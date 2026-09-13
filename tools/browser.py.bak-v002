@@ -1,0 +1,83 @@
+import os
+import uuid
+from datetime import datetime
+from pathlib import Path
+
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/opt/uqa/browsers")
+
+from playwright.sync_api import sync_playwright
+
+
+ARTIFACTS_ROOT = Path("/opt/uqa/artifacts/browser")
+
+
+def open_page(url: str) -> dict:
+    job_id = datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
+    job_dir = ARTIFACTS_ROOT / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
+
+    screenshot_path = job_dir / "page.png"
+
+    console_errors = []
+    failed_requests = []
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        context = browser.new_context(
+            ignore_https_errors=True,
+            viewport={"width": 1920, "height": 1080},
+        )
+
+        page = context.new_page()
+
+        page.on(
+            "console",
+            lambda msg: console_errors.append(msg.text)
+            if msg.type == "error"
+            else None,
+        )
+
+        page.on(
+            "requestfailed",
+            lambda request: failed_requests.append(
+                {
+                    "url": request.url,
+                    "error": request.failure,
+                }
+            ),
+        )
+
+        response = page.goto(
+            url,
+            wait_until="domcontentloaded",
+            timeout=30000,
+        )
+
+        page.wait_for_timeout(1500)
+
+        try:
+            body_text = page.locator("body").inner_text(timeout=5000)
+        except Exception:
+            body_text = ""
+
+        page.screenshot(
+            path=str(screenshot_path),
+            full_page=True,
+        )
+
+        result = {
+            "job_id": job_id,
+            "requested_url": url,
+            "final_url": page.url,
+            "http_status": response.status if response else None,
+            "title": page.title(),
+            "text_preview": body_text[:3000],
+            "screenshot": str(screenshot_path),
+            "console_errors": console_errors[:20],
+            "failed_requests": failed_requests[:20],
+        }
+
+        browser.close()
+
+    return result

@@ -1,0 +1,471 @@
+{
+  "schema_version": 1,
+  "job_id": "20260912-184121-12837490",
+  "owner": "adminacc",
+  "job_type": "regression",
+  "external_id": null,
+  "stand": "uc.lab.local",
+  "stand_identity": {
+    "status": "ok",
+    "stand": "uc.lab.local",
+    "installation_architecture": "ansible",
+    "server_version": "4.9.0",
+    "server_version_source": "u-backend_image_tag",
+    "deployment_version": "2.3.16",
+    "desired_deployment_version": "2.3.16",
+    "deployment_partial": false,
+    "deployment_version_source": "/var/lib/uconnect/install-state/active-release.yml",
+    "desired_state_digest": "sha256:f4f04ba2e9449029fb9d53835ee1092f24dc8efdbe804377de46dfa91c372925",
+    "active_state_digest": "sha256:d8c1e589d4ec6fb3f99515e50651a76f464280a799700e9f897e985e5c8577c5"
+  },
+  "request": "Проведи ровно один последовательный regression test case на стенде https://uc.lab.local. Создай ровно одну временную тестовую зону с точным именем uqa-e2e-cleanup-20260912-152500. В обязательном поле Parent выбери существующую зону Master, не изменяя её. Поле Mnemonic code оставь пустым. Зарегистрируй созданный ресурс UQA для cleanup и проверь автоматическую очистку. Не используй другое имя, не создавай другие сущности и не изменяй существующие объекты. Выводы только по фактическим evidence. Перед WRITE или DESTRUCTIVE дождись подтверждения.\nПроверь, что:\n1. зона с точным именем создана и отображается;\n2. ресурс зарегистрирован UQA для cleanup;\n3. cleanup удалил именно эту зону;\n4. после cleanup зона с этим именем не существует.",
+  "status": "blocked",
+  "created_at": "2026-09-12T18:41:21.455009+00:00",
+  "updated_at": "2026-09-12T22:53:39.280375+00:00",
+  "test_cases": [
+    {
+      "case_id": "tc-6e9a9f1d",
+      "title": "Проведи ровно один последовательный regression test case на стенде https://uc.lab.local. Создай ровно одну временную тестовую зону с точным именем uqa-e2e-cleanup-20260912-152500. В обязательном поле Parent выбери существующую зону Master, не изменяя её. Поле Mnemonic code оставь пустым. Зарегистрируй созданный ресурс UQA для cleanup и проверь автоматическую очистку. Не используй другое имя, не создавай другие сущности и не изменяй существующие объекты. Выводы только по фактическим evidence. Пер",
+      "expected": null,
+      "requirement": null,
+      "planned_checks": [
+        {
+          "check_id": "planned-001",
+          "title": "зона с точным именем создана и отображается",
+          "expected": "зона с точным именем создана и отображается;"
+        },
+        {
+          "check_id": "planned-002",
+          "title": "ресурс зарегистрирован UQA для cleanup",
+          "expected": "ресурс зарегистрирован UQA для cleanup;"
+        },
+        {
+          "check_id": "planned-003",
+          "title": "cleanup удалил именно эту зону",
+          "expected": "cleanup удалил именно эту зону;"
+        },
+        {
+          "check_id": "planned-004",
+          "title": "после cleanup зона с этим именем не существует",
+          "expected": "после cleanup зона с этим именем не существует"
+        }
+      ],
+      "status": "blocked",
+      "started_at": "2026-09-12T18:41:33.746778+00:00",
+      "finished_at": "2026-09-12T22:53:39.259443+00:00",
+      "result": "[Указано, что операция не выполнена из-за ошибки тайм-аута. Необходимо повторить попытку авторизации или проверить настройки подключения к стенду.]\n\n[UQA CORE]\nstatus=BLOCKED\nreason=structured_result_missing",
+      "checks": [],
+      "evidence": [
+        {
+          "evidence_id": "ev-b95573c912b4",
+          "type": "browser_open_page",
+          "value": "{\"tool\": \"browser_open_page\", \"arguments\": {\"url\": \"https://uc.lab.local\"}, \"result\": {\"navigation_preflight_status\": \"required\", \"required_navigation_candidate\": {\"tool\": \"browser_click_semantic\", \"arguments\": {\"name\": \"plus\", \"exact\": true}, \"action_class\": \"interact\", \"basis\": \"The latest browser state exposed exactly one unique enabled unnamed icon hint. Use it only when its meaning matches the documented navigation context.\"}, \"available_navigation_labels\": [\"Open profile\", \"All PC\", \"all\", \"CMDB\"], \"session_id\": \"20260912-212828-006509\", \"action\": \"open\", \"current_url\": \"https://uc.lab.local/cmdb?limit=50&offset=0\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nAll PC\\nall\\nAdd\\nAll PC\\nShowing 1 to 4 of 4\\nStatus\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\\nhome-server-UC-redos8\\n1.2.25\\n192.168.50.70\\nRED OS 8.0.2\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n8/3/2026, 16:26:11\\nMaster\\nhome-server-UC-astra18\\n1.2.25\\n192.168.50.69\\nAstra Linux\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 18:15:12\\nMaster\\nhome-server-UC-ubuntu22\\n1.2.25\\n192.168.50.68\\nUbuntu 22.04.4 LTS\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 17:40:02\\nMaster\\nhome-server-UC-windows10\\n1.2.25\\n192.168.50.67\\nМайкрософт Windows 10 Pro\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 15:39:20\\nMaster\\n1\\n50\\nCMDB\", \"unique_unnamed_icon_hints\": [\"plus\"], \"navigation_labels\": [\"Open profile\", \"All PC\", \"all\", \"CMDB\"], \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e89\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e90\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"icon_hints\": [\"globe\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e91\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"icon_hints\": [\"sign-out\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e92\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"text\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e93\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"All PC\", \"label\": \"\", \"element_id\": \"e94\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"all\", \"label\": \"\", \"element_id\": \"e95\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"icon_hints\": [\"cog\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e96\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Agent Download\", \"icon_hints\": [\"download\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e97\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"text\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"Search by name\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e98\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"checkbox\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": false, \"indeterminate\": false, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": {\"section\": \"thead\", \"row_text\": \"Status\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\", \"data_cell_count\": 0, \"header_cell_count\": 16}, \"text\": \"\", \"label\": \"\", \"element_id\": \"e99\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder...<truncated>",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-23ea224942"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T18:41:41.489717+00:00"
+        },
+        {
+          "evidence_id": "ev-61235bcae391",
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"name\": \"plus\", \"exact\": true}, \"result\": {\"navigation_preflight_status\": \"required\", \"required_navigation_candidate\": {\"tool\": \"browser_click_semantic\", \"arguments\": {\"name\": \"Administration\", \"exact\": true, \"role\": \"menuitem\"}, \"action_class\": \"interact\", \"basis\": \"UQA Core Navigation Resolver selected one exact label from the latest observed navigation candidates.\"}, \"available_navigation_labels\": [\"Aspects\", \"Automation & policies\", \"Repositories\", \"Info Center\", \"Dictionaries\", \"Administration\"], \"session_id\": \"20260912-212828-006509\", \"action\": \"click-semantic\", \"current_url\": \"https://uc.lab.local/cmdb?limit=50&offset=0\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nAll PC\\nall\\nAdd\\nAll PC\\nShowing 1 to 4 of 4\\nStatus\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\\nhome-server-UC-redos8\\n1.2.25\\n192.168.50.70\\nRED OS 8.0.2\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n8/3/2026, 16:26:11\\nMaster\\nhome-server-UC-astra18\\n1.2.25\\n192.168.50.69\\nAstra Linux\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 18:15:12\\nMaster\\nhome-server-UC-ubuntu22\\n1.2.25\\n192.168.50.68\\nUbuntu 22.04.4 LTS\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 17:40:02\\nMaster\\nhome-server-UC-windows10\\n1.2.25\\n192.168.50.67\\nМайкрософт Windows 10 Pro\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 15:39:20\\nMaster\\n1\\n50\\nCMDB\\nCMDB\\nAspects\\nAutomation & policies\\nRepositories\\nInfo Center\\nDictionaries\\nAdministration\", \"unique_unnamed_icon_hints\": [\"plus\"], \"navigation_labels\": [\"Open profile\", \"All PC\", \"all\", \"CMDB\", \"Aspects\", \"Automation & policies\", \"Repositories\", \"Info Center\", \"Dictionaries\", \"Administration\"], \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e89\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e90\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"icon_hints\": [\"globe\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e91\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"icon_hints\": [\"sign-out\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e92\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"text\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e93\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"All PC\", \"label\": \"\", \"element_id\": \"e94\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"all\", \"label\": \"\", \"element_id\": \"e95\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"icon_hints\": [\"cog\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e96\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Agent Download\", \"icon_hints\": [\"download\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e97\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"text\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"Search by name\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e98\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"checkbox\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": false, \"indeterminate\": false, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": {\"section\": \"thead\", \"row_text\": \"Status\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number...<truncated>",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-d2898d17da"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T18:41:50.819030+00:00"
+        },
+        {
+          "evidence_id": "ev-60b90940e33e",
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"exact\": true, \"name\": \"Administration\", \"role\": \"menuitem\"}, \"result\": {\"navigation_preflight_status\": \"required\", \"required_navigation_candidate\": {\"tool\": \"browser_click_semantic\", \"arguments\": {\"name\": \"Access management\", \"exact\": true, \"role\": \"menuitem\"}, \"action_class\": \"interact\", \"basis\": \"UQA Core Navigation Resolver selected one exact label from the latest observed navigation candidates.\"}, \"available_navigation_labels\": [\"General settings\", \"Server management\", \"Security\", \"Access management\", \"Agent management\", \"Integration\"], \"session_id\": \"20260912-212828-006509\", \"action\": \"click-semantic\", \"current_url\": \"https://uc.lab.local/cmdb?limit=50&offset=0\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nAll PC\\nall\\nAdd\\nAll PC\\nShowing 1 to 4 of 4\\nStatus\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\\nhome-server-UC-redos8\\n1.2.25\\n192.168.50.70\\nRED OS 8.0.2\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n8/3/2026, 16:26:11\\nMaster\\nhome-server-UC-astra18\\n1.2.25\\n192.168.50.69\\nAstra Linux\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 18:15:12\\nMaster\\nhome-server-UC-ubuntu22\\n1.2.25\\n192.168.50.68\\nUbuntu 22.04.4 LTS\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 17:40:02\\nMaster\\nhome-server-UC-windows10\\n1.2.25\\n192.168.50.67\\nМайкрософт Windows 10 Pro\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 15:39:20\\nMaster\\n1\\n50\\nCMDB\\nCMDB\\nAspects\\nAutomation & policies\\nRepositories\\nInfo Center\\nDictionaries\\nAdministration\\nGeneral settings\\nServer management\\nSecurity\\nAccess management\\nAgent management\\nIntegration\", \"unique_unnamed_icon_hints\": [\"plus\"], \"navigation_labels\": [\"Open profile\", \"All PC\", \"all\", \"CMDB\", \"Aspects\", \"Automation & policies\", \"Repositories\", \"Info Center\", \"Dictionaries\", \"Administration\\nGeneral settings\\nServer management\\nSecurity\\nAccess management\\nAgent management\\nIntegration\", \"Administration\", \"General settings\", \"Server management\", \"Security\", \"Access management\", \"Agent management\", \"Integration\"], \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e89\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e90\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"icon_hints\": [\"globe\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e91\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"icon_hints\": [\"sign-out\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e92\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"text\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e93\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"All PC\", \"label\": \"\", \"element_id\": \"e94\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"all\", \"label\": \"\", \"element_id\": \"e95\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"icon_hints\": [\"cog\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e96\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Agent Download\", \"icon_hints\": [\"download\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e97\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"text\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"Search by name\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e98\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"checkbox\", \"role\": ...<truncated>",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-ae4aa6c901"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T18:42:00.531385+00:00"
+        },
+        {
+          "evidence_id": "ev-3c49130db46b",
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"exact\": true, \"name\": \"Access management\", \"role\": \"menuitem\"}, \"result\": {\"navigation_preflight_status\": \"required\", \"required_navigation_candidate\": {\"tool\": \"browser_click_semantic\", \"arguments\": {\"name\": \"Access zones\", \"exact\": true, \"role\": \"menuitem\"}, \"action_class\": \"interact\", \"basis\": \"UQA Core Navigation Resolver selected one exact label from the latest observed navigation candidates.\"}, \"available_navigation_labels\": [\"Access zones\", \"Users\", \"Roles\"], \"session_id\": \"20260912-212828-006509\", \"action\": \"click-semantic\", \"current_url\": \"https://uc.lab.local/cmdb?limit=50&offset=0\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nAll PC\\nall\\nAdd\\nAll PC\\nShowing 1 to 4 of 4\\nStatus\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\\nhome-server-UC-redos8\\n1.2.25\\n192.168.50.70\\nRED OS 8.0.2\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n8/3/2026, 16:26:11\\nMaster\\nhome-server-UC-astra18\\n1.2.25\\n192.168.50.69\\nAstra Linux\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 18:15:12\\nMaster\\nhome-server-UC-ubuntu22\\n1.2.25\\n192.168.50.68\\nUbuntu 22.04.4 LTS\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 17:40:02\\nMaster\\nhome-server-UC-windows10\\n1.2.25\\n192.168.50.67\\nМайкрософт Windows 10 Pro\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 15:39:20\\nMaster\\n1\\n50\\nCMDB\\nCMDB\\nAspects\\nAutomation & policies\\nRepositories\\nInfo Center\\nDictionaries\\nAdministration\\nGeneral settings\\nServer management\\nSecurity\\nAccess management\\nAccess zones\\nUsers\\nRoles\\nAgent management\\nIntegration\", \"unique_unnamed_icon_hints\": [\"plus\"], \"navigation_labels\": [\"Open profile\", \"All PC\", \"all\", \"CMDB\", \"Aspects\", \"Automation & policies\", \"Repositories\", \"Info Center\", \"Dictionaries\", \"Administration\\nGeneral settings\\nServer management\\nSecurity\\nAccess management\\nAccess zones\\nUsers\\nRoles\\nAgent management\\nIntegration\", \"Administration\", \"General settings\", \"Server management\", \"Security\", \"Access management\\nAccess zones\\nUsers\\nRoles\", \"Access management\", \"Access zones\", \"Users\", \"Roles\", \"Agent management\", \"Integration\"], \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e89\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e90\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"icon_hints\": [\"globe\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e91\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"icon_hints\": [\"sign-out\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e92\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"text\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e93\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"All PC\", \"label\": \"\", \"element_id\": \"e94\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"all\", \"label\": \"\", \"element_id\": \"e95\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"icon_hints\": [\"cog\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e96\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Agent Download\", \"icon_hints\": [\"download\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e97\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"text\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"Search by name\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e98\", \"...<truncated>",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-e8ed0a98c1"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T18:42:17.081918+00:00"
+        },
+        {
+          "evidence_id": "ev-7f5ad6b25b81",
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"exact\": true, \"name\": \"Access zones\", \"role\": \"menuitem\"}, \"result\": {\"session_id\": \"20260912-212828-006509\", \"action\": \"click-semantic\", \"current_url\": \"https://uc.lab.local/administration/access-management/access-zones\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nAccess zones\\nCreate acces zone\\nName\\n\\t\\nMnemonic code\\n\\t\\nCreate date\\n\\t\\nUpdate date\\n\\n\\nMaster\\n\\tMASTER\\t\\n5/20/2026, 17:44:06\\n\\t\\n5/20/2026, 17:44:06\\n1\\n10\\nCMDB\\nAccess zones\", \"unique_unnamed_icon_hints\": [\"plus\"], \"navigation_labels\": [\"Open profile\", \"CMDB\", \"Access zones\"], \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e89\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e90\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"icon_hints\": [\"globe\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e91\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"icon_hints\": [\"sign-out\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e92\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"text\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"Search by acces zones\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e162\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Create acces zone\", \"icon_hints\": [\"plus\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"Create acces zone\", \"label\": \"\", \"element_id\": \"e163\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": true, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e164\", \"enabled\": false}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": true, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e165\", \"enabled\": false}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Page 1\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"1\", \"label\": \"\", \"element_id\": \"e166\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": true, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e167\", \"enabled\": false}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": true, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e168\", \"enabled\": false}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e127\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [\"plus\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e128\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [\"times\"], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e129\", \"enabled\": true}, {\"tag\": \"a\", \"type\": \"\", \"role\": \"\", \"name\"...<truncated>",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-c74ef90e22"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T18:42:26.930776+00:00"
+        },
+        {
+          "evidence_id": "ev-25ebba604b1d",
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"exact\": true, \"name\": \"Create acces zone\", \"role\": \"button\"}, \"result\": {\"session_id\": \"20260912-212828-006509\", \"action\": \"click-semantic\", \"current_url\": \"https://uc.lab.local/administration/access-management/access-zones\", \"title\": \"U-Connect\", \"text_preview\": \"Login\\nPassword\\nEnter a password\\nSign in\", \"unique_unnamed_icon_hints\": [], \"navigation_labels\": [], \"interactive_elements\": [{\"tag\": \"input\", \"type\": \"text\", \"role\": \"\", \"name\": \"login\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e170\", \"enabled\": true}, {\"tag\": \"input\", \"type\": \"password\", \"role\": \"\", \"name\": \"password\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e171\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign in\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"Sign in\", \"label\": \"\", \"element_id\": \"e172\", \"enabled\": true}, {\"tag\": \"button\", \"type\": \"button\", \"role\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"icon_hints\": [], \"checked\": null, \"indeterminate\": null, \"aria_checked\": null, \"aria_selected\": null, \"disabled_attribute\": false, \"aria_disabled\": null, \"readonly_attribute\": false, \"table_context\": null, \"text\": \"\", \"label\": \"\", \"element_id\": \"e173\", \"enabled\": true}], \"screenshot\": \"/opt/uqa/artifacts/browser/adminacc/20260912-212828-006509/013-click-semantic.png\", \"console_errors\": [], \"http_errors\": [{\"status\": 419, \"method\": \"GET\", \"url\": \"/api/v1/u-auth/u-sys/api/v1/access-zones?limit=0\"}, {\"status\": 428, \"method\": \"GET\", \"url\": \"/check-auth\"}, {\"status\": 400, \"method\": \"GET\", \"url\": \"/check-krb-auth\"}], \"failed_requests\": [], \"network_request_count\": 3, \"network_requests\": [{\"request_id\": \"n33\", \"session_id\": \"20260912-212828-006509\", \"action_execution_id\": \"20260912-212828-006509-a0011\", \"method\": \"GET\", \"status\": 419, \"type\": \"xhr\", \"url\": \"/api/v1/u-auth/u-sys/api/v1/access-zones?limit=0\"}, {\"request_id\": \"n34\", \"session_id\": \"20260912-212828-006509\", \"action_execution_id\": \"20260912-212828-006509-a0011\", \"method\": \"GET\", \"status\": 428, \"type\": \"xhr\", \"url\": \"/check-auth\"}, {\"request_id\": \"n35\", \"session_id\": \"20260912-212828-006509\", \"action_execution_id\": \"20260912-212828-006509-a0011\", \"method\": \"GET\", \"status\": 400, \"type\": \"xhr\", \"url\": \"/check-krb-auth\"}], \"semantic_name\": \"Create acces zone\", \"semantic_strategy\": \"role:button\", \"click_status\": \"executed\", \"post_action_wait_ms\": 1000, \"action_execution_id\": \"20260912-212828-006509-a0011\", \"network_window_closed\": true, \"network_capture_scope\": \"fetch_xhr_until_capture_state\", \"action_class\": \"write\", \"action_policy_status\": \"confirmed\", \"auth_challenge_status\": \"required\", \"required_action_candidate\": {\"tool\": \"browser_authenticate_saved_stand\", \"arguments\": {\"stand\": \"uc.lab.local\"}, \"action_class\": \"interact\", \"basis\": \"UQA Core detected a visible Login/Password challenge and will keep credentials outside model context and evidence.\"}}}",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-64c8c2a7be"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T22:53:18.188775+00:00"
+        },
+        {
+          "evidence_id": "ev-c0338bd3866d",
+          "type": "browser_authenticate_saved_stand",
+          "value": "{\"tool\": \"browser_authenticate_saved_stand\", \"arguments\": {\"stand\": \"uc.lab.local\"}, \"result\": {\"error\": \"saved_web_authentication_error\", \"error_type\": \"TimeoutError\", \"status\": \"error\", \"executed\": false, \"action_execution_id\": \"20260912-212828-006509-a0012\", \"network_window_closed\": true, \"network_capture_scope\": \"fetch_xhr_until_capture_state\", \"action_class\": \"interact\", \"action_policy_status\": \"auto_allowed\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [],
+          "usable_for_pass": false,
+          "usable_for_verdict": false,
+          "execution_status": "tool_error",
+          "eligibility_reason": "tool_result_contains_error",
+          "created_at": "2026-09-12T22:53:37.631749+00:00"
+        }
+      ],
+      "observations": [
+        {
+          "observation_id": "obs-23ea224942",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_open_page",
+            "action": "open",
+            "input": {
+              "url": "https://uc.lab.local"
+            },
+            "session_id": "20260912-212828-006509",
+            "action_execution_id": null,
+            "network_window_closed": null,
+            "network_capture_scope": null,
+            "post_action_wait_ms": null,
+            "network_request_count": 9,
+            "network_requests": [
+              {
+                "request_id": "n23",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/users/self"
+              },
+              {
+                "request_id": "n24",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v2/u-auth/users/7461345b-177e-b55b-e5af-3c626a04ce6c/roles-permissions"
+              },
+              {
+                "request_id": "n25",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/general-settings/6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              },
+              {
+                "request_id": "n26",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": null,
+                "method": "POST",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ui-visibility"
+              },
+              {
+                "request_id": "n27",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ci-collection-group-item?limit=0"
+              },
+              {
+                "request_id": "n28",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ci-collection?limit=0"
+              },
+              {
+                "request_id": "n29",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/tags?limit=0"
+              },
+              {
+                "request_id": "n30",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ci-collection-group?limit=0"
+              },
+              {
+                "request_id": "n31",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/cmdb/endpoints?limit=50&offset=0"
+              }
+            ],
+            "title": "U-Connect",
+            "http_status": 200,
+            "url": "https://uc.lab.local/cmdb?limit=50&offset=0",
+            "path": "/cmdb",
+            "query": {
+              "limit": "50",
+              "offset": "0"
+            },
+            "screenshot": "/opt/uqa/artifacts/browser/adminacc/20260912-212828-006509/008-open.png",
+            "text_excerpt": ".\n...\n...\nAll PC\nall\nAdd\nAll PC\nShowing 1 to 4 of 4\nStatus\nType\nName\nAgent\nIP\nUser\nOS\nInventory number\nSerial number\nLocation\nTags\nOrg. unit\nCreated at\nArchived\nZone of access\nhome-server-UC-redos8\n1.2.25\n192.168.50.70\nRED OS 8.0.2\nInvalid serial number\nВоронеж\nЛаборатория\n8/3/2026, 16:26:11\nMaster\nhome-server-UC-astra18\n1.2.25\n192.168.50.69\nAstra Linux\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 18:15:12\nMaster\nhome-server-UC-ubuntu22\n1.2.25\n192.168.50.68\nUbuntu 22.04.4 LTS\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 17:40:02\nMaster\nhome-server-UC-windows10\n1.2.25\n192.168.50.67\nМайкрософт Windows 10 Pro\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 15:39:20\nMaster\n1\n50\nCMDB"
+          },
+          "created_at": "2026-09-12T18:41:41.488479+00:00"
+        },
+        {
+          "observation_id": "obs-d2898d17da",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic",
+            "input": {
+              "name": "plus",
+              "exact": true
+            },
+            "session_id": "20260912-212828-006509",
+            "action_execution_id": "20260912-212828-006509-a0007",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb?limit=50&offset=0",
+            "path": "/cmdb",
+            "query": {
+              "limit": "50",
+              "offset": "0"
+            },
+            "screenshot": "/opt/uqa/artifacts/browser/adminacc/20260912-212828-006509/009-click-semantic.png",
+            "text_excerpt": ".\n...\n...\nAll PC\nall\nAdd\nAll PC\nShowing 1 to 4 of 4\nStatus\nType\nName\nAgent\nIP\nUser\nOS\nInventory number\nSerial number\nLocation\nTags\nOrg. unit\nCreated at\nArchived\nZone of access\nhome-server-UC-redos8\n1.2.25\n192.168.50.70\nRED OS 8.0.2\nInvalid serial number\nВоронеж\nЛаборатория\n8/3/2026, 16:26:11\nMaster\nhome-server-UC-astra18\n1.2.25\n192.168.50.69\nAstra Linux\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 18:15:12\nMaster\nhome-server-UC-ubuntu22\n1.2.25\n192.168.50.68\nUbuntu 22.04.4 LTS\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 17:40:02\nMaster\nhome-server-UC-windows10\n1.2.25\n192.168.50.67\nМайкрософт Windows 10 Pro\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 15:39:20\nMaster\n1\n50\nCMDB\nCMDB\nAspects\nAutomation & policies\nRepositories\nInfo Center\nDictionaries\nAdministration"
+          },
+          "created_at": "2026-09-12T18:41:50.817485+00:00"
+        },
+        {
+          "observation_id": "obs-ae4aa6c901",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic",
+            "input": {
+              "exact": true,
+              "name": "Administration",
+              "role": "menuitem"
+            },
+            "session_id": "20260912-212828-006509",
+            "action_execution_id": "20260912-212828-006509-a0008",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb?limit=50&offset=0",
+            "path": "/cmdb",
+            "query": {
+              "limit": "50",
+              "offset": "0"
+            },
+            "screenshot": "/opt/uqa/artifacts/browser/adminacc/20260912-212828-006509/010-click-semantic.png",
+            "text_excerpt": ".\n...\n...\nAll PC\nall\nAdd\nAll PC\nShowing 1 to 4 of 4\nStatus\nType\nName\nAgent\nIP\nUser\nOS\nInventory number\nSerial number\nLocation\nTags\nOrg. unit\nCreated at\nArchived\nZone of access\nhome-server-UC-redos8\n1.2.25\n192.168.50.70\nRED OS 8.0.2\nInvalid serial number\nВоронеж\nЛаборатория\n8/3/2026, 16:26:11\nMaster\nhome-server-UC-astra18\n1.2.25\n192.168.50.69\nAstra Linux\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 18:15:12\nMaster\nhome-server-UC-ubuntu22\n1.2.25\n192.168.50.68\nUbuntu 22.04.4 LTS\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 17:40:02\nMaster\nhome-server-UC-windows10\n1.2.25\n192.168.50.67\nМайкрософт Windows 10 Pro\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 15:39:20\nMaster\n1\n50\nCMDB\nCMDB\nAspects\nAutomation & policies\nRepositories\nInfo Center\nDictionaries\nAdministration\nGeneral settings\nServer management\nSecurity\nAccess management\nAgent management\nIntegration"
+          },
+          "created_at": "2026-09-12T18:42:00.528465+00:00"
+        },
+        {
+          "observation_id": "obs-e8ed0a98c1",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic",
+            "input": {
+              "exact": true,
+              "name": "Access management",
+              "role": "menuitem"
+            },
+            "session_id": "20260912-212828-006509",
+            "action_execution_id": "20260912-212828-006509-a0009",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb?limit=50&offset=0",
+            "path": "/cmdb",
+            "query": {
+              "limit": "50",
+              "offset": "0"
+            },
+            "screenshot": "/opt/uqa/artifacts/browser/adminacc/20260912-212828-006509/011-click-semantic.png",
+            "text_excerpt": ".\n...\n...\nAll PC\nall\nAdd\nAll PC\nShowing 1 to 4 of 4\nStatus\nType\nName\nAgent\nIP\nUser\nOS\nInventory number\nSerial number\nLocation\nTags\nOrg. unit\nCreated at\nArchived\nZone of access\nhome-server-UC-redos8\n1.2.25\n192.168.50.70\nRED OS 8.0.2\nInvalid serial number\nВоронеж\nЛаборатория\n8/3/2026, 16:26:11\nMaster\nhome-server-UC-astra18\n1.2.25\n192.168.50.69\nAstra Linux\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 18:15:12\nMaster\nhome-server-UC-ubuntu22\n1.2.25\n192.168.50.68\nUbuntu 22.04.4 LTS\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 17:40:02\nMaster\nhome-server-UC-windows10\n1.2.25\n192.168.50.67\nМайкрософт Windows 10 Pro\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 15:39:20\nMaster\n1\n50\nCMDB\nCMDB\nAspects\nAutomation & policies\nRepositories\nInfo Center\nDictionaries\nAdministration\nGeneral settings\nServer management\nSecurity\nAccess management\nAccess zones\nUsers\nRoles\nAgent management\nIntegration"
+          },
+          "created_at": "2026-09-12T18:42:17.080083+00:00"
+        },
+        {
+          "observation_id": "obs-c74ef90e22",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic",
+            "input": {
+              "exact": true,
+              "name": "Access zones",
+              "role": "menuitem"
+            },
+            "session_id": "20260912-212828-006509",
+            "action_execution_id": "20260912-212828-006509-a0010",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 1,
+            "network_requests": [
+              {
+                "request_id": "n32",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": "20260912-212828-006509-a0010",
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/access-zones?limit=0"
+              }
+            ],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/administration/access-management/access-zones",
+            "path": "/administration/access-management/access-zones",
+            "query": {},
+            "screenshot": "/opt/uqa/artifacts/browser/adminacc/20260912-212828-006509/012-click-semantic.png",
+            "text_excerpt": ".\n...\n...\nAccess zones\nCreate acces zone\nName\n\t\nMnemonic code\n\t\nCreate date\n\t\nUpdate date\n\n\nMaster\n\tMASTER\t\n5/20/2026, 17:44:06\n\t\n5/20/2026, 17:44:06\n1\n10\nCMDB\nAccess zones"
+          },
+          "created_at": "2026-09-12T18:42:26.928610+00:00"
+        },
+        {
+          "observation_id": "obs-64c8c2a7be",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic",
+            "input": {
+              "exact": true,
+              "name": "Create acces zone",
+              "role": "button"
+            },
+            "session_id": "20260912-212828-006509",
+            "action_execution_id": "20260912-212828-006509-a0011",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 3,
+            "network_requests": [
+              {
+                "request_id": "n33",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": "20260912-212828-006509-a0011",
+                "method": "GET",
+                "status": 419,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/access-zones?limit=0"
+              },
+              {
+                "request_id": "n34",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": "20260912-212828-006509-a0011",
+                "method": "GET",
+                "status": 428,
+                "type": "xhr",
+                "url": "/check-auth"
+              },
+              {
+                "request_id": "n35",
+                "session_id": "20260912-212828-006509",
+                "action_execution_id": "20260912-212828-006509-a0011",
+                "method": "GET",
+                "status": 400,
+                "type": "xhr",
+                "url": "/check-krb-auth"
+              }
+            ],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/administration/access-management/access-zones",
+            "path": "/administration/access-management/access-zones",
+            "query": {},
+            "screenshot": "/opt/uqa/artifacts/browser/adminacc/20260912-212828-006509/013-click-semantic.png",
+            "text_excerpt": "Login\nPassword\nEnter a password\nSign in"
+          },
+          "created_at": "2026-09-12T22:53:18.187324+00:00"
+        }
+      ],
+      "candidate_facts": [],
+      "notes": []
+    }
+  ],
+  "resources": [],
+  "cleanup_status": "not_required",
+  "cleanup_started_at": null,
+  "cleanup_finished_at": null,
+  "summary": "Regression: 1 case(s) | PASS=0 | FAIL=0 | BLOCKED=1 | SKIPPED=0",
+  "jira_comment": null
+}

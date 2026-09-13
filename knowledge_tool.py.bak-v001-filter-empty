@@ -1,0 +1,92 @@
+from knowledge_index import search
+
+
+MAX_RESULTS = 5
+MAX_CHARS_PER_RESULT = 3500
+MAX_TOTAL_CHARS = 12000
+
+
+def knowledge_search(
+    query: str,
+    limit: int = 5,
+) -> dict:
+    query = str(query).strip()
+
+    if not query:
+        return {
+            "status": "invalid_query",
+            "results": [],
+        }
+
+    try:
+        limit = int(limit)
+    except Exception:
+        limit = 5
+
+    limit = max(
+        1,
+        min(limit, MAX_RESULTS),
+    )
+
+    raw = search(
+        query,
+        limit=limit,
+    )
+
+    results = []
+    total_chars = 0
+
+    for item in raw:
+        content = (
+            item.get("content")
+            or ""
+        ).strip()
+
+        truncated = False
+
+        if len(content) > MAX_CHARS_PER_RESULT:
+            content = (
+                content[:MAX_CHARS_PER_RESULT]
+                + "\n...<truncated>"
+            )
+            truncated = True
+
+        if (
+            total_chars + len(content)
+            > MAX_TOTAL_CHARS
+        ):
+            remaining = (
+                MAX_TOTAL_CHARS
+                - total_chars
+            )
+
+            if remaining < 300:
+                break
+
+            content = (
+                content[:remaining]
+                + "\n...<truncated>"
+            )
+            truncated = True
+
+        results.append(
+            {
+                "source": item.get("source"),
+                "chunk_no": item.get("chunk_no"),
+                "heading": item.get("heading"),
+                "content": content,
+                "truncated": truncated,
+            }
+        )
+
+        total_chars += len(content)
+
+        if total_chars >= MAX_TOTAL_CHARS:
+            break
+
+    return {
+        "status": "ok",
+        "query": query,
+        "result_count": len(results),
+        "results": results,
+    }

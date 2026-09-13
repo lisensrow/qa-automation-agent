@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "job_id": "20260910-223340-b84d02f4",
+  "owner": "d.storozheva",
+  "external_id": null,
+  "stand": "uc.lab.local",
+  "stand_identity": {
+    "status": "ok",
+    "stand": "uc.lab.local",
+    "installation_architecture": "ansible",
+    "server_version": "4.9.0",
+    "server_version_source": "u-backend_image_tag",
+    "deployment_version": "2.3.16",
+    "desired_deployment_version": "2.3.16",
+    "deployment_partial": false,
+    "deployment_version_source": "/var/lib/uconnect/install-state/active-release.yml",
+    "desired_state_digest": "sha256:f4f04ba2e9449029fb9d53835ee1092f24dc8efdbe804377de46dfa91c372925",
+    "active_state_digest": "sha256:d8c1e589d4ec6fb3f99515e50651a76f464280a799700e9f897e985e5c8577c5"
+  },
+  "request": "2. Проверь, что поле Search by name доступно.",
+  "status": "passed",
+  "created_at": "2026-09-10T22:33:40.259017+00:00",
+  "updated_at": "2026-09-10T22:33:48.200142+00:00",
+  "test_cases": [
+    {
+      "case_id": "tc-b56a68a6",
+      "title": "2. Проверь, что поле Search by name доступно.",
+      "expected": null,
+      "status": "passed",
+      "started_at": "2026-09-10T22:33:40.259696+00:00",
+      "finished_at": "2026-09-10T22:33:48.199439+00:00",
+      "result": "Поле \"Search by name\" найдено и доступно на текущей странице.",
+      "checks": [
+        {
+          "check_id": "check-001",
+          "title": "Проверка доступности поля Search by name",
+          "status": "passed",
+          "expected": "поле Search by name доступно",
+          "actual": "поле Search by name доступно",
+          "evidence": [
+            "/opt/uqa/artifacts/browser/d.storozheva/20260911-012654-616340/049-state.png"
+          ],
+          "reason": null
+        }
+      ],
+      "evidence": [
+        {
+          "type": "browser_inspect_semantic",
+          "value": "{\"tool\": \"browser_inspect_semantic\", \"arguments\": {\"name\": \"Search by name\", \"exact\": true}, \"result\": {\"error\": \"semantic_element_not_found\", \"name\": \"Search by name\"}}",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T22:33:41.891358+00:00"
+        },
+        {
+          "type": "browser_inspect_semantic",
+          "value": "{\"tool\": \"browser_inspect_semantic\", \"arguments\": {\"exact\": false, \"name\": \"Search by name\"}, \"result\": {\"error\": \"semantic_element_not_found\", \"name\": \"Search by name\"}}",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T22:33:42.577049+00:00"
+        },
+        {
+          "type": "browser_get_state",
+          "value": "{\"tool\": \"browser_get_state\", \"arguments\": {}, \"result\": {\"session_id\": \"20260911-012654-616340\", \"action\": \"state\", \"current_url\": \"https://uc.lab.local/cmdb?limit=50&offset=0\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nAll PC\\nall\\nAdd\\nAll PC\\nShowing 1 to 4 of 4\\nStatus\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\\nhome-server-UC-redos8\\n1.2.25\\n192.168.50.70\\nRED OS 8.0.2\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n8/3/2026, 16:26:11\\nMaster\\nhome-server-UC-astra18\\n1.2.25\\n192.168.50.69\\nAstra Linux\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 18:15:12\\nMaster\\nhome-server-UC-ubuntu22\\n1.2.25\\n192.168.50.68\\nUbuntu 22.04.4 LTS\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 17:40:02\\nMaster\\nhome-server-UC-windows10\\n1.2.25\\n192.168.50.67\\nМайкрософт Windows 10 Pro\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 15:39:20\\nMaster\\n1\\n50\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\\nCMDB\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e951\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e952\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e953\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e954\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e955\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"All PC\", \"label\": \"\", \"element_id\": \"e956\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"all\", \"label\": \"\", \"element_id\": \"e957\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e958\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Agent Download\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e959\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by name\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e960\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e961\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e962\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e963\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e964\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e965\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e966\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e967\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e968\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e969\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e970\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e971\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e972\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e973\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e974\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e975\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e976\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e977\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e978\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e979\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e980\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Page 1\", \"text\": \"1\", \"label\": \"\", \"element_id\": \"e981\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e982\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e983\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e984\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e985\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": ...<truncated>",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T22:33:43.561469+00:00"
+        }
+      ],
+      "observations": [
+        {
+          "observation_id": "obs-1d7fff4dfa",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_get_state",
+            "action": "state",
+            "input": {},
+            "session_id": "20260911-012654-616340",
+            "action_execution_id": null,
+            "network_window_closed": null,
+            "network_capture_scope": null,
+            "post_action_wait_ms": null,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb?limit=50&offset=0",
+            "path": "/cmdb",
+            "query": {
+              "limit": "50",
+              "offset": "0"
+            },
+            "screenshot": "/opt/uqa/artifacts/browser/d.storozheva/20260911-012654-616340/049-state.png",
+            "text_excerpt": ".\n...\n...\nAll PC\nall\nAdd\nAll PC\nShowing 1 to 4 of 4\nStatus\nType\nName\nAgent\nIP\nUser\nOS\nInventory number\nSerial number\nLocation\nTags\nOrg. unit\nCreated at\nArchived\nZone of access\nhome-server-UC-redos8\n1.2.25\n192.168.50.70\nRED OS 8.0.2\nInvalid serial number\nВоронеж\nЛаборатория\n8/3/2026, 16:26:11\nMaster\nhome-server-UC-astra18\n1.2.25\n192.168.50.69\nAstra Linux\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 18:15:12\nMaster\nhome-server-UC-ubuntu22\n1.2.25\n192.168.50.68\nUbuntu 22.04.4 LTS\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 17:40:02\nMaster\nhome-server-UC-windows10\n1.2.25\n192.168.50.67\nМайкрософт Windows 10 Pro\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 15:39:20\nMaster\n1\n50\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB\nCMDB"
+          },
+          "created_at": "2026-09-10T22:33:43.560888+00:00"
+        }
+      ],
+      "candidate_facts": [],
+      "notes": []
+    }
+  ],
+  "summary": null,
+  "jira_comment": null
+}

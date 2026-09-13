@@ -1,0 +1,37 @@
+import json
+from tools.browser import open_page
+
+
+TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_open_page",
+            "description": (
+                "Открывает URL в изолированном Chromium через Playwright. "
+                "Возвращает HTTP status, конечный URL, title, текст страницы, "
+                "ошибки консоли, failed requests и путь к реальному screenshot. "
+                "Используй для проверки доступности и содержимого веб-интерфейса."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "Полный URL, например https://uc.lab.local"
+                    }
+                },
+                "required": ["url"]
+            }
+        }
+    }
+]
+
+
+def execute_tool(name: str, arguments: dict):
+    if name == "browser_open_page":
+        return open_page(arguments["url"])
+
+    return {
+        "error": f"Unknown tool: {name}"
+    }

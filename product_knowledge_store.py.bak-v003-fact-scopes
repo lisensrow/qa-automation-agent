@@ -1,0 +1,612 @@
+import json
+import sqlite3
+from copy import deepcopy
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+DB_PATH = Path(
+    "/opt/uqa/product_knowledge/"
+    "product_knowledge.db"
+)
+
+
+VALID_STATUSES = {
+    "candidate",
+    "verified",
+    "conflict",
+    "deprecated",
+}
+
+
+def _now():
+    return datetime.now(
+        timezone.utc
+    ).isoformat()
+
+
+def _connect():
+    DB_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    conn = sqlite3.connect(
+        DB_PATH
+    )
+
+    conn.row_factory = (
+        sqlite3.Row
+    )
+
+    conn.execute(
+        "PRAGMA journal_mode=WAL"
+    )
+
+    conn.execute(
+        "PRAGMA foreign_keys=ON"
+    )
+
+    return conn
+
+
+def init_db():
+    with _connect() as conn:
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS facts (
+                fact_key TEXT PRIMARY KEY,
+                fact_type TEXT NOT NULL,
+                statement TEXT NOT NULL,
+                data_json TEXT NOT NULL,
+                status TEXT NOT NULL,
+                first_seen_at TEXT NOT NULL,
+                last_seen_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS confirmations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                fact_key TEXT NOT NULL,
+
+                job_id TEXT NOT NULL,
+                case_id TEXT NOT NULL,
+                candidate_id TEXT,
+
+                stand TEXT,
+                product_version TEXT,
+
+                server_version TEXT,
+                installation_architecture TEXT,
+                deployment_version TEXT,
+                desired_deployment_version TEXT,
+                deployment_partial INTEGER,
+                stand_identity_json TEXT,
+
+                verification_json TEXT NOT NULL,
+                source_observation_ids_json TEXT NOT NULL,
+
+                created_at TEXT NOT NULL,
+                last_seen_at TEXT NOT NULL,
+
+                FOREIGN KEY (
+                    fact_key
+                )
+                REFERENCES facts(
+                    fact_key
+                )
+                ON DELETE CASCADE,
+
+                UNIQUE(
+                    fact_key,
+                    job_id,
+                    case_id
+                )
+            );
+
+            CREATE INDEX IF NOT EXISTS
+            idx_confirmations_fact_key
+            ON confirmations(
+                fact_key
+            );
+
+            CREATE INDEX IF NOT EXISTS
+            idx_confirmations_stand
+            ON confirmations(
+                stand
+            );
+
+            CREATE INDEX IF NOT EXISTS
+            idx_facts_status
+            ON facts(
+                status
+            );
+            """
+        )
+
+
+
+def _ensure_confirmation_identity_columns():
+    columns = (
+        ("server_version", "TEXT"),
+        ("installation_architecture", "TEXT"),
+        ("deployment_version", "TEXT"),
+        ("desired_deployment_version", "TEXT"),
+        ("deployment_partial", "INTEGER"),
+        ("stand_identity_json", "TEXT"),
+    )
+
+    with _connect() as conn:
+        existing = {
+            row[1]
+            for row in conn.execute(
+                "PRAGMA table_info(confirmations)"
+            ).fetchall()
+        }
+
+        for name, column_type in columns:
+            if name in existing:
+                continue
+
+            conn.execute(
+                f"ALTER TABLE confirmations "
+                f"ADD COLUMN {name} {column_type}"
+            )
+
+
+def migrate_confirmation_identity_schema():
+    init_db()
+    _ensure_confirmation_identity_columns()
+
+
+def ingest_candidate(
+    job_id: str,
+    case_id: str,
+    stand: str,
+    candidate: dict,
+    product_version: str = None,
+    stand_identity: dict = None,
+):
+    init_db()
+    _ensure_confirmation_identity_columns()
+
+    stand_identity = (
+        stand_identity
+        if isinstance(stand_identity, dict)
+        else {}
+    )
+
+    server_version = stand_identity.get(
+        "server_version"
+    )
+
+    installation_architecture = (
+        stand_identity.get(
+            "installation_architecture"
+        )
+    )
+
+    deployment_version = (
+        stand_identity.get(
+            "deployment_version"
+        )
+    )
+
+    desired_deployment_version = (
+        stand_identity.get(
+            "desired_deployment_version"
+        )
+    )
+
+    deployment_partial = stand_identity.get(
+        "deployment_partial"
+    )
+
+    if deployment_partial is not None:
+        deployment_partial = int(
+            bool(deployment_partial)
+        )
+
+    stand_identity_json = (
+        json.dumps(
+            stand_identity,
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        if stand_identity
+        else None
+    )
+
+    fact_key = candidate.get(
+        "fact_key"
+    )
+
+    if not fact_key:
+        raise ValueError(
+            "candidate has no fact_key"
+        )
+
+    fact_type = candidate.get(
+        "fact_type"
+    )
+
+    statement = candidate.get(
+        "statement"
+    )
+
+    data = candidate.get(
+        "data"
+    ) or {}
+
+    verification = candidate.get(
+        "verification"
+    ) or {}
+
+    source_ids = candidate.get(
+        "source_observation_ids"
+    ) or []
+
+    now = _now()
+
+    with _connect() as conn:
+        existing = conn.execute(
+            """
+            SELECT *
+            FROM facts
+            WHERE fact_key = ?
+            """,
+            (
+                fact_key,
+            ),
+        ).fetchone()
+
+        if existing is None:
+            conn.execute(
+                """
+                INSERT INTO facts (
+                    fact_key,
+                    fact_type,
+                    statement,
+                    data_json,
+                    status,
+                    first_seen_at,
+                    last_seen_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    fact_key,
+                    fact_type,
+                    statement,
+                    json.dumps(
+                        data,
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                    "candidate",
+                    now,
+                    now,
+                ),
+            )
+
+        else:
+            # Один fact_key должен означать
+            # одну и ту же каноническую сущность.
+            # Пока обновляем формулировку и last_seen,
+            # но статус самостоятельно не повышаем.
+            conn.execute(
+                """
+                UPDATE facts
+                SET statement = ?,
+                    data_json = ?,
+                    last_seen_at = ?
+                WHERE fact_key = ?
+                """,
+                (
+                    statement,
+                    json.dumps(
+                        data,
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                    now,
+                    fact_key,
+                ),
+            )
+
+        conn.execute(
+            """
+            INSERT INTO confirmations (
+                fact_key,
+                job_id,
+                case_id,
+                candidate_id,
+                stand,
+                product_version,
+                server_version,
+                installation_architecture,
+                deployment_version,
+                desired_deployment_version,
+                deployment_partial,
+                stand_identity_json,
+                verification_json,
+                source_observation_ids_json,
+                created_at,
+                last_seen_at
+            )
+            VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?
+            )
+
+            ON CONFLICT(
+                fact_key,
+                job_id,
+                case_id
+            )
+            DO UPDATE SET
+                candidate_id =
+                    excluded.candidate_id,
+
+                stand =
+                    excluded.stand,
+
+                product_version =
+                    excluded.product_version,
+
+                server_version =
+                    excluded.server_version,
+
+                installation_architecture =
+                    excluded.installation_architecture,
+
+                deployment_version =
+                    excluded.deployment_version,
+
+                desired_deployment_version =
+                    excluded.desired_deployment_version,
+
+                deployment_partial =
+                    excluded.deployment_partial,
+
+                stand_identity_json =
+                    excluded.stand_identity_json,
+
+                verification_json =
+                    excluded.verification_json,
+
+                source_observation_ids_json =
+                    excluded.source_observation_ids_json,
+
+                last_seen_at =
+                    excluded.last_seen_at
+            """,
+            (
+                fact_key,
+                job_id,
+                case_id,
+                candidate.get(
+                    "candidate_id"
+                ),
+                stand,
+                product_version,
+                server_version,
+                installation_architecture,
+                deployment_version,
+                desired_deployment_version,
+                deployment_partial,
+                stand_identity_json,
+                json.dumps(
+                    verification,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ),
+                json.dumps(
+                    source_ids,
+                    ensure_ascii=False,
+                ),
+                now,
+                now,
+            ),
+        )
+
+    return get_fact(
+        fact_key
+    )
+
+
+def get_fact(
+    fact_key: str,
+):
+    init_db()
+
+    with _connect() as conn:
+        row = conn.execute(
+            """
+            SELECT *
+            FROM facts
+            WHERE fact_key = ?
+            """,
+            (
+                fact_key,
+            ),
+        ).fetchone()
+
+        if row is None:
+            return None
+
+        confirmations = (
+            conn.execute(
+                """
+                SELECT *
+                FROM confirmations
+                WHERE fact_key = ?
+                ORDER BY created_at
+                """,
+                (
+                    fact_key,
+                ),
+            )
+            .fetchall()
+        )
+
+    result = dict(row)
+
+    result["data"] = json.loads(
+        result.pop(
+            "data_json"
+        )
+    )
+
+    result["confirmations"] = []
+
+    stands = set()
+
+    for item in confirmations:
+        confirmation = dict(item)
+
+        confirmation[
+            "verification"
+        ] = json.loads(
+            confirmation.pop(
+                "verification_json"
+            )
+        )
+
+        confirmation[
+            "source_observation_ids"
+        ] = json.loads(
+            confirmation.pop(
+                "source_observation_ids_json"
+            )
+        )
+
+        if confirmation.get(
+            "stand"
+        ):
+            stands.add(
+                confirmation[
+                    "stand"
+                ]
+            )
+
+        result[
+            "confirmations"
+        ].append(
+            confirmation
+        )
+
+    result[
+        "confirmation_count"
+    ] = len(
+        result["confirmations"]
+    )
+
+    result[
+        "distinct_stand_count"
+    ] = len(stands)
+
+    result[
+        "stands"
+    ] = sorted(
+        stands
+    )
+
+    return deepcopy(
+        result
+    )
+
+
+def set_fact_status(
+    fact_key: str,
+    status: str,
+):
+    status = (
+        str(status)
+        .strip()
+        .lower()
+    )
+
+    if status not in VALID_STATUSES:
+        raise ValueError(
+            f"invalid status: {status}"
+        )
+
+    init_db()
+
+    with _connect() as conn:
+        cursor = conn.execute(
+            """
+            UPDATE facts
+            SET status = ?,
+                last_seen_at = ?
+            WHERE fact_key = ?
+            """,
+            (
+                status,
+                _now(),
+                fact_key,
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise KeyError(
+                fact_key
+            )
+
+    return get_fact(
+        fact_key
+    )
+
+
+def list_facts(
+    status: str = None,
+    limit: int = 100,
+):
+    init_db()
+
+    try:
+        limit = int(limit)
+    except Exception:
+        limit = 100
+
+    limit = max(
+        1,
+        min(limit, 1000),
+    )
+
+    with _connect() as conn:
+        if status:
+            rows = conn.execute(
+                """
+                SELECT fact_key
+                FROM facts
+                WHERE status = ?
+                ORDER BY last_seen_at DESC
+                LIMIT ?
+                """,
+                (
+                    status,
+                    limit,
+                ),
+            ).fetchall()
+
+        else:
+            rows = conn.execute(
+                """
+                SELECT fact_key
+                FROM facts
+                ORDER BY last_seen_at DESC
+                LIMIT ?
+                """,
+                (
+                    limit,
+                ),
+            ).fetchall()
+
+    return [
+        get_fact(
+            row["fact_key"]
+        )
+        for row in rows
+    ]

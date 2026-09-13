@@ -1,0 +1,402 @@
+{
+  "schema_version": 1,
+  "job_id": "20260910-191254-168c3807",
+  "external_id": null,
+  "stand": "uc.lab.local",
+  "stand_identity": {
+    "status": "ok",
+    "stand": "uc.lab.local",
+    "installation_architecture": "ansible",
+    "server_version": "4.9.0",
+    "server_version_source": "u-backend_image_tag",
+    "deployment_version": "2.3.16",
+    "desired_deployment_version": "2.3.16",
+    "deployment_partial": false,
+    "deployment_version_source": "/var/lib/uconnect/install-state/active-release.yml",
+    "desired_state_digest": "sha256:f4f04ba2e9449029fb9d53835ee1092f24dc8efdbe804377de46dfa91c372925",
+    "active_state_digest": "sha256:d8c1e589d4ec6fb3f99515e50651a76f464280a799700e9f897e985e5c8577c5"
+  },
+  "request": "Проверь на стенде uc.lab.local поиск КЕ по имени home-server-UC-windows10 в CMDB. Проверь UI, соответствующий API-запрос и backend.",
+  "status": "passed",
+  "created_at": "2026-09-10T19:12:54.230731+00:00",
+  "updated_at": "2026-09-10T19:23:34.540129+00:00",
+  "test_cases": [
+    {
+      "case_id": "tc-39181120",
+      "title": "Проверь на стенде uc.lab.local поиск КЕ по имени home-server-UC-windows10 в CMDB. Проверь UI, соответствующий API-запрос и backend.",
+      "expected": null,
+      "status": "passed",
+      "started_at": "2026-09-10T19:12:54.231486+00:00",
+      "finished_at": "2026-09-10T19:23:34.537834+00:00",
+      "result": "## ✅ Результат проверки: поиск КЕ `home-server-UC-windows10` в CMDB\n\n**Вердикт: PASS**\n\n### 1. UI (браузер)\n- Поле \"Search by name\" заполнено значением `home-server-UC-windows10`.\n- Таблица отфильтрована: **\"Showing 1 to 1 of 1\"** — ровно 1 запись.\n- Видимая строка: `home-server-UC-windows10` | Agent 1.2.25 | IP 192.168.50.67 | Майкрософт Windows 10 Pro | Воронеж | Лаборатория | 5/14/2026, 15:39:20 | Master.\n- До поиска список содержал 4 КЕ (redos8, astra18, ubuntu22, windows10) — фильтрация сработала.\n\n### 2. API-запрос (browser XHR)\n- Запрос `n16`: **GET** `/api/v1/u-auth/u-sys/api/v1/cmdb/endpoints?limit=50&offset=0&name=home-server-UC-windows10`\n- Статус: **200**\n- Ответ: `count: 1, total: 1`, один элемент с:\n  - `name`: `home-server-UC-windows10`\n  - `endpoint_status`: **offline** (наблюдение из API)\n  - `ipv4_addresses`: `192.168.50.67`\n  - `os_name`: Майкрософт Windows 10 Pro\n  - `location`: Воронеж, `ou`: Лаборатория, `access_zone`: Master\n  - `created_at`: 2026-05-14T12:39:20Z\n- Значения из API совпадают с данными, отображёнными в UI (имя, IP, ОС, локация, OU, дата создания, зона).\n\n### 3. Backend (SSH, контейнер `u_backend`)\nНашена ровно 1 соответствующая запись в backend-logs:\n```\n2026-09-10T19:15:29Z 172.19.0.1:56870 - \"GET /api/v1/cmdb/endpoints?limit=50&offset=0&name=home-server-UC-windows10 HTTP/1.1\" 200\n```\n- Метод: **GET** ✓\n- Endpoint: `/api/v1/cmdb/endpoints` ✓\n- Query: `limit=50&offset=0&name=home-server-UC-windows10` ✓\n- HTTP-статус: **200** ✓\n- Временное окно: совпадает с моментом поиска ✓\n\n> Примечание по корреляции: backend-log совпал по method, endpoint, query и статусу; общего request/correlation id нет, поэтому это корреляция по evidence, а не абсолютное доказательство идентичности — однако однозначного расхождения нет.\n\n### Итог\nUI → API → backend согласованы: поиск КЕ по имени `home-server-UC-windows10` в CMDB работает корректно — возвращается ровно 1 ожидаемая запись на всех проверенных уровнях.\n\n**Artifacts:**\n- UI (initial): `/opt/uqa/artifacts/browser/20260910-221250-64602f/001-open.png`\n- UI (after search): `/opt/uqa/artifacts/browser/20260910-221250-64602f/002-fill-semantic.png`\n\n*Ограничение: проверка ограничена одним конкретным поиском и одним уровнем пагинации; другие сценарии (пустой результат, частичное совпадение имени, кириллица) в этой задаче не проверялись.*",
+      "evidence": [
+        {
+          "type": "browser_open_page",
+          "value": "{\"tool\": \"browser_open_page\", \"arguments\": {\"url\": \"https://uc.lab.local\"}, \"result\": {\"session_id\": \"20260910-221250-64602f\", \"action\": \"open\", \"current_url\": \"https://uc.lab.local/cmdb?limit=50&offset=0\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nAll PC\\nall\\nAdd\\nAll PC\\nShowing 1 to 4 of 4\\nStatus\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\\nhome-server-UC-redos8\\n1.2.25\\n192.168.50.70\\nRED OS 8.0.2\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n8/3/2026, 16:26:11\\nMaster\\nhome-server-UC-astra18\\n1.2.25\\n192.168.50.69\\nAstra Linux\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 18:15:12\\nMaster\\nhome-server-UC-ubuntu22\\n1.2.25\\n192.168.50.68\\nUbuntu 22.04.4 LTS\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 17:40:02\\nMaster\\nhome-server-UC-windows10\\n1.2.25\\n192.168.50.67\\nМайкрософт Windows 10 Pro\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 15:39:20\\nMaster\\n1\\n50\\nCMDB\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e1\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e2\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e3\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e4\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e5\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"All PC\", \"label\": \"\", \"element_id\": \"e6\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"all\", \"label\": \"\", \"element_id\": \"e7\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e8\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Agent Download\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e9\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by name\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e10\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e11\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e12\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e13\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e14\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e15\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e16\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e17\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e18\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e19\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e20\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e21\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e22\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e23\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e24\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e25\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e26\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e27\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e28\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e29\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e30\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Page 1\", \"text\": \"1\", \"label\": \"\", \"element_id\": \"e31\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e32\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e33\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e34\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e35\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e36\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_...<truncated>",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T19:14:34.069230+00:00"
+        },
+        {
+          "type": "browser_fill_semantic",
+          "value": "{\"tool\": \"browser_fill_semantic\", \"arguments\": {\"field\": \"Search by name\", \"text\": \"home-server-UC-windows10\"}, \"result\": {\"session_id\": \"20260910-221250-64602f\", \"action\": \"fill-semantic\", \"current_url\": \"https://uc.lab.local/cmdb?limit=50&offset=0&name=home-server-UC-windows10\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nAll PC\\nall\\nAdd\\nAll PC\\nShowing 1 to 1 of 1\\nStatus\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\\nhome-server-UC-windows10\\n1.2.25\\n192.168.50.67\\nМайкрософт Windows 10 Pro\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 15:39:20\\nMaster\\n1\\n50\\nCMDB\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e1\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e2\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e3\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e4\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e5\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"All PC\", \"label\": \"\", \"element_id\": \"e6\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"all\", \"label\": \"\", \"element_id\": \"e7\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e8\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Agent Download\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e9\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by name\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e10\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e11\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e12\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e13\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e14\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e15\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e16\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e17\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e18\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e19\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e20\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e21\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e22\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e23\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e24\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e42\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e29\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e30\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Page 1\", \"text\": \"1\", \"label\": \"\", \"element_id\": \"e31\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e32\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e33\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e34\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e35\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e36\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e37\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Access zones\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e38\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e39\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e40\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e41\"}], \"screenshot\": \"/opt/uqa/artifacts/browser/20260910-221250-64602f/002-fill-semantic.png\", \"console_errors\": [], \"http_errors\": [], \"fai...<truncated>",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T19:15:32.135363+00:00"
+        },
+        {
+          "type": "browser_get_network_detail",
+          "value": "{\"tool\": \"browser_get_network_detail\", \"arguments\": {\"request_id\": \"n16\"}, \"result\": {\"request_id\": \"n16\", \"session_id\": \"20260910-221250-64602f\", \"action_execution_id\": \"20260910-221250-64602f-a0001\", \"method\": \"GET\", \"url\": \"/api/v1/u-auth/u-sys/api/v1/cmdb/endpoints?limit=50&offset=0&name=home-server-UC-windows10\", \"resource_type\": \"xhr\", \"status\": 200, \"request_headers\": {\"accept\": \"application/json, text/plain, */*\"}, \"request_body\": null, \"response_headers\": {\"content-length\": \"798\", \"content-type\": \"application/json\"}, \"response_body\": \"{\\n  \\\"limit\\\": 50,\\n  \\\"offset\\\": 0,\\n  \\\"count\\\": 1,\\n  \\\"total\\\": 1,\\n  \\\"items\\\": [\\n    {\\n      \\\"id\\\": \\\"c0951a10-3e93-58f9-9468-4702734b417f\\\",\\n      \\\"endpoint_status\\\": \\\"offline\\\",\\n      \\\"endpoint_type\\\": \\\"default\\\",\\n      \\\"ci_class\\\": \\\"endpoint\\\",\\n      \\\"name\\\": \\\"home-server-UC-windows10\\\",\\n      \\\"agent\\\": {\\n        \\\"id\\\": \\\"71724f3b-41b9-449b-9075-1dd6c8e1c2df\\\",\\n        \\\"version\\\": \\\"1.2.25\\\"\\n      },\\n      \\\"ipv4_addresses\\\": [\\n        \\\"192.168.50.67\\\"\\n      ],\\n      \\\"ipv6_addresses\\\": [],\\n      \\\"users_online\\\": [\\n        \\\"HOME-SERVER-UC-\\\\\\\\admin\\\"\\n      ],\\n      \\\"os_name\\\": \\\"Майкрософт Windows 10 Pro\\\",\\n      \\\"inv_number\\\": null,\\n      \\\"serial_number\\\": \\\"Invalid serial number\\\",\\n      \\\"location\\\": {\\n        \\\"id\\\": \\\"f13b847d-62f7-4d1d-874b-e22966a39e6c\\\",\\n        \\\"name\\\": \\\"Воронеж\\\"\\n      },\\n      \\\"tags\\\": [],\\n      \\\"ou\\\": {\\n        \\\"id\\\": \\\"8fb71e20-90d8-4178-8d38-cab5d6e74b7b\\\",\\n        \\\"name\\\": \\\"Лаборатория\\\"\\n      },\\n      \\\"created_at\\\": \\\"2026-05-14T12:39:20.959720Z\\\",\\n      \\\"is_archived\\\": false,\\n      \\\"access_zone\\\": {\\n        \\\"id\\\": \\\"1282a723-b600-5e5d-bf04-7dc2f58a7eae\\\",\\n        \\\"name\\\": \\\"Master\\\"\\n      }\\n    }\\n  ]\\n}\", \"response_body_note\": null}}",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T19:17:27.694567+00:00"
+        },
+        {
+          "type": "ssh_find_backend_request",
+          "value": "{\"tool\": \"ssh_find_backend_request\", \"arguments\": {\"stand\": \"uc.lab.local\", \"method\": \"GET\", \"endpoint_contains\": \"/api/v1/cmdb/endpoints\", \"query_contains\": [\"name=home-server-UC-windows10\"], \"since\": \"2m\"}, \"result\": {\"status\": \"ok\", \"stand\": \"uc.lab.local\", \"container\": \"u_backend\", \"method\": \"GET\", \"endpoint_contains\": \"/api/v1/cmdb/endpoints\", \"query_contains\": [\"name=home-server-UC-windows10\"], \"since\": \"2m\", \"scanned_tail\": 500, \"match_count\": 1, \"matches\": [\"2026-09-10T19:15:29.810210367Z 172.19.0.1:56870 - \\\"GET /api/v1/cmdb/endpoints?limit=50&offset=0&name=home-server-UC-windows10 HTTP/1.1\\\" 200\"], \"correlation_note\": \"Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов.\", \"container_autodetected\": \"u_backend\"}}",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T19:17:28.026004+00:00"
+        }
+      ],
+      "observations": [
+        {
+          "observation_id": "obs-83cc0f3982",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_open_page",
+            "action": "open",
+            "input": {
+              "url": "https://uc.lab.local"
+            },
+            "session_id": "20260910-221250-64602f",
+            "action_execution_id": null,
+            "network_window_closed": null,
+            "network_capture_scope": null,
+            "post_action_wait_ms": null,
+            "network_request_count": 9,
+            "network_requests": [
+              {
+                "request_id": "n7",
+                "session_id": "20260910-221250-64602f",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/users/self"
+              },
+              {
+                "request_id": "n8",
+                "session_id": "20260910-221250-64602f",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v2/u-auth/users/7461345b-177e-b55b-e5af-3c626a04ce6c/roles-permissions"
+              },
+              {
+                "request_id": "n9",
+                "session_id": "20260910-221250-64602f",
+                "action_execution_id": null,
+                "method": "POST",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ui-visibility"
+              },
+              {
+                "request_id": "n10",
+                "session_id": "20260910-221250-64602f",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/general-settings/6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              },
+              {
+                "request_id": "n11",
+                "session_id": "20260910-221250-64602f",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/tags?limit=0"
+              },
+              {
+                "request_id": "n12",
+                "session_id": "20260910-221250-64602f",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ci-collection-group?limit=0"
+              },
+              {
+                "request_id": "n13",
+                "session_id": "20260910-221250-64602f",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ci-collection-group-item?limit=0"
+              },
+              {
+                "request_id": "n14",
+                "session_id": "20260910-221250-64602f",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ci-collection?limit=0"
+              },
+              {
+                "request_id": "n15",
+                "session_id": "20260910-221250-64602f",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/cmdb/endpoints?limit=50&offset=0"
+              }
+            ],
+            "title": "U-Connect",
+            "http_status": 200,
+            "url": "https://uc.lab.local/cmdb?limit=50&offset=0",
+            "path": "/cmdb",
+            "query": {
+              "limit": "50",
+              "offset": "0"
+            },
+            "screenshot": "/opt/uqa/artifacts/browser/20260910-221250-64602f/001-open.png",
+            "text_excerpt": ".\n...\n...\nAll PC\nall\nAdd\nAll PC\nShowing 1 to 4 of 4\nStatus\nType\nName\nAgent\nIP\nUser\nOS\nInventory number\nSerial number\nLocation\nTags\nOrg. unit\nCreated at\nArchived\nZone of access\nhome-server-UC-redos8\n1.2.25\n192.168.50.70\nRED OS 8.0.2\nInvalid serial number\nВоронеж\nЛаборатория\n8/3/2026, 16:26:11\nMaster\nhome-server-UC-astra18\n1.2.25\n192.168.50.69\nAstra Linux\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 18:15:12\nMaster\nhome-server-UC-ubuntu22\n1.2.25\n192.168.50.68\nUbuntu 22.04.4 LTS\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 17:40:02\nMaster\nhome-server-UC-windows10\n1.2.25\n192.168.50.67\nМайкрософт Windows 10 Pro\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 15:39:20\nMaster\n1\n50\nCMDB"
+          },
+          "created_at": "2026-09-10T19:14:34.068132+00:00"
+        },
+        {
+          "observation_id": "obs-3be4bd4e73",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_fill_semantic",
+            "action": "fill-semantic",
+            "input": {
+              "field": "Search by name",
+              "text": "home-server-UC-windows10"
+            },
+            "session_id": "20260910-221250-64602f",
+            "action_execution_id": "20260910-221250-64602f-a0001",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 1,
+            "network_requests": [
+              {
+                "request_id": "n16",
+                "session_id": "20260910-221250-64602f",
+                "action_execution_id": "20260910-221250-64602f-a0001",
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/cmdb/endpoints?limit=50&offset=0&name=home-server-UC-windows10"
+              }
+            ],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb?limit=50&offset=0&name=home-server-UC-windows10",
+            "path": "/cmdb",
+            "query": {
+              "limit": "50",
+              "offset": "0",
+              "name": "home-server-UC-windows10"
+            },
+            "screenshot": "/opt/uqa/artifacts/browser/20260910-221250-64602f/002-fill-semantic.png",
+            "text_excerpt": ".\n...\n...\nAll PC\nall\nAdd\nAll PC\nShowing 1 to 1 of 1\nStatus\nType\nName\nAgent\nIP\nUser\nOS\nInventory number\nSerial number\nLocation\nTags\nOrg. unit\nCreated at\nArchived\nZone of access\nhome-server-UC-windows10\n1.2.25\n192.168.50.67\nМайкрософт Windows 10 Pro\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 15:39:20\nMaster\n1\n50\nCMDB"
+          },
+          "created_at": "2026-09-10T19:15:32.134264+00:00"
+        },
+        {
+          "observation_id": "obs-e6f9c87c22",
+          "type": "api_exchange",
+          "source": "browser_xhr",
+          "data": {
+            "request_id": "n16",
+            "session_id": "20260910-221250-64602f",
+            "action_execution_id": "20260910-221250-64602f-a0001",
+            "method": "GET",
+            "resource_type": "xhr",
+            "http_status": 200,
+            "url": "/api/v1/u-auth/u-sys/api/v1/cmdb/endpoints?limit=50&offset=0&name=home-server-UC-windows10",
+            "path": "/api/v1/u-auth/u-sys/api/v1/cmdb/endpoints",
+            "query": {
+              "limit": "50",
+              "offset": "0",
+              "name": "home-server-UC-windows10"
+            },
+            "response_type": "object",
+            "count": 1,
+            "total": 1,
+            "limit": 50,
+            "offset": 0,
+            "items_count": 1,
+            "response_scalars": [
+              {
+                "path": "limit",
+                "value": 50
+              },
+              {
+                "path": "offset",
+                "value": 0
+              },
+              {
+                "path": "count",
+                "value": 1
+              },
+              {
+                "path": "total",
+                "value": 1
+              },
+              {
+                "path": "items[0].id",
+                "value": "c0951a10-3e93-58f9-9468-4702734b417f"
+              },
+              {
+                "path": "items[0].endpoint_status",
+                "value": "offline"
+              },
+              {
+                "path": "items[0].endpoint_type",
+                "value": "default"
+              },
+              {
+                "path": "items[0].ci_class",
+                "value": "endpoint"
+              },
+              {
+                "path": "items[0].name",
+                "value": "home-server-UC-windows10"
+              },
+              {
+                "path": "items[0].agent.id",
+                "value": "71724f3b-41b9-449b-9075-1dd6c8e1c2df"
+              },
+              {
+                "path": "items[0].agent.version",
+                "value": "1.2.25"
+              },
+              {
+                "path": "items[0].ipv4_addresses[0]",
+                "value": "192.168.50.67"
+              },
+              {
+                "path": "items[0].users_online[0]",
+                "value": "HOME-SERVER-UC-\\admin"
+              },
+              {
+                "path": "items[0].os_name",
+                "value": "Майкрософт Windows 10 Pro"
+              },
+              {
+                "path": "items[0].inv_number",
+                "value": null
+              },
+              {
+                "path": "items[0].serial_number",
+                "value": "Invalid serial number"
+              },
+              {
+                "path": "items[0].location.id",
+                "value": "f13b847d-62f7-4d1d-874b-e22966a39e6c"
+              },
+              {
+                "path": "items[0].location.name",
+                "value": "Воронеж"
+              },
+              {
+                "path": "items[0].ou.id",
+                "value": "8fb71e20-90d8-4178-8d38-cab5d6e74b7b"
+              },
+              {
+                "path": "items[0].ou.name",
+                "value": "Лаборатория"
+              },
+              {
+                "path": "items[0].created_at",
+                "value": "2026-05-14T12:39:20.959720Z"
+              },
+              {
+                "path": "items[0].is_archived",
+                "value": false
+              },
+              {
+                "path": "items[0].access_zone.id",
+                "value": "1282a723-b600-5e5d-bf04-7dc2f58a7eae"
+              },
+              {
+                "path": "items[0].access_zone.name",
+                "value": "Master"
+              }
+            ]
+          },
+          "created_at": "2026-09-10T19:17:27.693582+00:00"
+        },
+        {
+          "observation_id": "obs-08c2ce987e",
+          "type": "backend_request",
+          "source": "ssh_backend_logs",
+          "data": {
+            "stand": "uc.lab.local",
+            "container": "u_backend",
+            "container_autodetected": "u_backend",
+            "method": "GET",
+            "endpoint": "/api/v1/cmdb/endpoints",
+            "query_contains": [
+              "name=home-server-UC-windows10"
+            ],
+            "since": "2m",
+            "match_count": 1,
+            "matches": [
+              "2026-09-10T19:15:29.810210367Z 172.19.0.1:56870 - \"GET /api/v1/cmdb/endpoints?limit=50&offset=0&name=home-server-UC-windows10 HTTP/1.1\" 200"
+            ],
+            "correlation_note": "Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов."
+          },
+          "created_at": "2026-09-10T19:17:28.024711+00:00"
+        }
+      ],
+      "candidate_facts": [
+        {
+          "candidate_id": "fact-037be2b56c",
+          "fact_key": "ui_api_binding:bb21329c982d63ed8ee2",
+          "subject_key": "ui_api_binding_subject:c83e02d9c4617dd6d5ee",
+          "status": "candidate",
+          "fact_type": "ui_api_binding",
+          "statement": "UI action on /cmdb field 'Search by name' uses GET /api/v1/cmdb/endpoints with query parameter 'name'",
+          "data": {
+            "ui_path": "/cmdb",
+            "ui_action": "fill-semantic",
+            "ui_field": "Search by name",
+            "api_method": "GET",
+            "api_endpoint": "/api/v1/cmdb/endpoints",
+            "query_parameter": "name",
+            "backend_container": "u_backend"
+          },
+          "source_observation_ids": [
+            "obs-3be4bd4e73",
+            "obs-e6f9c87c22",
+            "obs-08c2ce987e"
+          ],
+          "verification": {
+            "runtime_ui_action_observed": true,
+            "runtime_api_exchange_observed": true,
+            "backend_request_correlated": true,
+            "documentation_api_endpoint_supported": false,
+            "documentation_query_parameter_supported": false,
+            "documentation_same_reference_supported": false,
+            "documentation_ui_binding_supported": false
+          },
+          "created_at": "2026-09-10T19:23:34.540095+00:00",
+          "first_seen_at": "2026-09-10T19:23:34.540095+00:00",
+          "last_seen_at": "2026-09-10T19:23:34.540095+00:00"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "summary": null,
+  "jira_comment": null
+}

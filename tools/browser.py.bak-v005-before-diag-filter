@@ -1,0 +1,441 @@
+import atexit
+import os
+import uuid
+from datetime import datetime
+from pathlib import Path
+
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/opt/uqa/browsers")
+
+from playwright.sync_api import sync_playwright
+
+
+ARTIFACTS_ROOT = Path("/opt/uqa/artifacts/browser")
+
+UC_ORIGIN = "https://uc.lab.local"
+UC_PFX = Path("/opt/uqa/secrets/Realm-manager.pfx")
+UC_PFX_PASSWORD = Path("/opt/uqa/secrets/password.txt")
+
+
+class BrowserSession:
+    def __init__(self):
+        self.session_id = (
+            datetime.now().strftime("%Y%m%d-%H%M%S")
+            + "-"
+            + uuid.uuid4().hex[:6]
+        )
+
+        self.session_dir = ARTIFACTS_ROOT / self.session_id
+        self.session_dir.mkdir(parents=True, exist_ok=True)
+
+        self.playwright = None
+        self.browser = None
+        self.context = None
+        self.page = None
+
+        self.action_counter = 0
+        self.element_counter = 0
+
+        self.console_errors = []
+        self.failed_requests = []
+
+    def _ensure_started(self):
+        if self.browser is not None:
+            return
+
+        self.playwright = sync_playwright().start()
+
+        self.browser = self.playwright.chromium.launch(
+            headless=True
+        )
+
+        context_kwargs = {
+            "ignore_https_errors": True,
+            "viewport": {
+                "width": 1920,
+                "height": 1080,
+            },
+        }
+
+        if UC_PFX.exists() and UC_PFX_PASSWORD.exists():
+            pfx_password = UC_PFX_PASSWORD.read_text(
+                encoding="utf-8"
+            ).strip()
+
+            context_kwargs["client_certificates"] = [
+                {
+                    "origin": UC_ORIGIN,
+                    "pfxPath": str(UC_PFX),
+                    "passphrase": pfx_password,
+                }
+            ]
+
+        self.context = self.browser.new_context(
+            **context_kwargs
+        )
+
+        self.page = self.context.new_page()
+
+        self.page.on(
+            "console",
+            self._on_console,
+        )
+
+        self.page.on(
+            "requestfailed",
+            self._on_request_failed,
+        )
+
+    def _ensure_uc_authenticated(self, url: str):
+        if not (
+            url == UC_ORIGIN
+            or url.startswith(UC_ORIGIN + "/")
+        ):
+            return None
+
+        check_before = self.page.evaluate(
+            """
+            async () => {
+                const r = await fetch('/check-auth', {
+                    credentials: 'include'
+                });
+
+                return {
+                    status: r.status,
+                    body: await r.text()
+                };
+            }
+            """
+        )
+
+        if check_before["status"] == 200:
+            return {
+                "status": "already_authenticated",
+                "check_before": 200,
+                "cert_login": None,
+                "check_after": 200,
+            }
+
+        if (
+            check_before["status"] == 428
+            and "valid cert" in check_before["body"].lower()
+        ):
+            cert_login = self.page.evaluate(
+                """
+                async () => {
+                    const r = await fetch(
+                        '/api/v1/u-auth/cert-login',
+                        {
+                            method: 'POST',
+                            credentials: 'include'
+                        }
+                    );
+
+                    return {
+                        status: r.status,
+                        body: await r.text()
+                    };
+                }
+                """
+            )
+
+            check_after = self.page.evaluate(
+                """
+                async () => {
+                    const r = await fetch('/check-auth', {
+                        credentials: 'include'
+                    });
+
+                    return {
+                        status: r.status,
+                        body: await r.text()
+                    };
+                }
+                """
+            )
+
+            if (
+                cert_login["status"] == 200
+                and check_after["status"] == 200
+            ):
+                self.page.reload(
+                    wait_until="domcontentloaded",
+                    timeout=30000,
+                )
+
+                self.page.wait_for_timeout(1500)
+
+                return {
+                    "status": "authenticated_by_certificate",
+                    "check_before": check_before["status"],
+                    "cert_login": cert_login["status"],
+                    "check_after": check_after["status"],
+                }
+
+            return {
+                "status": "authentication_failed",
+                "check_before": check_before["status"],
+                "cert_login": cert_login["status"],
+                "check_after": check_after["status"],
+            }
+
+        return {
+            "status": "not_authenticated",
+            "check_before": check_before["status"],
+            "cert_login": None,
+            "check_after": None,
+        }
+
+    def _on_console(self, msg):
+        if msg.type == "error":
+            self.console_errors.append(msg.text)
+
+    def _on_request_failed(self, request):
+        self.failed_requests.append(
+            {
+                "url": request.url,
+                "error": request.failure,
+            }
+        )
+
+    def _inspect_elements(self):
+        selector = (
+            "input, button, select, textarea, a, "
+            "[role='button'], [role='link']"
+        )
+
+        elements = self.page.locator(selector)
+        result = []
+
+        count = min(elements.count(), 100)
+
+        for i in range(count):
+            element = elements.nth(i)
+
+            try:
+                if not element.is_visible():
+                    continue
+
+                uqa_id = element.get_attribute("data-uqa-id")
+
+                if not uqa_id:
+                    self.element_counter += 1
+                    uqa_id = f"e{self.element_counter}"
+
+                    element.evaluate(
+                        "(el, id) => el.setAttribute('data-uqa-id', id)",
+                        uqa_id,
+                    )
+
+                info = element.evaluate(
+                    """
+                    el => {
+                        let label = "";
+
+                        if (el.labels && el.labels.length) {
+                            label = Array.from(el.labels)
+                                .map(x => x.innerText || x.textContent || "")
+                                .join(" ")
+                                .trim();
+                        }
+
+                        return {
+                            tag: (el.tagName || "").toLowerCase(),
+                            type: el.getAttribute("type") || "",
+                            name: el.getAttribute("name") || "",
+                            placeholder: el.getAttribute("placeholder") || "",
+                            aria_label: el.getAttribute("aria-label") || "",
+                            text: (el.innerText || el.textContent || "")
+                                .trim()
+                                .slice(0, 300),
+                            label: label.slice(0, 300)
+                        };
+                    }
+                    """
+                )
+
+                info["element_id"] = uqa_id
+                result.append(info)
+
+            except Exception:
+                continue
+
+        return result
+
+    def _capture_state(self, action: str):
+        self.action_counter += 1
+
+        screenshot_path = (
+            self.session_dir
+            / f"{self.action_counter:03d}-{action}.png"
+        )
+
+        try:
+            body_text = self.page.locator("body").inner_text(
+                timeout=5000
+            )
+        except Exception:
+            body_text = ""
+
+        interactive_elements = self._inspect_elements()
+
+        self.page.screenshot(
+            path=str(screenshot_path),
+            full_page=True,
+        )
+
+        return {
+            "session_id": self.session_id,
+            "action": action,
+            "current_url": self.page.url,
+            "title": self.page.title(),
+            "text_preview": body_text[:5000],
+            "interactive_elements": interactive_elements,
+            "screenshot": str(screenshot_path),
+            "console_errors": self.console_errors[-20:],
+            "failed_requests": self.failed_requests[-20:],
+        }
+
+    def open_page(self, url: str):
+        self._ensure_started()
+
+        self.console_errors.clear()
+        self.failed_requests.clear()
+
+        response = self.page.goto(
+            url,
+            wait_until="domcontentloaded",
+            timeout=30000,
+        )
+
+        self.page.wait_for_timeout(1500)
+
+        uc_auth = self._ensure_uc_authenticated(url)
+
+        result = self._capture_state("open")
+
+        result.update(
+            {
+                "requested_url": url,
+                "final_url": self.page.url,
+                "http_status": (
+                    response.status
+                    if response
+                    else None
+                ),
+                "uc_auth": uc_auth,
+            }
+        )
+
+        return result
+
+    def get_state(self):
+        self._ensure_started()
+        return self._capture_state("state")
+
+    def fill(self, element_id: str, text: str):
+        self._ensure_started()
+
+        locator = self.page.locator(
+            f'[data-uqa-id="{element_id}"]'
+        )
+
+        if locator.count() != 1:
+            return {
+                "error": (
+                    f"Element {element_id} not found "
+                    f"or is not unique"
+                )
+            }
+
+        locator.fill(text)
+
+        result = self._capture_state(
+            f"fill-{element_id}"
+        )
+
+        result["filled_element"] = element_id
+        return result
+
+    def click(self, element_id: str):
+        self._ensure_started()
+
+        locator = self.page.locator(
+            f'[data-uqa-id="{element_id}"]'
+        )
+
+        if locator.count() != 1:
+            return {
+                "error": (
+                    f"Element {element_id} not found "
+                    f"or is not unique"
+                )
+            }
+
+        locator.click(timeout=10000)
+
+        try:
+            self.page.wait_for_load_state(
+                "domcontentloaded",
+                timeout=5000,
+            )
+        except Exception:
+            pass
+
+        self.page.wait_for_timeout(1000)
+
+        result = self._capture_state(
+            f"click-{element_id}"
+        )
+
+        result["clicked_element"] = element_id
+        return result
+
+    def close(self):
+        try:
+            if self.context is not None:
+                self.context.close()
+        except Exception:
+            pass
+
+        try:
+            if self.browser is not None:
+                self.browser.close()
+        except Exception:
+            pass
+
+        try:
+            if self.playwright is not None:
+                self.playwright.stop()
+        except Exception:
+            pass
+
+        self.page = None
+        self.context = None
+        self.browser = None
+        self.playwright = None
+
+
+_session = BrowserSession()
+
+
+def open_page(url: str) -> dict:
+    return _session.open_page(url)
+
+
+def get_state() -> dict:
+    return _session.get_state()
+
+
+def fill(element_id: str, text: str) -> dict:
+    return _session.fill(element_id, text)
+
+
+def click(element_id: str) -> dict:
+    return _session.click(element_id)
+
+
+def close_browser_session():
+    _session.close()
+
+
+atexit.register(close_browser_session)

@@ -1,0 +1,402 @@
+{
+  "schema_version": 1,
+  "job_id": "20260912-170110-f4870bba",
+  "owner": "adminacc",
+  "job_type": "regression",
+  "external_id": null,
+  "stand": "uc.lab.local",
+  "stand_identity": {
+    "status": "ok",
+    "stand": "uc.lab.local",
+    "installation_architecture": "ansible",
+    "server_version": "4.9.0",
+    "server_version_source": "u-backend_image_tag",
+    "deployment_version": "2.3.16",
+    "desired_deployment_version": "2.3.16",
+    "deployment_partial": false,
+    "deployment_version_source": "/var/lib/uconnect/install-state/active-release.yml",
+    "desired_state_digest": "sha256:f4f04ba2e9449029fb9d53835ee1092f24dc8efdbe804377de46dfa91c372925",
+    "active_state_digest": "sha256:d8c1e589d4ec6fb3f99515e50651a76f464280a799700e9f897e985e5c8577c5"
+  },
+  "request": "Проведи ровно один последовательный regression test case на стенде https://uc.lab.local: создай ровно одну временную тестовую зону с точным именем uqa-e2e-cleanup-20260912-152500, зарегистрируй созданный ресурс UQA для cleanup и проверь автоматическую очистку. Не используй другое имя, не создавай другие сущности и не изменяй существующие объекты. Внутри этого одного case задай ровно четыре отдельные checks: 1) зона с точным именем создана и отображается; 2) ресурс зарегистрирован UQA для cleanup; 3) cleanup удалил именно эту зону; 4) после cleanup зона с этим именем не существует. Выводы только по фактическим evidence. Перед WRITE или DESTRUCTIVE дождись подтверждения.",
+  "status": "blocked",
+  "created_at": "2026-09-12T17:01:10.961783+00:00",
+  "updated_at": "2026-09-12T17:02:51.409372+00:00",
+  "test_cases": [
+    {
+      "case_id": "tc-573e5e96",
+      "title": "Создание и проверка временной тестовой зоны с именем uqa-e2e-cleanup-20260912-152500 и её очистка",
+      "expected": null,
+      "requirement": null,
+      "planned_checks": [
+        {
+          "check_id": "planned-001",
+          "title": "Зона с точным именем uqa-e2e-cleanup-20260912-152500 создана и отображается",
+          "expected": "Зона с именем uqa-e2e-cleanup-20260912-152500 существует и отображается в интерфейсе."
+        },
+        {
+          "check_id": "planned-002",
+          "title": "Ресурс зарегистрирован UQA для cleanup",
+          "expected": "Ресурс, связанный с зоной uqa-e2e-cleanup-20260912-152500, успешно зарегистрирован в UQA для автоматической очистки."
+        },
+        {
+          "check_id": "planned-003",
+          "title": "Cleanup удалил именно эту зону",
+          "expected": "Cleanup был запущен и успешно удалил зону с именем uqa-e2e-cleanup-20260912-152500."
+        },
+        {
+          "check_id": "planned-004",
+          "title": "После cleanup зона с этим именем не существует",
+          "expected": "Зона с именем uqa-e2e-cleanup-20260912-152500 больше не существует в системе."
+        }
+      ],
+      "status": "blocked",
+      "started_at": "2026-09-12T17:02:18.558149+00:00",
+      "finished_at": "2026-09-12T17:02:51.394728+00:00",
+      "result": "[Результат тестирования]\nНе удалось открыть веб-интерфейс U-Connect по адресу https://uc.lab.local:8080 из-за ошибки подключения (net::ERR_SOCKS_CONNECTION_FAILED). Проверка backend-запросов на наличие GET-запросов к /api/v1/cmdb/zones не выявила активных запросов в логах. Возможно, веб-интерфейс недоступен или нет активных запросов к указанному эндпоинту.\n\n[UQA CORE]\nstatus=BLOCKED\nreason=structured_result_missing_end_marker",
+      "checks": [],
+      "evidence": [
+        {
+          "evidence_id": "ev-fcf4557c17b1",
+          "type": "browser_open_page",
+          "value": "{\"tool\": \"browser_open_page\", \"arguments\": {\"url\": \"https://uc.lab.local:8080\"}, \"result\": {\"error\": \"Page.goto: net::ERR_SOCKS_CONNECTION_FAILED at https://uc.lab.local:8080/\\nCall log:\\n  - navigating to \\\"https://uc.lab.local:8080/\\\", waiting until \\\"domcontentloaded\\\"\\n\", \"tool\": \"browser_open_page\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-27cd2cc9e4"
+          ],
+          "usable_for_pass": false,
+          "usable_for_verdict": false,
+          "execution_status": "tool_error",
+          "eligibility_reason": "tool_result_contains_error",
+          "created_at": "2026-09-12T17:02:21.892198+00:00"
+        },
+        {
+          "evidence_id": "ev-55abcd397547",
+          "type": "knowledge_search",
+          "value": "{\"tool\": \"knowledge_search\", \"arguments\": {\"query\": \"Как создать временную зону в U-Connect\", \"limit\": 3}, \"result\": {\"status\": \"ok\", \"query\": \"Как создать временную зону в U-Connect\", \"result_count\": 3, \"results\": [{\"source\": \"UQA-docs/UC Руководство пользователя от 06.07.2026.docx\", \"chunk_no\": 17, \"heading\": \"Зоны доступа\", \"content\": \"Зоны доступа\\nДля каждого территориального подразделения необходимо создать зону доступа. Зоны доступа разграничивают видимость СВТ и коллекций для пользователей.\\nТаблица раздела «Зоны доступа» (Рисунок 27) содержит следующие столбцы:\\nимя;\\nдата создания;\\nдата обновления.\\nПо умолчанию создаётся зона «Master», которая является корнем всех зон.\\nРисунок 27 – Раздел «Зоны доступа»\\nНажмите кнопку «Создать зону доступа», откроется одноименная форма с полями:\\nимя;\\nродитель (зоны доступа имеют иерархическую структуру).\\nРисунок 28 – Форма «Создать зону доступа»\", \"truncated\": false}, {\"source\": \"UQA-docs/UC Ротация логирования через swagger.docx\", \"chunk_no\": 1, \"heading\": \"\", \"content\": \"Инструкция: изменение сроков хранения мониторинговых индексов через Swagger в U-Connect\\nНазначение\\nИнструкция используется, если на сервере U-Connect быстро растёт объём данных мониторинга, и требуется уменьшить срок хранения индексов мониторинга через системные настройки U-Connect.\\nВ U-Connect для этого используются системные настройки usystem-settings, доступные через API. Для чтения требуется право usystem-settings:read, для изменения — usystem-settings:update.\\nЧто именно будем менять\\nНас интересуют две системные настройки:\\nism-policy-monitoring-process\\nism-policy-monitoring-system\\nЭто политики хранения мониторинговых индексов.\\nИзменение выполняется не через редактирование файлов на сервере, а через Swagger / API методом:\\nчтение списка настроек: GET /api/v1/usystem-settings\\nчтение одной настройки: GET /api/v1/usystem-settings/{uid}\\nизменение настройки: PUT /api/v1/usystem-settings/{uid}\\nЧто нужно заранее\\nПеред началом работы необходимо:\\nИметь доступ в веб-интерфейс U-Connect.\\nИметь доступ к Swagger UI.\\nРаботать под учётной записью с правами:\\nusystem-settings:read\\nusystem-settings:update\\nПонимать, какие сроки хранения нужно установить после согласования с ответственными коллегами.\\n1. Как открыть Swagger\\nВ нашем контуре Swagger UI открывается по пути:\\nhttps://<адрес_сервера_UC>/api/v1/docs\\nЧто делать:\\nОткрыть браузер.\\nВ адресной строке указать адрес сервера U-Connect.\\nДобавить путь /api/v1/docs.\\nОткрыть страницу.\\nЕсли страница открыта успешно, появится Swagger UI со списком методов API (GET, POST, PUT, DELETE).\\n2. Как найти нужные настройки и получить их UID\\nШаг 1. Найти раздел usystem-settings\\nВ Swagger найти блок:\\nGET /api/v1/usystem-settings\\nЭто метод получения списка системных настроек.\\nШаг 2. Выполнить запрос\\nНажать Try it out.\\nНажать Execute.\\nВ ответе будет список настроек примерно такого вида:\\n{\\n \\\"limit\\\": 100,\\n \\\"offset\\\": 0,\\n \\\"count\\\": 2,\\n \\\"total\\\": 2,\\n \\\"items\\\": [\\n {\\n \\\"id\\\": \\\"...\\\",\\n \\\"name\\\": \\\"ism-policy-monitoring-process\\\",\\n \\\"data\\\": { ... }\\n },\\n {\\n \\\"id\\\": \\\"...\\\",\\n \\\"name\\\": \\\"ism-policy-monitoring-system\\\",\\n \\\"data\\\": { ... }\\n }\\n ]\\n}\\nШаг 3. Найти нужные объекты\\nВ ответе найти два объекта по полю name:\\nism-policy-monitoring-process\\nism-policy-monitoring-system\\nУ каждого объекта взять его значение id.\\nЭто и будет uid, который нужен для чтения и изменения конкретной настройки.\\n3. Как получить текущую политику перед изменением\", \"truncated\": false}, {\"source\": \"UQA-docs/UC Руководство пользователя от 06.07.2026.docx\", \"chunk_no\": 64, \"heading\": \"Ключевые сущности и термины\", \"content\": \"Ключевые сущности и термины\\nДля понимания работы PXE в U-Connect необходимо ознакомиться с основными сущностями:\\nPXE-сервер — это центральный управляющий элемент, который создаётся в системе на основе выбранного компьютера с агентом. Он объединяет в себе конфигурационные файлы, скрипты развёртывания и группу образов ОС. Каждый PXE-сервер обслуживает определённый сетевой сегмент;\\nPXE Boot — временная среда исполнения, в которую попадает физический компьютер во время загрузки по сети. В этой среде запускается облегчённый агент U-Connect, который регистрирует устройство в системе как обнаруженное устройство или PXE Endpoint;\\nendpoint — временный объект, отображаемый в интерфейсе. Он служит точкой для управления процессом установки постоянной ОС;\\nобраз ОС (Image) выступает основным носителем для установки. Как правило, это архив, созданный с помощью таких инструментов, как Clonezilla, содержащий готовую к развёртыванию систему;\\nгруппы образов — объединение образов, которые администратор связывает с конкретным PXE-сервером;\\nконфигурация PXE — сущность, которая связывает архив с настройками (например, pxe.tar.gz) и выбранную группу образов. Используется для настройки самого сервиса сетевой загрузки.\", \"truncated\": false}], \"action_class\": \"observe\", \"action_policy_status\": \"auto_allowed\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-941c7ce583"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T17:02:22.738634+00:00"
+        },
+        {
+          "evidence_id": "ev-a5edeac222da",
+          "type": "browser_open_page",
+          "value": "{\"tool\": \"browser_open_page\", \"arguments\": {\"url\": \"https://uc.lab.local:8080/\"}, \"result\": {\"error\": \"Page.goto: net::ERR_SOCKS_CONNECTION_FAILED at https://uc.lab.local:8080/\\nCall log:\\n  - navigating to \\\"https://uc.lab.local:8080/\\\", waiting until \\\"domcontentloaded\\\"\\n\", \"tool\": \"browser_open_page\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-0255a397ce"
+          ],
+          "usable_for_pass": false,
+          "usable_for_verdict": false,
+          "execution_status": "tool_error",
+          "eligibility_reason": "tool_result_contains_error",
+          "created_at": "2026-09-12T17:02:24.205028+00:00"
+        },
+        {
+          "evidence_id": "ev-67f4178f1827",
+          "type": "ssh_docker_ps",
+          "value": "{\"tool\": \"ssh_docker_ps\", \"arguments\": {\"stand\": \"uc.lab.local\"}, \"result\": {\"status\": \"ok\", \"stand\": \"uc.lab.local\", \"exit_code\": 0, \"containers\": [{\"name\": \"u_backend\", \"image\": \"registry.u-system.tech/usystech/u-backend:4.9.0\", \"status\": \"Up 33 hours (healthy)\"}, {\"name\": \"u-connect-schedule_worker-1\", \"image\": \"registry.u-system.tech/usystech/u-backend:4.9.0\", \"status\": \"Up 33 hours\"}, {\"name\": \"u-connect-worker-1\", \"image\": \"registry.u-system.tech/usystech/u-backend:4.9.0\", \"status\": \"Up 33 hours\"}, {\"name\": \"u-connect-ldapsync-1\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/ldapsync:4.2.0\", \"status\": \"Up 33 hours (healthy)\"}, {\"name\": \"u-connect-minio-1\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/minio:2022.07.29\", \"status\": \"Up 33 hours (healthy)\"}, {\"name\": \"u-connect-schedule_beat-1\", \"image\": \"registry.u-system.tech/usystech/u-backend:4.9.0\", \"status\": \"Up 33 hours\"}, {\"name\": \"frontend\", \"image\": \"registry.u-system.tech/usystech/u-frontend-prime-ui:2.21.0\", \"status\": \"Up 33 hours\"}, {\"name\": \"u-connect-pgsync-1\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/pgsync:2.3.2\", \"status\": \"Up 2 minutes\"}, {\"name\": \"opensearch-dashboards\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/opensearch/opensearch-dashboards:1.3.18\", \"status\": \"Up 33 hours (healthy)\"}, {\"name\": \"u-connect-u_websocket-1\", \"image\": \"registry.u-system.tech/usystech/u-websocket:4.0.4\", \"status\": \"Up 33 hours\"}, {\"name\": \"u-connect-logrotate-1\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/rsyslog/logrotate:1.3.0\", \"status\": \"Up 33 hours\"}, {\"name\": \"u-connect-guacamole-1\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/guacamole/guacamole:1.5.5\", \"status\": \"Up 33 hours\"}, {\"name\": \"u-connect-tasks-server-1\", \"image\": \"registry.u-system.tech/usystech/tasks-server:4.0.2\", \"status\": \"Up 33 hours\"}, {\"name\": \"script_executor\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/script-executor:1.0.2\", \"status\": \"Up 33 hours (healthy)\"}, {\"name\": \"superset\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/superset:6.1.0\", \"status\": \"Up 33 hours (healthy)\"}, {\"name\": \"opensearch-node1\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/opensearch/opensearch:1.3.18\", \"status\": \"Up 33 hours (healthy)\"}, {\"name\": \"openbao\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/openbao:2.4.3\", \"status\": \"Up 33 hours\"}, {\"name\": \"u-connect-guacd-proxy-1\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/guacamole/guacd-proxy:1.1.0\", \"status\": \"Up 33 hours\"}, {\"name\": \"rabbitmq\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/rabbitmq:3.13.6\", \"status\": \"Up 33 hours\"}, {\"name\": \"u-connect-rsyslog-1\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/rsyslog/rsyslog:8.2001.1\", \"status\": \"Up 33 hours\"}, {\"name\": \"redis\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/redis:6.0.3\", \"status\": \"Up 33 hours\"}, {\"name\": \"u-connect-guacd-1\", \"image\": \"registry.u-system.tech/usystech/infrastructure/docker/guacamole/guacd:1.6.0\", \"status\": \"Up 33 hours\"}], \"stderr\": \"\", \"action_class\": \"observe\", \"action_policy_status\": \"auto_allowed\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T17:02:25.191936+00:00"
+        },
+        {
+          "evidence_id": "ev-ebdfe7cf6ab1",
+          "type": "ssh_find_backend_request",
+          "value": "{\"tool\": \"ssh_find_backend_request\", \"arguments\": {\"stand\": \"uc.lab.local\", \"method\": \"GET\", \"endpoint_contains\": \"/api/v1/cmdb/zones\", \"since\": \"1m\", \"max_matches\": 5}, \"result\": {\"status\": \"ok\", \"stand\": \"uc.lab.local\", \"container\": \"u_backend\", \"method\": \"GET\", \"endpoint_contains\": \"/api/v1/cmdb/zones\", \"query_contains\": [], \"since\": \"1m\", \"scanned_tail\": 500, \"match_count\": 0, \"matches\": [], \"correlation_note\": \"Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов.\", \"container_autodetected\": \"u_backend\", \"action_class\": \"observe\", \"action_policy_status\": \"auto_allowed\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-0b715f81ac"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T17:02:27.238554+00:00"
+        },
+        {
+          "evidence_id": "ev-a6e97e71cc30",
+          "type": "browser_open_page",
+          "value": "{\"tool\": \"browser_open_page\", \"arguments\": {\"url\": \"https://uc.lab.local:8080/\"}, \"result\": {\"error\": \"Page.goto: net::ERR_SOCKS_CONNECTION_FAILED at https://uc.lab.local:8080/\\nCall log:\\n  - navigating to \\\"https://uc.lab.local:8080/\\\", waiting until \\\"domcontentloaded\\\"\\n\", \"tool\": \"browser_open_page\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-f84d5bf266"
+          ],
+          "usable_for_pass": false,
+          "usable_for_verdict": false,
+          "execution_status": "tool_error",
+          "eligibility_reason": "tool_result_contains_error",
+          "created_at": "2026-09-12T17:02:28.092867+00:00"
+        },
+        {
+          "evidence_id": "ev-764486603d8d",
+          "type": "ssh_find_backend_request",
+          "value": "{\"tool\": \"ssh_find_backend_request\", \"arguments\": {\"endpoint_contains\": \"/api/v1/cmdb/zones\", \"max_matches\": 5, \"method\": \"GET\", \"since\": \"2m\", \"stand\": \"uc.lab.local\"}, \"result\": {\"status\": \"ok\", \"stand\": \"uc.lab.local\", \"container\": \"u_backend\", \"method\": \"GET\", \"endpoint_contains\": \"/api/v1/cmdb/zones\", \"query_contains\": [], \"since\": \"2m\", \"scanned_tail\": 500, \"match_count\": 0, \"matches\": [], \"correlation_note\": \"Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов.\", \"container_autodetected\": \"u_backend\", \"action_class\": \"observe\", \"action_policy_status\": \"auto_allowed\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-1aa99fa9e3"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T17:02:29.595752+00:00"
+        },
+        {
+          "evidence_id": "ev-dff38a8e56bd",
+          "type": "ssh_find_backend_request",
+          "value": "{\"tool\": \"ssh_find_backend_request\", \"arguments\": {\"method\": \"GET\", \"since\": \"5m\", \"stand\": \"uc.lab.local\", \"endpoint_contains\": \"/api/v1/cmdb/zones\", \"max_matches\": 5}, \"result\": {\"status\": \"ok\", \"stand\": \"uc.lab.local\", \"container\": \"u_backend\", \"method\": \"GET\", \"endpoint_contains\": \"/api/v1/cmdb/zones\", \"query_contains\": [], \"since\": \"5m\", \"scanned_tail\": 500, \"match_count\": 0, \"matches\": [], \"correlation_note\": \"Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов.\", \"container_autodetected\": \"u_backend\", \"action_class\": \"observe\", \"action_policy_status\": \"auto_allowed\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-af334dd34b"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T17:02:31.199560+00:00"
+        },
+        {
+          "evidence_id": "ev-5a4b57b424b5",
+          "type": "ssh_find_backend_request",
+          "value": "{\"tool\": \"ssh_find_backend_request\", \"arguments\": {\"since\": \"10m\", \"stand\": \"uc.lab.local\", \"endpoint_contains\": \"/api/v1/cmdb/zones\", \"max_matches\": 5, \"method\": \"GET\"}, \"result\": {\"status\": \"ok\", \"stand\": \"uc.lab.local\", \"container\": \"u_backend\", \"method\": \"GET\", \"endpoint_contains\": \"/api/v1/cmdb/zones\", \"query_contains\": [], \"since\": \"10m\", \"scanned_tail\": 500, \"match_count\": 0, \"matches\": [], \"correlation_note\": \"Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов.\", \"container_autodetected\": \"u_backend\", \"action_class\": \"observe\", \"action_policy_status\": \"auto_allowed\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-1725e1ffe9"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T17:02:32.804513+00:00"
+        },
+        {
+          "evidence_id": "ev-37716860f6d6",
+          "type": "ssh_find_backend_request",
+          "value": "{\"tool\": \"ssh_find_backend_request\", \"arguments\": {\"endpoint_contains\": \"/api/v1/cmdb/zones\", \"max_matches\": 5, \"method\": \"GET\", \"since\": \"15m\", \"stand\": \"uc.lab.local\"}, \"result\": {\"status\": \"ok\", \"stand\": \"uc.lab.local\", \"container\": \"u_backend\", \"method\": \"GET\", \"endpoint_contains\": \"/api/v1/cmdb/zones\", \"query_contains\": [], \"since\": \"15m\", \"scanned_tail\": 500, \"match_count\": 0, \"matches\": [], \"correlation_note\": \"Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов.\", \"container_autodetected\": \"u_backend\", \"action_class\": \"observe\", \"action_policy_status\": \"auto_allowed\"}}",
+          "source": "uqa_tool",
+          "observation_ids": [
+            "obs-ed6cfcaa01"
+          ],
+          "usable_for_pass": true,
+          "usable_for_verdict": true,
+          "execution_status": "observed",
+          "eligibility_reason": null,
+          "created_at": "2026-09-12T17:02:34.413294+00:00"
+        }
+      ],
+      "observations": [
+        {
+          "observation_id": "obs-27cd2cc9e4",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_open_page",
+            "action": null,
+            "input": {
+              "url": "https://uc.lab.local:8080"
+            },
+            "session_id": null,
+            "action_execution_id": null,
+            "network_window_closed": null,
+            "network_capture_scope": null,
+            "post_action_wait_ms": null,
+            "network_request_count": null,
+            "network_requests": [],
+            "title": null,
+            "http_status": null,
+            "screenshot": null,
+            "text_excerpt": ""
+          },
+          "created_at": "2026-09-12T17:02:21.891659+00:00"
+        },
+        {
+          "observation_id": "obs-941c7ce583",
+          "type": "documentation_search",
+          "source": "knowledge",
+          "data": {
+            "query": "Как создать временную зону в U-Connect",
+            "result_count": 3,
+            "references": [
+              {
+                "source": "UQA-docs/UC Руководство пользователя от 06.07.2026.docx",
+                "chunk_no": 17,
+                "heading": "Зоны доступа",
+                "content_excerpt": "Зоны доступа\nДля каждого территориального подразделения необходимо создать зону доступа. Зоны доступа разграничивают видимость СВТ и коллекций для пользователей.\nТаблица раздела «Зоны доступа» (Рисунок 27) содержит следующие столбцы:\nимя;\nдата создания;\nдата обновления.\nПо умолчанию создаётся зона «Master», которая является корнем всех зон.\nРисунок 27 – Раздел «Зоны доступа»\nНажмите кнопку «Создать зону доступа», откроется одноименная форма с полями:\nимя;\nродитель (зоны доступа имеют иерархическую структуру).\nРисунок 28 – Форма «Создать зону доступа»"
+              },
+              {
+                "source": "UQA-docs/UC Ротация логирования через swagger.docx",
+                "chunk_no": 1,
+                "heading": "",
+                "content_excerpt": "Инструкция: изменение сроков хранения мониторинговых индексов через Swagger в U-Connect\nНазначение\nИнструкция используется, если на сервере U-Connect быстро растёт объём данных мониторинга, и требуется уменьшить срок хранения индексов мониторинга через системные настройки U-Connect.\nВ U-Connect для этого используются системные настройки usystem-settings, доступные через API. Для чтения требуется право usystem-settings:read, для изменения — usystem-settings:update.\nЧто именно будем менять\nНас интересуют две системные настройки:\nism-policy-monitoring-process\nism-policy-monitoring-system\nЭто политики хранения мониторинговых индексов.\nИзменение выполняется не через редактирование файлов на сервере, а через Swagger / API методом:\nчтение списка настроек: GET /api/v1/usystem-settings\nчтение одной"
+              },
+              {
+                "source": "UQA-docs/UC Руководство пользователя от 06.07.2026.docx",
+                "chunk_no": 64,
+                "heading": "Ключевые сущности и термины",
+                "content_excerpt": "Ключевые сущности и термины\nДля понимания работы PXE в U-Connect необходимо ознакомиться с основными сущностями:\nPXE-сервер — это центральный управляющий элемент, который создаётся в системе на основе выбранного компьютера с агентом. Он объединяет в себе конфигурационные файлы, скрипты развёртывания и группу образов ОС. Каждый PXE-сервер обслуживает определённый сетевой сегмент;\nPXE Boot — временная среда исполнения, в которую попадает физический компьютер во время загрузки по сети. В этой среде запускается облегчённый агент U-Connect, который регистрирует устройство в системе как обнаруженное устройство или PXE Endpoint;\nendpoint — временный объект, отображаемый в интерфейсе. Он служит точкой для управления процессом установки постоянной ОС;\nобраз ОС (Image) выступает основным носителем д"
+              }
+            ]
+          },
+          "created_at": "2026-09-12T17:02:22.737750+00:00"
+        },
+        {
+          "observation_id": "obs-0255a397ce",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_open_page",
+            "action": null,
+            "input": {
+              "url": "https://uc.lab.local:8080/"
+            },
+            "session_id": null,
+            "action_execution_id": null,
+            "network_window_closed": null,
+            "network_capture_scope": null,
+            "post_action_wait_ms": null,
+            "network_request_count": null,
+            "network_requests": [],
+            "title": null,
+            "http_status": null,
+            "screenshot": null,
+            "text_excerpt": ""
+          },
+          "created_at": "2026-09-12T17:02:24.203622+00:00"
+        },
+        {
+          "observation_id": "obs-0b715f81ac",
+          "type": "backend_request",
+          "source": "ssh_backend_logs",
+          "data": {
+            "stand": "uc.lab.local",
+            "container": "u_backend",
+            "container_autodetected": "u_backend",
+            "method": "GET",
+            "endpoint": "/api/v1/cmdb/zones",
+            "query_contains": [],
+            "since": "1m",
+            "match_count": 0,
+            "matches": [],
+            "correlation_note": "Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов."
+          },
+          "created_at": "2026-09-12T17:02:27.237803+00:00"
+        },
+        {
+          "observation_id": "obs-f84d5bf266",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_open_page",
+            "action": null,
+            "input": {
+              "url": "https://uc.lab.local:8080/"
+            },
+            "session_id": null,
+            "action_execution_id": null,
+            "network_window_closed": null,
+            "network_capture_scope": null,
+            "post_action_wait_ms": null,
+            "network_request_count": null,
+            "network_requests": [],
+            "title": null,
+            "http_status": null,
+            "screenshot": null,
+            "text_excerpt": ""
+          },
+          "created_at": "2026-09-12T17:02:28.091681+00:00"
+        },
+        {
+          "observation_id": "obs-1aa99fa9e3",
+          "type": "backend_request",
+          "source": "ssh_backend_logs",
+          "data": {
+            "stand": "uc.lab.local",
+            "container": "u_backend",
+            "container_autodetected": "u_backend",
+            "method": "GET",
+            "endpoint": "/api/v1/cmdb/zones",
+            "query_contains": [],
+            "since": "2m",
+            "match_count": 0,
+            "matches": [],
+            "correlation_note": "Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов."
+          },
+          "created_at": "2026-09-12T17:02:29.593777+00:00"
+        },
+        {
+          "observation_id": "obs-af334dd34b",
+          "type": "backend_request",
+          "source": "ssh_backend_logs",
+          "data": {
+            "stand": "uc.lab.local",
+            "container": "u_backend",
+            "container_autodetected": "u_backend",
+            "method": "GET",
+            "endpoint": "/api/v1/cmdb/zones",
+            "query_contains": [],
+            "since": "5m",
+            "match_count": 0,
+            "matches": [],
+            "correlation_note": "Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов."
+          },
+          "created_at": "2026-09-12T17:02:31.198316+00:00"
+        },
+        {
+          "observation_id": "obs-1725e1ffe9",
+          "type": "backend_request",
+          "source": "ssh_backend_logs",
+          "data": {
+            "stand": "uc.lab.local",
+            "container": "u_backend",
+            "container_autodetected": "u_backend",
+            "method": "GET",
+            "endpoint": "/api/v1/cmdb/zones",
+            "query_contains": [],
+            "since": "10m",
+            "match_count": 0,
+            "matches": [],
+            "correlation_note": "Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов."
+          },
+          "created_at": "2026-09-12T17:02:32.803444+00:00"
+        },
+        {
+          "observation_id": "obs-ed6cfcaa01",
+          "type": "backend_request",
+          "source": "ssh_backend_logs",
+          "data": {
+            "stand": "uc.lab.local",
+            "container": "u_backend",
+            "container_autodetected": "u_backend",
+            "method": "GET",
+            "endpoint": "/api/v1/cmdb/zones",
+            "query_contains": [],
+            "since": "15m",
+            "match_count": 0,
+            "matches": [],
+            "correlation_note": "Совпадения найдены по содержимому backend logs. Без общего request/correlation id это корреляция, а не абсолютное доказательство идентичности запросов."
+          },
+          "created_at": "2026-09-12T17:02:34.411916+00:00"
+        }
+      ],
+      "candidate_facts": [],
+      "notes": []
+    }
+  ],
+  "resources": [],
+  "cleanup_status": "not_required",
+  "cleanup_started_at": null,
+  "cleanup_finished_at": null,
+  "summary": "Regression: 1 case(s) | PASS=0 | FAIL=0 | BLOCKED=1 | SKIPPED=0",
+  "jira_comment": null
+}

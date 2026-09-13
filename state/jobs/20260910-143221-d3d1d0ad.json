@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "job_id": "20260910-143221-d3d1d0ad",
+  "external_id": null,
+  "stand": "uc.lab.local",
+  "stand_identity": {
+    "status": "ok",
+    "stand": "uc.lab.local",
+    "installation_architecture": "ansible",
+    "server_version": "4.9.0",
+    "server_version_source": "u-backend_image_tag",
+    "deployment_version": "2.3.16",
+    "desired_deployment_version": "2.3.16",
+    "deployment_partial": false,
+    "deployment_version_source": "/var/lib/uconnect/install-state/active-release.yml",
+    "desired_state_digest": "sha256:f4f04ba2e9449029fb9d53835ee1092f24dc8efdbe804377de46dfa91c372925",
+    "active_state_digest": "sha256:d8c1e589d4ec6fb3f99515e50651a76f464280a799700e9f897e985e5c8577c5"
+  },
+  "request": "stand identity smoke test",
+  "status": "created",
+  "created_at": "2026-09-10T14:32:21.120398+00:00",
+  "updated_at": "2026-09-10T14:32:21.120398+00:00",
+  "test_cases": [],
+  "summary": null,
+  "jira_comment": null
+}

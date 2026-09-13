@@ -1,0 +1,165 @@
+#!/opt/uqa/.venv/bin/python
+
+import os
+import json
+import httpx
+
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Prompt
+
+console = Console()
+
+OLLAMA_URL = os.getenv(
+    "OLLAMA_URL",
+    "http://192.168.50.51:11434"
+)
+
+MODEL = os.getenv(
+    "UQA_MODEL",
+    "qwen3.8:27b-q4_K_M"
+)
+
+SYSTEM_PROMPT = """
+Ты UQA — внутренний AI-ассистент команды тестирования U-Connect.
+
+Ты умеешь:
+- отвечать на обычные вопросы;
+- помогать тестировщикам;
+- обсуждать U-Connect;
+- анализировать тестовые сценарии;
+- готовить формулировки результатов тестирования.
+
+Сейчас инструменты браузера и SSH ещё не подключены.
+Если пользователь просит выполнить реальное действие,
+не притворяйся, что выполнил его — сообщи, что инструмент
+ещё не подключён.
+
+Отвечай на русском языке, если пользователь не попросил иначе.
+"""
+
+messages = [
+    {
+        "role": "system",
+        "content": SYSTEM_PROMPT
+    }
+]
+
+
+def banner():
+    console.print(
+        Panel.fit(
+            f"[bold]UQA[/bold]  v0.0.1\n"
+            f"Model: {MODEL}\n"
+            f"Ollama: {OLLAMA_URL}\n\n"
+            "[dim]/clear  /status  /exit[/dim]",
+            title="U-Connect QA Agent",
+        )
+    )
+
+
+def status():
+    console.print(f"[cyan]Model:[/cyan]  {MODEL}")
+    console.print(f"[cyan]Server:[/cyan] {OLLAMA_URL}")
+    console.print(
+        f"[cyan]Messages:[/cyan] {len(messages) - 1}"
+    )
+
+
+def chat(user_text):
+    messages.append(
+        {
+            "role": "user",
+            "content": user_text
+        }
+    )
+
+    payload = {
+        "model": MODEL,
+        "messages": messages,
+        "stream": True
+    }
+
+    answer = ""
+
+    try:
+        with httpx.stream(
+            "POST",
+            f"{OLLAMA_URL}/api/chat",
+            json=payload,
+            timeout=None
+        ) as response:
+
+            response.raise_for_status()
+
+            console.print("\n[bold cyan]UQA[/bold cyan]")
+
+            for line in response.iter_lines():
+                if not line:
+                    continue
+
+                data = json.loads(line)
+
+                chunk = (
+                    data.get("message", {})
+                    .get("content", "")
+                )
+
+                if chunk:
+                    answer += chunk
+                    console.print(
+                        chunk,
+                        end="",
+                        markup=False
+                    )
+
+            console.print("\n")
+
+        messages.append(
+            {
+                "role": "assistant",
+                "content": answer
+            }
+        )
+
+    except Exception as exc:
+        console.print(
+            f"\n[bold red]Ошибка:[/bold red] {exc}\n"
+        )
+
+
+def main():
+    banner()
+
+    while True:
+        try:
+            text = Prompt.ask(
+                "\n[bold green]>[/bold green]"
+            ).strip()
+
+        except (KeyboardInterrupt, EOFError):
+            console.print("\nВыход.")
+            break
+
+        if not text:
+            continue
+
+        if text == "/exit":
+            break
+
+        if text == "/clear":
+            del messages[1:]
+            console.print(
+                "[yellow]Контекст очищен.[/yellow]"
+            )
+            continue
+
+        if text == "/status":
+            status()
+            continue
+
+        chat(text)
+
+
+if __name__ == "__main__":
+    main()

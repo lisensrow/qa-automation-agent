@@ -1,0 +1,381 @@
+import json
+import os
+import uuid
+from copy import deepcopy
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+JOBS_DIR = Path("/opt/uqa/state/jobs")
+
+
+VALID_JOB_STATUSES = {
+    "created",
+    "running",
+    "passed",
+    "failed",
+    "blocked",
+    "cancelled",
+}
+
+VALID_CASE_STATUSES = {
+    "pending",
+    "running",
+    "passed",
+    "failed",
+    "blocked",
+    "skipped",
+}
+
+
+def _now():
+    return datetime.now(
+        timezone.utc
+    ).isoformat()
+
+
+def _ensure_storage():
+    JOBS_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    os.chmod(
+        JOBS_DIR,
+        0o700,
+    )
+
+
+def _job_path(job_id: str):
+    job_id = str(job_id).strip()
+
+    if not job_id:
+        raise ValueError(
+            "empty job_id"
+        )
+
+    if not all(
+        ch.isalnum() or ch in "-_"
+        for ch in job_id
+    ):
+        raise ValueError(
+            "invalid job_id"
+        )
+
+    return JOBS_DIR / f"{job_id}.json"
+
+
+def _atomic_write(path: Path, data: dict):
+    tmp = path.with_suffix(
+        path.suffix + ".tmp"
+    )
+
+    tmp.write_text(
+        json.dumps(
+            data,
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    os.chmod(
+        tmp,
+        0o600,
+    )
+
+    tmp.replace(path)
+
+    os.chmod(
+        path,
+        0o600,
+    )
+
+
+def create_job(
+    request: str,
+    stand: str = None,
+    external_id: str = None,
+):
+    _ensure_storage()
+
+    now = _now()
+
+    job_id = (
+        datetime.now(timezone.utc)
+        .strftime("%Y%m%d-%H%M%S")
+        + "-"
+        + uuid.uuid4().hex[:8]
+    )
+
+    job = {
+        "schema_version": 1,
+        "job_id": job_id,
+        "external_id": external_id,
+        "stand": stand,
+        "request": str(request).strip(),
+        "status": "created",
+        "created_at": now,
+        "updated_at": now,
+        "test_cases": [],
+        "summary": None,
+        "jira_comment": None,
+    }
+
+    _atomic_write(
+        _job_path(job_id),
+        job,
+    )
+
+    return deepcopy(job)
+
+
+def get_job(job_id: str):
+    path = _job_path(job_id)
+
+    if not path.exists():
+        return None
+
+    return json.loads(
+        path.read_text(
+            encoding="utf-8"
+        )
+    )
+
+
+def save_job(job: dict):
+    if not isinstance(job, dict):
+        raise ValueError(
+            "job must be dict"
+        )
+
+    job_id = job.get("job_id")
+
+    if not job_id:
+        raise ValueError(
+            "job_id missing"
+        )
+
+    job["updated_at"] = _now()
+
+    _atomic_write(
+        _job_path(job_id),
+        job,
+    )
+
+    return deepcopy(job)
+
+
+def set_job_status(
+    job_id: str,
+    status: str,
+):
+    status = str(status).strip().lower()
+
+    if status not in VALID_JOB_STATUSES:
+        raise ValueError(
+            f"invalid job status: {status}"
+        )
+
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    job["status"] = status
+
+    return save_job(job)
+
+
+def add_test_case(
+    job_id: str,
+    title: str,
+    expected: str = None,
+):
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    case_id = (
+        "tc-"
+        + uuid.uuid4().hex[:8]
+    )
+
+    case = {
+        "case_id": case_id,
+        "title": str(title).strip(),
+        "expected": expected,
+        "status": "pending",
+        "started_at": None,
+        "finished_at": None,
+        "result": None,
+        "evidence": [],
+        "notes": [],
+    }
+
+    job.setdefault(
+        "test_cases",
+        [],
+    ).append(case)
+
+    save_job(job)
+
+    return deepcopy(case)
+
+
+def update_test_case(
+    job_id: str,
+    case_id: str,
+    status: str = None,
+    result: str = None,
+):
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    found = None
+
+    for case in job.get(
+        "test_cases",
+        []
+    ):
+        if case.get("case_id") == case_id:
+            found = case
+            break
+
+    if found is None:
+        raise FileNotFoundError(
+            case_id
+        )
+
+    if status is not None:
+        status = (
+            str(status)
+            .strip()
+            .lower()
+        )
+
+        if status not in VALID_CASE_STATUSES:
+            raise ValueError(
+                f"invalid test case status: {status}"
+            )
+
+        if (
+            status == "running"
+            and not found.get("started_at")
+        ):
+            found["started_at"] = _now()
+
+        if status in {
+            "passed",
+            "failed",
+            "blocked",
+            "skipped",
+        }:
+            found["finished_at"] = _now()
+
+        found["status"] = status
+
+    if result is not None:
+        found["result"] = str(result)
+
+    save_job(job)
+
+    return deepcopy(found)
+
+
+def add_evidence(
+    job_id: str,
+    case_id: str,
+    evidence_type: str,
+    value: str,
+    source: str = None,
+):
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    found = None
+
+    for case in job.get(
+        "test_cases",
+        []
+    ):
+        if case.get("case_id") == case_id:
+            found = case
+            break
+
+    if found is None:
+        raise FileNotFoundError(
+            case_id
+        )
+
+    evidence = {
+        "type": str(
+            evidence_type
+        ).strip(),
+        "value": str(value),
+        "source": source,
+        "created_at": _now(),
+    }
+
+    found.setdefault(
+        "evidence",
+        [],
+    ).append(evidence)
+
+    save_job(job)
+
+    return deepcopy(evidence)
+
+
+def list_jobs(limit: int = 20):
+    _ensure_storage()
+
+    try:
+        limit = int(limit)
+    except Exception:
+        limit = 20
+
+    limit = max(
+        1,
+        min(limit, 100),
+    )
+
+    jobs = []
+
+    for path in JOBS_DIR.glob(
+        "*.json"
+    ):
+        try:
+            data = json.loads(
+                path.read_text(
+                    encoding="utf-8"
+                )
+            )
+
+            jobs.append(data)
+
+        except Exception:
+            continue
+
+    jobs.sort(
+        key=lambda item: item.get(
+            "created_at",
+            "",
+        ),
+        reverse=True,
+    )
+
+    return jobs[:limit]

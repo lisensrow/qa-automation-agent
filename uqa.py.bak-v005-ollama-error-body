@@ -1,0 +1,246 @@
+#!/opt/uqa/.venv/bin/python
+
+import json
+import os
+
+import httpx
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.panel import Panel
+from rich.prompt import Prompt
+
+from tools.registry import TOOLS, execute_tool
+
+
+OLLAMA_URL = os.getenv(
+    "OLLAMA_URL",
+    "http://192.168.50.51:11434"
+).rstrip("/")
+
+MODEL = os.getenv(
+    "UQA_MODEL",
+    "qwen3.8:27b-q4_K_M"
+)
+
+MAX_TOOL_STEPS = 6
+
+console = Console()
+
+
+SYSTEM_PROMPT = """
+Ты UQA — внутренний AI QA-агент продукта U-Connect.
+
+Ты работаешь как помощник тестировщика и можешь использовать подключённые инструменты.
+
+Правила:
+- Если пользователь просит реально проверить веб-интерфейс, используй browser tool.
+- Никогда не утверждай, что выполнил действие, если tool действительно его не выполнил.
+- Результаты тестирования основывай на фактических evidence от tools.
+- Screenshot от Playwright является реальным артефактом тестирования.
+- Если страница показывает Login/Password/Sign in, считай, что открылась страница авторизации, а не что пользователь авторизован.
+- Ошибки console/network анализируй отдельно и не объявляй FAIL только по их наличию без контекста.
+- При выводе результата указывай путь к screenshot/evidence, если он был создан.
+- Отвечай по-русски, если пользователь не попросил иначе.
+- Не раскрывай внутреннюю цепочку рассуждений.
+
+Правила доказательного тестирования:
+- Делай выводы только из фактов, которые реально вернули инструменты.
+- Не придумывай состояния, проценты, причины ошибок или успешность,
+  если инструмент этого прямо не подтвердил.
+- Четко разделяй наблюдение, вывод и предположение.
+- Не выдавай предположение за установленный факт.
+- PASS ставь только когда проверяемое условие подтверждено evidence.
+- FAIL ставь только когда нарушение проверяемого условия подтверждено evidence.
+- Если evidence недостаточно, укажи: недостаточно данных для PASS/FAIL.
+- Не используй формулировки вроде "100% корректно", "полностью исправно",
+  "без ошибок", если это не было непосредственно проверено.
+- Путь к screenshot, HTTP-статусы, URL, текст страницы,
+  элементы интерфейса и диагностические данные считаются evidence,
+  только если их действительно вернул tool.
+- Отсутствие записанных ошибок не означает отсутствие всех возможных ошибок.
+- Штатные события авторизации, уже отфильтрованные browser tool,
+  не пытайся заново интерпретировать как дефекты.
+"""
+
+
+def banner():
+    console.print(
+        Panel(
+            f"[bold]UQA  v0.0.2[/bold]\n"
+            f"Model: {MODEL}\n"
+            f"Ollama: {OLLAMA_URL}\n"
+            f"Tools: browser_open_page\n\n"
+            f"/clear  /status  /exit",
+            title="U-Connect QA Agent",
+        )
+    )
+
+
+def ask_ollama(messages):
+    with httpx.Client(timeout=httpx.Timeout(600.0, connect=10.0)) as client:
+        response = client.post(
+            f"{OLLAMA_URL}/api/chat",
+            json={
+                "model": MODEL,
+                "messages": messages,
+                "tools": TOOLS,
+                "stream": False,
+                "keep_alive": "30m",
+            },
+        )
+
+        response.raise_for_status()
+        return response.json()
+
+
+def run_turn(messages):
+    for _ in range(MAX_TOOL_STEPS):
+        data = ask_ollama(messages)
+
+        message = data.get("message", {})
+        content = message.get("content", "")
+        tool_calls = message.get("tool_calls") or []
+
+        assistant_message = {
+            "role": "assistant",
+            "content": content,
+        }
+
+        if tool_calls:
+            assistant_message["tool_calls"] = tool_calls
+
+        messages.append(assistant_message)
+
+        if not tool_calls:
+            if content.strip():
+                console.print()
+                console.print(Markdown(content))
+                console.print()
+
+            return
+
+        for call in tool_calls:
+            function = call.get("function", {})
+            name = function.get("name")
+            arguments = function.get("arguments") or {}
+
+            if isinstance(arguments, str):
+                try:
+                    arguments = json.loads(arguments)
+                except json.JSONDecodeError:
+                    arguments = {}
+
+            console.print(
+                f"\n[cyan]● TOOL[/cyan] {name} "
+                f"[dim]{json.dumps(arguments, ensure_ascii=False)}[/dim]"
+            )
+
+            try:
+                result = execute_tool(name, arguments)
+
+                status = result.get("http_status")
+                final_url = result.get("final_url")
+                screenshot = result.get("screenshot")
+
+                console.print(
+                    f"[green]✓ TOOL RESULT[/green] "
+                    f"HTTP={status} URL={final_url}"
+                )
+
+                if screenshot:
+                    console.print(
+                        f"[dim]Evidence: {screenshot}[/dim]"
+                    )
+
+            except Exception as exc:
+                result = {
+                    "error": str(exc),
+                    "tool": name,
+                }
+
+                console.print(
+                    f"[red]✗ TOOL ERROR[/red] {exc}"
+                )
+
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_name": name,
+                    "content": json.dumps(
+                        result,
+                        ensure_ascii=False,
+                    ),
+                }
+            )
+
+    console.print(
+        "[red]Достигнут лимит последовательных tool-вызовов.[/red]"
+    )
+
+
+def main():
+    banner()
+
+    messages = [
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT,
+        }
+    ]
+
+    while True:
+        try:
+            user_input = Prompt.ask("\n[bold cyan]>[/bold cyan]").strip()
+        except (EOFError, KeyboardInterrupt):
+            console.print()
+            break
+
+        if not user_input:
+            continue
+
+        if user_input == "/exit":
+            break
+
+        if user_input == "/clear":
+            messages = [
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT,
+                }
+            ]
+            console.print("[yellow]Контекст очищен.[/yellow]")
+            continue
+
+        if user_input == "/status":
+            console.print(
+                Panel(
+                    f"Model: {MODEL}\n"
+                    f"Ollama: {OLLAMA_URL}\n"
+                    f"Messages: {len(messages)}\n"
+                    f"Tools: browser_open_page",
+                    title="Status",
+                )
+            )
+            continue
+
+        messages.append(
+            {
+                "role": "user",
+                "content": user_input,
+            }
+        )
+
+        try:
+            run_turn(messages)
+        except httpx.HTTPError as exc:
+            console.print(
+                f"[red]Ошибка Ollama API:[/red] {exc}"
+            )
+        except Exception as exc:
+            console.print(
+                f"[red]Ошибка UQA:[/red] {exc}"
+            )
+
+
+if __name__ == "__main__":
+    main()

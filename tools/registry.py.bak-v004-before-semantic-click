@@ -1,0 +1,106 @@
+from tools.browser import open_page, get_state, fill, click
+
+
+TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_open_page",
+            "description": (
+                "Открывает URL в постоянной браузерной сессии Chromium. "
+                "Возвращает состояние страницы, интерактивные элементы "
+                "с element_id и screenshot."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "Полный URL страницы"
+                    }
+                },
+                "required": ["url"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_get_state",
+            "description": (
+                "Получает текущее состояние браузера и список "
+                "интерактивных элементов с element_id."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_fill",
+            "description": (
+                "Вводит обычный несекретный текст в поле по element_id. "
+                "Не использовать для паролей, токенов и других секретов."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "element_id": {
+                        "type": "string"
+                    },
+                    "text": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "element_id",
+                    "text"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_click",
+            "description": (
+                "Нажимает видимый элемент страницы по element_id."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "element_id": {
+                        "type": "string"
+                    }
+                },
+                "required": ["element_id"]
+            }
+        }
+    }
+]
+
+
+def execute_tool(name: str, arguments: dict):
+    if name == "browser_open_page":
+        return open_page(arguments["url"])
+
+    if name == "browser_get_state":
+        return get_state()
+
+    if name == "browser_fill":
+        return fill(
+            arguments["element_id"],
+            arguments["text"],
+        )
+
+    if name == "browser_click":
+        return click(
+            arguments["element_id"]
+        )
+
+    return {
+        "error": f"Unknown tool: {name}"
+    }

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "job_id": "20260910-223349-72d920d6",
+  "owner": "d.storozheva",
+  "external_id": null,
+  "stand": "uc.lab.local",
+  "stand_identity": {
+    "status": "ok",
+    "stand": "uc.lab.local",
+    "installation_architecture": "ansible",
+    "server_version": "4.9.0",
+    "server_version_source": "u-backend_image_tag",
+    "deployment_version": "2.3.16",
+    "desired_deployment_version": "2.3.16",
+    "deployment_partial": false,
+    "deployment_version_source": "/var/lib/uconnect/install-state/active-release.yml",
+    "desired_state_digest": "sha256:f4f04ba2e9449029fb9d53835ee1092f24dc8efdbe804377de46dfa91c372925",
+    "active_state_digest": "sha256:d8c1e589d4ec6fb3f99515e50651a76f464280a799700e9f897e985e5c8577c5"
+  },
+  "request": "3. Проверь, что кнопка Add отображается.",
+  "status": "passed",
+  "created_at": "2026-09-10T22:33:49.101684+00:00",
+  "updated_at": "2026-09-10T22:33:51.810951+00:00",
+  "test_cases": [
+    {
+      "case_id": "tc-ad3ad7fb",
+      "title": "3. Проверь, что кнопка Add отображается.",
+      "expected": null,
+      "status": "passed",
+      "started_at": "2026-09-10T22:33:49.102496+00:00",
+      "finished_at": "2026-09-10T22:33:51.810384+00:00",
+      "result": "Кнопка \"Add\" отображается на текущей странице.",
+      "checks": [
+        {
+          "check_id": "check-001",
+          "title": "Проверка отображения кнопки Add",
+          "status": "passed",
+          "expected": "кнопка Add отображается",
+          "actual": "кнопка Add отображается",
+          "evidence": [
+            "/opt/uqa/artifacts/browser/d.storozheva/20260911-012654-616340/050-state.png"
+          ],
+          "reason": null
+        }
+      ],
+      "evidence": [],
+      "observations": [],
+      "candidate_facts": [],
+      "notes": []
+    }
+  ],
+  "summary": null,
+  "jira_comment": null
+}

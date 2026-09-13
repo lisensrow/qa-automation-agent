@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "job_id": "20260911-112801-42651fab",
+  "owner": "adminacc",
+  "job_type": "regression",
+  "external_id": null,
+  "stand": "uc.lab.local",
+  "stand_identity": {
+    "status": "ok",
+    "stand": "uc.lab.local",
+    "installation_architecture": "ansible",
+    "server_version": "4.9.0",
+    "server_version_source": "u-backend_image_tag",
+    "deployment_version": "2.3.16",
+    "desired_deployment_version": "2.3.16",
+    "deployment_partial": false,
+    "deployment_version_source": "/var/lib/uconnect/install-state/active-release.yml",
+    "desired_state_digest": "sha256:f4f04ba2e9449029fb9d53835ee1092f24dc8efdbe804377de46dfa91c372925",
+    "active_state_digest": "sha256:d8c1e589d4ec6fb3f99515e50651a76f464280a799700e9f897e985e5c8577c5"
+  },
+  "request": "Проведи один последовательный regression workflow механизма создания и автоматической очистки тестовых ресурсов на стенде https://uc.lab.local. Создай ровно одну временную тестовую зону с уникальным именем, начинающимся с uqa-e2e-cleanup-. Не создавай другие сущности и не изменяй существующие объекты. Внутри одного test case проверь: зона создана и отображается; ресурс зарегистрирован UQA для cleanup; после завершения test case cleanup удаляет именно эту зону; после удаления зона не существует. Все выводы делай только по фактическим evidence. Если Core запросит WRITE или DESTRUCTIVE, остановись и дождись ответа.",
+  "status": "cancelled",
+  "created_at": "2026-09-11T11:28:01.093046+00:00",
+  "updated_at": "2026-09-11T11:28:28.296079+00:00",
+  "test_cases": [],
+  "resources": [],
+  "cleanup_status": "not_required",
+  "cleanup_started_at": null,
+  "cleanup_finished_at": null,
+  "summary": "Regression cancelled before execution: proposed plan was not confirmed.",
+  "jira_comment": null
+}

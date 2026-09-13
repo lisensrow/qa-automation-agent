@@ -1,0 +1,914 @@
+import json
+import getpass
+import os
+import uuid
+from copy import deepcopy
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+JOBS_DIR = Path("/opt/uqa/state/jobs")
+
+
+VALID_JOB_STATUSES = {
+    "created",
+    "running",
+    "passed",
+    "failed",
+    "blocked",
+    "cancelled",
+}
+
+VALID_CASE_STATUSES = {
+    "pending",
+    "running",
+    "passed",
+    "failed",
+    "blocked",
+    "skipped",
+}
+
+VALID_CHECK_STATUSES = {
+    "passed",
+    "failed",
+    "blocked",
+    "skipped",
+}
+
+
+def _normalize_checks(checks):
+    if not isinstance(checks, list):
+        raise ValueError(
+            "checks must be list"
+        )
+
+    normalized = []
+
+    for index, item in enumerate(
+        checks,
+        start=1,
+    ):
+        if not isinstance(item, dict):
+            raise ValueError(
+                "each check must be dict"
+            )
+
+        title = str(
+            item.get("title")
+            or ""
+        ).strip()
+
+        if not title:
+            raise ValueError(
+                "check title missing"
+            )
+
+        status = str(
+            item.get("status")
+            or ""
+        ).strip().lower()
+
+        if status not in VALID_CHECK_STATUSES:
+            raise ValueError(
+                f"invalid check status: {status}"
+            )
+
+        evidence = item.get(
+            "evidence"
+        ) or []
+
+        if isinstance(evidence, str):
+            evidence = [evidence]
+
+        if not isinstance(evidence, list):
+            raise ValueError(
+                "check evidence must be list"
+            )
+
+        observations = item.get(
+            "observations"
+        ) or []
+
+        if isinstance(
+            observations,
+            str,
+        ):
+            observations = [
+                observations
+            ]
+
+        if not isinstance(
+            observations,
+            list,
+        ):
+            raise ValueError(
+                "check observations must be list"
+            )
+
+        assertions = item.get(
+            "assertions"
+        ) or []
+
+        if isinstance(
+            assertions,
+            dict,
+        ):
+            assertions = [
+                assertions
+            ]
+
+        if not isinstance(
+            assertions,
+            list,
+        ):
+            assertions = []
+
+        check_id = str(
+            item.get("check_id")
+            or f"check-{index:03d}"
+        ).strip()
+
+        normalized.append(
+            {
+                "check_id": check_id,
+                "title": title,
+                "status": status,
+                "expected": (
+                    str(item["expected"]).strip()
+                    if item.get("expected") is not None
+                    else None
+                ),
+                "actual": (
+                    str(item["actual"]).strip()
+                    if item.get("actual") is not None
+                    else None
+                ),
+                "evidence": [
+                    str(value).strip()
+                    for value in evidence
+                    if str(value).strip()
+                ],
+                "subject": (
+                    str(
+                        item["subject"]
+                    ).strip()
+                    if item.get(
+                        "subject"
+                    ) is not None
+                    else None
+                ),
+                "observations": [
+                    str(value).strip()
+                    for value in observations
+                    if str(value).strip()
+                ],
+                "assertions": [
+                    {
+                        "field": str(
+                            assertion.get(
+                                "field"
+                            )
+                            or ""
+                        ).strip(),
+                        "operator": str(
+                            assertion.get(
+                                "operator"
+                            )
+                            or "eq"
+                        ).strip().lower(),
+                        "expected": assertion.get(
+                            "expected"
+                        ),
+                        "actual": assertion.get(
+                            "actual"
+                        ),
+                        "satisfied": (
+                            assertion.get(
+                                "satisfied"
+                            )
+                            if isinstance(
+                                assertion.get(
+                                    "satisfied"
+                                ),
+                                bool,
+                            )
+                            else None
+                        ),
+                        "observation_id": (
+                            str(
+                                assertion.get(
+                                    "observation_id"
+                                )
+                                or ""
+                            ).strip()
+                            or None
+                        ),
+                    }
+                    for assertion
+                    in assertions
+                    if isinstance(
+                        assertion,
+                        dict,
+                    )
+                ],
+                "reason": (
+                    str(item["reason"]).strip()
+                    if item.get("reason") is not None
+                    else None
+                ),
+            }
+        )
+
+    return normalized
+
+
+def _now():
+    return datetime.now(
+        timezone.utc
+    ).isoformat()
+
+
+def _ensure_storage():
+    JOBS_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+
+def _job_path(job_id: str):
+    job_id = str(job_id).strip()
+
+    if not job_id:
+        raise ValueError(
+            "empty job_id"
+        )
+
+    if not all(
+        ch.isalnum() or ch in "-_"
+        for ch in job_id
+    ):
+        raise ValueError(
+            "invalid job_id"
+        )
+
+    return JOBS_DIR / f"{job_id}.json"
+
+
+def _atomic_write(path: Path, data: dict):
+    tmp = path.with_suffix(
+        path.suffix + ".tmp"
+    )
+
+    tmp.write_text(
+        json.dumps(
+            data,
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    os.chmod(
+        tmp,
+        0o660,
+    )
+
+    tmp.replace(path)
+
+    os.chmod(
+        path,
+        0o660,
+    )
+
+
+def create_job(
+    request: str,
+    stand: str = None,
+    external_id: str = None,
+    stand_identity: dict = None,
+):
+    _ensure_storage()
+
+    now = _now()
+
+    job_id = (
+        datetime.now(timezone.utc)
+        .strftime("%Y%m%d-%H%M%S")
+        + "-"
+        + uuid.uuid4().hex[:8]
+    )
+
+    owner = (
+        os.getenv("UQA_USER")
+        or getpass.getuser()
+        or "unknown"
+    ).strip()
+
+    job = {
+        "schema_version": 1,
+        "job_id": job_id,
+        "owner": owner,
+        "external_id": external_id,
+        "stand": stand,
+        "stand_identity": (
+            deepcopy(stand_identity)
+            if stand_identity
+            else None
+        ),
+        "request": str(request).strip(),
+        "status": "created",
+        "created_at": now,
+        "updated_at": now,
+        "test_cases": [],
+        "summary": None,
+        "jira_comment": None,
+    }
+
+    _atomic_write(
+        _job_path(job_id),
+        job,
+    )
+
+    return deepcopy(job)
+
+
+def get_job(job_id: str):
+    path = _job_path(job_id)
+
+    if not path.exists():
+        return None
+
+    return json.loads(
+        path.read_text(
+            encoding="utf-8"
+        )
+    )
+
+
+def save_job(job: dict):
+    if not isinstance(job, dict):
+        raise ValueError(
+            "job must be dict"
+        )
+
+    job_id = job.get("job_id")
+
+    if not job_id:
+        raise ValueError(
+            "job_id missing"
+        )
+
+    job["updated_at"] = _now()
+
+    _atomic_write(
+        _job_path(job_id),
+        job,
+    )
+
+    return deepcopy(job)
+
+
+def set_job_status(
+    job_id: str,
+    status: str,
+):
+    status = str(status).strip().lower()
+
+    if status not in VALID_JOB_STATUSES:
+        raise ValueError(
+            f"invalid job status: {status}"
+        )
+
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    job["status"] = status
+
+    return save_job(job)
+
+
+def set_job_summary(
+    job_id: str,
+    summary: str,
+):
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    job["summary"] = (
+        str(summary)
+        if summary is not None
+        else None
+    )
+
+    return save_job(job)
+
+
+def add_test_case(
+    job_id: str,
+    title: str,
+    expected: str = None,
+    requirement: dict = None,
+):
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    case_id = (
+        "tc-"
+        + uuid.uuid4().hex[:8]
+    )
+
+    case = {
+        "case_id": case_id,
+        "title": str(title).strip(),
+        "expected": expected,
+        "requirement": (
+            deepcopy(requirement)
+            if isinstance(
+                requirement,
+                dict,
+            )
+            else None
+        ),
+        "status": "pending",
+        "started_at": None,
+        "finished_at": None,
+        "result": None,
+        "checks": [],
+        "evidence": [],
+        "observations": [],
+        "candidate_facts": [],
+        "notes": [],
+    }
+
+    job.setdefault(
+        "test_cases",
+        [],
+    ).append(case)
+
+    save_job(job)
+
+    return deepcopy(case)
+
+
+def update_test_case(
+    job_id: str,
+    case_id: str,
+    status: str = None,
+    result: str = None,
+    checks: list = None,
+):
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    found = None
+
+    for case in job.get(
+        "test_cases",
+        []
+    ):
+        if case.get("case_id") == case_id:
+            found = case
+            break
+
+    if found is None:
+        raise FileNotFoundError(
+            case_id
+        )
+
+    if status is not None:
+        status = (
+            str(status)
+            .strip()
+            .lower()
+        )
+
+        if status not in VALID_CASE_STATUSES:
+            raise ValueError(
+                f"invalid test case status: {status}"
+            )
+
+        if (
+            status == "running"
+            and not found.get("started_at")
+        ):
+            found["started_at"] = _now()
+
+        if status in {
+            "passed",
+            "failed",
+            "blocked",
+            "skipped",
+        }:
+            found["finished_at"] = _now()
+
+        found["status"] = status
+
+    if result is not None:
+        found["result"] = str(result)
+
+    if checks is not None:
+        found["checks"] = _normalize_checks(
+            checks
+        )
+
+    # Старые Job schema v1 могли быть созданы
+    # до появления structured checks.
+    found.setdefault(
+        "checks",
+        [],
+    )
+
+    save_job(job)
+
+    return deepcopy(found)
+
+
+def add_evidence(
+    job_id: str,
+    case_id: str,
+    evidence_type: str,
+    value: str,
+    source: str = None,
+    observation_ids=None,
+    usable_for_pass=None,
+    usable_for_verdict=None,
+    execution_status: str = None,
+    eligibility_reason: str = None,
+):
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    found = None
+
+    for case in job.get(
+        "test_cases",
+        []
+    ):
+        if case.get("case_id") == case_id:
+            found = case
+            break
+
+    if found is None:
+        raise FileNotFoundError(
+            case_id
+        )
+
+    if isinstance(
+        observation_ids,
+        str,
+    ):
+        observation_ids = [
+            observation_ids
+        ]
+
+    if not isinstance(
+        observation_ids,
+        list,
+    ):
+        observation_ids = []
+
+    evidence = {
+        "evidence_id": (
+            "ev-"
+            + uuid.uuid4().hex[:12]
+        ),
+        "type": str(
+            evidence_type
+        ).strip(),
+        "value": str(value),
+        "source": source,
+        "observation_ids": [
+            str(value).strip()
+            for value in observation_ids
+            if str(value).strip()
+        ],
+        "usable_for_pass": (
+            bool(usable_for_pass)
+            if usable_for_pass is not None
+            else None
+        ),
+        "usable_for_verdict": (
+            bool(usable_for_verdict)
+            if usable_for_verdict is not None
+            else None
+        ),
+        "execution_status": (
+            str(execution_status).strip()
+            if execution_status is not None
+            else None
+        ),
+        "eligibility_reason": (
+            str(eligibility_reason).strip()
+            if eligibility_reason is not None
+            else None
+        ),
+        "created_at": _now(),
+    }
+
+    found.setdefault(
+        "evidence",
+        [],
+    ).append(evidence)
+
+    save_job(job)
+
+    return deepcopy(evidence)
+
+
+def add_observation(
+    job_id: str,
+    case_id: str,
+    observation_type: str,
+    source: str,
+    data: dict,
+):
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    found = None
+
+    for case in job.get(
+        "test_cases",
+        []
+    ):
+        if case.get("case_id") == case_id:
+            found = case
+            break
+
+    if found is None:
+        raise FileNotFoundError(
+            case_id
+        )
+
+    observation = {
+        "observation_id": (
+            "obs-"
+            + uuid.uuid4().hex[:10]
+        ),
+        "type": str(
+            observation_type
+        ).strip(),
+        "source": str(
+            source
+        ).strip(),
+        "data": deepcopy(data),
+        "created_at": _now(),
+    }
+
+    found.setdefault(
+        "observations",
+        [],
+    ).append(observation)
+
+    save_job(job)
+
+    return deepcopy(
+        observation
+    )
+
+
+def add_candidate_fact(
+    job_id: str,
+    case_id: str,
+    fact_type: str,
+    statement: str,
+    data: dict,
+    source_observation_ids=None,
+    verification=None,
+):
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(
+            job_id
+        )
+
+    found = None
+
+    for case in job.get(
+        "test_cases",
+        []
+    ):
+        if case.get("case_id") == case_id:
+            found = case
+            break
+
+    if found is None:
+        raise FileNotFoundError(
+            case_id
+        )
+
+    candidate = {
+        "candidate_id": (
+            "fact-"
+            + uuid.uuid4().hex[:10]
+        ),
+        "status": "candidate",
+        "fact_type": str(
+            fact_type
+        ).strip(),
+        "statement": str(
+            statement
+        ).strip(),
+        "data": deepcopy(
+            data
+        ),
+        "source_observation_ids": list(
+            source_observation_ids or []
+        ),
+        "verification": deepcopy(
+            verification or {}
+        ),
+        "created_at": _now(),
+    }
+
+    found.setdefault(
+        "candidate_facts",
+        [],
+    ).append(candidate)
+
+    save_job(job)
+
+    return deepcopy(
+        candidate
+    )
+
+
+def upsert_candidate_fact(
+    job_id: str,
+    case_id: str,
+    fact_key: str,
+    fact_type: str,
+    statement: str,
+    data: dict,
+    subject_key: str = None,
+    source_observation_ids=None,
+    verification=None,
+):
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(job_id)
+
+    found_case = None
+
+    for case in job.get("test_cases", []):
+        if case.get("case_id") == case_id:
+            found_case = case
+            break
+
+    if found_case is None:
+        raise FileNotFoundError(case_id)
+
+    facts = found_case.setdefault(
+        "candidate_facts",
+        [],
+    )
+
+    existing = None
+
+    for fact in facts:
+        if fact.get("fact_key") == fact_key:
+            existing = fact
+            break
+
+    now = _now()
+
+    if existing is None:
+        existing = {
+            "candidate_id": (
+                "fact-"
+                + uuid.uuid4().hex[:10]
+            ),
+            "fact_key": fact_key,
+            "subject_key": (
+                str(subject_key).strip()
+                if subject_key
+                else None
+            ),
+            "status": "candidate",
+            "fact_type": str(fact_type).strip(),
+            "statement": str(statement).strip(),
+            "data": deepcopy(data),
+            "source_observation_ids": [],
+            "verification": {},
+            "created_at": now,
+            "first_seen_at": now,
+            "last_seen_at": now,
+        }
+
+        facts.append(existing)
+
+    else:
+        if subject_key:
+            existing["subject_key"] = (
+                str(subject_key).strip()
+            )
+
+        existing["statement"] = (
+            str(statement).strip()
+        )
+        existing["data"] = deepcopy(data)
+        existing["last_seen_at"] = now
+
+    old_sources = existing.setdefault(
+        "source_observation_ids",
+        [],
+    )
+
+    for obs_id in (
+        source_observation_ids or []
+    ):
+        if (
+            obs_id
+            and obs_id not in old_sources
+        ):
+            old_sources.append(obs_id)
+
+    old_verification = existing.setdefault(
+        "verification",
+        {},
+    )
+
+    for key, value in (
+        verification or {}
+    ).items():
+        if isinstance(value, bool):
+            old_verification[key] = bool(
+                old_verification.get(
+                    key,
+                    False,
+                )
+                or value
+            )
+        else:
+            old_verification[key] = value
+
+    save_job(job)
+
+    return deepcopy(existing)
+
+
+def list_jobs(limit: int = 20):
+    _ensure_storage()
+
+    try:
+        limit = int(limit)
+    except Exception:
+        limit = 20
+
+    limit = max(
+        1,
+        min(limit, 100),
+    )
+
+    jobs = []
+
+    for path in JOBS_DIR.glob(
+        "*.json"
+    ):
+        try:
+            data = json.loads(
+                path.read_text(
+                    encoding="utf-8"
+                )
+            )
+
+            jobs.append(data)
+
+        except Exception:
+            continue
+
+    jobs.sort(
+        key=lambda item: item.get(
+            "created_at",
+            "",
+        ),
+        reverse=True,
+    )
+
+    return jobs[:limit]

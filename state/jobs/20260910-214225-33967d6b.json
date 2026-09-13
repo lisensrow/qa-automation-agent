@@ -1,0 +1,415 @@
+{
+  "schema_version": 1,
+  "job_id": "20260910-214225-33967d6b",
+  "owner": "d.storozheva",
+  "external_id": null,
+  "stand": "uc.lab.local",
+  "stand_identity": {
+    "status": "ok",
+    "stand": "uc.lab.local",
+    "installation_architecture": "ansible",
+    "server_version": "4.9.0",
+    "server_version_source": "u-backend_image_tag",
+    "deployment_version": "2.3.16",
+    "desired_deployment_version": "2.3.16",
+    "deployment_partial": false,
+    "deployment_version_source": "/var/lib/uconnect/install-state/active-release.yml",
+    "desired_state_digest": "sha256:f4f04ba2e9449029fb9d53835ee1092f24dc8efdbe804377de46dfa91c372925",
+    "active_state_digest": "sha256:d8c1e589d4ec6fb3f99515e50651a76f464280a799700e9f897e985e5c8577c5"
+  },
+  "request": "Проверь на стенде uc.lab.local страницу CMDB. Проверь, что кнопка Schedule недоступна без выбора КЕ, зафиксируй её фактическое состояние через UI и screenshot. Затем проверь, меняется ли её состояние после выбора одной КЕ. Ничего не изменяй на стенде и не создавай расписание. Если безопасно выбрать КЕ имеющимися инструментами невозможно — не обходи ограничения и укажи BLOCKED для этой части.",
+  "status": "blocked",
+  "created_at": "2026-09-10T21:42:25.195666+00:00",
+  "updated_at": "2026-09-10T21:53:38.058178+00:00",
+  "test_cases": [
+    {
+      "case_id": "tc-471b012a",
+      "title": "Проверь на стенде uc.lab.local страницу CMDB. Проверь, что кнопка Schedule недоступна без выбора КЕ, зафиксируй её фактическое состояние через UI и screenshot. Затем проверь, меняется ли её состояние после выбора одной КЕ. Ничего не изменяй на стенде и не создавай расписание. Если безопасно выбрать КЕ имеющимися инструментами невозможно — не обходи ограничения и укажи BLOCKED для этой части.",
+      "expected": null,
+      "status": "blocked",
+      "started_at": "2026-09-10T21:42:25.196374+00:00",
+      "finished_at": "2026-09-10T21:53:38.056512+00:00",
+      "result": "[UQA CORE]\nstatus=BLOCKED\nreason=tool_step_limit\ndetail=Maximum sequential tool calls reached.",
+      "evidence": [
+        {
+          "type": "browser_open_page",
+          "value": "{\"tool\": \"browser_open_page\", \"arguments\": {\"url\": \"https://uc.lab.local\"}, \"result\": {\"session_id\": \"20260911-003547-e734cc\", \"action\": \"open\", \"current_url\": \"https://uc.lab.local/cmdb?limit=50&offset=0\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nAll PC\\nall\\nAdd\\nAll PC\\nShowing 1 to 4 of 4\\nStatus\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\\nhome-server-UC-redos8\\n1.2.25\\n192.168.50.70\\nRED OS 8.0.2\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n8/3/2026, 16:26:11\\nMaster\\nhome-server-UC-astra18\\n1.2.25\\n192.168.50.69\\nAstra Linux\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 18:15:12\\nMaster\\nhome-server-UC-ubuntu22\\n1.2.25\\n192.168.50.68\\nUbuntu 22.04.4 LTS\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 17:40:02\\nMaster\\nhome-server-UC-windows10\\n1.2.25\\n192.168.50.67\\nМайкрософт Windows 10 Pro\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 15:39:20\\nMaster\\n1\\n50\\nCMDB\\nCMDB\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e44\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e45\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e46\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e47\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e48\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"All PC\", \"label\": \"\", \"element_id\": \"e49\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"all\", \"label\": \"\", \"element_id\": \"e50\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e51\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Agent Download\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e52\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by name\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e53\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e54\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e55\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e56\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e57\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e58\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e59\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e60\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e61\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e62\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e63\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e64\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e65\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e66\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e67\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e68\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e69\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e70\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e71\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e72\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e73\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Page 1\", \"text\": \"1\", \"label\": \"\", \"element_id\": \"e74\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e75\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e76\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e77\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e78\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e79\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placehold...<truncated>",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T21:42:29.258974+00:00"
+        },
+        {
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"name\": \"Add\", \"exact\": true}, \"result\": {\"session_id\": \"20260911-003547-e734cc\", \"action\": \"click-semantic\", \"current_url\": \"https://uc.lab.local/cmdb?limit=50&offset=0\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nAll PC\\nall\\nAdd\\nAll PC\\nShowing 1 to 4 of 4\\nStatus\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\\nhome-server-UC-redos8\\n1.2.25\\n192.168.50.70\\nRED OS 8.0.2\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n8/3/2026, 16:26:11\\nMaster\\nhome-server-UC-astra18\\n1.2.25\\n192.168.50.69\\nAstra Linux\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 18:15:12\\nMaster\\nhome-server-UC-ubuntu22\\n1.2.25\\n192.168.50.68\\nUbuntu 22.04.4 LTS\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 17:40:02\\nMaster\\nhome-server-UC-windows10\\n1.2.25\\n192.168.50.67\\nМайкрософт Windows 10 Pro\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 15:39:20\\nMaster\\n1\\n50\\nCMDB\\nCMDB\\nAdd group\\nAdd collection\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e44\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e45\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e46\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e47\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e48\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"All PC\", \"label\": \"\", \"element_id\": \"e49\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"all\", \"label\": \"\", \"element_id\": \"e50\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e51\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Agent Download\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e52\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by name\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e53\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e54\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e55\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e56\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e57\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e58\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e59\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e60\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e61\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e62\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e63\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e64\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e65\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e66\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e67\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e68\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e69\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e70\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e71\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e72\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e73\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Page 1\", \"text\": \"1\", \"label\": \"\", \"element_id\": \"e74\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e75\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e76\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e77\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e78\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e79\"}, {\"tag\": \"button\",...<truncated>",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T21:42:33.169552+00:00"
+        },
+        {
+          "type": "browser_fill_semantic",
+          "value": "{\"tool\": \"browser_fill_semantic\", \"arguments\": {\"exact\": true, \"field\": \"Search by collections\", \"text\": \"KE\"}, \"result\": {\"session_id\": \"20260911-003547-e734cc\", \"action\": \"fill-semantic\", \"current_url\": \"https://uc.lab.local/cmdb?limit=50&offset=0\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nNo available options\\nNo data\\nAdd\\nAll PC\\nShowing 1 to 4 of 4\\nStatus\\nType\\nName\\nAgent\\nIP\\nUser\\nOS\\nInventory number\\nSerial number\\nLocation\\nTags\\nOrg. unit\\nCreated at\\nArchived\\nZone of access\\nhome-server-UC-redos8\\n1.2.25\\n192.168.50.70\\nRED OS 8.0.2\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n8/3/2026, 16:26:11\\nMaster\\nhome-server-UC-astra18\\n1.2.25\\n192.168.50.69\\nAstra Linux\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 18:15:12\\nMaster\\nhome-server-UC-ubuntu22\\n1.2.25\\n192.168.50.68\\nUbuntu 22.04.4 LTS\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 17:40:02\\nMaster\\nhome-server-UC-windows10\\n1.2.25\\n192.168.50.67\\nМайкрософт Windows 10 Pro\\nInvalid serial number\\nВоронеж\\nЛаборатория\\n5/14/2026, 15:39:20\\nMaster\\n1\\n50\\nCMDB\\nCMDB\\nAdd group\\nAdd collection\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e44\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e45\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e46\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e47\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e48\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e51\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Agent Download\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e52\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by name\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e53\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e54\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e55\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e56\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e57\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e58\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e59\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e60\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e61\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e62\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e63\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e64\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e65\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e66\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e67\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e68\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e69\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e70\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e71\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e72\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e73\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Page 1\", \"text\": \"1\", \"label\": \"\", \"element_id\": \"e74\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e75\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e76\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e77\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e78\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e79\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e80\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": ...<truncated>",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T21:42:36.953407+00:00"
+        },
+        {
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"exact\": true, \"name\": \"Add collection\"}, \"result\": {\"session_id\": \"20260911-003547-e734cc\", \"action\": \"click-semantic\", \"current_url\": \"https://uc.lab.local/cmdb/collections/new/settings/composition\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nNo available options\\nNo data\\nAdd\\nNew CI collection\\nComposition\\nConditions\\nTable fields\\nSettings\\nPolicies\\n...\\nDelete CI\\nAdd\\n\\t\\nCI\\n\\t\\nType\\n\\t\\nAdd date\\n\\n\\nNo data\\n\\n\\n50\\nSave\\nCMDB\\nCMDB\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e44\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e45\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e46\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e47\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e48\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e51\"}, {\"tag\": \"button\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e88\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Composition\", \"label\": \"\", \"element_id\": \"e89\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Composition\", \"label\": \"\", \"element_id\": \"e90\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Conditions\", \"label\": \"\", \"element_id\": \"e91\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Conditions\", \"label\": \"\", \"element_id\": \"e92\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Table fields\", \"label\": \"\", \"element_id\": \"e93\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Table fields\", \"label\": \"\", \"element_id\": \"e94\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Settings\", \"label\": \"\", \"element_id\": \"e95\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Settings\", \"label\": \"\", \"element_id\": \"e96\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Policies\", \"label\": \"\", \"element_id\": \"e97\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Policies\", \"label\": \"\", \"element_id\": \"e98\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Delete CI\", \"label\": \"\", \"element_id\": \"e99\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e100\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"All items unselected\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e101\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Show Filter Menu\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e102\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Show Filter Menu\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e103\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e104\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e105\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e106\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e107\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Save\", \"text\": \"Save\", \"label\": \"\", \"element_id\": \"e108\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e77\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e78\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e79\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e80\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Access zones\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e81\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e82\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e83\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e84\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e85\"}], \"screenshot\": \"/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/008-click-semantic.png\", \"console_errors\": [], \"http_errors\": [], \"failed_requests\": [], \"network_request_count\": 0, \"network_requests\": [], \"semantic_name\": \"Add collection\", \"semantic_strategy\": \"role:menuitem\", \"click_status\": \"executed\", \"post_action_wait_ms\": 1000, \"action_execution_id\": \"20260911-003547-e734cc-a0004\", \"network_window_closed\": true, \"network_capture_scope\": \"fetch_xhr_u...<truncated>",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T21:42:40.633213+00:00"
+        },
+        {
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"exact\": true, \"name\": \"CI\"}, \"result\": {\"session_id\": \"20260911-003547-e734cc\", \"action\": \"click-semantic\", \"current_url\": \"https://uc.lab.local/cmdb/collections/new/settings/composition\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nNo available options\\nNo data\\nAdd\\nNew CI collection\\nComposition\\nConditions\\nTable fields\\nSettings\\nPolicies\\n...\\nDelete CI\\nAdd\\n\\t\\nCI\\n\\t\\nType\\n\\t\\nAdd date\\n\\n\\nNo data\\n\\n\\n50\\nSave\\nCMDB\\nCMDB\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e44\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e45\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e46\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e47\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e48\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e51\"}, {\"tag\": \"button\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e88\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Composition\", \"label\": \"\", \"element_id\": \"e89\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Composition\", \"label\": \"\", \"element_id\": \"e90\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Conditions\", \"label\": \"\", \"element_id\": \"e91\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Conditions\", \"label\": \"\", \"element_id\": \"e92\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Table fields\", \"label\": \"\", \"element_id\": \"e93\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Table fields\", \"label\": \"\", \"element_id\": \"e94\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Settings\", \"label\": \"\", \"element_id\": \"e95\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Settings\", \"label\": \"\", \"element_id\": \"e96\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Policies\", \"label\": \"\", \"element_id\": \"e97\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Policies\", \"label\": \"\", \"element_id\": \"e98\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Delete CI\", \"label\": \"\", \"element_id\": \"e99\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e100\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"All items unselected\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e101\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Show Filter Menu\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e102\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Show Filter Menu\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e103\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e104\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e105\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e106\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e107\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Save\", \"text\": \"Save\", \"label\": \"\", \"element_id\": \"e108\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e77\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e78\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e79\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e80\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Access zones\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e81\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e82\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e83\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e84\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e85\"}], \"screenshot\": \"/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/009-click-semantic.png\", \"console_errors\": [], \"http_errors\": [], \"failed_requests\": [], \"network_request_count\": 0, \"network_requests\": [], \"semantic_name\": \"CI\", \"semantic_strategy\": \"text\", \"click_status\": \"executed\", \"post_action_wait_ms\": 1000, \"action_execution_id\": \"20260911-003547-e734cc-a0005\", \"network_window_closed\": true, \"network_capture_scope\": \"fetch_xhr_until_capture_state\"}}",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T21:42:44.200051+00:00"
+        },
+        {
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"name\": \"Type\", \"exact\": true}, \"result\": {\"session_id\": \"20260911-003547-e734cc\", \"action\": \"click-semantic\", \"current_url\": \"https://uc.lab.local/cmdb/collections/new/settings/composition\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nNo available options\\nNo data\\nAdd\\nNew CI collection\\nComposition\\nConditions\\nTable fields\\nSettings\\nPolicies\\n...\\nDelete CI\\nAdd\\n\\t\\nCI\\n\\t\\nType\\n\\t\\nAdd date\\n\\n\\nNo data\\n\\n\\n50\\nSave\\nCMDB\\nCMDB\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e44\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e45\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e46\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e47\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e48\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e51\"}, {\"tag\": \"button\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e88\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Composition\", \"label\": \"\", \"element_id\": \"e89\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Composition\", \"label\": \"\", \"element_id\": \"e90\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Conditions\", \"label\": \"\", \"element_id\": \"e91\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Conditions\", \"label\": \"\", \"element_id\": \"e92\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Table fields\", \"label\": \"\", \"element_id\": \"e93\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Table fields\", \"label\": \"\", \"element_id\": \"e94\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Settings\", \"label\": \"\", \"element_id\": \"e95\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Settings\", \"label\": \"\", \"element_id\": \"e96\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Policies\", \"label\": \"\", \"element_id\": \"e97\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Policies\", \"label\": \"\", \"element_id\": \"e98\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Delete CI\", \"label\": \"\", \"element_id\": \"e99\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e100\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"All items unselected\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e101\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Show Filter Menu\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e102\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Show Filter Menu\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e103\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e104\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e105\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e106\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e107\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Save\", \"text\": \"Save\", \"label\": \"\", \"element_id\": \"e108\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e77\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e78\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e79\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e80\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Access zones\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e81\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e82\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e83\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e84\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e85\"}], \"screenshot\": \"/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/010-click-semantic.png\", \"console_errors\": [], \"http_errors\": [], \"failed_requests\": [], \"network_request_count\": 0, \"network_requests\": [], \"semantic_name\": \"Type\", \"semantic_strategy\": \"text\", \"click_status\": \"executed\", \"post_action_wait_ms\": 1000, \"action_execution_id\": \"20260911-003547-e734cc-a0006\", \"network_window_closed\": true, \"network_capture_scope\": \"fetch_xhr_until_capture_state\"}}",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T21:42:47.816598+00:00"
+        },
+        {
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"exact\": true, \"name\": \"Add date\"}, \"result\": {\"session_id\": \"20260911-003547-e734cc\", \"action\": \"click-semantic\", \"current_url\": \"https://uc.lab.local/cmdb/collections/new/settings/composition\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nNo available options\\nNo data\\nAdd\\nNew CI collection\\nComposition\\nConditions\\nTable fields\\nSettings\\nPolicies\\n...\\nDelete CI\\nAdd\\n\\t\\nCI\\n\\t\\nType\\n\\t\\nAdd date\\n\\n\\nNo data\\n\\n\\n50\\nSave\\nCMDB\\nCMDB\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e44\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e45\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e46\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e47\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e48\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e51\"}, {\"tag\": \"button\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e88\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Composition\", \"label\": \"\", \"element_id\": \"e89\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Composition\", \"label\": \"\", \"element_id\": \"e90\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Conditions\", \"label\": \"\", \"element_id\": \"e91\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Conditions\", \"label\": \"\", \"element_id\": \"e92\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Table fields\", \"label\": \"\", \"element_id\": \"e93\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Table fields\", \"label\": \"\", \"element_id\": \"e94\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Settings\", \"label\": \"\", \"element_id\": \"e95\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Settings\", \"label\": \"\", \"element_id\": \"e96\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Policies\", \"label\": \"\", \"element_id\": \"e97\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Policies\", \"label\": \"\", \"element_id\": \"e98\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Delete CI\", \"label\": \"\", \"element_id\": \"e99\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e100\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"All items unselected\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e101\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Show Filter Menu\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e102\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Show Filter Menu\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e103\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e104\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e105\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e106\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e107\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Save\", \"text\": \"Save\", \"label\": \"\", \"element_id\": \"e108\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e77\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e78\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e79\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e80\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Access zones\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e81\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e82\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e83\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e84\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e85\"}], \"screenshot\": \"/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/011-click-semantic.png\", \"console_errors\": [], \"http_errors\": [], \"failed_requests\": [], \"network_request_count\": 0, \"network_requests\": [], \"semantic_name\": \"Add date\", \"semantic_strategy\": \"text\", \"click_status\": \"executed\", \"post_action_wait_ms\": 1000, \"action_execution_id\": \"20260911-003547-e734cc-a0007\", \"network_window_closed\": true, \"network_capture_scope\": \"fetch_xhr_until_capture_state\"}}",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T21:42:51.516224+00:00"
+        },
+        {
+          "type": "browser_click_semantic",
+          "value": "{\"tool\": \"browser_click_semantic\", \"arguments\": {\"exact\": true, \"name\": \"Save\"}, \"result\": {\"session_id\": \"20260911-003547-e734cc\", \"action\": \"click-semantic-disabled\", \"current_url\": \"https://uc.lab.local/cmdb/collections/new/settings/composition\", \"title\": \"U-Connect\", \"text_preview\": \".\\n...\\n...\\nNo available options\\nNo data\\nAdd\\nNew CI collection\\nComposition\\nConditions\\nTable fields\\nSettings\\nPolicies\\n...\\nDelete CI\\nAdd\\n\\t\\nCI\\n\\t\\nType\\n\\t\\nAdd date\\n\\n\\nNo data\\n\\n\\n50\\nSave\\nCMDB\\nCMDB\", \"interactive_elements\": [{\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e44\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Open profile\", \"text\": \".\\n...\\n...\", \"label\": \"\", \"element_id\": \"e45\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Change language\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e46\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Sign out\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e47\"}, {\"tag\": \"input\", \"type\": \"text\", \"name\": \"\", \"placeholder\": \"Search by collections\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e48\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Add\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e51\"}, {\"tag\": \"button\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e88\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Composition\", \"label\": \"\", \"element_id\": \"e89\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Composition\", \"label\": \"\", \"element_id\": \"e90\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Conditions\", \"label\": \"\", \"element_id\": \"e91\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Conditions\", \"label\": \"\", \"element_id\": \"e92\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Table fields\", \"label\": \"\", \"element_id\": \"e93\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Table fields\", \"label\": \"\", \"element_id\": \"e94\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Settings\", \"label\": \"\", \"element_id\": \"e95\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Settings\", \"label\": \"\", \"element_id\": \"e96\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Policies\", \"label\": \"\", \"element_id\": \"e97\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Policies\", \"label\": \"\", \"element_id\": \"e98\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Delete CI\", \"label\": \"\", \"element_id\": \"e99\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"Add\", \"label\": \"\", \"element_id\": \"e100\"}, {\"tag\": \"input\", \"type\": \"checkbox\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"All items unselected\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e101\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Show Filter Menu\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e102\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Show Filter Menu\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e103\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"First Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e104\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Previous Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e105\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Next Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e106\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Last Page\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e107\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Save\", \"text\": \"Save\", \"label\": \"\", \"element_id\": \"e108\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Remote Desktop\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e77\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Schedule\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e78\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e79\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Policy\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e80\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"Access zones\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e81\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e82\"}, {\"tag\": \"button\", \"type\": \"button\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"\", \"label\": \"\", \"element_id\": \"e83\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e84\"}, {\"tag\": \"a\", \"type\": \"\", \"name\": \"\", \"placeholder\": \"\", \"aria_label\": \"\", \"text\": \"CMDB\", \"label\": \"\", \"element_id\": \"e85\"}], \"screenshot\": \"/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/012-click-semantic-disabled.png\", \"console_errors\": [], \"http_errors\": [], \"failed_requests\": [], \"network_request_count\": 0, \"network_requests\": [], \"error\": \"element_disabled\", \"semantic_name\": \"Save\", \"semantic_strategy\": \"role:button\", \"click_status\": \"not_executed\"}}",
+          "source": "uqa_tool",
+          "created_at": "2026-09-10T21:42:54.366968+00:00"
+        }
+      ],
+      "observations": [
+        {
+          "observation_id": "obs-d89e6f692c",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_open_page",
+            "action": "open",
+            "input": {
+              "url": "https://uc.lab.local"
+            },
+            "session_id": "20260911-003547-e734cc",
+            "action_execution_id": null,
+            "network_window_closed": null,
+            "network_capture_scope": null,
+            "post_action_wait_ms": null,
+            "network_request_count": 10,
+            "network_requests": [
+              {
+                "request_id": "n16",
+                "session_id": "20260911-003547-e734cc",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/cmdb/endpoints?limit=50&offset=0"
+              },
+              {
+                "request_id": "n18",
+                "session_id": "20260911-003547-e734cc",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/users/self"
+              },
+              {
+                "request_id": "n19",
+                "session_id": "20260911-003547-e734cc",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v2/u-auth/users/7461345b-177e-b55b-e5af-3c626a04ce6c/roles-permissions"
+              },
+              {
+                "request_id": "n20",
+                "session_id": "20260911-003547-e734cc",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/general-settings/6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              },
+              {
+                "request_id": "n21",
+                "session_id": "20260911-003547-e734cc",
+                "action_execution_id": null,
+                "method": "POST",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ui-visibility"
+              },
+              {
+                "request_id": "n22",
+                "session_id": "20260911-003547-e734cc",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ci-collection?limit=0"
+              },
+              {
+                "request_id": "n23",
+                "session_id": "20260911-003547-e734cc",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ci-collection-group-item?limit=0"
+              },
+              {
+                "request_id": "n24",
+                "session_id": "20260911-003547-e734cc",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/cmdb/endpoints?limit=50&offset=0"
+              },
+              {
+                "request_id": "n25",
+                "session_id": "20260911-003547-e734cc",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/tags?limit=0"
+              },
+              {
+                "request_id": "n26",
+                "session_id": "20260911-003547-e734cc",
+                "action_execution_id": null,
+                "method": "GET",
+                "status": 200,
+                "type": "xhr",
+                "url": "/api/v1/u-auth/u-sys/api/v1/ci-collection-group?limit=0"
+              }
+            ],
+            "title": "U-Connect",
+            "http_status": 200,
+            "url": "https://uc.lab.local/cmdb?limit=50&offset=0",
+            "path": "/cmdb",
+            "query": {
+              "limit": "50",
+              "offset": "0"
+            },
+            "screenshot": "/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/005-open.png",
+            "text_excerpt": ".\n...\n...\nAll PC\nall\nAdd\nAll PC\nShowing 1 to 4 of 4\nStatus\nType\nName\nAgent\nIP\nUser\nOS\nInventory number\nSerial number\nLocation\nTags\nOrg. unit\nCreated at\nArchived\nZone of access\nhome-server-UC-redos8\n1.2.25\n192.168.50.70\nRED OS 8.0.2\nInvalid serial number\nВоронеж\nЛаборатория\n8/3/2026, 16:26:11\nMaster\nhome-server-UC-astra18\n1.2.25\n192.168.50.69\nAstra Linux\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 18:15:12\nMaster\nhome-server-UC-ubuntu22\n1.2.25\n192.168.50.68\nUbuntu 22.04.4 LTS\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 17:40:02\nMaster\nhome-server-UC-windows10\n1.2.25\n192.168.50.67\nМайкрософт Windows 10 Pro\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 15:39:20\nMaster\n1\n50\nCMDB\nCMDB"
+          },
+          "created_at": "2026-09-10T21:42:29.258256+00:00"
+        },
+        {
+          "observation_id": "obs-757c18c54f",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic",
+            "input": {
+              "name": "Add",
+              "exact": true
+            },
+            "session_id": "20260911-003547-e734cc",
+            "action_execution_id": "20260911-003547-e734cc-a0002",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb?limit=50&offset=0",
+            "path": "/cmdb",
+            "query": {
+              "limit": "50",
+              "offset": "0"
+            },
+            "screenshot": "/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/006-click-semantic.png",
+            "text_excerpt": ".\n...\n...\nAll PC\nall\nAdd\nAll PC\nShowing 1 to 4 of 4\nStatus\nType\nName\nAgent\nIP\nUser\nOS\nInventory number\nSerial number\nLocation\nTags\nOrg. unit\nCreated at\nArchived\nZone of access\nhome-server-UC-redos8\n1.2.25\n192.168.50.70\nRED OS 8.0.2\nInvalid serial number\nВоронеж\nЛаборатория\n8/3/2026, 16:26:11\nMaster\nhome-server-UC-astra18\n1.2.25\n192.168.50.69\nAstra Linux\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 18:15:12\nMaster\nhome-server-UC-ubuntu22\n1.2.25\n192.168.50.68\nUbuntu 22.04.4 LTS\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 17:40:02\nMaster\nhome-server-UC-windows10\n1.2.25\n192.168.50.67\nМайкрософт Windows 10 Pro\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 15:39:20\nMaster\n1\n50\nCMDB\nCMDB\nAdd group\nAdd collection"
+          },
+          "created_at": "2026-09-10T21:42:33.168699+00:00"
+        },
+        {
+          "observation_id": "obs-3ef27273ea",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_fill_semantic",
+            "action": "fill-semantic",
+            "input": {
+              "exact": true,
+              "field": "Search by collections",
+              "text": "KE"
+            },
+            "session_id": "20260911-003547-e734cc",
+            "action_execution_id": "20260911-003547-e734cc-a0003",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb?limit=50&offset=0",
+            "path": "/cmdb",
+            "query": {
+              "limit": "50",
+              "offset": "0"
+            },
+            "screenshot": "/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/007-fill-semantic.png",
+            "text_excerpt": ".\n...\n...\nNo available options\nNo data\nAdd\nAll PC\nShowing 1 to 4 of 4\nStatus\nType\nName\nAgent\nIP\nUser\nOS\nInventory number\nSerial number\nLocation\nTags\nOrg. unit\nCreated at\nArchived\nZone of access\nhome-server-UC-redos8\n1.2.25\n192.168.50.70\nRED OS 8.0.2\nInvalid serial number\nВоронеж\nЛаборатория\n8/3/2026, 16:26:11\nMaster\nhome-server-UC-astra18\n1.2.25\n192.168.50.69\nAstra Linux\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 18:15:12\nMaster\nhome-server-UC-ubuntu22\n1.2.25\n192.168.50.68\nUbuntu 22.04.4 LTS\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 17:40:02\nMaster\nhome-server-UC-windows10\n1.2.25\n192.168.50.67\nМайкрософт Windows 10 Pro\nInvalid serial number\nВоронеж\nЛаборатория\n5/14/2026, 15:39:20\nMaster\n1\n50\nCMDB\nCMDB\nAdd group\nAdd collection"
+          },
+          "created_at": "2026-09-10T21:42:36.952360+00:00"
+        },
+        {
+          "observation_id": "obs-84ee5b4c1c",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic",
+            "input": {
+              "exact": true,
+              "name": "Add collection"
+            },
+            "session_id": "20260911-003547-e734cc",
+            "action_execution_id": "20260911-003547-e734cc-a0004",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb/collections/new/settings/composition",
+            "path": "/cmdb/collections/new/settings/composition",
+            "query": {},
+            "screenshot": "/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/008-click-semantic.png",
+            "text_excerpt": ".\n...\n...\nNo available options\nNo data\nAdd\nNew CI collection\nComposition\nConditions\nTable fields\nSettings\nPolicies\n...\nDelete CI\nAdd\n\t\nCI\n\t\nType\n\t\nAdd date\n\n\nNo data\n\n\n50\nSave\nCMDB\nCMDB"
+          },
+          "created_at": "2026-09-10T21:42:40.631985+00:00"
+        },
+        {
+          "observation_id": "obs-3ab92544cc",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic",
+            "input": {
+              "exact": true,
+              "name": "CI"
+            },
+            "session_id": "20260911-003547-e734cc",
+            "action_execution_id": "20260911-003547-e734cc-a0005",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb/collections/new/settings/composition",
+            "path": "/cmdb/collections/new/settings/composition",
+            "query": {},
+            "screenshot": "/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/009-click-semantic.png",
+            "text_excerpt": ".\n...\n...\nNo available options\nNo data\nAdd\nNew CI collection\nComposition\nConditions\nTable fields\nSettings\nPolicies\n...\nDelete CI\nAdd\n\t\nCI\n\t\nType\n\t\nAdd date\n\n\nNo data\n\n\n50\nSave\nCMDB\nCMDB"
+          },
+          "created_at": "2026-09-10T21:42:44.198993+00:00"
+        },
+        {
+          "observation_id": "obs-9a77df0fcb",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic",
+            "input": {
+              "name": "Type",
+              "exact": true
+            },
+            "session_id": "20260911-003547-e734cc",
+            "action_execution_id": "20260911-003547-e734cc-a0006",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb/collections/new/settings/composition",
+            "path": "/cmdb/collections/new/settings/composition",
+            "query": {},
+            "screenshot": "/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/010-click-semantic.png",
+            "text_excerpt": ".\n...\n...\nNo available options\nNo data\nAdd\nNew CI collection\nComposition\nConditions\nTable fields\nSettings\nPolicies\n...\nDelete CI\nAdd\n\t\nCI\n\t\nType\n\t\nAdd date\n\n\nNo data\n\n\n50\nSave\nCMDB\nCMDB"
+          },
+          "created_at": "2026-09-10T21:42:47.815289+00:00"
+        },
+        {
+          "observation_id": "obs-630d4e0605",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic",
+            "input": {
+              "exact": true,
+              "name": "Add date"
+            },
+            "session_id": "20260911-003547-e734cc",
+            "action_execution_id": "20260911-003547-e734cc-a0007",
+            "network_window_closed": true,
+            "network_capture_scope": "fetch_xhr_until_capture_state",
+            "post_action_wait_ms": 1000,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb/collections/new/settings/composition",
+            "path": "/cmdb/collections/new/settings/composition",
+            "query": {},
+            "screenshot": "/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/011-click-semantic.png",
+            "text_excerpt": ".\n...\n...\nNo available options\nNo data\nAdd\nNew CI collection\nComposition\nConditions\nTable fields\nSettings\nPolicies\n...\nDelete CI\nAdd\n\t\nCI\n\t\nType\n\t\nAdd date\n\n\nNo data\n\n\n50\nSave\nCMDB\nCMDB"
+          },
+          "created_at": "2026-09-10T21:42:51.515011+00:00"
+        },
+        {
+          "observation_id": "obs-705804904e",
+          "type": "ui_state",
+          "source": "browser",
+          "data": {
+            "tool": "browser_click_semantic",
+            "action": "click-semantic-disabled",
+            "input": {
+              "exact": true,
+              "name": "Save"
+            },
+            "session_id": "20260911-003547-e734cc",
+            "action_execution_id": null,
+            "network_window_closed": null,
+            "network_capture_scope": null,
+            "post_action_wait_ms": null,
+            "network_request_count": 0,
+            "network_requests": [],
+            "title": "U-Connect",
+            "http_status": null,
+            "url": "https://uc.lab.local/cmdb/collections/new/settings/composition",
+            "path": "/cmdb/collections/new/settings/composition",
+            "query": {},
+            "screenshot": "/opt/uqa/artifacts/browser/d.storozheva/20260911-003547-e734cc/012-click-semantic-disabled.png",
+            "text_excerpt": ".\n...\n...\nNo available options\nNo data\nAdd\nNew CI collection\nComposition\nConditions\nTable fields\nSettings\nPolicies\n...\nDelete CI\nAdd\n\t\nCI\n\t\nType\n\t\nAdd date\n\n\nNo data\n\n\n50\nSave\nCMDB\nCMDB"
+          },
+          "created_at": "2026-09-10T21:42:54.365308+00:00"
+        }
+      ],
+      "candidate_facts": [],
+      "notes": []
+    }
+  ],
+  "summary": null,
+  "jira_comment": null
+}

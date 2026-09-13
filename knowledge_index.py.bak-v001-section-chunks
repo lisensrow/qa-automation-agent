@@ -1,0 +1,573 @@
+import re
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+
+from docx import Document
+from docx.document import Document as _Document
+from docx.table import Table
+from docx.text.paragraph import Paragraph
+from docx.oxml.table import CT_Tbl
+from docx.oxml.text.paragraph import CT_P
+
+
+SOURCE_DIR = Path("/opt/uqa/knowledge/source")
+DB_PATH = Path("/opt/uqa/knowledge/index/knowledge.db")
+
+TARGET_CHUNK_CHARS = 2400
+MAX_CHUNK_CHARS = 3600
+OVERLAP_BLOCKS = 2
+
+
+def _now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _normalize_text(text: str) -> str:
+    text = text.replace("\xa0", " ")
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def _iter_docx_blocks(doc):
+    if isinstance(doc, _Document):
+        parent = doc.element.body
+    else:
+        raise ValueError("Unsupported DOCX parent")
+
+    for child in parent.iterchildren():
+        if isinstance(child, CT_P):
+            yield Paragraph(child, doc)
+
+        elif isinstance(child, CT_Tbl):
+            yield Table(child, doc)
+
+
+def _read_docx(path: Path):
+    doc = Document(path)
+
+    blocks = []
+    current_heading = ""
+
+    for item in _iter_docx_blocks(doc):
+        if isinstance(item, Paragraph):
+            text = _normalize_text(item.text)
+
+            if not text:
+                continue
+
+            style_name = ""
+
+            try:
+                if item.style:
+                    style_name = (
+                        item.style.name or ""
+                    ).lower()
+            except Exception:
+                pass
+
+            is_heading = (
+                style_name.startswith("heading")
+                or style_name.startswith("заголовок")
+            )
+
+            if is_heading:
+                current_heading = text
+
+                blocks.append(
+                    {
+                        "heading": current_heading,
+                        "text": text,
+                        "type": "heading",
+                    }
+                )
+            else:
+                blocks.append(
+                    {
+                        "heading": current_heading,
+                        "text": text,
+                        "type": "paragraph",
+                    }
+                )
+
+        elif isinstance(item, Table):
+            for row in item.rows:
+                cells = []
+
+                for cell in row.cells:
+                    value = _normalize_text(
+                        cell.text
+                    )
+
+                    if value:
+                        cells.append(value)
+
+                if cells:
+                    blocks.append(
+                        {
+                            "heading": current_heading,
+                            "text": " | ".join(cells),
+                            "type": "table",
+                        }
+                    )
+
+    return blocks
+
+
+def _read_text(path: Path):
+    text = path.read_text(
+        encoding="utf-8",
+        errors="replace",
+    )
+
+    blocks = []
+    current_heading = ""
+
+    for raw in text.splitlines():
+        line = _normalize_text(raw)
+
+        if not line:
+            continue
+
+        if line.startswith("#"):
+            heading = line.lstrip("#").strip()
+
+            if heading:
+                current_heading = heading
+
+        blocks.append(
+            {
+                "heading": current_heading,
+                "text": line,
+                "type": "text",
+            }
+        )
+
+    return blocks
+
+
+def read_document(path: Path):
+    suffix = path.suffix.lower()
+
+    if suffix == ".docx":
+        return _read_docx(path)
+
+    if suffix in (
+        ".md",
+        ".txt",
+    ):
+        return _read_text(path)
+
+    raise ValueError(
+        f"Unsupported file type: {suffix}"
+    )
+
+
+def make_chunks(blocks):
+    chunks = []
+
+    current = []
+    current_chars = 0
+    current_heading = ""
+
+    def flush():
+        nonlocal current
+        nonlocal current_chars
+        nonlocal current_heading
+
+        if not current:
+            return
+
+        content = "\n".join(
+            item["text"]
+            for item in current
+        ).strip()
+
+        if content:
+            heading = ""
+
+            for item in reversed(current):
+                if item.get("heading"):
+                    heading = item["heading"]
+                    break
+
+            chunks.append(
+                {
+                    "heading": heading,
+                    "content": content,
+                }
+            )
+
+        overlap = current[-OVERLAP_BLOCKS:]
+
+        current = list(overlap)
+
+        current_chars = sum(
+            len(item["text"]) + 1
+            for item in current
+        )
+
+        current_heading = (
+            current[-1].get("heading", "")
+            if current
+            else ""
+        )
+
+    for block in blocks:
+        text = block["text"]
+
+        # Один гигантский абзац режем отдельно.
+        if len(text) > MAX_CHUNK_CHARS:
+            flush()
+
+            start = 0
+
+            while start < len(text):
+                end = start + TARGET_CHUNK_CHARS
+
+                piece = text[start:end]
+
+                chunks.append(
+                    {
+                        "heading": block.get(
+                            "heading",
+                            "",
+                        ),
+                        "content": piece,
+                    }
+                )
+
+                start = end
+
+            current = []
+            current_chars = 0
+            continue
+
+        if (
+            current
+            and current_chars + len(text)
+            > TARGET_CHUNK_CHARS
+        ):
+            flush()
+
+        current.append(block)
+
+        current_chars += len(text) + 1
+
+        if block.get("heading"):
+            current_heading = block["heading"]
+
+    flush()
+
+    return chunks
+
+
+def _connect():
+    DB_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    con = sqlite3.connect(DB_PATH)
+
+    con.execute(
+        """
+        CREATE TABLE IF NOT EXISTS metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+        """
+    )
+
+    con.execute(
+        """
+        CREATE VIRTUAL TABLE IF NOT EXISTS chunks
+        USING fts5(
+            source UNINDEXED,
+            chunk_no UNINDEXED,
+            heading,
+            content,
+            tokenize='unicode61 remove_diacritics 2'
+        )
+        """
+    )
+
+    return con
+
+
+def build_index():
+    SOURCE_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    con = _connect()
+
+    con.execute("DELETE FROM chunks")
+    con.execute("DELETE FROM metadata")
+
+    supported = {
+        ".docx",
+        ".md",
+        ".txt",
+    }
+
+    documents = 0
+    chunks_total = 0
+    skipped = []
+
+    for path in sorted(
+        SOURCE_DIR.rglob("*")
+    ):
+        if not path.is_file():
+            continue
+
+        if path.suffix.lower() not in supported:
+            skipped.append(
+                str(
+                    path.relative_to(
+                        SOURCE_DIR
+                    )
+                )
+            )
+            continue
+
+        try:
+            blocks = read_document(path)
+            chunks = make_chunks(blocks)
+
+        except Exception as exc:
+            print(
+                f"ERROR {path.name}: {exc}"
+            )
+            continue
+
+        relative = str(
+            path.relative_to(SOURCE_DIR)
+        )
+
+        for index, chunk in enumerate(
+            chunks,
+            start=1,
+        ):
+            con.execute(
+                """
+                INSERT INTO chunks(
+                    source,
+                    chunk_no,
+                    heading,
+                    content
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    relative,
+                    index,
+                    chunk["heading"],
+                    chunk["content"],
+                ),
+            )
+
+        documents += 1
+        chunks_total += len(chunks)
+
+        print(
+            f"INDEXED: {relative} "
+            f"blocks={len(blocks)} "
+            f"chunks={len(chunks)}"
+        )
+
+    con.execute(
+        """
+        INSERT INTO metadata(key, value)
+        VALUES('indexed_at', ?)
+        """,
+        (_now(),),
+    )
+
+    con.execute(
+        """
+        INSERT INTO metadata(key, value)
+        VALUES('documents', ?)
+        """,
+        (str(documents),),
+    )
+
+    con.execute(
+        """
+        INSERT INTO metadata(key, value)
+        VALUES('chunks', ?)
+        """,
+        (str(chunks_total),),
+    )
+
+    con.commit()
+    con.close()
+
+    print()
+    print("BUILD COMPLETE")
+    print("DOCUMENTS:", documents)
+    print("CHUNKS   :", chunks_total)
+
+    if skipped:
+        print("SKIPPED  :", len(skipped))
+
+        for item in skipped:
+            print(" -", item)
+
+
+def _make_fts_query(query: str):
+    tokens = re.findall(
+        r"[A-Za-zА-Яа-яЁё0-9_.-]+",
+        query,
+    )
+
+    cleaned = []
+
+    for token in tokens:
+        token = token.strip(
+            "._-"
+        )
+
+        if len(token) < 2:
+            continue
+
+        # prefix search помогает:
+        # плагин -> плагины / плагина
+        escaped = token.replace('"', '""')
+
+        cleaned.append(
+            f'"{escaped}"*'
+        )
+
+    if not cleaned:
+        raise ValueError(
+            "Search query contains no useful tokens"
+        )
+
+    return " OR ".join(cleaned)
+
+
+def search(
+    query: str,
+    limit: int = 5,
+):
+    limit = max(
+        1,
+        min(int(limit), 20),
+    )
+
+    fts_query = _make_fts_query(
+        query
+    )
+
+    con = _connect()
+
+    rows = con.execute(
+        """
+        SELECT
+            rowid,
+            source,
+            chunk_no,
+            heading,
+            content,
+            bm25(chunks) AS score
+        FROM chunks
+        WHERE chunks MATCH ?
+        ORDER BY score
+        LIMIT ?
+        """,
+        (
+            fts_query,
+            limit,
+        ),
+    ).fetchall()
+
+    con.close()
+
+    result = []
+
+    for row in rows:
+        result.append(
+            {
+                "rowid": row[0],
+                "source": row[1],
+                "chunk_no": row[2],
+                "heading": row[3],
+                "content": row[4],
+                "score": row[5],
+            }
+        )
+
+    return result
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+
+    sub = parser.add_subparsers(
+        dest="command",
+        required=True,
+    )
+
+    sub.add_parser("build")
+
+    search_parser = sub.add_parser(
+        "search"
+    )
+
+    search_parser.add_argument(
+        "query"
+    )
+
+    search_parser.add_argument(
+        "--limit",
+        type=int,
+        default=5,
+    )
+
+    args = parser.parse_args()
+
+    if args.command == "build":
+        build_index()
+
+    elif args.command == "search":
+        results = search(
+            args.query,
+            limit=args.limit,
+        )
+
+        print(
+            f"RESULTS: {len(results)}"
+        )
+
+        for i, item in enumerate(
+            results,
+            start=1,
+        ):
+            print()
+            print(
+                f"=== {i} ==="
+            )
+            print(
+                "SOURCE:",
+                item["source"],
+            )
+            print(
+                "CHUNK :",
+                item["chunk_no"],
+            )
+            print(
+                "HEADING:",
+                item["heading"],
+            )
+            print(
+                "SCORE:",
+                item["score"],
+            )
+            print(
+                item["content"][:2000]
+            )

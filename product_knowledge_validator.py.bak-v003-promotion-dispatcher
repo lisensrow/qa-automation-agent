@@ -1,0 +1,399 @@
+import json
+
+from product_knowledge_store import (
+    _connect,
+    migrate_fact_scopes_schema,
+    set_fact_scope_status,
+)
+
+
+RUNTIME_FLAGS_UI_API_BINDING = (
+    "runtime_ui_action_observed",
+    "runtime_api_exchange_observed",
+    "backend_request_correlated",
+)
+
+DOC_FLAGS_UI_API_BINDING = (
+    "documentation_api_endpoint_supported",
+    "documentation_query_parameter_supported",
+    "documentation_same_reference_supported",
+)
+
+
+def _all_true(data, keys):
+    return all(
+        data.get(key) is True
+        for key in keys
+    )
+
+
+def evaluate_ui_api_binding_scope(
+    fact_key: str,
+    installation_architecture: str,
+    server_version: str,
+):
+    """
+    Read-only validator.
+
+    Ничего в Product Knowledge не изменяет.
+    Только решает, достаточно ли evidence
+    для candidate -> verified.
+    """
+
+    migrate_fact_scopes_schema()
+
+    installation_architecture = (
+        str(installation_architecture)
+        .strip()
+        .lower()
+    )
+
+    server_version = (
+        str(server_version)
+        .strip()
+    )
+
+    with _connect() as conn:
+        fact = conn.execute(
+            """
+            SELECT
+                fact_key,
+                fact_type,
+                statement
+            FROM facts
+            WHERE fact_key = ?
+            """,
+            (fact_key,),
+        ).fetchone()
+
+        if fact is None:
+            return {
+                "decision": "not_found",
+                "fact_key": fact_key,
+            }
+
+        if fact["fact_type"] != "ui_api_binding":
+            return {
+                "decision": "unsupported_fact_type",
+                "fact_key": fact_key,
+                "fact_type": fact["fact_type"],
+            }
+
+        scope = conn.execute(
+            """
+            SELECT *
+            FROM fact_scopes
+            WHERE fact_key = ?
+              AND installation_architecture = ?
+              AND server_version = ?
+            """,
+            (
+                fact_key,
+                installation_architecture,
+                server_version,
+            ),
+        ).fetchone()
+
+        if scope is None:
+            return {
+                "decision": "scope_not_found",
+                "fact_key": fact_key,
+                "installation_architecture":
+                    installation_architecture,
+                "server_version":
+                    server_version,
+            }
+
+        rows = conn.execute(
+            """
+            SELECT
+                job_id,
+                case_id,
+                stand,
+                deployment_version,
+                verification_json,
+                source_observation_ids_json,
+                created_at
+            FROM confirmations
+            WHERE fact_key = ?
+              AND installation_architecture = ?
+              AND server_version = ?
+            ORDER BY created_at
+            """,
+            (
+                fact_key,
+                installation_architecture,
+                server_version,
+            ),
+        ).fetchall()
+
+    confirmations = []
+
+    for row in rows:
+        verification = json.loads(
+            row["verification_json"]
+        )
+
+        source_ids = json.loads(
+            row["source_observation_ids_json"]
+        )
+
+        runtime_flags_ok = _all_true(
+            verification,
+            RUNTIME_FLAGS_UI_API_BINDING,
+        )
+
+        # Для ui_api_binding ожидаем как минимум
+        # UI + API + backend observation.
+        traceable = (
+            isinstance(source_ids, list)
+            and len(set(source_ids)) >= 3
+        )
+
+        runtime_ok = (
+            runtime_flags_ok
+            and traceable
+        )
+
+        docs_ok = _all_true(
+            verification,
+            DOC_FLAGS_UI_API_BINDING,
+        )
+
+        confirmations.append(
+            {
+                "job_id": row["job_id"],
+                "case_id": row["case_id"],
+                "stand": row["stand"],
+                "deployment_version":
+                    row["deployment_version"],
+                "created_at": row["created_at"],
+                "runtime_ok": runtime_ok,
+                "docs_ok": docs_ok,
+                "source_observation_count":
+                    len(source_ids),
+                "source_observation_ids":
+                    list(source_ids),
+            }
+        )
+
+    strong_runtime = [
+        item
+        for item in confirmations
+        if item["runtime_ok"]
+    ]
+
+    distinct_jobs = {
+        item["job_id"]
+        for item in strong_runtime
+        if item["job_id"]
+    }
+
+    distinct_stands = {
+        item["stand"]
+        for item in strong_runtime
+        if item["stand"]
+    }
+
+    docs_supported = [
+        item
+        for item in strong_runtime
+        if item["docs_ok"]
+    ]
+
+    repeated_runtime = (
+        len(distinct_jobs) >= 2
+    )
+
+    docs_corroborated = (
+        len(docs_supported) >= 1
+    )
+
+    cross_stand_runtime = (
+        len(distinct_stands) >= 2
+    )
+
+    eligible = (
+        repeated_runtime
+        and (
+            docs_corroborated
+            or cross_stand_runtime
+        )
+    )
+
+    if eligible:
+        if docs_corroborated:
+            route = (
+                "repeated_runtime_plus_docs"
+            )
+        else:
+            route = (
+                "cross_stand_runtime"
+            )
+
+        decision = (
+            "eligible_for_verified"
+        )
+
+    else:
+        route = None
+        decision = "keep_candidate"
+
+    reasons = []
+
+    if not repeated_runtime:
+        reasons.append(
+            "need_at_least_2_distinct_jobs_with_strong_runtime"
+        )
+
+    if (
+        repeated_runtime
+        and not docs_corroborated
+        and not cross_stand_runtime
+    ):
+        reasons.append(
+            "need_docs_corroboration_or_second_stand"
+        )
+
+    return {
+        "validator_policy":
+            "ui_api_binding_v1",
+        "policy_version": 1,
+        "decision": decision,
+        "route": route,
+        "fact_key": fact_key,
+        "fact_type": fact["fact_type"],
+        "statement": fact["statement"],
+        "scope": {
+            "installation_architecture":
+                installation_architecture,
+            "server_version":
+                server_version,
+            "current_status":
+                scope["status"],
+        },
+        "metrics": {
+            "scoped_confirmations":
+                len(confirmations),
+            "strong_runtime_confirmations":
+                len(strong_runtime),
+            "distinct_jobs":
+                len(distinct_jobs),
+            "distinct_stands":
+                len(distinct_stands),
+            "docs_corroborated_confirmations":
+                len(docs_supported),
+        },
+        "reasons": reasons,
+        "confirmations": confirmations,
+    }
+
+
+
+def promote_ui_api_binding_scope_if_eligible(
+    fact_key: str,
+    installation_architecture: str,
+    server_version: str,
+):
+    """
+    Безопасная автоматическая promotion.
+
+    Может делать только:
+        candidate -> verified
+
+    Никогда автоматически не меняет:
+        verified
+        conflict
+        deprecated
+
+    Решение и supporting evidence полностью
+    сохраняются в status history.
+    """
+
+    decision = evaluate_ui_api_binding_scope(
+        fact_key=fact_key,
+        installation_architecture=(
+            installation_architecture
+        ),
+        server_version=server_version,
+    )
+
+    if decision.get(
+        "decision"
+    ) != "eligible_for_verified":
+        return {
+            "action": "keep_candidate",
+            "changed": False,
+            "decision": decision,
+        }
+
+    scope = decision.get(
+        "scope"
+    ) or {}
+
+    current_status = scope.get(
+        "current_status"
+    )
+
+    if current_status == "verified":
+        return {
+            "action": "already_verified",
+            "changed": False,
+            "decision": decision,
+        }
+
+    if current_status in (
+        "conflict",
+        "deprecated",
+    ):
+        return {
+            "action": (
+                "promotion_blocked_by_status"
+            ),
+            "changed": False,
+            "current_status":
+                current_status,
+            "decision": decision,
+        }
+
+    if current_status != "candidate":
+        return {
+            "action": (
+                "promotion_blocked_unknown_status"
+            ),
+            "changed": False,
+            "current_status":
+                current_status,
+            "decision": decision,
+        }
+
+    result = set_fact_scope_status(
+        fact_key=fact_key,
+        installation_architecture=(
+            installation_architecture
+        ),
+        server_version=server_version,
+        status="verified",
+        source="validator",
+        reason=(
+            "ui_api_binding_v1: "
+            + str(
+                decision.get("route")
+            )
+        ),
+        decision=decision,
+    )
+
+    return {
+        "action": "promoted",
+        "changed": bool(
+            result.get("changed")
+        ),
+        "event_id": result.get(
+            "event_id"
+        ),
+        "status": result.get(
+            "status"
+        ),
+        "decision": decision,
+    }

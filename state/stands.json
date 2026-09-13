@@ -1,0 +1,16 @@
+{
+  "uc.lab.local": {
+    "stand_id": "uc.lab.local",
+    "web_url": "https://uc.lab.local",
+    "ssh_host": "uc.lab.local",
+    "ssh_username": "adminacc",
+    "ssh_password_enc": "gAAAAABqooYGypC7oVhytrdeTMf79xZC9nxwF6wcvdDNPByIE46SZAOEQ_Z8_ZaDTFaXVeyEfRp__cRIHYgTBMf2FnIw-6OuXg==",
+    "created_at": "2026-09-10T10:27:18.888164+00:00",
+    "updated_at": "2026-09-10T11:15:32.318574+00:00",
+    "last_verified_at": "2026-09-13T20:21:17.174117+00:00",
+    "last_error": null,
+    "aliases": [
+      "lab"
+    ]
+  }
+}

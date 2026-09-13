@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-09-13T20:04:14.766258+00:00",
+  "blockers": [
+    {
+      "blocker_id": "blk-access-zone-cleanup",
+      "created_at": "2026-09-13T20:04:14.766193+00:00",
+      "source_jobs": [
+        "20260913-132945-60149183"
+      ],
+      "affected_resources": [
+        "res-8f69030954b1"
+      ],
+      "capability": "cleanup.access_zone",
+      "status": "open",
+      "reason": "U-Connect exposes create/update but no working delete or archive operation for Access Zones",
+      "product_versions": {
+        "backend": "4.9.0",
+        "frontend": "2.21.0"
+      },
+      "evidence": {
+        "ui_actions": [
+          "Edit",
+          "Cancel",
+          "Save"
+        ],
+        "delete_member_status": 405,
+        "archive_member_status": 404
+      },
+      "retry_when": "backend or frontend version changes",
+      "required_work": "Re-run safe capability probe; when a destructive operation exists, map it through v069 policy and complete cleanup",
+      "last_seen_at": "2026-09-13T20:04:14.766193+00:00",
+      "updated_at": "2026-09-13T20:04:14.766193+00:00",
+      "resolved_at": null
+    }
+  ]
+}

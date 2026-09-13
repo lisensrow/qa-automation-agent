@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "job_id": "20260912-125448-33b50946",
+  "owner": "adminacc",
+  "job_type": "regression",
+  "external_id": null,
+  "stand": "uc.lab.local",
+  "stand_identity": {
+    "status": "ok",
+    "stand": "uc.lab.local",
+    "installation_architecture": "ansible",
+    "server_version": "4.9.0",
+    "server_version_source": "u-backend_image_tag",
+    "deployment_version": "2.3.16",
+    "desired_deployment_version": "2.3.16",
+    "deployment_partial": false,
+    "deployment_version_source": "/var/lib/uconnect/install-state/active-release.yml",
+    "desired_state_digest": "sha256:f4f04ba2e9449029fb9d53835ee1092f24dc8efdbe804377de46dfa91c372925",
+    "active_state_digest": "sha256:d8c1e589d4ec6fb3f99515e50651a76f464280a799700e9f897e985e5c8577c5"
+  },
+  "request": "Проведи ровно один последовательный regression test case на стенде https://uc.lab.local: создай ровно одну временную тестовую зону с точным именем uqa-e2e-cleanup-20260912-152500, зарегистрируй созданный ресурс UQA для cleanup и проверь автоматическую очистку. Не используй другое имя, не создавай другие сущности и не изменяй существующие объекты. Внутри этого одного case задай ровно четыре отдельные checks: 1) зона с точным именем создана и отображается; 2) ресурс зарегистрирован UQA для cleanup; 3) cleanup удалил именно эту зону; 4) после cleanup зона с этим именем не существует. Выводы только по фактическим evidence. Перед WRITE или DESTRUCTIVE дождись подтверждения.",
+  "status": "cancelled",
+  "created_at": "2026-09-12T12:54:48.078390+00:00",
+  "updated_at": "2026-09-12T12:55:30.904997+00:00",
+  "test_cases": [],
+  "resources": [],
+  "cleanup_status": "not_required",
+  "cleanup_started_at": null,
+  "cleanup_finished_at": null,
+  "summary": "Regression cancelled before execution: proposed plan was not confirmed.",
+  "jira_comment": null
+}
