@@ -4,6 +4,15 @@ __pycache__/
 
 browsers/
 artifacts/
+state/
+secrets/
+
+knowledge/index/*.db*
+product_knowledge/*.db*
+
+*.log
+*.tmp
+*.swp
 *.bak
 *.bak-*
 *.bak.*
