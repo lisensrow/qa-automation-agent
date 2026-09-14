@@ -7625,15 +7625,25 @@ def _cleanup_browser_verification_succeeded(
         "browser_delete_json_resource",
         "browser_archive_json_resource",
     }:
-        return (
-            result.get("status") == "ok"
-            and 200 <= int(
+        mutation_succeeded = (
+            result.get("already_satisfied") is True
+            or 200 <= int(
                 result.get("mutation_status")
                 or result.get("delete_status")
                 or 0
             ) < 300
+        )
+        return (
+            result.get("status") == "ok"
+            and mutation_succeeded
             and 200 <= int(result.get("post_delete_status") or 0) < 300
-            and result.get("post_delete_match_count") == 0
+            and (
+                result.get("post_delete_verified") is True
+                or (
+                    "post_delete_verified" not in result
+                    and result.get("post_delete_match_count") == 0
+                )
+            )
         )
 
     if tool_name != "browser_inspect_semantic":
@@ -7694,8 +7704,12 @@ def _cleanup_event_summary(
         "mutation_status",
         "mutation_method",
         "operation_suffix",
+        "mutation_executed",
+        "already_satisfied",
         "post_delete_status",
         "post_delete_match_count",
+        "post_delete_archived_match_count",
+        "post_delete_verified",
     ):
         if key in result:
             result_summary[key] = result[key]
@@ -7725,6 +7739,22 @@ def _cleanup_navigation_context(job):
             data = observation.get("data") or {}
             tool_name = str(data.get("tool") or "")
             arguments = data.get("input") or {}
+
+            if tool_name == "browser_open_page":
+                http_status = int(data.get("http_status") or 0)
+
+                if 200 <= http_status < 400:
+                    observed_open_url = str(
+                        arguments.get("url")
+                        or ""
+                    ).strip()
+
+                    if (
+                        observed_open_url.startswith(("http://", "https://"))
+                        and observed_open_url not in urls
+                    ):
+                        urls.append(observed_open_url)
+
             action_class = classify_tool_action(
                 tool_name,
                 arguments,

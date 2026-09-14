@@ -96,6 +96,40 @@ assert uqa._cleanup_browser_verification_succeeded(
     "browser_archive_json_resource",
     {
         "status": "ok",
+        "mutation_status": 202,
+        "post_delete_status": 200,
+        "post_delete_match_count": 1,
+        "post_delete_archived_match_count": 1,
+        "post_delete_verified": True,
+    },
+)
+assert uqa._cleanup_browser_verification_succeeded(
+    "browser_archive_json_resource",
+    {
+        "status": "ok",
+        "mutation_status": None,
+        "mutation_executed": False,
+        "already_satisfied": True,
+        "post_delete_status": 200,
+        "post_delete_match_count": 1,
+        "post_delete_archived_match_count": 1,
+        "post_delete_verified": True,
+    },
+)
+assert not uqa._cleanup_browser_verification_succeeded(
+    "browser_delete_json_resource",
+    {
+        "status": "ok",
+        "mutation_status": 204,
+        "post_delete_status": 200,
+        "post_delete_match_count": 1,
+        "post_delete_verified": False,
+    },
+)
+assert uqa._cleanup_browser_verification_succeeded(
+    "browser_archive_json_resource",
+    {
+        "status": "ok",
         "mutation_status": 200,
         "post_delete_status": 200,
         "post_delete_match_count": 0,

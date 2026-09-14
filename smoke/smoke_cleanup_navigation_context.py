@@ -17,11 +17,17 @@ exec(
 )
 
 
-def observation(tool, name):
+def observation(tool, name=None, *, url=None, http_status=None):
+    arguments = {}
+    if name is not None:
+        arguments["name"] = name
+    if url is not None:
+        arguments["url"] = url
     return {
         "data": {
             "tool": tool,
-            "input": {"name": name},
+            "input": arguments,
+            "http_status": http_status,
         }
     }
 
@@ -66,4 +72,25 @@ assert result == {
 }
 assert "Create" not in str(result)
 assert "Save" not in str(result)
+
+job_without_request_url = {
+    "request": "Создай тестовый ресурс на текущем стенде",
+    "test_cases": [{
+        "observations": [
+            observation(
+                "browser_open_page",
+                url="https://stand.example.test",
+                http_status=200,
+            ),
+            observation("browser_click_semantic", "Dictionaries"),
+            observation("browser_click_semantic", "Create"),
+        ]
+    }],
+}
+result = scope["_cleanup_navigation_context"](job_without_request_url)
+assert result["urls"] == ["https://stand.example.test"]
+assert result["observed_navigation_before_first_mutation"] == [{
+    "tool": "browser_click_semantic",
+    "arguments": {"name": "Dictionaries"},
+}]
 print("cleanup navigation context smoke: PASS")

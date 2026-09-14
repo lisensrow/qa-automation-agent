@@ -2159,6 +2159,18 @@ class BrowserSession:
                 }
                 return null;
             };
+            const isArchived = (item) => {
+                if (!item || typeof item !== 'object') return false;
+                for (const key of ['is_archived', 'archived', 'isArchived']) {
+                    if (item[key] === true) return true;
+                    if (String(item[key] ?? '').toLowerCase() === 'true') {
+                        return true;
+                    }
+                }
+                return ['archived'].includes(
+                    String(item.status ?? item.state ?? '').toLowerCase()
+                );
+            };
             const readCollection = async () => {
                 const response = await fetch(collectionUrl, {
                     method: 'GET',
@@ -2187,6 +2199,26 @@ class BrowserSession:
                 };
             }
             const identifier = before.identifiers[0];
+            const archiveOperation =
+                mutationMethod === 'POST' && operationSuffix === 'archive';
+            if (archiveOperation && isArchived(before.matches[0])) {
+                return {
+                    phase: 'complete',
+                    preflight_status: before.status,
+                    exact_match_count: before.matches.length,
+                    identifier_key: identifier.key,
+                    identifier_value: identifier.value,
+                    mutation_method: mutationMethod,
+                    operation_suffix: operationSuffix,
+                    mutation_status: null,
+                    mutation_executed: false,
+                    already_satisfied: true,
+                    post_delete_status: before.status,
+                    post_delete_match_count: before.matches.length,
+                    post_delete_archived_match_count: 1,
+                    post_delete_verified: true,
+                };
+            }
             const parsedMemberUrl = new URL(collectionUrl);
             parsedMemberUrl.pathname =
                 parsedMemberUrl.pathname.replace(/\/+$/, '') +
@@ -2202,6 +2234,10 @@ class BrowserSession:
                 headers: {Accept: 'application/json'},
             });
             const after = await readCollection();
+            const archivedMatches = after.matches.filter(isArchived).length;
+            const verified = archiveOperation
+                ? after.matches.length === 1 && archivedMatches === 1
+                : after.matches.length === 0;
             return {
                 phase: 'complete',
                 preflight_status: before.status,
@@ -2212,8 +2248,11 @@ class BrowserSession:
                 mutation_method: mutationMethod,
                 operation_suffix: operationSuffix || null,
                 mutation_status: deletion.status,
+                mutation_executed: true,
                 post_delete_status: after.status,
                 post_delete_match_count: after.matches.length,
+                post_delete_archived_match_count: archivedMatches,
+                post_delete_verified: verified,
             };
         }
         """
@@ -2255,9 +2294,12 @@ class BrowserSession:
 
         successful = (
             raw.get("phase") == "complete"
-            and 200 <= int(raw.get("mutation_status") or 0) < 300
+            and (
+                raw.get("already_satisfied") is True
+                or 200 <= int(raw.get("mutation_status") or 0) < 300
+            )
             and 200 <= int(raw.get("post_delete_status") or 0) < 300
-            and raw.get("post_delete_match_count") == 0
+            and raw.get("post_delete_verified") is True
         )
         result["executed"] = raw.get("phase") == "complete"
         result["status"] = "ok" if successful else "failed"
