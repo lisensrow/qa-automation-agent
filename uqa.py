@@ -2714,6 +2714,55 @@ def execute_resource_tool(
         }
 
 
+def _tool_history_observed_identifier(messages, candidate):
+    wanted = str(candidate or "").strip()
+
+    if not wanted:
+        return False
+
+    identifier_keys = {
+        "id",
+        "uid",
+        "uuid",
+        "external_id",
+        "identifier_value",
+    }
+
+    def contains_identifier(value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if (
+                    str(key).strip().casefold() in identifier_keys
+                    and str(item or "").strip() == wanted
+                ):
+                    return True
+
+                if contains_identifier(item):
+                    return True
+
+        elif isinstance(value, list):
+            return any(contains_identifier(item) for item in value)
+
+        return False
+
+    for message in reversed(messages or []):
+        if message.get("role") != "tool":
+            continue
+
+        content = message.get("content")
+
+        if isinstance(content, str):
+            try:
+                content = json.loads(content)
+            except json.JSONDecodeError:
+                continue
+
+        if contains_identifier(content):
+            return True
+
+    return False
+
+
 def execute_tool_with_policy(
     name,
     arguments,
@@ -3076,6 +3125,25 @@ def execute_tool_with_policy(
                 "reason": normalization_reason,
             }
 
+    resource_arguments = arguments
+    ignored_external_id = None
+
+    if name == "resource_register":
+        proposed_external_id = str(
+            arguments.get("external_id") or ""
+        ).strip()
+
+        if (
+            proposed_external_id
+            and not _tool_history_observed_identifier(
+                messages,
+                proposed_external_id,
+            )
+        ):
+            resource_arguments = dict(arguments)
+            resource_arguments["external_id"] = None
+            ignored_external_id = proposed_external_id
+
     if name in {
         "resource_register",
         "resource_update",
@@ -3083,7 +3151,7 @@ def execute_tool_with_policy(
     }:
         result = execute_resource_tool(
             name,
-            arguments,
+            resource_arguments,
             job_id,
             case_id,
         )
@@ -3095,6 +3163,9 @@ def execute_tool_with_policy(
 
     if isinstance(result, dict):
         result = dict(result)
+
+        if ignored_external_id is not None:
+            result["external_id_ignored"] = "not_observed_in_tool_history"
 
         if (
             name == "browser_open_page"
@@ -5872,6 +5943,8 @@ def _request_declares_single_workflow(request):
         r"\bone\s+(?:[\w-]+\s+){0,3}"
         r"(?:scenario|workflow|operation|lifecycle)\b",
         r"\bодн(?:ом|ого)\s+(?:test\s*case|тестов\w+\s+кейс\w*)\b",
+        r"\bод(?:ин|на|но)\s+(?:[\w-]+\s+){0,3}"
+        r"(?:test\s*case|тестов\w+\s+кейс\w*|кейс\w*)\b",
         r"\b(?:one|single)\s+test\s*case\b",
         r"\bодн(?:ого|ому|им)\s+и\s+тому\s+же\s+"
         r"(?:объект\w*|ресурс\w*|сущност\w*)\b",
@@ -9567,6 +9640,7 @@ def run_turn(
     action_policy="legacy",
 ):
     failed_semantic_inspections = set()
+    blocked_mutation_calls = set()
 
     for _ in range(MAX_TOOL_STEPS):
         try:
@@ -10146,6 +10220,8 @@ def run_turn(
             )
             semantic_inspection_key = None
             repeated_semantic_inspection = False
+            mutation_call_key = None
+            repeated_blocked_mutation = False
 
             if name == "browser_inspect_semantic":
                 semantic_inspection_key = (
@@ -10155,6 +10231,19 @@ def run_turn(
                 repeated_semantic_inspection = (
                     semantic_inspection_key
                     in failed_semantic_inspections
+                )
+
+            if action_class in {"write", "destructive"}:
+                mutation_call_key = (
+                    str(name or ""),
+                    json.dumps(
+                        arguments,
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                )
+                repeated_blocked_mutation = (
+                    mutation_call_key in blocked_mutation_calls
                 )
 
             console.print(
@@ -10176,6 +10265,18 @@ def run_turn(
                         "reason": (
                             "The same exact semantic target was already "
                             "searched with all strict fallback strategies."
+                        ),
+                    }
+                elif repeated_blocked_mutation:
+                    result = {
+                        "error": "repeated_blocked_mutation",
+                        "status": "blocked_by_policy",
+                        "executed": False,
+                        "action_class": action_class,
+                        "action_policy_status": "blocked",
+                        "reason": (
+                            "The same mutation was already denied by policy "
+                            "during this case."
                         ),
                     }
                 else:
@@ -10370,6 +10471,42 @@ def run_turn(
                 )
                 compact_completed_history(messages)
                 return
+
+            if repeated_blocked_mutation:
+                if job_id and case_id:
+                    finalize_case_blocked(
+                        job_id,
+                        case_id,
+                        "repeated_blocked_mutation",
+                        (
+                            "The agent repeated a WRITE/DESTRUCTIVE action "
+                            "after the same action was denied by policy."
+                        ),
+                    )
+
+                console.print(
+                    "[yellow]UQA Core stopped a repeated policy-denied "
+                    "mutation; case marked BLOCKED.[/yellow]"
+                )
+                compact_completed_history(messages)
+                return
+
+            if (
+                mutation_call_key is not None
+                and result.get("status") == "blocked_by_policy"
+                and result.get("action_policy_status") == "blocked"
+            ):
+                blocked_mutation_calls.add(mutation_call_key)
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "[UQA CORE: MUTATION DENIED]\n"
+                            "Do not repeat the same WRITE or DESTRUCTIVE "
+                            "action. Continue without it or return BLOCKED."
+                        ),
+                    }
+                )
 
             if (
                 semantic_inspection_key is not None

@@ -60,6 +60,74 @@ uqa.run_turn(semantic_messages)
 assert len(executed_semantic_calls) == 1
 assert next(semantic_turns, None) is None
 
+mutation_turns = iter([
+    {
+        "message": {
+            "content": "",
+            "tool_calls": [{
+                "function": {
+                    "name": "browser_click_semantic",
+                    "arguments": {
+                        "name": "Archive",
+                        "exact": True,
+                        "role": "menuitem",
+                    },
+                }
+            }],
+        }
+    },
+    {
+        "message": {
+            "content": "",
+            "tool_calls": [{
+                "function": {
+                    "name": "browser_click_semantic",
+                    "arguments": {
+                        "name": "Archive",
+                        "exact": True,
+                        "role": "menuitem",
+                    },
+                }
+            }],
+        }
+    },
+])
+executed_mutation_calls = []
+uqa.ask_ollama = lambda messages: next(mutation_turns)
+
+
+def fake_blocked_mutation(name, arguments, messages, **kwargs):
+    executed_mutation_calls.append((name, arguments))
+    return {
+        "error": "tool_policy_blocked",
+        "status": "blocked_by_policy",
+        "executed": False,
+        "action_class": "destructive",
+        "action_policy_status": "blocked",
+    }
+
+
+uqa.execute_tool_with_policy = fake_blocked_mutation
+uqa.run_turn([])
+assert len(executed_mutation_calls) == 1
+assert next(mutation_turns, None) is None
+
+identifier_messages = [{
+    "role": "tool",
+    "content": json.dumps({
+        "semantic_name": "resource-name",
+        "identifier_value": "observed-id-123",
+    }),
+}]
+assert uqa._tool_history_observed_identifier(
+    identifier_messages,
+    "observed-id-123",
+)
+assert not uqa._tool_history_observed_identifier(
+    identifier_messages,
+    "resource-name",
+)
+
 
 elements = []
 

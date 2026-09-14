@@ -24,6 +24,10 @@
 - `browser_inspect_semantic` теперь считает переданную role проверяемым сужающим hint: если DOM её не подтверждает, read-only inspection продолжает строгий поиск по тому же имени и явно сообщает о fallback. Это устраняет повторяющийся not-found цикл на выдуманной роли без ослабления точного совпадения имени.
 - Core запоминает неуспешную точную semantic-проверку внутри case. Повтор того же имени, даже с другой придуманной role, не вызывает браузер второй раз: case детерминированно получает `BLOCKED / repeated_semantic_inspection` и сохраняет evidence первого поиска.
 - Добавлен read-only `browser_inspect_table_row`: он требует единственную видимую строку с точным значением ячейки и возвращает структурированные `cells`, `headers` и `values_by_header` для evidence и verdict.
+- `resource_register` больше не принимает придуманный `external_id`: Core сохраняет его только при наличии того же значения в ID-поле предыдущего tool result; иначе имя остаётся, а ID записывается как неизвестный.
+- После отказа policy повтор идентичного WRITE/DESTRUCTIVE в том же case не показывает подтверждение снова и не достигает browser runtime: Core завершает case как `BLOCKED / repeated_blocked_mutation`.
+- Planner Core распознаёт формулировки вида «один последовательный test case» и автоматически объединяет ошибочно разделённые моделью шаги lifecycle в один case с несколькими checks.
+- Реальный Location Job подтвердил create, точное table-row evidence, persistent registration и успешный Cleanup Manager archive; ложный `external_id`, совпавший с именем, очищен из ledger. Verdict остался `BLOCKED` только из-за повторной direct-архивации после policy denial.
 
 ## v069 — General Action Policy
 

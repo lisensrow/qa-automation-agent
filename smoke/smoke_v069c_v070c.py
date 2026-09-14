@@ -100,6 +100,10 @@ assert len(coalesce(
     "Внутри одного test case проверь весь жизненный цикл.",
     split_plan,
 )) == 1
+assert len(coalesce(
+    "Выполни regression как один последовательный test case: создай, проверь и очисти ресурс.",
+    split_plan,
+)) == 1
 assert coalesce("Проверь три независимых страницы.", split_plan) == split_plan
 
 prompt = build_prompt(
