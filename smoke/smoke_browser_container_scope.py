@@ -26,6 +26,8 @@ assert "container" in [arg.arg for arg in methods["click_semantic"].args.args]
 assert "container" in [
     arg.arg for arg in module_functions["click_semantic"].args.args
 ]
+assert "inspect_table_row" in methods
+assert "inspect_table_row" in module_functions
 source = browser_path.read_text(encoding="utf-8")
 assert "lines.includes(wanted)" in source
 assert "semantic_container" in source
@@ -35,7 +37,14 @@ assert "continue through the same strict" in source
 registry = registry_path.read_text(encoding="utf-8")
 assert '"container": {' in registry
 assert "semantic_role_fallback" in registry
+assert '"name": "browser_inspect_table_row"' in registry
 uqa = uqa_path.read_text(encoding="utf-8")
 assert '"container": str(' in uqa
 assert '"name": "Expand"' in uqa
+assert '"browser_inspect_table_row"' in uqa
+observation = (
+    root / "observation_extractor.py"
+).read_text(encoding="utf-8")
+assert '"browser_inspect_table_row"' in observation
+assert '"values_by_header"' in observation
 print("browser container-scope smoke: PASS")

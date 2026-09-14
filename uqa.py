@@ -357,6 +357,8 @@ SYSTEM_PROMPT = """
 - Если документация и фактическое поведение расходятся, явно укажи это как обнаруженное расхождение.
 - Для проверки наличия, видимости или состояния enabled/disabled элемента используй browser_inspect_semantic.
   Не кликай по элементу только ради проверки его состояния.
+- Для проверки записи в таблице используй browser_inspect_table_row с точным значением
+  уникальной ячейки. Не придумывай для строки accessibility role.
 - Для нажатия известного элемента используй browser_click_semantic.
 - Для ввода текста используй browser_fill_semantic и смысловое имя поля.
 - Если после перехода фактически появилась форма Login/Password, а UQA Core
@@ -433,10 +435,10 @@ SYSTEM_PROMPT = """
 - Для status="passed" или status="failed" используй только evidence, где UQA Core вернул uqa_evidence_usable_for_verdict=true.
 - Evidence от blocked_by_policy, tool error или невыполненного действия нельзя использовать ни для PASS, ни для FAIL.
 - Ошибка самого QA-инструмента не является доказательством дефекта U-Connect; в таком случае используй BLOCKED.
-- Если verdict PASS/FAIL основан на browser_inspect_semantic, добавь в check поле "subject" с точным semantic_name проверенного элемента.
+- Если verdict PASS/FAIL основан на browser_inspect_semantic или browser_inspect_table_row, добавь в check поле "subject" с точным semantic_name проверенного элемента или строки.
 - Для такого check добавь поле "observations" со списком реальных uqa_observation_ids, которые вернул тот же tool result.
 - Не придумывай obs-* и не используй observation другого элемента или другого tool-вызова.
-- Для PASS/FAIL на основе browser_inspect_semantic поле assertions обязательно.
+- Для PASS/FAIL на основе browser_inspect_semantic или browser_inspect_table_row поле assertions обязательно.
 - Поддерживаемые assertion fields: visible, enabled, disabled, editable, value, text.
 - Для visible/enabled/disabled/editable используй operator "eq" или "ne" и JSON boolean true/false.
 - Для value/text разрешены operator "eq", "ne", "contains", "not_contains".
@@ -446,7 +448,7 @@ SYSTEM_PROMPT = """
 - Для такого case скопируй subject и assertions из LOCKED REQUIREMENT без изменений.
 - Не заменяй field, operator или expected на основании увиденного runtime результата.
 - Даже если ты передашь другие subject/assertions, UQA Core проигнорирует их и проверит сохранённый locked requirement.
-- В regression case, если LOCKED REQUIREMENT равен null и PASS/FAIL должен основываться на browser_inspect_semantic, не создавай собственный machine requirement вместо Core: используй BLOCKED. UQA Core также принудительно заблокирует такой verdict как requirement_not_machine_locked.
+- В regression case, если LOCKED REQUIREMENT равен null и PASS/FAIL должен основываться на browser_inspect_semantic или browser_inspect_table_row, не создавай собственный machine requirement вместо Core: используй BLOCKED. UQA Core также принудительно заблокирует такой verdict как requirement_not_machine_locked.
 - Путь к screenshot можешь указывать в обычном человеческом тексте результата, но не вместо uqa_evidence_id в structured checks.
 - Если проверка не выполнена из-за недостигнутого предусловия, используй status="blocked" и укажи reason.
 - Служебный JSON должен быть валидным JSON без Markdown внутри блока.
@@ -932,6 +934,7 @@ def classify_tool_action(
         "browser_get_state",
         "browser_get_network_detail",
         "browser_inspect_semantic",
+        "browser_inspect_table_row",
         "resource_list",
     }
 
@@ -4673,7 +4676,7 @@ def verify_structured_check_evidence(
                 )
 
         # ----------------------------------------------------
-        # Semantic binding for browser_inspect_semantic.
+        # Semantic binding for browser semantic and table-row inspections.
         #
         # Evidence tells us which observations were created
         # by that exact tool call. A check may therefore not

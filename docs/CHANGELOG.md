@@ -23,6 +23,7 @@
 - Реальный lifecycle Location подтвердил восстановление cleanup после остановки: созданный ресурс найден по точному ID, архивирован, повторно распознан как уже архивный и переведён ledger в `cleaned`. Сам test case честно завершён `BLOCKED` из-за отдельной ошибки model-side semantic role.
 - `browser_inspect_semantic` теперь считает переданную role проверяемым сужающим hint: если DOM её не подтверждает, read-only inspection продолжает строгий поиск по тому же имени и явно сообщает о fallback. Это устраняет повторяющийся not-found цикл на выдуманной роли без ослабления точного совпадения имени.
 - Core запоминает неуспешную точную semantic-проверку внутри case. Повтор того же имени, даже с другой придуманной role, не вызывает браузер второй раз: case детерминированно получает `BLOCKED / repeated_semantic_inspection` и сохраняет evidence первого поиска.
+- Добавлен read-only `browser_inspect_table_row`: он требует единственную видимую строку с точным значением ячейки и возвращает структурированные `cells`, `headers` и `values_by_header` для evidence и verdict.
 
 ## v069 — General Action Policy
 

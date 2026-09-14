@@ -2382,6 +2382,125 @@ class BrowserSession:
         result["clicked_element"] = element_id
         return result
 
+    def inspect_table_row(
+        self,
+        name: str,
+        exact: bool = True,
+    ):
+        """Inspect one visible table row by an exact cell value."""
+        self._ensure_started()
+        self._reset_diagnostics()
+
+        wanted = " ".join(str(name or "").split())
+
+        if not wanted:
+            return {
+                "error": "table_row_name_required",
+                "status": "error",
+            }
+
+        matches = []
+        rows = self.page.locator("tr")
+
+        try:
+            count = min(rows.count(), 500)
+        except Exception:
+            count = 0
+
+        for index in range(count):
+            row = rows.nth(index)
+
+            try:
+                if not row.is_visible():
+                    continue
+
+                row_data = row.evaluate(
+                    """
+                    row => {
+                        const clean = value => String(value || '')
+                            .replace(/\\s+/g, ' ')
+                            .trim();
+                        const cells = Array.from(
+                            row.querySelectorAll(':scope > th, :scope > td')
+                        ).map(cell => clean(cell.innerText || cell.textContent));
+                        const table = row.closest('table');
+                        const headers = table
+                            ? Array.from(table.querySelectorAll('thead th'))
+                                .map(cell => clean(cell.innerText || cell.textContent))
+                            : [];
+                        const valuesByHeader = {};
+                        if (headers.length === cells.length) {
+                            headers.forEach((header, position) => {
+                                if (header) valuesByHeader[header] = cells[position];
+                            });
+                        }
+                        return {
+                            tag: 'tr',
+                            role: (row.getAttribute('role') || 'row').toLowerCase(),
+                            text: clean(row.innerText || row.textContent),
+                            cells,
+                            headers,
+                            values_by_header: valuesByHeader,
+                            aria_selected: row.getAttribute('aria-selected'),
+                        };
+                    }
+                    """
+                )
+            except Exception:
+                continue
+
+            cells = row_data.get("cells") or []
+            row_text = str(row_data.get("text") or "")
+            matched = (
+                any(cell == wanted for cell in cells)
+                if exact
+                else wanted.casefold() in row_text.casefold()
+            )
+
+            if matched:
+                matches.append((row, row_data))
+
+        if not matches:
+            return {
+                "error": "table_row_not_found",
+                "status": "error",
+                "name": name,
+                "exact": exact,
+                "match_mode": "exact_cell" if exact else "row_contains",
+            }
+
+        if len(matches) > 1:
+            return {
+                "error": "ambiguous_table_row",
+                "status": "error",
+                "name": name,
+                "exact": exact,
+                "matches": len(matches),
+                "match_mode": "exact_cell" if exact else "row_contains",
+            }
+
+        _, row_data = matches[0]
+        result = self._capture_state("inspect-table-row")
+        result.update(
+            {
+                "semantic_name": name,
+                "semantic_strategy": (
+                    "table_row_exact_cell"
+                    if exact
+                    else "table_row_contains"
+                ),
+                "inspection_status": "observed",
+                "visible": True,
+                "enabled": None,
+                "disabled": None,
+                "editable": False,
+                "element": row_data,
+                "row": row_data,
+                "row_match_count": 1,
+            }
+        )
+        return result
+
     def inspect_semantic(
         self,
         name: str,
@@ -3466,6 +3585,16 @@ def inspect_semantic(
         name,
         exact,
         role,
+    )
+
+
+def inspect_table_row(
+    name: str,
+    exact: bool = True,
+) -> dict:
+    return _session.inspect_table_row(
+        name,
+        exact,
     )
 
 

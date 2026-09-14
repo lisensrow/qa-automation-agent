@@ -336,6 +336,11 @@ def _browser_semantic_observation(
                 "selection_reason"
             ),
             "text": element.get("text"),
+            "cells": element.get("cells"),
+            "headers": element.get("headers"),
+            "values_by_header": element.get(
+                "values_by_header"
+            ),
             "session_id": result.get(
                 "session_id"
             ),
@@ -510,7 +515,10 @@ def extract_observations(
             )
         ]
 
-    if tool_name == "browser_inspect_semantic":
+    if tool_name in {
+        "browser_inspect_semantic",
+        "browser_inspect_table_row",
+    }:
         return [
             _browser_semantic_observation(
                 arguments,

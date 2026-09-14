@@ -2,6 +2,7 @@ from tools.browser import (
     open_page,
     get_state,
     inspect_semantic,
+    inspect_table_row,
     click_semantic,
     context_menu_semantic,
     fill_semantic,
@@ -440,6 +441,32 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_table_row",
+            "description": (
+                "Read-only проверка одной видимой строки таблицы. При exact=true "
+                "требует ровно одну строку, содержащую ячейку с точным значением "
+                "name, и возвращает cells, headers и values_by_header. Используй "
+                "для проверки созданной записи вместо предположения ARIA role."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Точное видимое значение одной ячейки строки",
+                    },
+                    "exact": {
+                        "type": "boolean",
+                        "description": "Точное совпадение ячейки, по умолчанию true",
+                    },
+                },
+                "required": ["name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_semantic",
             "description": (
                 "Read-only проверка фактического состояния "
@@ -628,6 +655,12 @@ def execute_tool(name: str, arguments: dict):
             arguments["name"],
             arguments.get("exact", True),
             arguments.get("role"),
+        )
+
+    if name == "browser_inspect_table_row":
+        return inspect_table_row(
+            arguments["name"],
+            arguments.get("exact", True),
         )
 
     if name == "browser_click_semantic":
