@@ -2056,6 +2056,44 @@ def managed_navigation_preflight_check(
 
 
 _PENDING_NAVIGATION_CANDIDATES = {}
+_MANAGED_BROWSER_OPENED_CASES = set()
+
+
+def _managed_initial_browser_open_url(
+    requested_url,
+    task_text="",
+    already_opened=False,
+):
+    """Keep an inferred first browser open at the stand origin.
+
+    Models can mistake a documented API endpoint for a UI deep link. A deep
+    link is preserved only after browser state already exists or when the user
+    explicitly supplied that exact URL. This is origin-generic and does not
+    encode product routes.
+    """
+    from urllib.parse import urlsplit
+
+    requested = str(requested_url or "").strip()
+
+    if already_opened or not requested:
+        return requested, None
+
+    if requested in str(task_text or ""):
+        return requested, None
+
+    try:
+        parts = urlsplit(requested)
+    except ValueError:
+        return requested, None
+
+    if parts.scheme not in {"http", "https"} or not parts.netloc:
+        return requested, None
+
+    if parts.path in {"", "/"} and not parts.query and not parts.fragment:
+        return requested, None
+
+    origin = f"{parts.scheme}://{parts.netloc}"
+    return origin, "inferred_deep_link_normalized_to_origin"
 _PENDING_CONSTRAINED_ACTIONS = {}
 _PENDING_OMISSION_CONTINUATIONS = {}
 _PENDING_SELECTION_COMPLETIONS = {}
@@ -3005,6 +3043,36 @@ def execute_tool_with_policy(
             or "Action blocked by UQA Core.",
         }
 
+    managed_open_key = (
+        str(job_id),
+        str(case_id),
+    )
+    effective_arguments = arguments
+    managed_open_normalization = None
+
+    if (
+        name == "browser_open_page"
+        and action_policy == "confirm_mutations"
+        and job_id
+        and case_id
+    ):
+        normalized_url, normalization_reason = (
+            _managed_initial_browser_open_url(
+                arguments.get("url"),
+                authoritative_task_text or _latest_user_text(messages),
+                managed_open_key in _MANAGED_BROWSER_OPENED_CASES,
+            )
+        )
+
+        if normalization_reason:
+            effective_arguments = dict(arguments)
+            effective_arguments["url"] = normalized_url
+            managed_open_normalization = {
+                "model_requested_url": arguments.get("url"),
+                "opened_url": normalized_url,
+                "reason": normalization_reason,
+            }
+
     if name in {
         "resource_register",
         "resource_update",
@@ -3019,11 +3087,24 @@ def execute_tool_with_policy(
     else:
         result = execute_tool(
             name,
-            arguments,
+            effective_arguments,
         )
 
     if isinstance(result, dict):
         result = dict(result)
+
+        if (
+            name == "browser_open_page"
+            and action_policy == "confirm_mutations"
+            and job_id
+            and case_id
+            and not result.get("error")
+        ):
+            _MANAGED_BROWSER_OPENED_CASES.add(managed_open_key)
+
+        if managed_open_normalization:
+            result["managed_initial_open"] = managed_open_normalization
+
         result["action_class"] = (
             action_class
         )

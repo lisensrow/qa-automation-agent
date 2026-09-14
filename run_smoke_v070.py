@@ -18,6 +18,7 @@ PRODUCTION_FILES = [
 SMOKES = [
     "smoke_v069c_v070c.py",
     "smoke_navigation_guard.py",
+    "smoke_managed_initial_browser_url.py",
     "smoke_regression_stand_lock.py",
     "smoke_planned_lifecycle_verdict.py",
     "smoke_exact_resource_name.py",
