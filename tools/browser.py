@@ -1204,6 +1204,109 @@ class BrowserSession:
 
         return matches
 
+    def _visible_nearby_labeled_field_matches(
+        self,
+        name: str,
+        exact: bool,
+    ):
+        """Find an editable control grouped with a visible text label.
+
+        Some component libraries render a label-looking ``div`` or ``span``
+        beside an input without connecting the two through ``for``/``id`` or
+        ARIA.  Playwright therefore cannot resolve ``get_by_label`` even
+        though the relationship is unambiguous to a user.  Walk only nearby
+        ancestors and accept the first level containing exactly one visible
+        editable control.  Multiple matching groups stay ambiguous.
+        """
+        wanted = re.sub(
+            r"\s+",
+            " ",
+            str(name or "").strip(),
+        ).casefold()
+
+        if not wanted:
+            return []
+
+        labels = self.page.locator("label, div, span")
+        matches = []
+        seen = set()
+        editable_selector = (
+            'input:not([type="hidden"]), textarea, select, '
+            '[contenteditable="true"], [role="textbox"], '
+            '[role="searchbox"], [role="combobox"], '
+            '[role="spinbutton"]'
+        )
+
+        try:
+            count = min(labels.count(), 1500)
+        except Exception:
+            return matches
+
+        for index in range(count):
+            label = labels.nth(index)
+
+            try:
+                if not label.is_visible():
+                    continue
+
+                label_text = re.sub(
+                    r"\s+",
+                    " ",
+                    (label.inner_text() or "").strip(),
+                )
+                label_text = re.sub(
+                    r"\s*\*\s*$",
+                    "",
+                    label_text,
+                ).strip().casefold()
+                label_matches = (
+                    label_text == wanted
+                    if exact
+                    else wanted in label_text
+                )
+
+                if not label_matches:
+                    continue
+
+                ancestor = label
+
+                for _ in range(4):
+                    ancestor = ancestor.locator("xpath=..")
+                    controls = ancestor.locator(editable_selector)
+                    visible_controls = []
+
+                    for control_index in range(min(controls.count(), 20)):
+                        control = controls.nth(control_index)
+
+                        if control.is_visible():
+                            visible_controls.append(control)
+
+                    if not visible_controls:
+                        continue
+
+                    if len(visible_controls) == 1:
+                        control = visible_controls[0]
+                        key = (
+                            control.get_attribute("data-uqa-id")
+                            or control.get_attribute("id")
+                            or control.evaluate(
+                                "e => e.tagName + ':' + e.outerHTML"
+                            )[:500]
+                        )
+
+                        if key not in seen:
+                            seen.add(key)
+                            matches.append(control)
+
+                    # The nearest ancestor already contains editable fields.
+                    # Do not widen scope and guess among a larger form.
+                    break
+
+            except Exception:
+                continue
+
+        return matches
+
     def _filtered_http_errors(self, action: str):
         errors = list(self.http_errors)
 
@@ -1700,6 +1803,27 @@ class BrowserSession:
                 return {
                     "error": (
                         f'Ambiguous field label: {field}. '
+                        f'Matches: {len(matches)}'
+                    ),
+                    "field": field,
+                    "matches": len(matches),
+                }
+
+        # Затем nearby visible label для UI без for/id или ARIA.
+        if target is None:
+            matches = self._visible_nearby_labeled_field_matches(
+                field,
+                exact,
+            )
+
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = "nearby-visible-label"
+
+            elif len(matches) > 1:
+                return {
+                    "error": (
+                        f'Ambiguous nearby field label: {field}. '
                         f'Matches: {len(matches)}'
                     ),
                     "field": field,
