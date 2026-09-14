@@ -1384,6 +1384,94 @@ def _history_has_successful_interact_navigation(messages):
     return False
 
 
+NAVIGATION_CONCEPT_GROUPS = (
+    ("access", "доступ", "zone", "зон"),
+    ("administr", "администр"),
+    ("manage", "management", "управлен"),
+    ("user", "пользоват"),
+    ("role", "рол"),
+    ("security", "безопас"),
+    ("setting", "настрой"),
+    ("server", "сервер"),
+    ("agent", "агент"),
+    ("integrat", "интеграц"),
+    ("policy", "политик"),
+    ("repositor", "репозитор"),
+    ("computer", "компьют", "свт"),
+    (
+        "location",
+        "локац",
+        "местопол",
+        "dictionar",
+        "справоч",
+        "словар",
+    ),
+)
+
+
+def _latest_browser_state_for_navigation(messages):
+    for message in reversed(messages or []):
+        if (
+            message.get("role") != "tool"
+            or not str(message.get("tool_name") or "").startswith("browser_")
+        ):
+            continue
+
+        content = message.get("content")
+
+        if isinstance(content, str):
+            try:
+                result = json.loads(content)
+            except json.JSONDecodeError:
+                continue
+        elif isinstance(content, dict):
+            result = content
+        else:
+            continue
+
+        if any(
+            str(result.get(key) or "").strip()
+            for key in ("current_url", "title", "text_preview")
+        ):
+            return result
+
+    return None
+
+
+def _latest_state_matches_navigation_target(messages):
+    task_text = _navigation_task_text(messages).casefold()
+    target_groups = [
+        group
+        for group in NAVIGATION_CONCEPT_GROUPS
+        if any(term in task_text for term in group)
+    ]
+
+    if not target_groups:
+        return None
+
+    state = _latest_browser_state_for_navigation(messages)
+
+    if not state:
+        return False
+
+    state_text = " ".join(
+        str(state.get(key) or "")
+        for key in ("current_url", "title", "text_preview")
+    ).casefold()
+    return any(
+        any(term in state_text for term in group)
+        for group in target_groups
+    )
+
+
+def _managed_navigation_ready(messages):
+    if not _history_has_successful_interact_navigation(messages):
+        return False
+
+    target_match = _latest_state_matches_navigation_target(messages)
+    return True if target_match is None else target_match
+
+
 def _successful_clicked_semantic_names(messages):
     clicked_names = set()
 
@@ -1723,29 +1811,13 @@ def _deterministic_navigation_label(
     """
     task_context = str(task_text or "").casefold()
     knowledge_context = str(knowledge or "").casefold()
-    concept_groups = (
-        ("access", "доступ", "zone", "зон"),
-        ("administr", "администр"),
-        ("manage", "management", "управлен"),
-        ("user", "пользоват"),
-        ("role", "рол"),
-        ("security", "безопас"),
-        ("setting", "настрой"),
-        ("server", "сервер"),
-        ("agent", "агент"),
-        ("integrat", "интеграц"),
-        ("policy", "политик"),
-        ("repositor", "репозитор"),
-        ("dictionar", "словар"),
-        ("computer", "компьют", "свт"),
-    )
     scored = []
 
     for label in labels or []:
         normalized = str(label or "").strip().casefold()
         score = 0
 
-        for group in concept_groups:
+        for group in NAVIGATION_CONCEPT_GROUPS:
             if not any(
                 term in normalized
                 for term in group
@@ -1902,7 +1974,7 @@ def managed_navigation_preflight_check(
             arguments,
             action_class,
         )
-        or _history_has_successful_interact_navigation(
+        or _managed_navigation_ready(
             messages
         )
     ):
@@ -2097,7 +2169,7 @@ def add_managed_navigation_preflight_advisory(
         str(case_id),
     )
 
-    if _history_has_successful_interact_navigation(
+    if _managed_navigation_ready(
         augmented_messages
     ):
         _PENDING_NAVIGATION_CANDIDATES.pop(

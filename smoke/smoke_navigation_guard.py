@@ -9,6 +9,9 @@ names = {
     "_latest_user_text",
     "_generic_create_requires_navigation_preflight",
     "_history_has_successful_interact_navigation",
+    "_latest_browser_state_for_navigation",
+    "_latest_state_matches_navigation_target",
+    "_managed_navigation_ready",
     "_successful_clicked_semantic_names",
     "_latest_unique_unnamed_icon_hints",
     "_latest_navigation_labels",
@@ -35,6 +38,22 @@ scope = {
     "json": json,
     "re": re,
     "_PENDING_NAVIGATION_CANDIDATES": {},
+    "NAVIGATION_CONCEPT_GROUPS": (
+        ("access", "доступ", "zone", "зон"),
+        ("administr", "администр"),
+        ("manage", "management", "управлен"),
+        ("user", "пользоват"),
+        ("role", "рол"),
+        ("security", "безопас"),
+        ("setting", "настрой"),
+        ("server", "сервер"),
+        ("agent", "агент"),
+        ("integrat", "интеграц"),
+        ("policy", "политик"),
+        ("repositor", "репозитор"),
+        ("computer", "компьют", "свт"),
+        ("location", "локац", "местопол", "dictionar", "справоч", "словар"),
+    ),
     "execute_tool": lambda name, arguments: {
         "status": "ok",
         "results": [{"heading": "Access zones"}],
@@ -59,6 +78,7 @@ navigation_candidate_matches = scope[
 deterministic_navigation_label = scope[
     "_deterministic_navigation_label"
 ]
+managed_navigation_ready = scope["_managed_navigation_ready"]
 
 assert "Access zones" in latest_knowledge([{
     "role": "tool",
@@ -95,6 +115,16 @@ assert deterministic_navigation_label(
     "Зоны доступа",
     ["Access zones", "Users", "Roles"],
 ) == "Access zones"
+assert deterministic_navigation_label(
+    "Создай тестовую Location",
+    "Create Location",
+    ["CMDB", "Dictionaries", "Administration"],
+) == "Dictionaries"
+assert deterministic_navigation_label(
+    "Создай тестовую Location",
+    "Create Location",
+    ["Org Units", "Locations", "Tags"],
+) == "Locations"
 assert deterministic_navigation_label(
     "Create a resource",
     "",
@@ -322,6 +352,50 @@ successful_navigation = [
     },
 ]
 assert run(successful_navigation) is None
+
+wrong_location_branch = [
+    {
+        "role": "user",
+        "content": "Create a Location",
+    },
+    successful_navigation[0],
+    {
+        "role": "tool",
+        "tool_name": "browser_click_semantic",
+        "content": json.dumps({
+            "action_class": "interact",
+            "action_policy_status": "auto_allowed",
+            "click_status": "executed",
+            "current_url": "https://example.test/settings/general",
+            "title": "General settings",
+            "text_preview": "System name and access zone settings",
+        }),
+    },
+]
+assert managed_navigation_ready(wrong_location_branch) is False
+assert run(wrong_location_branch)["status"] == "blocked_by_policy"
+
+correct_location_branch = [
+    {
+        "role": "user",
+        "content": "Create a Location",
+    },
+    successful_navigation[0],
+    {
+        "role": "tool",
+        "tool_name": "browser_click_semantic",
+        "content": json.dumps({
+            "action_class": "interact",
+            "action_policy_status": "auto_allowed",
+            "click_status": "executed",
+            "current_url": "https://example.test/locations",
+            "title": "Locations",
+            "text_preview": "Locations",
+        }),
+    },
+]
+assert managed_navigation_ready(correct_location_branch) is True
+assert run(correct_location_branch) is None
 
 menu_only = [
     successful_navigation[0],
