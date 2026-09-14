@@ -28,6 +28,7 @@
 - После отказа policy повтор идентичного WRITE/DESTRUCTIVE в том же case не показывает подтверждение снова и не достигает browser runtime: Core завершает case как `BLOCKED / repeated_blocked_mutation`.
 - Planner Core распознаёт формулировки вида «один последовательный test case» и автоматически объединяет ошибочно разделённые моделью шаги lifecycle в один case с несколькими checks.
 - Реальный Location Job подтвердил create, точное table-row evidence, persistent registration и успешный Cleanup Manager archive; ложный `external_id`, совпавший с именем, очищен из ledger. Verdict остался `BLOCKED` только из-за повторной direct-архивации после policy denial.
+- Planned-check coverage допускает только детерминированное исправление ID: если модель заменила `planned-*` на свои `check-*`, но все точные уникальные titles совпадают один к одному, Core восстанавливает авторитетные IDs без fuzzy matching.
 
 ## v069 — General Action Policy
 

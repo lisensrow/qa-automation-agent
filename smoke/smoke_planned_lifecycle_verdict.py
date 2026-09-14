@@ -103,6 +103,33 @@ assert [item["title"] for item in bound] == [
     item["title"] for item in normalized
 ]
 
+model_numbered = [
+    {
+        "check_id": f"check-{index:03d}",
+        "title": item["title"],
+        "status": "passed",
+        "expected": item.get("expected"),
+        "actual": "model claim",
+        "evidence": ["ev-1"],
+    }
+    for index, item in enumerate(normalized, start=1)
+]
+bound_by_title, errors = scope["verify_planned_check_coverage"](
+    "job-smoke",
+    "case-smoke",
+    model_numbered,
+)
+assert errors == []
+assert [item["check_id"] for item in bound_by_title] == [
+    item["check_id"] for item in normalized
+]
+assert [item["model_check_id"] for item in bound_by_title] == [
+    "check-001",
+    "check-002",
+    "check-003",
+    "check-004",
+]
+
 job["resources"] = [{
     "resource_id": "res-smoke",
     "created_by_case": "case-smoke",

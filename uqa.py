@@ -5599,6 +5599,67 @@ def verify_planned_check_coverage(job_id, case_id, checks):
     if not planned:
         return verified, []
 
+    def normalized_title(item):
+        return " ".join(
+            str(item.get("title") or "")
+            .strip()
+            .casefold()
+            .split()
+        )
+
+    planned_by_title = {}
+
+    for item in planned:
+        title_key = normalized_title(item)
+
+        if not title_key:
+            continue
+
+        planned_by_title.setdefault(title_key, []).append(item)
+
+    actual_title_counts = {}
+
+    for item in verified:
+        title_key = normalized_title(item)
+
+        if title_key:
+            actual_title_counts[title_key] = (
+                actual_title_counts.get(title_key, 0) + 1
+            )
+
+    expected_id_set = {
+        item["check_id"]
+        for item in planned
+    }
+    already_claimed_ids = {
+        str(item.get("check_id") or "").strip()
+        for item in verified
+        if str(item.get("check_id") or "").strip()
+        in expected_id_set
+    }
+
+    # Models sometimes preserve every planned title exactly but replace the
+    # authoritative IDs with check-001/check-002. A unique exact title gives
+    # Core a deterministic one-to-one repair without fuzzy matching.
+    for item in verified:
+        current_id = str(item.get("check_id") or "").strip()
+
+        if current_id in expected_id_set:
+            continue
+
+        title_key = normalized_title(item)
+        candidates = planned_by_title.get(title_key) or []
+
+        if (
+            title_key
+            and actual_title_counts.get(title_key) == 1
+            and len(candidates) == 1
+            and candidates[0]["check_id"] not in already_claimed_ids
+        ):
+            item["model_check_id"] = current_id or None
+            item["check_id"] = candidates[0]["check_id"]
+            already_claimed_ids.add(candidates[0]["check_id"])
+
     expected_ids = [item["check_id"] for item in planned]
     actual_ids = [
         str(item.get("check_id") or "").strip()
