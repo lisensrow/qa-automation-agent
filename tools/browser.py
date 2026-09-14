@@ -1229,6 +1229,7 @@ class BrowserSession:
 
         labels = self.page.locator("label, div, span")
         matches = []
+        matching_labels = []
         seen = set()
         editable_selector = (
             'input:not([type="hidden"]), textarea, select, '
@@ -1268,6 +1269,8 @@ class BrowserSession:
                 if not label_matches:
                     continue
 
+                matching_labels.append(label)
+
                 ancestor = label
 
                 for _ in range(4):
@@ -1301,6 +1304,92 @@ class BrowserSession:
                     # The nearest ancestor already contains editable fields.
                     # Do not widen scope and guess among a larger form.
                     break
+
+            except Exception:
+                continue
+
+        if matches or not matching_labels:
+            return matches
+
+        # A form can render labels and controls in separate sibling branches,
+        # leaving their first shared ancestor as the whole form.  In that case
+        # use layout only as a final, bounded fallback: the control must be
+        # below (or level with) the label, horizontally overlap it, and be
+        # clearly closer than any alternative.
+        controls = self.page.locator(editable_selector)
+        visible_controls = []
+
+        try:
+            for control_index in range(min(controls.count(), 100)):
+                control = controls.nth(control_index)
+
+                if not control.is_visible():
+                    continue
+
+                box = control.bounding_box()
+
+                if box:
+                    visible_controls.append((control, box))
+        except Exception:
+            return matches
+
+        for label in matching_labels:
+            try:
+                label_box = label.bounding_box()
+
+                if not label_box:
+                    continue
+
+                label_bottom = label_box["y"] + label_box["height"]
+                label_left = label_box["x"]
+                label_right = label_left + label_box["width"]
+                candidates = []
+
+                for control, control_box in visible_controls:
+                    control_top = control_box["y"]
+                    control_left = control_box["x"]
+                    control_right = control_left + control_box["width"]
+                    vertical_gap = control_top - label_bottom
+                    horizontal_overlap = (
+                        min(label_right, control_right)
+                        - max(label_left, control_left)
+                    )
+
+                    if vertical_gap < -4 or vertical_gap > 140:
+                        continue
+
+                    if horizontal_overlap <= 0:
+                        continue
+
+                    score = (
+                        max(vertical_gap, 0)
+                        + abs(control_left - label_left) * 0.02
+                    )
+                    candidates.append((score, control))
+
+                candidates.sort(key=lambda item: item[0])
+
+                if not candidates:
+                    continue
+
+                if (
+                    len(candidates) > 1
+                    and abs(candidates[1][0] - candidates[0][0]) <= 4
+                ):
+                    continue
+
+                control = candidates[0][1]
+                key = (
+                    control.get_attribute("data-uqa-id")
+                    or control.get_attribute("id")
+                    or control.evaluate(
+                        "e => e.tagName + ':' + e.outerHTML"
+                    )[:500]
+                )
+
+                if key not in seen:
+                    seen.add(key)
+                    matches.append(control)
 
             except Exception:
                 continue
