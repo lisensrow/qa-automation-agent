@@ -13,6 +13,8 @@
 - Destructive REST tools изолированы от обычного агента и доступны только Cleanup Manager.
 - Добавлен persistent Product Blocker Registry и автоматическая постановка blocker на повторную проверку при изменении версии backend/frontend.
 - Собран постоянный suite из 14 архитектурных smoke-tests.
+- Добавлено ограниченное model-facing представление browser tool result: полные runtime-данные сначала обрабатываются evidence/observation pipeline, а повторяющийся UI payload больше не раздувает LLM-контекст до timeout.
+- Старые browser states в LLM-истории автоматически сворачиваются до результатов действий и ссылок на evidence; подробным остаётся только последнее актуальное состояние страницы.
 
 ## v069 — General Action Policy
 

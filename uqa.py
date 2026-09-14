@@ -3120,9 +3120,11 @@ def ask_ollama(
     LLM_CALL_COUNTER += 1
     call_id = LLM_CALL_COUNTER
 
+    model_messages = messages_for_model(messages)
+
     tool_messages = sum(
         1
-        for message in messages
+        for message in model_messages
         if message.get("role") == "tool"
     )
 
@@ -3133,7 +3135,7 @@ def ask_ollama(
                 or ""
             )
         )
-        for message in messages
+        for message in model_messages
     )
 
     llm_lock = None
@@ -3151,7 +3153,7 @@ def ask_ollama(
             f"LLM #{call_id} started: "
             f"ctx={UQA_NUM_CTX}, "
             f"think={'on' if UQA_THINK else 'off'}, "
-            f"messages={len(messages)}, "
+            f"messages={len(model_messages)}, "
             f"tool_messages={tool_messages}, "
             f"content_chars={input_chars}"
             f"[/dim]"
@@ -3169,7 +3171,7 @@ def ask_ollama(
                 f"{OLLAMA_URL}/api/chat",
                 json={
                     "model": MODEL,
-                    "messages": messages,
+                    "messages": model_messages,
                     "tools": tools,
                     "stream": False,
                     "think": UQA_THINK,
@@ -3790,6 +3792,229 @@ def record_tool_evidence(
             )
         ),
     )
+
+
+def _compact_model_browser_record(record, string_limit=240):
+    if not isinstance(record, dict):
+        return str(record)[:string_limit]
+
+    compacted = {}
+
+    for key, value in record.items():
+        if value is None or value == "" or value == [] or value == {}:
+            continue
+
+        if key == "table_context" and isinstance(value, dict):
+            table_context = {
+                field: value.get(field)
+                for field in (
+                    "section",
+                    "row_text",
+                    "data_cell_count",
+                    "header_cell_count",
+                )
+                if value.get(field) not in (None, "", [], {})
+            }
+
+            if "row_text" in table_context:
+                table_context["row_text"] = str(
+                    table_context["row_text"]
+                )[:string_limit]
+
+            if table_context:
+                compacted[key] = table_context
+
+            continue
+
+        if isinstance(value, str):
+            compacted[key] = value[:string_limit]
+        elif isinstance(value, list):
+            compacted[key] = [
+                str(item)[:80]
+                for item in value[:10]
+            ]
+        elif isinstance(value, (bool, int, float)):
+            compacted[key] = value
+
+    return compacted
+
+
+def _browser_element_model_priority(item):
+    if not isinstance(item, dict):
+        return 9
+
+    role = str(item.get("role") or "").casefold()
+    tag = str(item.get("tag") or "").casefold()
+
+    if role in {"menuitem", "option"}:
+        return 0
+
+    if tag in {"input", "select", "textarea"} or role in {
+        "textbox",
+        "combobox",
+        "checkbox",
+        "radio",
+    }:
+        return 1
+
+    if tag == "button" or role == "button":
+        return 2
+
+    if tag == "a" or role in {"link", "tab"}:
+        return 3
+
+    return 4
+
+
+def tool_result_for_model(tool_name, result, max_chars=14000):
+    """Return a bounded model view while evidence keeps the original result."""
+    if not isinstance(result, dict):
+        return result
+
+    if not str(tool_name or "").startswith("browser_"):
+        return result
+
+    compacted = {}
+    bulky_keys = {
+        "interactive_elements",
+        "network_requests",
+        "console_errors",
+        "http_errors",
+        "failed_requests",
+        "text_preview",
+    }
+
+    for key, value in result.items():
+        if key in bulky_keys:
+            continue
+
+        if isinstance(value, str):
+            compacted[key] = value[:1000]
+        else:
+            compacted[key] = value
+
+    text_preview = str(result.get("text_preview") or "")
+    compacted["text_preview"] = text_preview[:2500]
+
+    for key in (
+        "network_requests",
+        "console_errors",
+        "http_errors",
+        "failed_requests",
+    ):
+        values = result.get(key) or []
+        compacted[key] = [
+            _compact_model_browser_record(item)
+            for item in values[-12:]
+        ]
+        compacted[f"{key}_total"] = len(values)
+
+    elements = result.get("interactive_elements") or []
+    prioritized = sorted(
+        enumerate(elements),
+        key=lambda pair: (
+            _browser_element_model_priority(pair[1]),
+            pair[0],
+        ),
+    )
+    selected = []
+
+    for _, item in prioritized:
+        candidate = _compact_model_browser_record(item)
+        proposed = [*selected, candidate]
+        compacted["interactive_elements"] = proposed
+
+        if len(json.dumps(compacted, ensure_ascii=False, default=str)) > max_chars:
+            break
+
+        selected = proposed
+
+    compacted["interactive_elements"] = selected
+    compacted["interactive_elements_total"] = len(elements)
+    compacted["model_view_compacted"] = True
+
+    while (
+        len(json.dumps(compacted, ensure_ascii=False, default=str)) > max_chars
+        and len(compacted["text_preview"]) > 500
+    ):
+        compacted["text_preview"] = compacted["text_preview"][:-500]
+
+    return compacted
+
+
+def _historical_browser_result_summary(tool_name, content):
+    parsed = content
+
+    if isinstance(content, str):
+        try:
+            parsed = json.loads(content)
+        except (TypeError, ValueError):
+            parsed = {}
+
+    if not isinstance(parsed, dict):
+        parsed = {}
+
+    summary_keys = (
+        "status",
+        "error",
+        "executed",
+        "action",
+        "current_url",
+        "final_url",
+        "url",
+        "title",
+        "http_status",
+        "click_status",
+        "filled_element",
+        "clicked_element",
+        "semantic_name",
+        "semantic_role",
+        "semantic_container",
+        "context_menu_name",
+        "exact_match_count",
+        "matched_count",
+        "selection_status",
+        "action_policy_status",
+        "auth_challenge_status",
+        "network_request_count",
+        "uqa_evidence_id",
+    )
+    summary = {
+        key: parsed.get(key)
+        for key in summary_keys
+        if parsed.get(key) not in (None, "", [], {})
+    }
+    summary["tool"] = tool_name
+    summary["model_history_compacted"] = True
+    return summary
+
+
+def messages_for_model(messages, keep_latest_browser_results=1):
+    browser_indices = [
+        index
+        for index, message in enumerate(messages or [])
+        if message.get("role") == "tool"
+        and str(message.get("tool_name") or "").startswith("browser_")
+    ]
+    keep_count = max(0, int(keep_latest_browser_results))
+    keep = set(browser_indices[-keep_count:] if keep_count else [])
+    prepared = []
+
+    for index, message in enumerate(messages or []):
+        copied = dict(message)
+
+        if index in browser_indices and index not in keep:
+            copied["content"] = json.dumps(
+                _historical_browser_result_summary(
+                    copied.get("tool_name"),
+                    copied.get("content"),
+                ),
+                ensure_ascii=False,
+            )
+
+        prepared.append(copied)
+
+    return prepared
 
 
 def _normalize_semantic_subject(
@@ -8337,7 +8562,7 @@ def run_cleanup_resource(
                         "role": "tool",
                         "tool_name": name,
                         "content": json.dumps(
-                            result,
+                            tool_result_for_model(name, result),
                             ensure_ascii=False,
                         ),
                     }
@@ -9907,7 +10132,7 @@ def run_turn(
                     "role": "tool",
                     "tool_name": name,
                     "content": json.dumps(
-                        result,
+                        tool_result_for_model(name, result),
                         ensure_ascii=False,
                     ),
                 }

@@ -30,6 +30,7 @@ SMOKES = [
     "smoke_cleanup_rest_fallback.py",
     "smoke_product_blockers.py",
     "smoke_product_version_recheck.py",
+    "smoke_model_tool_context.py",
 ]
 
 
