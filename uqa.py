@@ -9563,6 +9563,8 @@ def run_turn(
     force_read_only=False,
     action_policy="legacy",
 ):
+    failed_semantic_inspections = set()
+
     for _ in range(MAX_TOOL_STEPS):
         try:
             data = ask_ollama(messages)
@@ -10139,6 +10141,18 @@ def run_turn(
                 name,
                 arguments,
             )
+            semantic_inspection_key = None
+            repeated_semantic_inspection = False
+
+            if name == "browser_inspect_semantic":
+                semantic_inspection_key = (
+                    str(arguments.get("name") or "").strip().casefold(),
+                    bool(arguments.get("exact", True)),
+                )
+                repeated_semantic_inspection = (
+                    semantic_inspection_key
+                    in failed_semantic_inspections
+                )
 
             console.print(
                 f"\n[cyan]● TOOL[/cyan] "
@@ -10148,15 +10162,29 @@ def run_turn(
             )
 
             try:
-                result = execute_tool_with_policy(
-                    name,
-                    arguments,
-                    messages,
-                    force_read_only=force_read_only,
-                    action_policy=action_policy,
-                    job_id=job_id,
-                    case_id=case_id,
-                )
+                if repeated_semantic_inspection:
+                    result = {
+                        "error": "repeated_semantic_inspection_blocked",
+                        "status": "blocked",
+                        "executed": False,
+                        "action_class": "observe",
+                        "action_policy_status": "auto_allowed",
+                        "semantic_name": arguments.get("name"),
+                        "reason": (
+                            "The same exact semantic target was already "
+                            "searched with all strict fallback strategies."
+                        ),
+                    }
+                else:
+                    result = execute_tool_with_policy(
+                        name,
+                        arguments,
+                        messages,
+                        force_read_only=force_read_only,
+                        action_policy=action_policy,
+                        job_id=job_id,
+                        case_id=case_id,
+                    )
                 record_required_selection_result(
                     job_id,
                     case_id,
@@ -10320,6 +10348,46 @@ def run_turn(
                     ),
                 }
             )
+
+            if repeated_semantic_inspection:
+                if job_id and case_id:
+                    finalize_case_blocked(
+                        job_id,
+                        case_id,
+                        "repeated_semantic_inspection",
+                        (
+                            "The agent repeated a failed exact semantic "
+                            f"inspection for {arguments.get('name')!r}."
+                        ),
+                    )
+
+                console.print(
+                    "[yellow]UQA Core stopped a repeated failed semantic "
+                    "inspection; case marked BLOCKED.[/yellow]"
+                )
+                compact_completed_history(messages)
+                return
+
+            if (
+                semantic_inspection_key is not None
+                and result.get("error")
+                == "semantic_element_not_found"
+            ):
+                failed_semantic_inspections.add(
+                    semantic_inspection_key
+                )
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "[UQA CORE: SEMANTIC TARGET NOT FOUND]\n"
+                            "Do not repeat browser_inspect_semantic for the "
+                            "same name, including with another guessed role. "
+                            "Inspect a different actually observed target or "
+                            "return BLOCKED with the missing evidence."
+                        ),
+                    }
+                )
 
     console.print(
         "[red]Достигнут лимит последовательных tool-вызовов.[/red]"

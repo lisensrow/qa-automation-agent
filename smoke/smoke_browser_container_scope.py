@@ -29,8 +29,12 @@ assert "container" in [
 source = browser_path.read_text(encoding="utf-8")
 assert "lines.includes(wanted)" in source
 assert "semantic_container" in source
+assert "role_constraint_matched = False" in source
+assert '"semantic_role_fallback"' in source
+assert "continue through the same strict" in source
 registry = registry_path.read_text(encoding="utf-8")
 assert '"container": {' in registry
+assert "semantic_role_fallback" in registry
 uqa = uqa_path.read_text(encoding="utf-8")
 assert '"container": str(' in uqa
 assert '"name": "Expand"' in uqa

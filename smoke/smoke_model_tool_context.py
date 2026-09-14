@@ -5,6 +5,62 @@ import json
 import uqa
 
 
+uqa_source = open(uqa.__file__, encoding="utf-8").read()
+assert "failed_semantic_inspections = set()" in uqa_source
+assert "repeated_semantic_inspection_blocked" in uqa_source
+assert "Do not repeat browser_inspect_semantic" in uqa_source
+
+semantic_turns = iter([
+    {
+        "message": {
+            "content": "",
+            "tool_calls": [{
+                "function": {
+                    "name": "browser_inspect_semantic",
+                    "arguments": {
+                        "name": "missing exact row",
+                        "exact": True,
+                        "role": "option",
+                    },
+                }
+            }],
+        }
+    },
+    {
+        "message": {
+            "content": "",
+            "tool_calls": [{
+                "function": {
+                    "name": "browser_inspect_semantic",
+                    "arguments": {
+                        "name": "missing exact row",
+                        "exact": True,
+                        "role": "button",
+                    },
+                }
+            }],
+        }
+    },
+])
+executed_semantic_calls = []
+uqa.ask_ollama = lambda messages: next(semantic_turns)
+
+
+def fake_execute_tool(name, arguments, messages, **kwargs):
+    executed_semantic_calls.append((name, arguments))
+    return {
+        "error": "semantic_element_not_found",
+        "status": "error",
+    }
+
+
+uqa.execute_tool_with_policy = fake_execute_tool
+semantic_messages = []
+uqa.run_turn(semantic_messages)
+assert len(executed_semantic_calls) == 1
+assert next(semantic_turns, None) is None
+
+
 elements = []
 
 for index in range(100):

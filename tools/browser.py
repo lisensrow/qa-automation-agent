@@ -2433,6 +2433,7 @@ class BrowserSession:
         ]
 
         requested_role = str(role or "").strip().casefold()
+        role_constraint_matched = None
 
         if requested_role and requested_role not in supported_roles:
             return {
@@ -2460,6 +2461,8 @@ class BrowserSession:
             if len(matches) == 1:
                 target = matches[0]
                 strategy = f"role:{role}"
+                if requested_role:
+                    role_constraint_matched = True
                 break
 
             if len(matches) > 1:
@@ -2486,6 +2489,7 @@ class BrowserSession:
                 strategy = (
                     f"explicit_role_text:{requested_role}"
                 )
+                role_constraint_matched = True
 
             elif len(matches) > 1:
                 return {
@@ -2498,11 +2502,11 @@ class BrowserSession:
                 }
 
         if requested_role and target is None:
-            return {
-                "error": "semantic_element_not_found",
-                "name": name,
-                "role": requested_role,
-            }
+            # A role supplied by the model is only a narrowing hint. If the
+            # live DOM does not confirm it, continue through the same strict
+            # label/placeholder/icon/text lookup instead of forcing the model
+            # into a repeated not-found loop.
+            role_constraint_matched = False
 
         # ----------------------------------------------------
         # 2. Explicit <label>.
@@ -2586,6 +2590,8 @@ class BrowserSession:
                 return {
                     "error": "semantic_element_not_found",
                     "name": name,
+                    "requested_role": requested_role or None,
+                    "role_constraint_matched": role_constraint_matched,
                 }
 
             if len(matches) > 1:
@@ -2819,6 +2825,12 @@ class BrowserSession:
                 ),
                 "element": metadata,
                 "inspection_status": "observed",
+                "requested_role": requested_role or None,
+                "role_constraint_matched": role_constraint_matched,
+                "semantic_role_fallback": (
+                    bool(requested_role)
+                    and role_constraint_matched is False
+                ),
             }
         )
 
