@@ -2078,6 +2078,369 @@ class BrowserSession:
 
         return result
 
+    def select_semantic(
+        self,
+        field: str,
+        option: str,
+        exact: bool = True,
+    ):
+        """Select one exact option from a native or ARIA combobox."""
+        self._ensure_started()
+        self._reset_diagnostics()
+
+        def visible_matches(locator, limit=50):
+            matches = []
+            for index in range(min(locator.count(), limit)):
+                candidate = locator.nth(index)
+                try:
+                    if candidate.is_visible():
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            return matches
+
+        target = None
+        strategy = None
+
+        for locator, candidate_strategy in (
+            (
+                self.page.get_by_role(
+                    "combobox",
+                    name=field,
+                    exact=exact,
+                ),
+                "role:combobox",
+            ),
+            (
+                self.page.get_by_label(field, exact=exact),
+                "label",
+            ),
+        ):
+            matches = visible_matches(locator)
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = candidate_strategy
+                break
+            if len(matches) > 1:
+                return {
+                    "error": "ambiguous_select_field",
+                    "field": field,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        if target is None:
+            matches = self._visible_nearby_labeled_field_matches(
+                field,
+                exact,
+            )
+            matches = [
+                item
+                for item in matches
+                if (
+                    item.evaluate("el => el.tagName.toLowerCase()")
+                    == "select"
+                    or (item.get_attribute("role") or "").casefold()
+                    == "combobox"
+                )
+            ]
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = "nearby-visible-label"
+            elif len(matches) > 1:
+                return {
+                    "error": "ambiguous_select_field",
+                    "field": field,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        if target is None:
+            controls = self.page.locator("select, [role='combobox']")
+            matches = []
+            for index in range(min(controls.count(), 100)):
+                candidate = controls.nth(index)
+                try:
+                    if not candidate.is_visible():
+                        continue
+                    values = [
+                        candidate.get_attribute("name") or "",
+                        candidate.get_attribute("aria-label") or "",
+                        candidate.get_attribute("placeholder") or "",
+                    ]
+                    if _field_metadata_matches(values, field, exact):
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = "html-metadata"
+            elif len(matches) > 1:
+                return {
+                    "error": "ambiguous_select_field",
+                    "field": field,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        if target is None:
+            return {
+                "error": "select_field_not_found",
+                "field": field,
+                "executed": False,
+            }
+
+        tag = target.evaluate("el => el.tagName.toLowerCase()")
+        wanted = str(option or "").strip()
+        if not wanted:
+            return {
+                "error": "select_option_required",
+                "field": field,
+                "executed": False,
+            }
+
+        self._reset_diagnostics()
+
+        if tag == "select":
+            options = target.locator("option")
+            option_matches = []
+            for index in range(min(options.count(), 500)):
+                candidate = options.nth(index)
+                label = (candidate.inner_text() or "").strip()
+                matched = (
+                    label.casefold() == wanted.casefold()
+                    if exact
+                    else wanted.casefold() in label.casefold()
+                )
+                if matched:
+                    option_matches.append(
+                        {
+                            "label": label,
+                            "value": candidate.get_attribute("value"),
+                        }
+                    )
+            if len(option_matches) != 1:
+                return {
+                    "error": (
+                        "select_option_not_found"
+                        if not option_matches
+                        else "ambiguous_select_option"
+                    ),
+                    "field": field,
+                    "option": option,
+                    "matches": len(option_matches),
+                    "executed": False,
+                }
+            selected = option_matches[0]
+            current_label = target.evaluate(
+                """
+                el => (el.selectedOptions[0]?.textContent || '').trim()
+                """
+            )
+            if current_label.casefold() == selected["label"].casefold():
+                result = self._capture_state("select-semantic")
+                result.update(
+                    {
+                        "selected_field": field,
+                        "selected_option": option,
+                        "selected_value": target.input_value(),
+                        "selected_text": current_label,
+                        "selection_strategy": "native-select",
+                        "field_match_strategy": strategy,
+                        "selection_status": "already_satisfied",
+                        "mutation_executed": False,
+                    }
+                )
+                return result
+            self._begin_action_execution()
+            target.select_option(label=selected["label"])
+            selection_strategy = "native-select"
+        else:
+            target.click()
+            self.page.wait_for_timeout(300)
+            option_locator = self.page.get_by_role(
+                "option",
+                name=option,
+                exact=exact,
+            )
+            option_matches = visible_matches(option_locator, 100)
+            if len(option_matches) != 1:
+                return {
+                    "error": (
+                        "select_option_not_found"
+                        if not option_matches
+                        else "ambiguous_select_option"
+                    ),
+                    "field": field,
+                    "option": option,
+                    "matches": len(option_matches),
+                    "executed": False,
+                }
+            self._begin_action_execution()
+            option_matches[0].click()
+            selection_strategy = "aria-option"
+
+        self.page.wait_for_timeout(500)
+        selected_value = target.input_value() if tag == "select" else None
+        selected_text = target.evaluate(
+            """
+            el => el.tagName.toLowerCase() === 'select'
+                ? (el.selectedOptions[0]?.textContent || '').trim()
+                : (
+                    el.getAttribute('aria-valuetext')
+                    || el.getAttribute('aria-label')
+                    || el.textContent
+                    || ''
+                ).trim()
+            """
+        )
+        result = self._capture_state("select-semantic")
+        result.update(
+            {
+                "selected_field": field,
+                "selected_option": option,
+                "selected_value": selected_value,
+                "selected_text": selected_text,
+                "selection_strategy": selection_strategy,
+                "field_match_strategy": strategy,
+                "selection_status": "selected",
+                "mutation_executed": True,
+                "post_action_wait_ms": 500,
+            }
+        )
+        return self._finish_action_execution(result)
+
+    def set_checked_semantic(
+        self,
+        field: str,
+        checked: bool,
+        exact: bool = True,
+    ):
+        """Set a checkbox or switch to the requested state idempotently."""
+        self._ensure_started()
+        self._reset_diagnostics()
+
+        def visible_matches(locator):
+            matches = []
+            for index in range(min(locator.count(), 50)):
+                candidate = locator.nth(index)
+                try:
+                    if candidate.is_visible():
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            return matches
+
+        target = None
+        strategy = None
+        for role in ("checkbox", "switch"):
+            matches = visible_matches(
+                self.page.get_by_role(
+                    role,
+                    name=field,
+                    exact=exact,
+                )
+            )
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = f"role:{role}"
+                break
+            if len(matches) > 1:
+                return {
+                    "error": "ambiguous_checkable_field",
+                    "field": field,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        if target is None:
+            matches = visible_matches(
+                self.page.get_by_label(field, exact=exact)
+            )
+            matches = [
+                item
+                for item in matches
+                if (
+                    (item.get_attribute("type") or "").casefold()
+                    == "checkbox"
+                    or (item.get_attribute("role") or "").casefold()
+                    in {"checkbox", "switch"}
+                )
+            ]
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = "label"
+            elif len(matches) > 1:
+                return {
+                    "error": "ambiguous_checkable_field",
+                    "field": field,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        if target is None:
+            return {
+                "error": "checkable_field_not_found",
+                "field": field,
+                "executed": False,
+            }
+
+        def current_state():
+            try:
+                return bool(target.is_checked())
+            except Exception:
+                value = str(target.get_attribute("aria-checked") or "")
+                if value.casefold() in {"true", "false"}:
+                    return value.casefold() == "true"
+                return None
+
+        desired = bool(checked)
+        previous = current_state()
+        if previous is None:
+            return {
+                "error": "checkable_state_unavailable",
+                "field": field,
+                "executed": False,
+            }
+
+        if previous == desired:
+            result = self._capture_state("set-checked-semantic")
+            result.update(
+                {
+                    "checked_field": field,
+                    "previous_checked": previous,
+                    "checked": previous,
+                    "check_status": "already_satisfied",
+                    "field_match_strategy": strategy,
+                    "mutation_executed": False,
+                }
+            )
+            return result
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        target.click()
+        self.page.wait_for_timeout(300)
+        actual = current_state()
+        result = self._capture_state("set-checked-semantic")
+        result.update(
+            {
+                "checked_field": field,
+                "previous_checked": previous,
+                "checked": actual,
+                "check_status": (
+                    "set" if actual == desired else "not_applied"
+                ),
+                "field_match_strategy": strategy,
+                "mutation_executed": True,
+                "post_action_wait_ms": 300,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if actual != desired:
+            result["error"] = "checked_state_not_applied"
+        return result
+
     def delete_json_resource(
         self,
         collection_endpoint: str,
@@ -3557,6 +3920,22 @@ def fill_semantic(
         text,
         exact,
     )
+
+
+def select_semantic(
+    field: str,
+    option: str,
+    exact: bool = True,
+) -> dict:
+    return _session.select_semantic(field, option, exact)
+
+
+def set_checked_semantic(
+    field: str,
+    checked: bool,
+    exact: bool = True,
+) -> dict:
+    return _session.set_checked_semantic(field, checked, exact)
 
 
 def fill(element_id: str, text: str) -> dict:

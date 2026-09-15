@@ -202,7 +202,9 @@ assert scope["_PENDING_SELECTION_CONTINUATIONS"][state_key] == {
 assert "managed_required_selection_missing" in uqa_source
 assert "required_selection_field" in uqa_source
 assert "required_selection_value" in uqa_source
+assert "required_selection_direct" in uqa_source
 assert "[UQA CORE: CONTINUE AFTER REQUIRED SELECTION]" in uqa_source
-assert '"role": "combobox"' in uqa_source
+assert '"tool": "browser_select_semantic"' in uqa_source
+assert '"option": required["value"]' in uqa_source
 
 print("exact resource-name constraint smoke: PASS")

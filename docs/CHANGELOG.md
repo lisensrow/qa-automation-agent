@@ -67,3 +67,12 @@
 
 - На U-Connect backend 4.9.0 / frontend 2.21.0 отсутствует рабочий UI/API cleanup для Access Zone; blocker хранится в Product Blocker Registry.
 - Контрольный lifecycle Location успешно создал и зарегистрировал точный тестовый ресурс. UI-верификация case остановлена из-за повторного предположения моделью несуществующей роли `option`; cleanup выполнил реальный archive, после чего потребовалось исправление post-check для сохранённой архивной строки.
+# v071a — semantic form controls
+
+- Добавлен универсальный выбор option для native select и ARIA combobox.
+- Добавлена идемпотентная установка checkbox/switch.
+- Новые действия классифицируются как WRITE и сохраняют policy v069.
+- Read-only policy блокирует новые form mutations, а обязательный field/value constraint исполняется одним атомарным selection-вызовом.
+- Повторный выбор уже активного значения native select не создаёт мутацию.
+- Добавлен изолированный browser smoke без изменения данных тестового стенда.
+- Добавлена живая матрица дальнейшего frontend-покрытия.

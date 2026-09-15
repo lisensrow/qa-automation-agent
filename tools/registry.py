@@ -6,6 +6,8 @@ from tools.browser import (
     click_semantic,
     context_menu_semantic,
     fill_semantic,
+    select_semantic,
+    set_checked_semantic,
     get_network_detail,
     delete_json_resource,
     archive_json_resource,
@@ -436,8 +438,46 @@ TOOLS = [
                 ]
             }
         }
-    }
-,
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_select_semantic",
+            "description": (
+                "Выбирает ровно один вариант в native select или ARIA combobox "
+                "по смысловому имени поля и видимому имени option. "
+                "Не угадывает при неоднозначности."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "field": {"type": "string"},
+                    "option": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["field", "option"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_set_checked_semantic",
+            "description": (
+                "Идемпотентно устанавливает checkbox или switch в требуемое "
+                "состояние. Уже установленное состояние не переключает."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "field": {"type": "string"},
+                    "checked": {"type": "boolean"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["field", "checked"]
+            }
+        }
+    },
     {
         "type": "function",
         "function": {
@@ -681,6 +721,20 @@ def execute_tool(name: str, arguments: dict):
         return fill_semantic(
             arguments["field"],
             arguments["text"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_select_semantic":
+        return select_semantic(
+            arguments["field"],
+            arguments["option"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_set_checked_semantic":
+        return set_checked_semantic(
+            arguments["field"],
+            arguments["checked"],
             arguments.get("exact", True),
         )
 

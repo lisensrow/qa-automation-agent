@@ -361,6 +361,10 @@ SYSTEM_PROMPT = """
   уникальной ячейки. Не придумывай для строки accessibility role.
 - Для нажатия известного элемента используй browser_click_semantic.
 - Для ввода текста используй browser_fill_semantic и смысловое имя поля.
+- Для выбора значения dropdown/combobox используй browser_select_semantic; не кликай
+  по предполагаемой role=option вручную.
+- Для checkbox/switch используй browser_set_checked_semantic с требуемым состоянием;
+  не переключай элемент вслепую повторным кликом.
 - Если после перехода фактически появилась форма Login/Password, а UQA Core
   разрешил повторное использование сохранённых credentials, вызови
   browser_authenticate_saved_stand с точным stand_id. Никогда не запрашивай,
@@ -986,6 +990,12 @@ def classify_tool_action(
 
         return "write"
 
+    if name in {
+        "browser_select_semantic",
+        "browser_set_checked_semantic",
+    }:
+        return "write"
+
     if name == "browser_click_semantic":
         semantic_name = " ".join(
             str(
@@ -1102,6 +1112,30 @@ def tool_policy_check(
                     "search/filter fields."
                 ),
             }
+
+    if name in {
+        "browser_select_semantic",
+        "browser_set_checked_semantic",
+    }:
+        return {
+            "error": "tool_policy_blocked",
+            "status": "blocked_by_policy",
+            "policy": (
+                "strict_read_only"
+                if force_read_only
+                else "read_only_request"
+            ),
+            "tool": name,
+            "executed": False,
+            "requested_semantic_name": (
+                arguments.get("field")
+                or ""
+            ),
+            "reason": (
+                "Form state changes are forbidden by the current "
+                "read-only QA request."
+            ),
+        }
 
     if name == "browser_click_semantic":
         semantic_name = (
@@ -2560,6 +2594,8 @@ def record_required_selection_result(
     job_id,
     case_id,
     result,
+    name=None,
+    arguments=None,
 ):
     state_key = (str(job_id), str(case_id))
     field_transition = _PENDING_SELECTION_FIELD_TRANSITIONS.pop(
@@ -2572,6 +2608,27 @@ def record_required_selection_result(
         and result.get("executed") is not False
         and not result.get("error")
     )
+
+    if (
+        result_succeeded
+        and name == "browser_select_semantic"
+    ):
+        direct_selection = {
+            "field": str((arguments or {}).get("field") or "").strip(),
+            "value": str((arguments or {}).get("option") or "").strip(),
+        }
+        if direct_selection["field"] and direct_selection["value"]:
+            completed = _COMPLETED_REQUIRED_SELECTIONS.setdefault(
+                state_key,
+                set(),
+            )
+            completed.add(
+                _selection_key(
+                    direct_selection["field"],
+                    direct_selection["value"],
+                )
+            )
+            _PENDING_SELECTION_CONTINUATIONS[state_key] = direct_selection
 
     if field_transition:
         if result_succeeded:
@@ -2892,6 +2949,16 @@ def execute_tool_with_policy(
             }
         elif (
             pending_constrained_action.get("constraint_kind")
+            == "required_selection_direct"
+        ):
+            _PENDING_SELECTION_COMPLETIONS[
+                constrained_state_key
+            ] = {
+                "field": pending_constrained_action["selection_field"],
+                "value": pending_constrained_action["selection_value"],
+            }
+        elif (
+            pending_constrained_action.get("constraint_kind")
             == "required_selection_value"
         ):
             _PENDING_SELECTION_COMPLETIONS[
@@ -3001,14 +3068,14 @@ def execute_tool_with_policy(
     ):
         required = missing_selections[0]
         candidate = {
-            "tool": "browser_click_semantic",
+            "tool": "browser_select_semantic",
             "arguments": {
-                "name": required["field"],
+                "field": required["field"],
+                "option": required["value"],
                 "exact": True,
-                "role": "combobox",
             },
-            "action_class": "interact",
-            "constraint_kind": "required_selection_field",
+            "action_class": "write",
+            "constraint_kind": "required_selection_direct",
             "selection_field": required["field"],
             "selection_value": required["value"],
             "basis": (
@@ -10939,6 +11006,8 @@ def run_turn(
                     job_id,
                     case_id,
                     result,
+                    name=name,
+                    arguments=arguments,
                 )
 
                 status = result.get("http_status")
