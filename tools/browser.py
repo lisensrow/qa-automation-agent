@@ -4350,6 +4350,72 @@ class BrowserSession:
             """
         )
 
+    def _table_selection_identity(
+        self,
+        table_locator,
+        table_name,
+        snapshot,
+    ):
+        """Return a pagination-stable, case-local table identity."""
+        resolved_name = str(table_name or "").strip()
+        if not resolved_name:
+            resolved_name = table_locator.evaluate(
+                """
+                table => {
+                    const clean = value => String(value || '')
+                        .replace(/\\s+/g, ' ').trim();
+                    const labelledBy = clean(
+                        table.getAttribute('aria-labelledby')
+                    );
+                    const label = labelledBy
+                        ? clean(document.getElementById(labelledBy)?.textContent)
+                        : '';
+                    return clean(
+                        table.getAttribute('aria-label')
+                        || label
+                        || table.querySelector('caption')?.textContent
+                        || ''
+                    );
+                }
+                """
+            )
+        resolved_name = resolved_name or "unnamed-table"
+        parsed = urlsplit(str(self.page.url or ""))
+        if parsed.scheme in {"http", "https"}:
+            page_scope = (
+                f"{parsed.scheme}://{parsed.netloc}{parsed.path or '/'}"
+            )
+        else:
+            page_scope = str(self.page.url or "").split("?", 1)[0]
+        header_names = [
+            str(item.get("name") or "").strip()
+            for item in snapshot.get("headers", [])
+            if isinstance(item, dict)
+        ]
+        payload = {
+            "page_scope": page_scope,
+            "table_name": resolved_name,
+            "headers": header_names,
+        }
+        key = "tbl-" + hashlib.sha256(
+            json.dumps(
+                payload,
+                ensure_ascii=False,
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()[:16]
+        return key, resolved_name, page_scope, header_names
+
+    @staticmethod
+    def _table_page_signature(snapshot):
+        return "page-" + hashlib.sha256(
+            json.dumps(
+                snapshot.get("row_signature") or [],
+                ensure_ascii=False,
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()[:16]
+
     def inspect_table_semantic(
         self,
         table: str = None,
@@ -4519,6 +4585,7 @@ class BrowserSession:
         name: str,
         selected: bool,
         exact: bool = True,
+        table: str = None,
     ):
         """Set the selection checkbox in one row matched by an exact cell."""
         self._ensure_started()
@@ -4529,8 +4596,23 @@ class BrowserSession:
                 "error": "table_row_name_required",
                 "executed": False,
             }
+        table_locator, error = self._resolve_table(table, exact)
+        if error:
+            return error
+        table_snapshot = self._table_snapshot(table_locator)
+        (
+            table_selection_key,
+            resolved_table_name,
+            table_page_scope,
+            table_header_names,
+        ) = self._table_selection_identity(
+            table_locator,
+            table,
+            table_snapshot,
+        )
+        table_page_signature = self._table_page_signature(table_snapshot)
         row_matches = []
-        rows = self.page.locator("tr")
+        rows = table_locator.locator("tr")
         for index in range(min(rows.count(), 500)):
             row = rows.nth(index)
             try:
@@ -4555,11 +4637,24 @@ class BrowserSession:
                     else "ambiguous_table_row"
                 ),
                 "name": name,
+                "table": table,
                 "matches": len(row_matches),
                 "executed": False,
             }
 
         row = row_matches[0]
+        selected_row_cells = [
+            " ".join(value.split())
+            for value in row.locator(
+                ":scope > td, :scope > th"
+            ).all_inner_texts()
+        ]
+        table_row_key = "row-" + hashlib.sha256(
+            json.dumps(
+                selected_row_cells,
+                ensure_ascii=False,
+            ).encode("utf-8")
+        ).hexdigest()[:16]
         controls = row.locator(
             'input[type="checkbox"], [role="checkbox"]'
         )
@@ -4576,6 +4671,7 @@ class BrowserSession:
                     else "ambiguous_table_row_checkbox"
                 ),
                 "name": name,
+                "table": table,
                 "matches": len(checkboxes),
                 "executed": False,
             }
@@ -4594,6 +4690,16 @@ class BrowserSession:
             result.update(
                 {
                     "table_row_name": name,
+                    "table_row_key": table_row_key,
+                    "table_row_cells": selected_row_cells[:50],
+                    "table_name": resolved_table_name,
+                    "table_selection_key": table_selection_key,
+                    "table_page_scope": table_page_scope,
+                    "table_page_signature": table_page_signature,
+                    "table_header_names": table_header_names,
+                    "table_visible_row_count": table_snapshot.get(
+                        "visible_row_count"
+                    ),
                     "previous_selected": previous,
                     "selected": previous,
                     "row_selection_status": "already_satisfied",
@@ -4617,10 +4723,24 @@ class BrowserSession:
         result.update(
             {
                 "table_row_name": name,
+                "table_row_key": table_row_key,
+                "table_row_cells": selected_row_cells[:50],
+                "table_name": resolved_table_name,
+                "table_selection_key": table_selection_key,
+                "table_page_scope": table_page_scope,
+                "table_page_signature": table_page_signature,
+                "table_header_names": table_header_names,
+                "table_visible_row_count": table_snapshot.get(
+                    "visible_row_count"
+                ),
                 "previous_selected": previous,
                 "selected": actual,
                 "row_selection_status": (
-                    "selected" if actual == desired else "not_applied"
+                    (
+                        "selected" if actual else "deselected"
+                    )
+                    if actual == desired
+                    else "not_applied"
                 ),
                 "mutation_executed": False,
             }
@@ -7035,8 +7155,9 @@ def set_table_row_selected(
     name: str,
     selected: bool,
     exact: bool = True,
+    table: str = None,
 ) -> dict:
-    return _session.set_table_row_selected(name, selected, exact)
+    return _session.set_table_row_selected(name, selected, exact, table)
 
 
 def table_page_semantic(

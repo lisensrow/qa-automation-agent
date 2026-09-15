@@ -809,14 +809,23 @@ TOOLS = [
             "name": "browser_set_table_row_selected",
             "description": (
                 "Идемпотентно устанавливает checkbox выбора ровно одной строки, "
-                "найденной по точному значению ячейки. Не запускает bulk action."
+                "найденной по точному значению ячейки внутри одной таблицы. "
+                "Возвращает устойчивый ключ таблицы для cross-page ledger и "
+                "не запускает bulk action."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "name": {"type": "string"},
                     "selected": {"type": "boolean"},
-                    "exact": {"type": "boolean"}
+                    "exact": {"type": "boolean"},
+                    "table": {
+                        "type": "string",
+                        "description": (
+                            "Точное доступное имя таблицы. Обязательно при "
+                            "наличии нескольких видимых таблиц."
+                        )
+                    }
                 },
                 "required": ["name", "selected"]
             }
@@ -1305,6 +1314,7 @@ def execute_tool(name: str, arguments: dict):
             arguments["name"],
             arguments["selected"],
             arguments.get("exact", True),
+            arguments.get("table"),
         )
 
     if name == "browser_table_page_semantic":

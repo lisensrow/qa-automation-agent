@@ -166,3 +166,13 @@
 - Visible DOM row count больше не используется как замена server-side total.
 - Header resolver умеет исключать вложенные buttons/inputs из имени колонки.
 - Добавлен изолированный table popover/totals smoke.
+
+# v074b — persistent cross-page table selection
+
+- Row selection теперь сужается одной точной таблицей и не конфликтует с одноимёнными строками соседних таблиц.
+- Для таблицы вычисляется устойчивый ключ из page scope без query, имени и headers; ключ сохраняется между страницами пагинации.
+- Job Store получил persistent `table_selections` ledger с upsert выбора/снятия, hash полного набора ячеек, bounded page history и фильтрацией активных строк; одинаковые отображаемые имена на разных страницах не сливаются.
+- После каждого успешного выбора Core возвращает полный набор выбранных строк этого case/table на всех уже посещённых страницах.
+- Добавлен read-only `table_selection_list`; ledger помечен как bookkeeping-only и никогда не разрешает bulk action.
+- v069 action-policy и архитектура STEP/AUTO не изменены.
+- Добавлен изолированный smoke для выбора Alpha/Gamma на разных страницах, снятия Alpha и проверки нулевого числа bulk clicks.

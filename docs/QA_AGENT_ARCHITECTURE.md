@@ -14,6 +14,7 @@
 - Проверяет фактический Tab focus order, выполняет закрытый набор keyboard chords и тестирует copy/paste через изолированный session-private clipboard без доступа к системному буферу.
 - Перетаскивает точный semantic source на точный target, проверяет итоговый порядок и отдельно подтверждает его сохранение после повторной загрузки.
 - Получает структурированный снимок таблицы, управляет сортировкой, выбором точной строки и проверяемой пагинацией.
+- Сохраняет выбранные строки одной таблицы между страницами пагинации в persistent ledger и отдельно показывает полный набор выбора, не запуская bulk action.
 - Применяет column filters, управляет select-all и проверяет bulk-action preview без запуска массовой операции.
 - Работает с filter popovers и отличает число видимых строк от server-side total/range/current page.
 - Снимает fingerprint фактических UI-контрактов, сохраняет историю по Job и обнаруживает смену совместимых adapters между прогонами; несовместимый контракт блокирует WRITE/DESTRUCTIVE до исполнения.
@@ -116,7 +117,7 @@ Keyboard primitive принимает только закрытый список
 
 Pointer primitives используют только однозначно найденные видимые endpoints. Drag-and-drop требует разные source/target и сохраняет bounding boxes до и после. Для reorder он до мутации снимает порядок верхнеуровневых semantic items в точном container, а после действия сравнивает весь exact order либо заданную subsequence. Несовпадение возвращается как ошибка при честно отмеченной выполненной мутации. Отдельный read-only order inspector позволяет повторить ту же проверку после reload: только этот второй match доказывает сохранение порядка, тогда как результат drag доказывает лишь состояние текущего UI. Resize ограничивает delta диапазоном, поддерживает правую, нижнюю и угловую границы и считается успешным только при фактически изменившемся bounding box. Изменяющие pointer actions относятся к WRITE и блокируются read-only policy.
 
-Table primitives работают с одной однозначно найденной таблицей. Snapshot ограничивает объём и сохраняет headers, aria-sort, cells, values_by_header и row signature. Sort принимает точный header и подтверждает направление через aria-sort; при отсутствии ARIA отдельно сообщает только наблюдаемое изменение порядка. Header matching умеет отделять имя колонки от текста вложенных sort/filter controls, но всё равно требует единственное совпадение. Row selection ищет строку по точной ячейке и единственный checkbox, не запуская bulk action. Pagination считается успешной только если после точного control изменился row signature.
+Table primitives работают с одной однозначно найденной таблицей. Snapshot ограничивает объём и сохраняет headers, aria-sort, cells, values_by_header и row signature. Sort принимает точный header и подтверждает направление через aria-sort; при отсутствии ARIA отдельно сообщает только наблюдаемое изменение порядка. Header matching умеет отделять имя колонки от текста вложенных sort/filter controls, но всё равно требует единственное совпадение. Row selection ищет строку по точной ячейке и единственный checkbox внутри указанной таблицы, не запуская bulk action. Для cross-page workflow runtime строит устойчивый ключ из page scope, имени таблицы и headers; query-параметр страницы в ключ не входит. Pagination считается успешной только если после точного control изменился row signature.
 
 Inline column filter связывается с точным header по cell index и допускается только при единственном видимом filter control в соответствующей header-cell. Popover filter требует единственную точную trigger-кнопку внутри header, однозначный popup через `aria-controls` либо единственный overlay, единственное value field и точную Apply-кнопку. Operator выбирается только из единственного native select с единственной совпавшей option. Результат сообщает факт отправки фильтра и rows before/after, но не объявляет server filter успешным только по клику.
 
@@ -155,8 +156,15 @@ Job Store — постоянное файловое хранилище сост�
 - evidence и observations;
 - итоговые статусы и summary;
 - test resources и история cleanup.
+- persistent выбор строк таблиц по test case и устойчивому ключу таблицы.
 
 Запись выполняется атомарно. Чувствительные поля metadata проходят очистку перед сохранением.
+
+### Persistent Table Selection Ledger
+
+Selection ledger хранит точные строки, которые агент выбрал или снял в рамках одного test case, даже если следующая страница таблицы уже заменила DOM предыдущей. Запись содержит `selection_id`, `case_id`, устойчивый `table_selection_key`, hash полного набора ячеек `table_row_key`, отображаемое имя строки, текущее состояние выбора, page signatures и timestamps. Поэтому одинаковые отображаемые имена на разных страницах не сливаются автоматически.
+
+Ledger является только памятью намерения агента. Он не доказывает, что frontend действительно удерживает checkbox между страницами, не считается runtime evidence для PASS и всегда возвращает `bulk_action_authorized=false`. Массовое Save/Archive/Delete остаётся отдельным действием и проходит обычную v069 policy.
 
 ### Persistent Resource Ledger
 
@@ -273,6 +281,7 @@ Observations извлекаются из фактических результа
 - изоляция destructive REST tools внутри Cleanup Manager;
 - product blocker registry;
 - команды просмотра статуса и blockers.
+- cross-page table selection с persistent selection ledger без автоматического bulk action.
 
 В работе:
 
@@ -294,12 +303,12 @@ Observations извлекаются из фактических результа
 - Визуальная проверка этого Job уточнила причину: первый пункт `Archive` лишь открыл отдельный confirm-popover, а строка осталась активной. Core больше не считает такой intent-click выполненной мутацией и требует отдельный policy-controlled клик по одноимённой кнопке подтверждения.
 - После исправления тот же Job безопасно восстановлен: оба destructive-клика прошли отдельные v069 confirmations, фактический Archive выполнен, а новый recovery без повторной mutation подтвердил `Unarchive` в context menu той же exact-строки. Итог: Job `passed`, case `passed`, три planned checks `passed`, resource `cleaned`, cleanup `completed`.
 
-## Следующий этап v070b+
+## Следующий этап frontend-покрытия
 
-- Расширить извлечение версий на дополнительные компоненты по мере появления blockers для них.
-- Поддерживать постоянный smoke-suite при добавлении новых архитектурных функций.
-- Сократить длительность model-call: в свежем lifecycle prompt достигал 8–13 тысяч токенов, а отдельные шаги занимали несколько минут.
-- Access Zone blocker оставить до появления продуктовой поддержки.
+- Date/time pickers, sliders, tree controls и complex popovers.
+- Upload/download с проверкой имени, типа и содержимого файла.
+- Modal/dialog, toast/notification, responsive и accessibility checks.
+- Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа
 

@@ -46,6 +46,8 @@ from job_store import (
     list_product_blockers,
     mark_product_blockers_for_version_change,
     record_compatibility_snapshot,
+    record_table_selection,
+    list_table_selections,
     _normalize_checks,
 )
 from observation_extractor import (
@@ -163,6 +165,25 @@ CORE_RESOURCE_TOOLS = [
                         "type": "boolean",
                         "description": "Вернуть ресурсы только текущего case.",
                     },
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "table_selection_list",
+            "description": (
+                "Возвращает persistent список строк, выбранных в таблицах "
+                "текущего test case на разных страницах. Это bookkeeping "
+                "намерения, а не доказательство сохранения выбора frontend "
+                "и не разрешение на bulk action."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "table_selection_key": {"type": "string"},
+                    "selected_only": {"type": "boolean"},
                 },
             },
         },
@@ -387,6 +408,10 @@ SYSTEM_PROMPT = """
 - Для сортировки, выбора строки и пагинации используй специализированные
   browser_sort_table_semantic, browser_set_table_row_selected и
   browser_table_page_semantic; bulk Save/Delete остаётся отдельным policy action.
+- При cross-page выборе всегда передавай точное имя table. После каждого
+  browser_set_table_row_selected Core сам обновляет persistent ledger.
+  table_selection_list показывает намерение выбора между страницами, но не
+  доказывает, что frontend сохранил checkbox, и никогда не разрешает bulk action.
 - Для column filter используй browser_fill_table_filter_semantic.
 - Если filter скрыт в header popover, используй browser_apply_table_filter_popover_semantic
   только с фактически наблюдёнными trigger/operator/apply labels.
@@ -424,7 +449,7 @@ SYSTEM_PROMPT = """
 - После фактически подтверждённого создания тестового объекта немедленно вызови resource_register.
 - Передавай в resource ledger только универсальный тип, имя/ID и несекретные metadata.
 - Никогда не сохраняй в resource ledger пароли, токены, cookies, ключи или другие секреты.
-- resource_register/resource_update/resource_list ведут только persistent bookkeeping и не являются runtime evidence стенда.
+- resource_register/resource_update/resource_list/table_selection_list ведут только persistent bookkeeping и не являются runtime evidence стенда.
 - Статусы cleaned/cleanup_failed выставляет только Cleanup Manager после проверки результата.
 - Не пытайся сам угадывать accessibility role.
 - Не перебирай element_id и не делай серию пробных действий по разным элементам.
@@ -979,6 +1004,7 @@ def classify_tool_action(
         "browser_inspect_order_semantic",
         "browser_inspect_bulk_action_semantic",
         "resource_list",
+        "table_selection_list",
     }
 
     if name in observe_tools:
@@ -2888,6 +2914,23 @@ def execute_resource_tool(
                 "resources": resources,
             }
 
+        if name == "table_selection_list":
+            selections = list_table_selections(
+                job_id=job_id,
+                case_id=case_id,
+                table_selection_key=arguments.get("table_selection_key"),
+                selected_only=arguments.get("selected_only", False),
+            )
+
+            return {
+                "status": "ok",
+                "executed": True,
+                "count": len(selections),
+                "selections": selections,
+                "bookkeeping_only": True,
+                "bulk_action_authorized": False,
+            }
+
         return {
             "error": "unknown_resource_tool",
             "status": "error",
@@ -3418,6 +3461,7 @@ def execute_tool_with_policy(
         "resource_register",
         "resource_update",
         "resource_list",
+        "table_selection_list",
     }:
         result = execute_resource_tool(
             name,
@@ -4090,12 +4134,50 @@ def record_tool_observations(
         "resource_register",
         "resource_update",
         "resource_list",
+        "table_selection_list",
     }:
         return []
 
     created = []
 
     try:
+        if (
+            tool_name == "browser_set_table_row_selected"
+            and isinstance(result, dict)
+            and not result.get("error")
+            and result.get("table_selection_key")
+            and isinstance(result.get("selected"), bool)
+        ):
+            stored_selection = record_table_selection(
+                job_id,
+                case_id,
+                result,
+            )
+            active_selections = list_table_selections(
+                job_id,
+                case_id=case_id,
+                table_selection_key=result.get("table_selection_key"),
+                selected_only=True,
+            )
+            result["table_selection_ledger_entry_id"] = (
+                stored_selection.get("selection_id")
+            )
+            result["cross_page_selected_rows"] = [
+                item.get("row_name")
+                for item in active_selections
+            ]
+            result["cross_page_selected_entries"] = [
+                {
+                    "selection_id": item.get("selection_id"),
+                    "row_name": item.get("row_name"),
+                    "table_row_key": item.get("table_row_key"),
+                }
+                for item in active_selections
+            ]
+            result["cross_page_selected_count"] = len(active_selections)
+            result["selection_bookkeeping_only"] = True
+            result["bulk_action_authorized"] = False
+
         if (
             tool_name == "browser_probe_capabilities"
             and isinstance(result, dict)
@@ -4270,6 +4352,7 @@ def record_tool_evidence(
         "resource_register",
         "resource_update",
         "resource_list",
+        "table_selection_list",
     }:
         return None
 
@@ -7913,6 +7996,7 @@ def _cleanup_tools():
         "resource_register",
         "resource_update",
         "resource_list",
+        "table_selection_list",
         # Core opens an exact row menu once. Exposing this toggle to the
         # worker could immediately close the already-open menu.
         "browser_context_menu_semantic",

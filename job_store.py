@@ -662,6 +662,7 @@ def create_job(
         "updated_at": now,
         "test_cases": [],
         "resources": [],
+        "table_selections": [],
         "compatibility": {
             "snapshots": [],
             "current_fingerprint": None,
@@ -822,6 +823,152 @@ def record_compatibility_snapshot(
     compatibility["last_checked_at"] = item["created_at"]
     save_job(job)
     return deepcopy(item)
+
+
+def record_table_selection(
+    job_id: str,
+    case_id: str,
+    result: dict,
+):
+    """Upsert one exact row selection without executing a bulk action."""
+    if not isinstance(result, dict) or result.get("error"):
+        raise ValueError("successful table selection result required")
+
+    table_key = str(
+        result.get("table_selection_key") or ""
+    ).strip()
+    row_name = str(result.get("table_row_name") or "").strip()
+    row_key = str(result.get("table_row_key") or "").strip()
+    selected = result.get("selected")
+    if not table_key or not row_name or not isinstance(selected, bool):
+        raise ValueError("invalid table selection result")
+    row_key = row_key or "row-name:" + row_name
+
+    job = get_job(job_id)
+    if job is None:
+        raise FileNotFoundError(job_id)
+    case_id = _validate_resource_case(job, case_id)
+    if not case_id:
+        raise ValueError("case_id required")
+
+    now = _now()
+    selections = job.setdefault("table_selections", [])
+    entry = next(
+        (
+            item
+            for item in selections
+            if item.get("case_id") == case_id
+            and item.get("table_selection_key") == table_key
+            and (
+                item.get("table_row_key")
+                or "row-name:" + str(item.get("row_name") or "")
+            ) == row_key
+        ),
+        None,
+    )
+    if entry is None:
+        entry = {
+            "selection_id": "sel-" + uuid.uuid4().hex[:12],
+            "case_id": case_id,
+            "table_selection_key": table_key,
+            "table_name": str(
+                result.get("table_name") or ""
+            ).strip() or None,
+            "table_page_scope": str(
+                result.get("table_page_scope") or ""
+            ).strip() or None,
+            "table_header_names": [
+                str(value).strip()
+                for value in (result.get("table_header_names") or [])
+                if str(value).strip()
+            ][:50],
+            "table_row_key": row_key,
+            "table_row_cells": [
+                str(value).strip()
+                for value in (result.get("table_row_cells") or [])
+            ][:50],
+            "row_name": row_name,
+            "selected": False,
+            "pages_seen": [],
+            "event_count": 0,
+            "created_at": now,
+            "updated_at": now,
+            "selected_at": None,
+            "deselected_at": None,
+        }
+        selections.append(entry)
+
+    entry["selected"] = selected
+    entry["updated_at"] = now
+    entry["event_count"] = int(entry.get("event_count") or 0) + 1
+    if selected:
+        entry["selected_at"] = now
+        entry["deselected_at"] = None
+    else:
+        entry["deselected_at"] = now
+
+    page_signature = str(
+        result.get("table_page_signature") or ""
+    ).strip()
+    if page_signature:
+        pages = entry.setdefault("pages_seen", [])
+        page = next(
+            (
+                item
+                for item in pages
+                if item.get("page_signature") == page_signature
+            ),
+            None,
+        )
+        if page is None:
+            page = {
+                "page_signature": page_signature,
+                "first_seen_at": now,
+                "last_seen_at": now,
+                "last_selected": selected,
+            }
+            pages.append(page)
+        else:
+            page["last_seen_at"] = now
+            page["last_selected"] = selected
+        if len(pages) > 20:
+            del pages[:-20]
+
+    if len(selections) > 1000:
+        inactive = [item for item in selections if not item.get("selected")]
+        while len(selections) > 1000 and inactive:
+            selections.remove(inactive.pop(0))
+
+    save_job(job)
+    return deepcopy(entry)
+
+
+def list_table_selections(
+    job_id: str,
+    case_id: str = None,
+    table_selection_key: str = None,
+    selected_only: bool = False,
+):
+    job = get_job(job_id)
+    if job is None:
+        raise FileNotFoundError(job_id)
+    case_id = str(case_id or "").strip() or None
+    table_selection_key = str(
+        table_selection_key or ""
+    ).strip() or None
+    if not isinstance(selected_only, bool):
+        raise ValueError("selected_only must be bool")
+
+    return [
+        deepcopy(item)
+        for item in job.get("table_selections", [])
+        if (case_id is None or item.get("case_id") == case_id)
+        and (
+            table_selection_key is None
+            or item.get("table_selection_key") == table_selection_key
+        )
+        and (not selected_only or bool(item.get("selected")))
+    ]
 
 
 def set_job_status(

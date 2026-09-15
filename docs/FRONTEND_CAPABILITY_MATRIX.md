@@ -22,6 +22,7 @@
 - Структурированный снимок таблицы, сортировка, выбор точной строки и проверяемая пагинация.
 - Column filters, select-all и read-only bulk-action preview.
 - Filter popovers и read-only server-side total/range/current-page metadata.
+- Cross-page выбор точных строк с persistent selection ledger без запуска bulk action.
 - UI-contract fingerprint, adapter discovery и persistent compatibility history.
 - Обязательный compatibility preflight перед первой мутацией и fail-closed блокировка несовместимого UI.
 - Проверка точной строки таблицы и работа с её context menu.
@@ -30,9 +31,8 @@
 
 ## Следующие этапы frontend-покрытия
 
-1. Cross-page table selection с persistent selection ledger.
-2. Date/time pickers, sliders, tree controls и complex popovers.
-3. Upload/download с проверкой имени, типа и содержимого файла.
-4. Modal/dialog, toast/notification, responsive и accessibility checks.
+1. Date/time pickers, sliders, tree controls и complex popovers.
+2. Upload/download с проверкой имени, типа и содержимого файла.
+3. Modal/dialog, toast/notification, responsive и accessibility checks.
 
 Каждый новый control добавляется универсальным browser primitive без ветвлений по сущностям U-Connect и обязательно включается в action-policy, evidence pipeline и изолированный smoke-test.
