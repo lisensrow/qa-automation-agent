@@ -2702,6 +2702,176 @@ class BrowserSession:
             result["error"] = "slider_value_not_applied"
         return result
 
+    def _resolve_tree(self, tree=None, exact=True):
+        candidates = (
+            self.page.get_by_role("tree", name=tree, exact=exact)
+            if tree
+            else self.page.get_by_role("tree")
+        )
+        visible = []
+        for index in range(min(candidates.count(), 50)):
+            candidate = candidates.nth(index)
+            try:
+                if candidate.is_visible():
+                    visible.append(candidate)
+            except Exception:
+                continue
+        if len(visible) == 1:
+            return visible[0], None
+        return None, {
+            "error": "tree_not_found" if not visible else "ambiguous_tree",
+            "tree": tree,
+            "matches": len(visible),
+            "executed": False,
+        }
+
+    @staticmethod
+    def _tree_snapshot(tree_locator):
+        return tree_locator.evaluate(
+            """
+            tree => {
+                const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
+                return Array.from(tree.querySelectorAll('[role="treeitem"]'))
+                    .filter(item => {
+                        const style = window.getComputedStyle(item);
+                        return !item.hidden && style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && item.getClientRects().length > 0;
+                    }).slice(0, 500).map(item => {
+                        const clone = item.cloneNode(true);
+                        clone.querySelectorAll('[role="group"]').forEach(node => node.remove());
+                        return {
+                            name: clean(item.getAttribute('aria-label') || clone.textContent),
+                            level: Number(item.getAttribute('aria-level')) || null,
+                            expanded: item.hasAttribute('aria-expanded')
+                                ? item.getAttribute('aria-expanded') === 'true' : null,
+                            selected: item.hasAttribute('aria-selected')
+                                ? item.getAttribute('aria-selected') === 'true' : null,
+                            checked: item.hasAttribute('aria-checked')
+                                ? item.getAttribute('aria-checked') : null,
+                            disabled: item.getAttribute('aria-disabled') === 'true'
+                        };
+                    });
+            }
+            """
+        )
+
+    def inspect_tree_semantic(self, tree: str = None, exact: bool = True):
+        self._ensure_started()
+        self._reset_diagnostics()
+        tree_locator, error = self._resolve_tree(tree, exact)
+        if error:
+            return error
+        items = self._tree_snapshot(tree_locator)
+        result = self._capture_state("inspect-tree-semantic")
+        result.update(
+            {
+                "tree_name": tree,
+                "tree_items": items,
+                "visible_tree_item_count": len(items),
+                "tree_inspection_status": "observed",
+                "mutation_executed": False,
+            }
+        )
+        return result
+
+    def set_tree_item_expanded(
+        self,
+        item: str,
+        expanded: bool,
+        tree: str = None,
+        exact: bool = True,
+    ):
+        self._ensure_started()
+        self._reset_diagnostics()
+        tree_locator, error = self._resolve_tree(tree, exact)
+        if error:
+            return error
+        locator = tree_locator.get_by_role("treeitem", name=item, exact=exact)
+        matches = []
+        for index in range(min(locator.count(), 100)):
+            candidate = locator.nth(index)
+            try:
+                if candidate.is_visible():
+                    matches.append(candidate)
+            except Exception:
+                continue
+        if len(matches) != 1:
+            return {
+                "error": (
+                    "tree_item_not_found"
+                    if not matches
+                    else "ambiguous_tree_item"
+                ),
+                "tree": tree,
+                "item": item,
+                "matches": len(matches),
+                "executed": False,
+            }
+        target = matches[0]
+        raw_expanded = target.get_attribute("aria-expanded")
+        if raw_expanded not in {"true", "false"}:
+            return {
+                "error": "tree_item_not_expandable",
+                "tree": tree,
+                "item": item,
+                "executed": False,
+            }
+        if (
+            target.get_attribute("aria-disabled") == "true"
+            or not target.is_enabled()
+        ):
+            return {
+                "error": "tree_item_not_enabled",
+                "tree": tree,
+                "item": item,
+                "executed": False,
+            }
+        previous = raw_expanded == "true"
+        desired = bool(expanded)
+        before = self._tree_snapshot(tree_locator)
+        if previous == desired:
+            result = self._capture_state("set-tree-item-expanded")
+            result.update(
+                {
+                    "tree_name": tree,
+                    "tree_item": item,
+                    "previous_expanded": previous,
+                    "expanded": previous,
+                    "tree_expand_status": "already_satisfied",
+                    "tree_before": before,
+                    "tree_after": before,
+                    "mutation_executed": False,
+                }
+            )
+            return result
+        key = "ArrowRight" if desired else "ArrowLeft"
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        target.focus()
+        target.press(key)
+        self.page.wait_for_timeout(300)
+        actual = target.get_attribute("aria-expanded") == "true"
+        after = self._tree_snapshot(tree_locator)
+        result = self._capture_state("set-tree-item-expanded")
+        result.update(
+            {
+                "tree_name": tree,
+                "tree_item": item,
+                "previous_expanded": previous,
+                "expanded": actual,
+                "tree_expand_status": "applied" if actual == desired else "not_applied",
+                "tree_key": key,
+                "tree_before": before,
+                "tree_after": after,
+                "mutation_executed": True,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if actual != desired:
+            result["error"] = "tree_item_expand_not_applied"
+        return result
+
     def select_semantic(
         self,
         field: str,
@@ -7415,6 +7585,19 @@ def set_slider_semantic(
     exact: bool = True,
 ) -> dict:
     return _session.set_slider_semantic(field, value, exact)
+
+
+def inspect_tree_semantic(tree: str = None, exact: bool = True) -> dict:
+    return _session.inspect_tree_semantic(tree, exact)
+
+
+def set_tree_item_expanded(
+    item: str,
+    expanded: bool,
+    tree: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.set_tree_item_expanded(item, expanded, tree, exact)
 
 
 def select_semantic(

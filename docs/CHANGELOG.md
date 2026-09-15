@@ -194,3 +194,11 @@
 - Изменение выполняется Arrow-клавишами с учётом horizontal/vertical orientation и подтверждается повторным чтением значения.
 - Primitive является WRITE и не нажимает Save/Apply.
 - Добавлен изолированный smoke для native и кастомного ARIA slider.
+
+# v075c — ARIA tree inspection and expansion
+
+- Добавлен read-only snapshot видимых treeitems с level/expanded/selected/checked/disabled.
+- Добавлен идемпотентный expand/collapse одного точного узла через ArrowRight/ArrowLeft.
+- Leaf без `aria-expanded`, disabled item и неоднозначные tree/item блокируются до действия.
+- Раскрытие дерева классифицируется как INTERACT и не считается выбором или Save.
+- Добавлен изолированный tree-controls smoke.

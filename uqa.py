@@ -388,6 +388,9 @@ SYSTEM_PROMPT = """
   строку вручную и не обходи возвращённые min/max/step ограничения.
 - Для native range или ARIA slider используй browser_set_slider_semantic с
   точным числом; не эмулируй произвольные клики по координатам шкалы.
+- Для ARIA tree сначала используй browser_inspect_tree_semantic, затем
+  browser_set_tree_item_expanded для точного expand/collapse. Раскрытие узла
+  не означает выбор значения или сохранение формы.
 - Для выбора значения dropdown/combobox используй browser_select_semantic; не кликай
   по предполагаемой role=option вручную.
 - Для checkbox/switch используй browser_set_checked_semantic с требуемым состоянием;
@@ -1008,6 +1011,7 @@ def classify_tool_action(
         "browser_inspect_table_pagination_semantic",
         "browser_inspect_order_semantic",
         "browser_inspect_bulk_action_semantic",
+        "browser_inspect_tree_semantic",
         "resource_list",
         "table_selection_list",
     }
@@ -1016,6 +1020,9 @@ def classify_tool_action(
         return "observe"
 
     if name == "browser_check_focus_order_semantic":
+        return "interact"
+
+    if name == "browser_set_tree_item_expanded":
         return "interact"
 
     if name in {

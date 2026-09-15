@@ -13,6 +13,7 @@
 - Работает с поисковым ARIA autocomplete: вводит точный запрос и выбирает единственную совпавшую option.
 - Устанавливает canonical значения native date/time/datetime-local/month/week, заранее проверяя min/max/step и подтверждая фактическое value после изменения.
 - Устанавливает точное значение native range или ARIA slider через bounded keyboard steps с проверкой min/max/step и итогового значения.
+- Читает структуру ARIA tree и идемпотентно раскрывает/сворачивает точный узел с проверкой aria-expanded.
 - Проверяет фактический Tab focus order, выполняет закрытый набор keyboard chords и тестирует copy/paste через изолированный session-private clipboard без доступа к системному буферу.
 - Перетаскивает точный semantic source на точный target, проверяет итоговый порядок и отдельно подтверждает его сохранение после повторной загрузки.
 - Получает структурированный снимок таблицы, управляет сортировкой, выбором точной строки и проверяемой пагинацией.
@@ -116,6 +117,8 @@ Radio primitive сначала сужает поиск именованной г
 Temporal primitive работает только с нативными HTML `date`, `time`, `datetime-local`, `month` и `week`. Значение передаётся в canonical HTML-формате. Перед мутацией runtime проверяет его на клоне control, включая browser constraint validation `min`, `max` и `step`; невалидное значение не касается исходного поля. После fill сверяются фактическое value и validity. Primitive не нажимает Save/Submit и классифицируется как WRITE.
 
 Slider primitive поддерживает native `input[type=range]` и `role=slider`. Он читает фактические min/max/current и стандартный native step либо явный `aria-valuestep`/`data-step`, блокирует выход за диапазон, несовпадение шага и более 500 keyboard steps. Значение меняется Arrow-клавишами с учётом orientation и считается установленным только после повторного чтения control. Save/Apply остаётся отдельным действием.
+
+Tree inspector возвращает ограниченный список видимых `treeitem` с именем, level, expanded, selected, checked и disabled. Expand primitive требует единственное точное дерево и item с явным `aria-expanded`, использует стандартные ArrowRight/ArrowLeft и сверяет состояние после события. Раскрытие ветки относится к INTERACT, не выбирает значение и не сохраняет форму.
 
 Keyboard primitive принимает только закрытый список клавиш и chords. Tab, Shift+Tab, Escape и Control+A классифицируются как INTERACT. Enter, Space, стрелки, Home/End/Page, Backspace, Undo/Redo chords, Shift+Enter и Alt+ArrowDown считаются WRITE, потому что способны изменить focused control или отправить форму. Delete считается DESTRUCTIVE. Control-based chord требует точный semantic target; неизвестные сочетания, включая прямые Control+C/X/V, не исполняются. Focus-order primitive фокусирует первый точный semantic target, проходит реальный Tab sequence и возвращает наблюдаемые focused elements и первое расхождение.
 
@@ -311,7 +314,7 @@ Observations извлекаются из фактических результа
 
 ## Следующий этап frontend-покрытия
 
-- Tree controls и complex popovers.
+- Выбор значений в tree controls и complex popovers.
 - Кастомные calendar/time picker overlays поверх native temporal fields.
 - Upload/download с проверкой имени, типа и содержимого файла.
 - Modal/dialog, toast/notification, responsive и accessibility checks.

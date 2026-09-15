@@ -9,6 +9,8 @@ from tools.browser import (
     fill_semantic,
     set_temporal_semantic,
     set_slider_semantic,
+    inspect_tree_semantic,
+    set_tree_item_expanded,
     select_semantic,
     set_checked_semantic,
     choose_radio_semantic,
@@ -521,6 +523,43 @@ TOOLS = [
                     "exact": {"type": "boolean"}
                 },
                 "required": ["field", "value"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_tree_semantic",
+            "description": (
+                "Read-only снимок одной точной ARIA tree: видимые items, "
+                "levels, expanded, selected, checked и disabled states."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "tree": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_set_tree_item_expanded",
+            "description": (
+                "Идемпотентно раскрывает или сворачивает один точный ARIA "
+                "treeitem стандартной Arrow-клавишей и проверяет aria-expanded."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "item": {"type": "string"},
+                    "expanded": {"type": "boolean"},
+                    "tree": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["item", "expanded"]
             }
         }
     },
@@ -1263,6 +1302,20 @@ def execute_tool(name: str, arguments: dict):
         return set_slider_semantic(
             arguments["field"],
             arguments["value"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_tree_semantic":
+        return inspect_tree_semantic(
+            arguments.get("tree"),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_set_tree_item_expanded":
+        return set_tree_item_expanded(
+            arguments["item"],
+            arguments["expanded"],
+            arguments.get("tree"),
             arguments.get("exact", True),
         )
 
