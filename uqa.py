@@ -383,6 +383,9 @@ SYSTEM_PROMPT = """
   уникальной ячейки. Не придумывай для строки accessibility role.
 - Для нажатия известного элемента используй browser_click_semantic.
 - Для ввода текста используй browser_fill_semantic и смысловое имя поля.
+- Для native date/time/datetime-local/month/week используй
+  browser_set_temporal_semantic с canonical HTML value. Не вводи локализованную
+  строку вручную и не обходи возвращённые min/max/step ограничения.
 - Для выбора значения dropdown/combobox используй browser_select_semantic; не кликай
   по предполагаемой role=option вручную.
 - Для checkbox/switch используй browser_set_checked_semantic с требуемым состоянием;
@@ -1102,6 +1105,7 @@ def classify_tool_action(
 
     if name in {
         "browser_paste_private_semantic",
+        "browser_set_temporal_semantic",
         "browser_select_semantic",
         "browser_set_checked_semantic",
         "browser_choose_radio_semantic",

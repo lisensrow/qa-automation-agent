@@ -176,3 +176,12 @@
 - Добавлен read-only `table_selection_list`; ledger помечен как bookkeeping-only и никогда не разрешает bulk action.
 - v069 action-policy и архитектура STEP/AUTO не изменены.
 - Добавлен изолированный smoke для выбора Alpha/Gamma на разных страницах, снятия Alpha и проверки нулевого числа bulk clicks.
+
+# v075a — native temporal controls
+
+- Добавлен semantic primitive для native `date`, `time`, `datetime-local`, `month` и `week`.
+- Значение задаётся только в canonical HTML-формате и связывается с точным semantic label/metadata поля.
+- До изменения проверяются browser validity, `min`, `max` и `step` на клоне control; невалидный запрос не меняет страницу.
+- Повтор уже установленного значения идемпотентен, после fill проверяются фактическое value и validity.
+- Primitive классифицируется как WRITE, не нажимает Save/Submit и сохраняет v069 policy.
+- Добавлен изолированный temporal-controls smoke без обращения к тестовому стенду.

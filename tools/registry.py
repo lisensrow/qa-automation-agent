@@ -7,6 +7,7 @@ from tools.browser import (
     click_semantic,
     context_menu_semantic,
     fill_semantic,
+    set_temporal_semantic,
     select_semantic,
     set_checked_semantic,
     choose_radio_semantic,
@@ -472,6 +473,33 @@ TOOLS = [
                     "field",
                     "text"
                 ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_set_temporal_semantic",
+            "description": (
+                "Идемпотентно устанавливает canonical HTML value нативного "
+                "date/time/datetime-local/month/week поля. До изменения "
+                "проверяет формат, min, max и step; после изменения сверяет "
+                "фактическое value и validity."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "field": {"type": "string"},
+                    "value": {
+                        "type": "string",
+                        "description": (
+                            "Canonical HTML value, например 2026-09-16, "
+                            "14:30 или 2026-09-16T14:30."
+                        )
+                    },
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["field", "value"]
             }
         }
     },
@@ -1200,6 +1228,13 @@ def execute_tool(name: str, arguments: dict):
         return fill_semantic(
             arguments["field"],
             arguments["text"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_set_temporal_semantic":
+        return set_temporal_semantic(
+            arguments["field"],
+            arguments["value"],
             arguments.get("exact", True),
         )
 

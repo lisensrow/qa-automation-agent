@@ -2304,6 +2304,232 @@ class BrowserSession:
 
         return result
 
+    def set_temporal_semantic(
+        self,
+        field: str,
+        value: str,
+        exact: bool = True,
+    ):
+        """Set one native date/time control using its canonical HTML value."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        supported_types = {
+            "date",
+            "time",
+            "datetime-local",
+            "month",
+            "week",
+        }
+
+        def visible_temporal_matches(locator):
+            matches = []
+            for index in range(min(locator.count(), 50)):
+                candidate = locator.nth(index)
+                try:
+                    if (
+                        candidate.is_visible()
+                        and candidate.evaluate(
+                            "el => el.tagName.toLowerCase() === 'input'"
+                        )
+                        and str(
+                            candidate.get_attribute("type") or ""
+                        ).casefold() in supported_types
+                    ):
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            return matches
+
+        target = None
+        strategy = None
+        for locator, candidate_strategy in (
+            (self.page.get_by_label(field, exact=exact), "label"),
+            (self.page.get_by_placeholder(field, exact=exact), "placeholder"),
+        ):
+            matches = visible_temporal_matches(locator)
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = candidate_strategy
+                break
+            if len(matches) > 1:
+                return {
+                    "error": "ambiguous_temporal_field",
+                    "field": field,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        if target is None:
+            nearby = self._visible_nearby_labeled_field_matches(
+                field,
+                exact,
+            )
+            matches = []
+            for candidate in nearby:
+                try:
+                    if str(
+                        candidate.get_attribute("type") or ""
+                    ).casefold() in supported_types:
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = "nearby-visible-label"
+            elif len(matches) > 1:
+                return {
+                    "error": "ambiguous_temporal_field",
+                    "field": field,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        if target is None:
+            controls = self.page.locator(
+                "input[type=date], input[type=time], "
+                "input[type=datetime-local], input[type=month], "
+                "input[type=week]"
+            )
+            matches = []
+            for index in range(min(controls.count(), 100)):
+                candidate = controls.nth(index)
+                try:
+                    if not candidate.is_visible():
+                        continue
+                    metadata = [
+                        candidate.get_attribute("name") or "",
+                        candidate.get_attribute("aria-label") or "",
+                        candidate.get_attribute("placeholder") or "",
+                    ]
+                    if _field_metadata_matches(metadata, field, exact):
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = "html-metadata"
+            elif len(matches) > 1:
+                return {
+                    "error": "ambiguous_temporal_field",
+                    "field": field,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        if target is None:
+            return {
+                "error": "temporal_field_not_found",
+                "field": field,
+                "supported_types": sorted(supported_types),
+                "executed": False,
+            }
+
+        requested_value = str(value or "").strip()
+        input_type = str(
+            target.get_attribute("type") or ""
+        ).casefold()
+        if not target.is_enabled() or not target.is_editable():
+            return {
+                "error": "temporal_field_not_editable",
+                "field": field,
+                "temporal_input_type": input_type,
+                "executed": False,
+                "mutation_executed": False,
+            }
+        validation = target.evaluate(
+            """
+            (el, requested) => {
+                const probe = el.cloneNode(true);
+                probe.value = requested;
+                return {
+                    accepted_value: probe.value,
+                    valid: probe.checkValidity(),
+                    value_missing: probe.validity.valueMissing,
+                    range_underflow: probe.validity.rangeUnderflow,
+                    range_overflow: probe.validity.rangeOverflow,
+                    step_mismatch: probe.validity.stepMismatch,
+                    bad_input: probe.validity.badInput,
+                    min: el.getAttribute('min'),
+                    max: el.getAttribute('max'),
+                    step: el.getAttribute('step')
+                };
+            }
+            """,
+            requested_value,
+        )
+        if (
+            not requested_value
+            or validation.get("accepted_value") != requested_value
+            or not validation.get("valid")
+        ):
+            return {
+                "error": "temporal_value_invalid_or_out_of_range",
+                "field": field,
+                "temporal_input_type": input_type,
+                "requested_value": requested_value,
+                "constraint_validation": validation,
+                "executed": False,
+                "mutation_executed": False,
+            }
+
+        previous = target.input_value()
+        if previous == requested_value:
+            result = self._capture_state("set-temporal-semantic")
+            result.update(
+                {
+                    "temporal_field": field,
+                    "temporal_input_type": input_type,
+                    "requested_value": requested_value,
+                    "previous_value": previous,
+                    "actual_value": previous,
+                    "temporal_status": "already_satisfied",
+                    "constraint_validation": validation,
+                    "temporal_match_strategy": strategy,
+                    "mutation_executed": False,
+                }
+            )
+            return result
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        target.fill(requested_value)
+        self.page.wait_for_timeout(300)
+        actual = target.input_value()
+        actual_validation = target.evaluate(
+            """
+            el => ({
+                valid: el.checkValidity(),
+                value_missing: el.validity.valueMissing,
+                range_underflow: el.validity.rangeUnderflow,
+                range_overflow: el.validity.rangeOverflow,
+                step_mismatch: el.validity.stepMismatch,
+                bad_input: el.validity.badInput,
+                min: el.getAttribute('min'),
+                max: el.getAttribute('max'),
+                step: el.getAttribute('step')
+            })
+            """
+        )
+        applied = actual == requested_value and actual_validation.get("valid")
+        result = self._capture_state("set-temporal-semantic")
+        result.update(
+            {
+                "temporal_field": field,
+                "temporal_input_type": input_type,
+                "requested_value": requested_value,
+                "previous_value": previous,
+                "actual_value": actual,
+                "temporal_status": "applied" if applied else "not_applied",
+                "constraint_validation": actual_validation,
+                "temporal_match_strategy": strategy,
+                "mutation_executed": True,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if not applied:
+            result["error"] = "temporal_value_not_applied"
+        return result
+
     def select_semantic(
         self,
         field: str,
@@ -7001,6 +7227,14 @@ def fill_semantic(
         text,
         exact,
     )
+
+
+def set_temporal_semantic(
+    field: str,
+    value: str,
+    exact: bool = True,
+) -> dict:
+    return _session.set_temporal_semantic(field, value, exact)
 
 
 def select_semantic(
