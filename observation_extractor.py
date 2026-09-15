@@ -519,6 +519,7 @@ def extract_observations(
         "browser_inspect_semantic",
         "browser_inspect_table_row",
         "browser_inspect_table_semantic",
+        "browser_inspect_bulk_action_semantic",
     }:
         return [
             _browser_semantic_observation(
@@ -543,6 +544,8 @@ def extract_observations(
         "browser_sort_table_semantic",
         "browser_set_table_row_selected",
         "browser_table_page_semantic",
+        "browser_fill_table_filter_semantic",
+        "browser_set_table_all_selected",
     }:
         return [
             _browser_state_observation(

@@ -3382,7 +3382,14 @@ class BrowserSession:
                 }));
                 const bodyRows = Array.from(
                     table.querySelectorAll('tbody tr, [role="rowgroup"] [role="row"]')
-                ).filter(row => !row.closest('thead')).slice(0, 200);
+                ).filter(row => {
+                    if (row.closest('thead')) return false;
+                    const style = window.getComputedStyle(row);
+                    return !row.hidden
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && row.getClientRects().length > 0;
+                }).slice(0, 200);
                 const rows = bodyRows.map(row => {
                     const cells = Array.from(
                         row.querySelectorAll(':scope > td, :scope > th, :scope > [role="cell"], :scope > [role="gridcell"]')
@@ -3731,6 +3738,316 @@ class BrowserSession:
         result = self._finish_action_execution(result)
         if not changed:
             result["error"] = "table_page_not_changed"
+        return result
+
+    def fill_table_filter_semantic(
+        self,
+        column: str,
+        text: str,
+        table: str = None,
+        exact: bool = True,
+    ):
+        """Fill one filter control associated with an exact table column."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        table_locator, error = self._resolve_table(table, exact)
+        if error:
+            return error
+
+        header_locator = table_locator.get_by_role(
+            "columnheader",
+            name=column,
+            exact=exact,
+        )
+        headers = []
+        for index in range(min(header_locator.count(), 50)):
+            candidate = header_locator.nth(index)
+            if candidate.is_visible():
+                headers.append(candidate)
+        if len(headers) != 1:
+            return {
+                "error": (
+                    "table_column_not_found"
+                    if not headers
+                    else "ambiguous_table_column"
+                ),
+                "column": column,
+                "matches": len(headers),
+                "executed": False,
+            }
+
+        header = headers[0]
+        column_index = header.evaluate(
+            "el => Number.isInteger(el.cellIndex) ? el.cellIndex : -1"
+        )
+        if column_index < 0:
+            return {
+                "error": "table_column_index_unavailable",
+                "column": column,
+                "executed": False,
+            }
+
+        candidates = []
+        seen = set()
+        header_rows = table_locator.locator("thead tr")
+        for row_index in range(min(header_rows.count(), 20)):
+            row = header_rows.nth(row_index)
+            cells = row.locator(":scope > th, :scope > td")
+            if column_index >= cells.count():
+                continue
+            controls = cells.nth(column_index).locator(
+                'input:not([type="hidden"]), textarea, '
+                '[role="textbox"], [role="searchbox"]'
+            )
+            for control_index in range(min(controls.count(), 20)):
+                candidate = controls.nth(control_index)
+                try:
+                    if not candidate.is_visible():
+                        continue
+                    key = candidate.evaluate(
+                        "el => el.id || el.name || el.outerHTML"
+                    )
+                    if key not in seen:
+                        seen.add(key)
+                        candidates.append(candidate)
+                except Exception:
+                    continue
+
+        if len(candidates) != 1:
+            return {
+                "error": (
+                    "table_column_filter_not_found"
+                    if not candidates
+                    else "ambiguous_table_column_filter"
+                ),
+                "column": column,
+                "matches": len(candidates),
+                "executed": False,
+            }
+
+        target = candidates[0]
+        if (target.get_attribute("type") or "").casefold() == "password":
+            return {
+                "error": "table_filter_password_forbidden",
+                "column": column,
+                "executed": False,
+            }
+        wanted = str(text or "")
+        current = target.input_value()
+        before = self._table_snapshot(table_locator)
+        if current == wanted:
+            result = self._capture_state("fill-table-filter-semantic")
+            result.update(
+                {
+                    "table_name": table,
+                    "filtered_column": column,
+                    "filter_text": wanted,
+                    "filter_status": "already_satisfied",
+                    "table_before": before,
+                    "table_after": before,
+                    "mutation_executed": False,
+                }
+            )
+            return result
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        target.fill(wanted)
+        self.page.wait_for_timeout(500)
+        actual = target.input_value()
+        after = self._table_snapshot(table_locator)
+        applied = actual == wanted
+        result = self._capture_state("fill-table-filter-semantic")
+        result.update(
+            {
+                "table_name": table,
+                "filtered_column": column,
+                "filter_text": wanted,
+                "observed_filter_text": actual,
+                "filter_status": "applied" if applied else "not_applied",
+                "rows_changed": (
+                    before.get("row_signature")
+                    != after.get("row_signature")
+                ),
+                "table_before": before,
+                "table_after": after,
+                "mutation_executed": False,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if not applied:
+            result["error"] = "table_filter_not_applied"
+        return result
+
+    def set_table_all_selected(
+        self,
+        selected: bool,
+        table: str = None,
+        exact: bool = True,
+    ):
+        """Set one table header checkbox and verify all visible row checkboxes."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        table_locator, error = self._resolve_table(table, exact)
+        if error:
+            return error
+
+        header_controls = table_locator.locator(
+            'thead input[type="checkbox"], thead [role="checkbox"]'
+        )
+        headers = []
+        for index in range(min(header_controls.count(), 20)):
+            candidate = header_controls.nth(index)
+            if candidate.is_visible():
+                headers.append(candidate)
+        if len(headers) != 1:
+            return {
+                "error": (
+                    "table_select_all_not_found"
+                    if not headers
+                    else "ambiguous_table_select_all"
+                ),
+                "table": table,
+                "matches": len(headers),
+                "executed": False,
+            }
+
+        row_controls = table_locator.locator(
+            'tbody input[type="checkbox"], tbody [role="checkbox"]'
+        )
+        rows = []
+        for index in range(min(row_controls.count(), 500)):
+            candidate = row_controls.nth(index)
+            if candidate.is_visible():
+                rows.append(candidate)
+        if not rows:
+            return {
+                "error": "table_row_checkboxes_not_found",
+                "table": table,
+                "executed": False,
+            }
+
+        def checked_state(locator):
+            try:
+                return bool(locator.is_checked())
+            except Exception:
+                return (
+                    str(locator.get_attribute("aria-checked") or "").casefold()
+                    == "true"
+                )
+
+        desired = bool(selected)
+        before_states = [checked_state(item) for item in rows]
+        if all(value == desired for value in before_states):
+            result = self._capture_state("set-table-all-selected")
+            result.update(
+                {
+                    "table_name": table,
+                    "selected": desired,
+                    "selected_row_count": sum(before_states),
+                    "visible_selectable_row_count": len(rows),
+                    "select_all_status": "already_satisfied",
+                    "mutation_executed": False,
+                }
+            )
+            return result
+
+        header = headers[0]
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        header.click()
+        self.page.wait_for_timeout(300)
+        after_states = [checked_state(item) for item in rows]
+        applied = all(value == desired for value in after_states)
+        result = self._capture_state("set-table-all-selected")
+        result.update(
+            {
+                "table_name": table,
+                "selected": desired,
+                "selected_row_count": sum(after_states),
+                "visible_selectable_row_count": len(rows),
+                "select_all_status": (
+                    "selected" if applied else "not_applied"
+                ),
+                "mutation_executed": False,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if not applied:
+            result["error"] = "table_select_all_not_applied"
+        return result
+
+    def inspect_bulk_action_semantic(
+        self,
+        name: str,
+        table: str = None,
+        exact: bool = True,
+        role: str = None,
+    ):
+        """Inspect one bulk-action control without activating it."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        table_locator, error = self._resolve_table(table, exact)
+        if error:
+            return error
+        action, strategy, error = self._pointer_target(
+            name,
+            exact,
+            role,
+        )
+        if error:
+            return error
+
+        enabled = None
+        try:
+            enabled = bool(action.is_enabled())
+        except Exception:
+            pass
+        action_state = action.evaluate(
+            """
+            el => ({
+                tag: el.tagName.toLowerCase(),
+                role: el.getAttribute('role') || '',
+                text: (el.innerText || el.textContent || '').trim().slice(0, 300),
+                aria_disabled: el.getAttribute('aria-disabled'),
+                disabled_attribute: el.hasAttribute('disabled')
+            })
+            """
+        )
+        row_controls = table_locator.locator(
+            'tbody input[type="checkbox"], tbody [role="checkbox"]'
+        )
+        selected_count = 0
+        selectable_count = 0
+        for index in range(min(row_controls.count(), 500)):
+            candidate = row_controls.nth(index)
+            if not candidate.is_visible():
+                continue
+            selectable_count += 1
+            try:
+                checked = bool(candidate.is_checked())
+            except Exception:
+                checked = (
+                    str(candidate.get_attribute("aria-checked") or "").casefold()
+                    == "true"
+                )
+            if checked:
+                selected_count += 1
+
+        result = self._capture_state("inspect-bulk-action-semantic")
+        result.update(
+            {
+                "table_name": table,
+                "bulk_action_name": name,
+                "bulk_action_strategy": strategy,
+                "bulk_action_status": "observed",
+                "bulk_action_enabled": enabled,
+                "bulk_action": action_state,
+                "selected_row_count": selected_count,
+                "visible_selectable_row_count": selectable_count,
+                "mutation_executed": False,
+            }
+        )
         return result
 
     def delete_json_resource(
@@ -5331,6 +5648,42 @@ def table_page_semantic(
     exact: bool = True,
 ) -> dict:
     return _session.table_page_semantic(control, table, exact)
+
+
+def fill_table_filter_semantic(
+    column: str,
+    text: str,
+    table: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.fill_table_filter_semantic(
+        column,
+        text,
+        table,
+        exact,
+    )
+
+
+def set_table_all_selected(
+    selected: bool,
+    table: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.set_table_all_selected(selected, table, exact)
+
+
+def inspect_bulk_action_semantic(
+    name: str,
+    table: str = None,
+    exact: bool = True,
+    role: str = None,
+) -> dict:
+    return _session.inspect_bulk_action_semantic(
+        name,
+        table,
+        exact,
+        role,
+    )
 
 
 def fill(element_id: str, text: str) -> dict:

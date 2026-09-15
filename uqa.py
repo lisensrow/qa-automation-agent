@@ -380,6 +380,10 @@ SYSTEM_PROMPT = """
 - Для сортировки, выбора строки и пагинации используй специализированные
   browser_sort_table_semantic, browser_set_table_row_selected и
   browser_table_page_semantic; bulk Save/Delete остаётся отдельным policy action.
+- Для column filter используй browser_fill_table_filter_semantic.
+- Для select-all используй browser_set_table_all_selected, затем проверяй
+  доступность массовой кнопки через browser_inspect_bulk_action_semantic.
+  Этот inspect-инструмент никогда не нажимает bulk action.
 - Если после перехода фактически появилась форма Login/Password, а UQA Core
   разрешил повторное использование сохранённых credentials, вызови
   browser_authenticate_saved_stand с точным stand_id. Никогда не запрашивай,
@@ -955,6 +959,7 @@ def classify_tool_action(
         "browser_inspect_semantic",
         "browser_inspect_table_row",
         "browser_inspect_table_semantic",
+        "browser_inspect_bulk_action_semantic",
         "resource_list",
     }
 
@@ -968,6 +973,8 @@ def classify_tool_action(
         "browser_sort_table_semantic",
         "browser_set_table_row_selected",
         "browser_table_page_semantic",
+        "browser_fill_table_filter_semantic",
+        "browser_set_table_all_selected",
     }:
         return "interact"
 
@@ -4380,6 +4387,13 @@ def _historical_browser_result_summary(tool_name, content):
         "row_selection_status",
         "table_page_control",
         "table_page_status",
+        "filtered_column",
+        "filter_status",
+        "select_all_status",
+        "bulk_action_name",
+        "bulk_action_status",
+        "bulk_action_enabled",
+        "selected_row_count",
         "action_policy_status",
         "auth_challenge_status",
         "network_request_count",

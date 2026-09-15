@@ -18,6 +18,9 @@ from tools.browser import (
     sort_table_semantic,
     set_table_row_selected,
     table_page_semantic,
+    fill_table_filter_semantic,
+    set_table_all_selected,
+    inspect_bulk_action_semantic,
     get_network_detail,
     delete_json_resource,
     archive_json_resource,
@@ -723,6 +726,68 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_fill_table_filter_semantic",
+            "description": (
+                "Заполняет единственный filter control точной колонки таблицы "
+                "и возвращает строки до/после. Это фильтрация, а не изменение "
+                "данных сущностей."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "column": {"type": "string"},
+                    "text": {"type": "string"},
+                    "table": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["column", "text"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_set_table_all_selected",
+            "description": (
+                "Идемпотентно устанавливает header select-all checkbox и "
+                "проверяет состояние всех видимых row checkboxes. Не нажимает "
+                "и не подтверждает bulk action."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "selected": {"type": "boolean"},
+                    "table": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["selected"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_bulk_action_semantic",
+            "description": (
+                "Read-only проверяет наличие и enabled/disabled состояние "
+                "точной bulk-action кнопки, а также число выбранных строк. "
+                "Никогда не активирует действие."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "table": {"type": "string"},
+                    "exact": {"type": "boolean"},
+                    "role": {"type": "string"}
+                },
+                "required": ["name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_table_row",
             "description": (
                 "Read-only проверка одной видимой строки таблицы. При exact=true "
@@ -1053,6 +1118,29 @@ def execute_tool(name: str, arguments: dict):
             arguments["control"],
             arguments.get("table"),
             arguments.get("exact", True),
+        )
+
+    if name == "browser_fill_table_filter_semantic":
+        return fill_table_filter_semantic(
+            arguments["column"],
+            arguments["text"],
+            arguments.get("table"),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_set_table_all_selected":
+        return set_table_all_selected(
+            arguments["selected"],
+            arguments.get("table"),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_bulk_action_semantic":
+        return inspect_bulk_action_semantic(
+            arguments["name"],
+            arguments.get("table"),
+            arguments.get("exact", True),
+            arguments.get("role"),
         )
 
     return {

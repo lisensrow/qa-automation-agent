@@ -17,6 +17,7 @@
 - Drag-and-drop между точными semantic endpoints.
 - Resize панели или колонки с проверкой bounding box до и после.
 - Структурированный снимок таблицы, сортировка, выбор точной строки и проверяемая пагинация.
+- Column filters, select-all и read-only bulk-action preview.
 - Проверка точной строки таблицы и работа с её context menu.
 - Фиксация screenshot, browser state, XHR/fetch и console/network errors.
 - Action policy v069 для OBSERVE, INTERACT, WRITE и DESTRUCTIVE.
@@ -26,7 +27,7 @@
 1. Составные ARIA multi-select и chip-based selectors.
 2. Составные hotkeys/chords с отдельной безопасной моделью clipboard.
 3. Специализированная проверка сохранённого порядка после drag-and-drop.
-4. Составные column filters, select-all и проверка bulk action preview.
+4. Сложные filter popovers, server-side totals и cross-page selection.
 5. Date/time pickers, sliders, tree controls и complex popovers.
 6. Upload/download с проверкой имени, типа и содержимого файла.
 7. Modal/dialog, toast/notification и validation errors.

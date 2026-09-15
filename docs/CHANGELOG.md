@@ -104,3 +104,10 @@
 - Добавлен идемпотентный выбор checkbox точной строки без запуска bulk action.
 - Добавлена пагинация с проверкой изменения row signature.
 - Добавлен изолированный table-controls smoke.
+# v071f — table filters and bulk preview
+
+- Добавлен column filter, связанный с точным header по cell index.
+- Добавлен идемпотентный select-all с проверкой всех видимых строк.
+- Добавлен read-only bulk-action preview без возможности нажать массовую кнопку.
+- Bulk mutation остаётся отдельным WRITE/DESTRUCTIVE policy action.
+- Добавлен изолированный table filters/bulk smoke.
