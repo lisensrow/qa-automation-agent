@@ -386,6 +386,8 @@ SYSTEM_PROMPT = """
 - Для native date/time/datetime-local/month/week используй
   browser_set_temporal_semantic с canonical HTML value. Не вводи локализованную
   строку вручную и не обходи возвращённые min/max/step ограничения.
+- Для native range или ARIA slider используй browser_set_slider_semantic с
+  точным числом; не эмулируй произвольные клики по координатам шкалы.
 - Для выбора значения dropdown/combobox используй browser_select_semantic; не кликай
   по предполагаемой role=option вручную.
 - Для checkbox/switch используй browser_set_checked_semantic с требуемым состоянием;
@@ -1106,6 +1108,7 @@ def classify_tool_action(
     if name in {
         "browser_paste_private_semantic",
         "browser_set_temporal_semantic",
+        "browser_set_slider_semantic",
         "browser_select_semantic",
         "browser_set_checked_semantic",
         "browser_choose_radio_semantic",

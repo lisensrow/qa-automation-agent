@@ -5,6 +5,7 @@ import os
 import re
 import uuid
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
@@ -2528,6 +2529,177 @@ class BrowserSession:
         result = self._finish_action_execution(result)
         if not applied:
             result["error"] = "temporal_value_not_applied"
+        return result
+
+    def set_slider_semantic(
+        self,
+        field: str,
+        value,
+        exact: bool = True,
+    ):
+        """Set one exact native or ARIA slider value and verify it."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        locator = self.page.get_by_role("slider", name=field, exact=exact)
+        matches = []
+        for index in range(min(locator.count(), 50)):
+            candidate = locator.nth(index)
+            try:
+                if candidate.is_visible():
+                    matches.append(candidate)
+            except Exception:
+                continue
+        if len(matches) != 1:
+            return {
+                "error": (
+                    "slider_not_found" if not matches else "ambiguous_slider"
+                ),
+                "field": field,
+                "matches": len(matches),
+                "executed": False,
+            }
+        target = matches[0]
+        if not target.is_enabled():
+            return {
+                "error": "slider_not_enabled",
+                "field": field,
+                "executed": False,
+                "mutation_executed": False,
+            }
+
+        metadata = target.evaluate(
+            """
+            el => {
+                const native = el.matches('input[type="range"]');
+                return {
+                    adapter: native ? 'native-range' : 'aria-slider',
+                    min: native ? (el.min || '0') : (el.getAttribute('aria-valuemin') || '0'),
+                    max: native ? (el.max || '100') : (el.getAttribute('aria-valuemax') || '100'),
+                    step: native ? (el.step || '1') : (
+                        el.getAttribute('aria-valuestep')
+                        || el.getAttribute('data-step')
+                        || '1'
+                    ),
+                    current: native ? el.value : el.getAttribute('aria-valuenow'),
+                    orientation: el.getAttribute('aria-orientation') || 'horizontal'
+                };
+            }
+            """
+        )
+        try:
+            requested = Decimal(str(value).strip())
+            minimum = Decimal(str(metadata.get("min")))
+            maximum = Decimal(str(metadata.get("max")))
+            current = Decimal(str(metadata.get("current")))
+            step_text = str(metadata.get("step") or "1").strip().casefold()
+            if step_text == "any":
+                raise ValueError("slider_step_any_unsupported")
+            step = Decimal(step_text)
+        except (InvalidOperation, TypeError, ValueError):
+            return {
+                "error": "invalid_slider_numeric_contract",
+                "field": field,
+                "slider_contract": metadata,
+                "executed": False,
+            }
+        if step <= 0 or minimum > maximum:
+            return {
+                "error": "invalid_slider_numeric_contract",
+                "field": field,
+                "slider_contract": metadata,
+                "executed": False,
+            }
+        if requested < minimum or requested > maximum:
+            return {
+                "error": "slider_value_out_of_range",
+                "field": field,
+                "requested_value": str(requested),
+                "slider_contract": metadata,
+                "executed": False,
+                "mutation_executed": False,
+            }
+        if (requested - minimum) % step != 0:
+            return {
+                "error": "slider_value_step_mismatch",
+                "field": field,
+                "requested_value": str(requested),
+                "slider_contract": metadata,
+                "executed": False,
+                "mutation_executed": False,
+            }
+        if current == requested:
+            result = self._capture_state("set-slider-semantic")
+            result.update(
+                {
+                    "slider_field": field,
+                    "slider_adapter": metadata.get("adapter"),
+                    "requested_value": str(requested),
+                    "actual_value": str(current),
+                    "slider_status": "already_satisfied",
+                    "slider_contract": metadata,
+                    "mutation_executed": False,
+                }
+            )
+            return result
+
+        delta_steps = (requested - current) / step
+        if delta_steps != delta_steps.to_integral_value():
+            return {
+                "error": "slider_current_value_off_step",
+                "field": field,
+                "slider_contract": metadata,
+                "executed": False,
+            }
+        step_count = abs(int(delta_steps))
+        if step_count > 500:
+            return {
+                "error": "slider_step_limit_exceeded",
+                "field": field,
+                "required_steps": step_count,
+                "executed": False,
+            }
+
+        orientation = str(metadata.get("orientation") or "horizontal")
+        if delta_steps > 0:
+            key = "ArrowUp" if orientation == "vertical" else "ArrowRight"
+        else:
+            key = "ArrowDown" if orientation == "vertical" else "ArrowLeft"
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        target.focus()
+        for _ in range(step_count):
+            target.press(key)
+        self.page.wait_for_timeout(300)
+        actual_text = target.evaluate(
+            """
+            el => el.matches('input[type="range"]')
+                ? el.value
+                : el.getAttribute('aria-valuenow')
+            """
+        )
+        try:
+            actual = Decimal(str(actual_text))
+        except InvalidOperation:
+            actual = None
+        applied = actual == requested
+        result = self._capture_state("set-slider-semantic")
+        result.update(
+            {
+                "slider_field": field,
+                "slider_adapter": metadata.get("adapter"),
+                "requested_value": str(requested),
+                "previous_value": str(current),
+                "actual_value": str(actual_text),
+                "slider_status": "applied" if applied else "not_applied",
+                "slider_key": key,
+                "slider_key_presses": step_count,
+                "slider_contract": metadata,
+                "mutation_executed": True,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if not applied:
+            result["error"] = "slider_value_not_applied"
         return result
 
     def select_semantic(
@@ -7235,6 +7407,14 @@ def set_temporal_semantic(
     exact: bool = True,
 ) -> dict:
     return _session.set_temporal_semantic(field, value, exact)
+
+
+def set_slider_semantic(
+    field: str,
+    value,
+    exact: bool = True,
+) -> dict:
+    return _session.set_slider_semantic(field, value, exact)
 
 
 def select_semantic(

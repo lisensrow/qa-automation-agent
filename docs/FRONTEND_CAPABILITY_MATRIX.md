@@ -14,6 +14,7 @@
 - Точная установка полного набора ARIA multi-select и chip-based combobox.
 - Выбор единственной точной option в поисковом ARIA autocomplete.
 - Native date/time/datetime-local/month/week с проверкой canonical value, min/max/step и фактического результата.
+- Native range и ARIA slider с точным bounded keyboard stepping и проверкой итогового значения.
 - Проверка фактического forward Tab focus order.
 - Ограниченные keyboard actions с отдельной классификацией риска.
 - Закрытый allowlist keyboard chords и session-private clipboard для безопасных copy/paste проверок.
@@ -32,7 +33,7 @@
 
 ## Следующие этапы frontend-покрытия
 
-1. Sliders, tree controls и complex popovers.
+1. Tree controls и complex popovers.
 2. Кастомные calendar/time picker overlays.
 3. Upload/download с проверкой имени, типа и содержимого файла.
 4. Modal/dialog, toast/notification, responsive и accessibility checks.

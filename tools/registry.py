@@ -8,6 +8,7 @@ from tools.browser import (
     context_menu_semantic,
     fill_semantic,
     set_temporal_semantic,
+    set_slider_semantic,
     select_semantic,
     set_checked_semantic,
     choose_radio_semantic,
@@ -497,6 +498,26 @@ TOOLS = [
                             "14:30 или 2026-09-16T14:30."
                         )
                     },
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["field", "value"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_set_slider_semantic",
+            "description": (
+                "Идемпотентно устанавливает точное значение native range или "
+                "ARIA slider. Проверяет min/max/step, использует ограниченное "
+                "число keyboard steps и сверяет фактическое значение."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "field": {"type": "string"},
+                    "value": {"type": "number"},
                     "exact": {"type": "boolean"}
                 },
                 "required": ["field", "value"]
@@ -1233,6 +1254,13 @@ def execute_tool(name: str, arguments: dict):
 
     if name == "browser_set_temporal_semantic":
         return set_temporal_semantic(
+            arguments["field"],
+            arguments["value"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_set_slider_semantic":
+        return set_slider_semantic(
             arguments["field"],
             arguments["value"],
             arguments.get("exact", True),

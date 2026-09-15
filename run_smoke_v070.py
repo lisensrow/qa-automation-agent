@@ -26,6 +26,7 @@ SMOKES = [
     "smoke_form_controls.py",
     "smoke_advanced_form_controls.py",
     "smoke_temporal_controls.py",
+    "smoke_slider_controls.py",
     "smoke_aria_multiselect_chips.py",
     "smoke_keyboard_focus.py",
     "smoke_keyboard_chords_clipboard.py",

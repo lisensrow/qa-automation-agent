@@ -185,3 +185,12 @@
 - Повтор уже установленного значения идемпотентен, после fill проверяются фактическое value и validity.
 - Primitive классифицируется как WRITE, не нажимает Save/Submit и сохраняет v069 policy.
 - Добавлен изолированный temporal-controls smoke без обращения к тестовому стенду.
+
+# v075b — native and ARIA sliders
+
+- Добавлен semantic primitive для native range и ARIA slider.
+- Проверяются exact semantic name, enabled state, min/max/current и дискретный step.
+- Выход за диапазон, step mismatch, неизвестный numeric contract и более 500 шагов блокируются до изменения.
+- Изменение выполняется Arrow-клавишами с учётом horizontal/vertical orientation и подтверждается повторным чтением значения.
+- Primitive является WRITE и не нажимает Save/Apply.
+- Добавлен изолированный smoke для native и кастомного ARIA slider.
