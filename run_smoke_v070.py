@@ -24,6 +24,7 @@ SMOKES = [
     "smoke_exact_resource_name.py",
     "smoke_browser_field_matching.py",
     "smoke_form_controls.py",
+    "smoke_advanced_form_controls.py",
     "smoke_labeled_field_fallback.py",
     "smoke_browser_navigation_labels.py",
     "smoke_browser_container_scope.py",

@@ -8,6 +8,8 @@ from tools.browser import (
     fill_semantic,
     select_semantic,
     set_checked_semantic,
+    choose_radio_semantic,
+    select_many_semantic,
     get_network_detail,
     delete_json_resource,
     archive_json_resource,
@@ -481,6 +483,50 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_choose_radio_semantic",
+            "description": (
+                "Выбирает ровно одну radio option по видимому имени, при "
+                "необходимости внутри точной именованной radio group. "
+                "Уже выбранную option повторно не переключает."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "option": {"type": "string"},
+                    "group": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["option"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_select_many_semantic",
+            "description": (
+                "Устанавливает точный набор выбранных значений native HTML "
+                "multiple select. Проверяет все option до изменения и не "
+                "выполняет повторную мутацию при уже правильном наборе."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "field": {"type": "string"},
+                    "options": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 1
+                    },
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["field", "options"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_table_row",
             "description": (
                 "Read-only проверка одной видимой строки таблицы. При exact=true "
@@ -735,6 +781,20 @@ def execute_tool(name: str, arguments: dict):
         return set_checked_semantic(
             arguments["field"],
             arguments["checked"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_choose_radio_semantic":
+        return choose_radio_semantic(
+            arguments["option"],
+            arguments.get("group"),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_select_many_semantic":
+        return select_many_semantic(
+            arguments["field"],
+            arguments["options"],
             arguments.get("exact", True),
         )
 

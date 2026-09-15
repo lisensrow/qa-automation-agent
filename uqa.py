@@ -365,6 +365,10 @@ SYSTEM_PROMPT = """
   по предполагаемой role=option вручную.
 - Для checkbox/switch используй browser_set_checked_semantic с требуемым состоянием;
   не переключай элемент вслепую повторным кликом.
+- Для radio group используй browser_choose_radio_semantic, указывая option и,
+  когда она известна, точное имя group.
+- Для native multiple select используй browser_select_many_semantic и передавай
+  полный ожидаемый набор значений.
 - Если после перехода фактически появилась форма Login/Password, а UQA Core
   разрешил повторное использование сохранённых credentials, вызови
   browser_authenticate_saved_stand с точным stand_id. Никогда не запрашивай,
@@ -993,6 +997,8 @@ def classify_tool_action(
     if name in {
         "browser_select_semantic",
         "browser_set_checked_semantic",
+        "browser_choose_radio_semantic",
+        "browser_select_many_semantic",
     }:
         return "write"
 
@@ -1116,6 +1122,8 @@ def tool_policy_check(
     if name in {
         "browser_select_semantic",
         "browser_set_checked_semantic",
+        "browser_choose_radio_semantic",
+        "browser_select_many_semantic",
     }:
         return {
             "error": "tool_policy_blocked",

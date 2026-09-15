@@ -76,3 +76,10 @@
 - Повторный выбор уже активного значения native select не создаёт мутацию.
 - Добавлен изолированный browser smoke без изменения данных тестового стенда.
 - Добавлена живая матрица дальнейшего frontend-покрытия.
+# v071b — radio, multi-select and autocomplete
+
+- Добавлен идемпотентный выбор radio option с точным group scope.
+- Добавлена точная установка native HTML multiple select.
+- Одиночный semantic select поддерживает поисковый ARIA autocomplete.
+- Все новые действия относятся к WRITE, блокируются read-only policy и входят в evidence pipeline.
+- Добавлен изолированный advanced form-controls smoke.

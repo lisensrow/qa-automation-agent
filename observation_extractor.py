@@ -533,6 +533,8 @@ def extract_observations(
         "browser_fill_semantic",
         "browser_select_semantic",
         "browser_set_checked_semantic",
+        "browser_choose_radio_semantic",
+        "browser_select_many_semantic",
     }:
         return [
             _browser_state_observation(

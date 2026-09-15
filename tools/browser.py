@@ -2258,14 +2258,28 @@ class BrowserSession:
         else:
             target.click()
             self.page.wait_for_timeout(300)
-            option_locator = self.page.get_by_role(
-                "option",
-                name=option,
-                exact=exact,
-            )
-            option_matches = visible_matches(option_locator, 100)
+            autocomplete_typed = False
+
+            def visible_option_matches():
+                return visible_matches(
+                    self.page.get_by_role(
+                        "option",
+                        name=option,
+                        exact=exact,
+                    ),
+                    100,
+                )
+
+            option_matches = visible_option_matches()
+            if not option_matches and tag == "input":
+                self._begin_action_execution()
+                target.fill(wanted)
+                autocomplete_typed = True
+                self.page.wait_for_timeout(500)
+                option_matches = visible_option_matches()
+
             if len(option_matches) != 1:
-                return {
+                error_result = {
                     "error": (
                         "select_option_not_found"
                         if not option_matches
@@ -2274,11 +2288,23 @@ class BrowserSession:
                     "field": field,
                     "option": option,
                     "matches": len(option_matches),
-                    "executed": False,
+                    "executed": autocomplete_typed,
+                    "mutation_executed": autocomplete_typed,
                 }
-            self._begin_action_execution()
+                if autocomplete_typed:
+                    error_result.update(
+                        self._capture_state("select-semantic-error")
+                    )
+                    return self._finish_action_execution(error_result)
+                return error_result
+            if not autocomplete_typed:
+                self._begin_action_execution()
             option_matches[0].click()
-            selection_strategy = "aria-option"
+            selection_strategy = (
+                "aria-autocomplete-option"
+                if autocomplete_typed
+                else "aria-option"
+            )
 
         self.page.wait_for_timeout(500)
         selected_value = target.input_value() if tag == "select" else None
@@ -2439,6 +2465,355 @@ class BrowserSession:
         result = self._finish_action_execution(result)
         if actual != desired:
             result["error"] = "checked_state_not_applied"
+        return result
+
+    def choose_radio_semantic(
+        self,
+        option: str,
+        group: str = None,
+        exact: bool = True,
+    ):
+        """Choose one radio option, optionally within one named group."""
+        self._ensure_started()
+        self._reset_diagnostics()
+
+        def visible_matches(locator, limit=100):
+            matches = []
+            for index in range(min(locator.count(), limit)):
+                candidate = locator.nth(index)
+                try:
+                    if candidate.is_visible():
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            return matches
+
+        scope = self.page
+        group_strategy = None
+        wanted_group = str(group or "").strip()
+
+        if wanted_group:
+            group_matches = []
+            for role in ("radiogroup", "group"):
+                matches = visible_matches(
+                    self.page.get_by_role(
+                        role,
+                        name=wanted_group,
+                        exact=exact,
+                    )
+                )
+                if matches:
+                    group_matches.extend(matches)
+                    group_strategy = f"role:{role}"
+                    break
+
+            if not group_matches:
+                fieldsets = self.page.locator("fieldset")
+                for index in range(min(fieldsets.count(), 100)):
+                    fieldset = fieldsets.nth(index)
+                    try:
+                        if not fieldset.is_visible():
+                            continue
+                        legend = fieldset.locator("legend").first
+                        if not legend.is_visible():
+                            continue
+                        label = (legend.inner_text() or "").strip()
+                        matched = (
+                            label.casefold() == wanted_group.casefold()
+                            if exact
+                            else wanted_group.casefold() in label.casefold()
+                        )
+                        if matched:
+                            group_matches.append(fieldset)
+                            group_strategy = "fieldset-legend"
+                    except Exception:
+                        continue
+
+            if len(group_matches) != 1:
+                return {
+                    "error": (
+                        "radio_group_not_found"
+                        if not group_matches
+                        else "ambiguous_radio_group"
+                    ),
+                    "group": group,
+                    "matches": len(group_matches),
+                    "executed": False,
+                }
+            scope = group_matches[0]
+
+        radio_matches = visible_matches(
+            scope.get_by_role(
+                "radio",
+                name=option,
+                exact=exact,
+            )
+        )
+        if not radio_matches and not wanted_group:
+            radio_matches = [
+                item
+                for item in visible_matches(
+                    self.page.get_by_label(option, exact=exact)
+                )
+                if (
+                    (item.get_attribute("type") or "").casefold()
+                    == "radio"
+                    or (item.get_attribute("role") or "").casefold()
+                    == "radio"
+                )
+            ]
+
+        if len(radio_matches) != 1:
+            return {
+                "error": (
+                    "radio_option_not_found"
+                    if not radio_matches
+                    else "ambiguous_radio_option"
+                ),
+                "group": group,
+                "option": option,
+                "matches": len(radio_matches),
+                "executed": False,
+            }
+
+        target = radio_matches[0]
+        try:
+            previous = bool(target.is_checked())
+        except Exception:
+            previous = (
+                str(target.get_attribute("aria-checked") or "").casefold()
+                == "true"
+            )
+
+        if previous:
+            result = self._capture_state("choose-radio-semantic")
+            result.update(
+                {
+                    "radio_group": group,
+                    "selected_option": option,
+                    "radio_status": "already_satisfied",
+                    "group_match_strategy": group_strategy,
+                    "mutation_executed": False,
+                }
+            )
+            return result
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        target.click()
+        self.page.wait_for_timeout(300)
+        try:
+            selected = bool(target.is_checked())
+        except Exception:
+            selected = (
+                str(target.get_attribute("aria-checked") or "").casefold()
+                == "true"
+            )
+        result = self._capture_state("choose-radio-semantic")
+        result.update(
+            {
+                "radio_group": group,
+                "selected_option": option,
+                "radio_status": "selected" if selected else "not_applied",
+                "group_match_strategy": group_strategy,
+                "mutation_executed": True,
+                "post_action_wait_ms": 300,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if not selected:
+            result["error"] = "radio_selection_not_applied"
+        return result
+
+    def select_many_semantic(
+        self,
+        field: str,
+        options: list,
+        exact: bool = True,
+    ):
+        """Set the exact selection of one native HTML multiple select."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        requested = [
+            str(value or "").strip()
+            for value in (options or [])
+            if str(value or "").strip()
+        ]
+        if not requested:
+            return {
+                "error": "multiselect_options_required",
+                "field": field,
+                "executed": False,
+            }
+        if len({value.casefold() for value in requested}) != len(requested):
+            return {
+                "error": "duplicate_multiselect_options",
+                "field": field,
+                "executed": False,
+            }
+
+        def visible_matches(locator):
+            matches = []
+            for index in range(min(locator.count(), 50)):
+                candidate = locator.nth(index)
+                try:
+                    if candidate.is_visible():
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            return matches
+
+        target = None
+        strategy = None
+        for locator, candidate_strategy in (
+            (
+                self.page.get_by_role(
+                    "listbox",
+                    name=field,
+                    exact=exact,
+                ),
+                "role:listbox",
+            ),
+            (
+                self.page.get_by_label(field, exact=exact),
+                "label",
+            ),
+        ):
+            matches = [
+                item
+                for item in visible_matches(locator)
+                if (
+                    item.evaluate("el => el.tagName.toLowerCase()")
+                    == "select"
+                    and item.get_attribute("multiple") is not None
+                )
+            ]
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = candidate_strategy
+                break
+            if len(matches) > 1:
+                return {
+                    "error": "ambiguous_multiselect_field",
+                    "field": field,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        if target is None:
+            controls = self.page.locator("select[multiple]")
+            matches = []
+            for index in range(min(controls.count(), 100)):
+                candidate = controls.nth(index)
+                try:
+                    if not candidate.is_visible():
+                        continue
+                    values = [
+                        candidate.get_attribute("name") or "",
+                        candidate.get_attribute("aria-label") or "",
+                    ]
+                    if _field_metadata_matches(values, field, exact):
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            if len(matches) == 1:
+                target = matches[0]
+                strategy = "html-metadata"
+            elif len(matches) > 1:
+                return {
+                    "error": "ambiguous_multiselect_field",
+                    "field": field,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        if target is None:
+            return {
+                "error": "native_multiselect_field_not_found",
+                "field": field,
+                "executed": False,
+            }
+
+        available = []
+        option_nodes = target.locator("option")
+        for index in range(min(option_nodes.count(), 500)):
+            candidate = option_nodes.nth(index)
+            available.append((candidate.inner_text() or "").strip())
+
+        selected_labels = []
+        for requested_label in requested:
+            matches = [
+                label
+                for label in available
+                if (
+                    label.casefold() == requested_label.casefold()
+                    if exact
+                    else requested_label.casefold() in label.casefold()
+                )
+            ]
+            if len(matches) != 1:
+                return {
+                    "error": (
+                        "multiselect_option_not_found"
+                        if not matches
+                        else "ambiguous_multiselect_option"
+                    ),
+                    "field": field,
+                    "option": requested_label,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+            selected_labels.append(matches[0])
+
+        current = target.evaluate(
+            """
+            el => Array.from(el.selectedOptions)
+                .map(option => (option.textContent || '').trim())
+            """
+        )
+        if {value.casefold() for value in current} == {
+            value.casefold() for value in selected_labels
+        }:
+            result = self._capture_state("select-many-semantic")
+            result.update(
+                {
+                    "selected_field": field,
+                    "selected_options": current,
+                    "selection_status": "already_satisfied",
+                    "field_match_strategy": strategy,
+                    "mutation_executed": False,
+                }
+            )
+            return result
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        target.select_option(label=selected_labels)
+        self.page.wait_for_timeout(500)
+        actual = target.evaluate(
+            """
+            el => Array.from(el.selectedOptions)
+                .map(option => (option.textContent || '').trim())
+            """
+        )
+        expected_set = {value.casefold() for value in selected_labels}
+        actual_set = {value.casefold() for value in actual}
+        result = self._capture_state("select-many-semantic")
+        result.update(
+            {
+                "selected_field": field,
+                "selected_options": actual,
+                "selection_status": (
+                    "selected" if actual_set == expected_set else "not_applied"
+                ),
+                "field_match_strategy": strategy,
+                "mutation_executed": True,
+                "post_action_wait_ms": 500,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if actual_set != expected_set:
+            result["error"] = "multiselect_state_not_applied"
         return result
 
     def delete_json_resource(
@@ -3936,6 +4311,22 @@ def set_checked_semantic(
     exact: bool = True,
 ) -> dict:
     return _session.set_checked_semantic(field, checked, exact)
+
+
+def choose_radio_semantic(
+    option: str,
+    group: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.choose_radio_semantic(option, group, exact)
+
+
+def select_many_semantic(
+    field: str,
+    options: list,
+    exact: bool = True,
+) -> dict:
+    return _session.select_many_semantic(field, options, exact)
 
 
 def fill(element_id: str, text: str) -> dict:
