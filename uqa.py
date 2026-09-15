@@ -376,6 +376,10 @@ SYSTEM_PROMPT = """
 - Для drag-and-drop используй browser_drag_semantic с точными source и target.
 - Для изменения ширины/высоты панели или колонки используй browser_resize_semantic
   с точным target, edge и ограниченным delta.
+- Для общего снимка таблицы используй browser_inspect_table_semantic.
+- Для сортировки, выбора строки и пагинации используй специализированные
+  browser_sort_table_semantic, browser_set_table_row_selected и
+  browser_table_page_semantic; bulk Save/Delete остаётся отдельным policy action.
 - Если после перехода фактически появилась форма Login/Password, а UQA Core
   разрешил повторное использование сохранённых credentials, вызови
   browser_authenticate_saved_stand с точным stand_id. Никогда не запрашивай,
@@ -950,6 +954,7 @@ def classify_tool_action(
         "browser_get_network_detail",
         "browser_inspect_semantic",
         "browser_inspect_table_row",
+        "browser_inspect_table_semantic",
         "resource_list",
     }
 
@@ -957,6 +962,13 @@ def classify_tool_action(
         return "observe"
 
     if name == "browser_check_focus_order_semantic":
+        return "interact"
+
+    if name in {
+        "browser_sort_table_semantic",
+        "browser_set_table_row_selected",
+        "browser_table_page_semantic",
+    }:
         return "interact"
 
     # Ledger updates are internal QA bookkeeping. They do not mutate
@@ -4361,6 +4373,13 @@ def _historical_browser_result_summary(tool_name, content):
         "drag_status",
         "resized_target",
         "resize_status",
+        "table_inspection_status",
+        "sorted_column",
+        "sort_status",
+        "table_row_name",
+        "row_selection_status",
+        "table_page_control",
+        "table_page_status",
         "action_policy_status",
         "auth_challenge_status",
         "network_request_count",

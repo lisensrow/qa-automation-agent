@@ -3334,6 +3334,405 @@ class BrowserSession:
             result["error"] = "resize_not_observed"
         return result
 
+    def _resolve_table(self, table=None, exact=True):
+        candidates = (
+            self.page.get_by_role("table", name=table, exact=exact)
+            if table
+            else self.page.locator("table")
+        )
+        visible = []
+        for index in range(min(candidates.count(), 100)):
+            candidate = candidates.nth(index)
+            try:
+                if candidate.is_visible():
+                    visible.append(candidate)
+            except Exception:
+                continue
+        if len(visible) == 1:
+            return visible[0], None
+        return None, {
+            "error": (
+                "table_not_found"
+                if not visible
+                else "ambiguous_table"
+            ),
+            "table": table,
+            "matches": len(visible),
+            "executed": False,
+        }
+
+    @staticmethod
+    def _table_snapshot(table_locator):
+        return table_locator.evaluate(
+            """
+            table => {
+                const clean = value => String(value || '')
+                    .replace(/\\s+/g, ' ')
+                    .trim();
+                const headerCells = Array.from(
+                    table.querySelectorAll('thead th, thead [role="columnheader"]')
+                );
+                const headers = headerCells.slice(0, 50).map(cell => ({
+                    name: clean(
+                        cell.getAttribute('aria-label')
+                        || cell.innerText
+                        || cell.textContent
+                    ),
+                    aria_sort: cell.getAttribute('aria-sort')
+                }));
+                const bodyRows = Array.from(
+                    table.querySelectorAll('tbody tr, [role="rowgroup"] [role="row"]')
+                ).filter(row => !row.closest('thead')).slice(0, 200);
+                const rows = bodyRows.map(row => {
+                    const cells = Array.from(
+                        row.querySelectorAll(':scope > td, :scope > th, :scope > [role="cell"], :scope > [role="gridcell"]')
+                    ).slice(0, 50).map(cell => clean(
+                        cell.innerText || cell.textContent
+                    ).slice(0, 300));
+                    const valuesByHeader = {};
+                    if (headers.length === cells.length) {
+                        headers.forEach((header, index) => {
+                            if (header.name) valuesByHeader[header.name] = cells[index];
+                        });
+                    }
+                    return {
+                        text: clean(row.innerText || row.textContent).slice(0, 1000),
+                        cells,
+                        values_by_header: valuesByHeader,
+                        aria_selected: row.getAttribute('aria-selected')
+                    };
+                });
+                return {
+                    headers,
+                    rows,
+                    visible_row_count: rows.length,
+                    row_signature: rows.map(row => row.cells.join('\u241f'))
+                };
+            }
+            """
+        )
+
+    def inspect_table_semantic(
+        self,
+        table: str = None,
+        exact: bool = True,
+    ):
+        """Return a bounded structured snapshot of one visible table."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        locator, error = self._resolve_table(table, exact)
+        if error:
+            return error
+        summary = self._table_snapshot(locator)
+        result = self._capture_state("inspect-table-semantic")
+        result.update(
+            {
+                "table_name": table,
+                "table_inspection_status": "observed",
+                "table_summary": summary,
+                "mutation_executed": False,
+            }
+        )
+        return result
+
+    def sort_table_semantic(
+        self,
+        column: str,
+        direction: str,
+        table: str = None,
+        exact: bool = True,
+    ):
+        """Trigger and verify ascending or descending sort on one column."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        wanted_direction = str(direction or "").strip().casefold()
+        direction_map = {
+            "asc": "ascending",
+            "ascending": "ascending",
+            "desc": "descending",
+            "descending": "descending",
+        }
+        wanted_sort = direction_map.get(wanted_direction)
+        if not wanted_sort:
+            return {
+                "error": "unsupported_sort_direction",
+                "direction": direction,
+                "executed": False,
+            }
+        table_locator, error = self._resolve_table(table, exact)
+        if error:
+            return error
+
+        header_locator = table_locator.get_by_role(
+            "columnheader",
+            name=column,
+            exact=exact,
+        )
+        headers = []
+        for index in range(min(header_locator.count(), 50)):
+            candidate = header_locator.nth(index)
+            if candidate.is_visible():
+                headers.append(candidate)
+        if len(headers) != 1:
+            return {
+                "error": (
+                    "table_column_not_found"
+                    if not headers
+                    else "ambiguous_table_column"
+                ),
+                "table": table,
+                "column": column,
+                "matches": len(headers),
+                "executed": False,
+            }
+
+        header = headers[0]
+        before = self._table_snapshot(table_locator)
+        current_sort = str(
+            header.get_attribute("aria-sort") or ""
+        ).strip().casefold()
+        if current_sort == wanted_sort:
+            result = self._capture_state("sort-table-semantic")
+            result.update(
+                {
+                    "table_name": table,
+                    "sorted_column": column,
+                    "sort_direction": wanted_sort,
+                    "sort_status": "already_satisfied",
+                    "table_before": before,
+                    "table_after": before,
+                    "mutation_executed": False,
+                }
+            )
+            return result
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        attempts = 0
+        final_sort = current_sort
+        while attempts < 2 and final_sort != wanted_sort:
+            header.click()
+            attempts += 1
+            self.page.wait_for_timeout(400)
+            final_sort = str(
+                header.get_attribute("aria-sort") or ""
+            ).strip().casefold()
+            if not final_sort:
+                break
+
+        after = self._table_snapshot(table_locator)
+        verified = final_sort == wanted_sort
+        changed = before.get("row_signature") != after.get("row_signature")
+        result = self._capture_state("sort-table-semantic")
+        result.update(
+            {
+                "table_name": table,
+                "sorted_column": column,
+                "sort_direction": wanted_sort,
+                "observed_aria_sort": final_sort or None,
+                "sort_click_attempts": attempts,
+                "sort_status": (
+                    "sorted"
+                    if verified
+                    else "triggered_unverified"
+                    if changed
+                    else "not_observed"
+                ),
+                "table_before": before,
+                "table_after": after,
+                "mutation_executed": True,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if not verified and not changed:
+            result["error"] = "table_sort_not_observed"
+        return result
+
+    def set_table_row_selected(
+        self,
+        name: str,
+        selected: bool,
+        exact: bool = True,
+    ):
+        """Set the selection checkbox in one row matched by an exact cell."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        wanted = " ".join(str(name or "").split())
+        if not wanted:
+            return {
+                "error": "table_row_name_required",
+                "executed": False,
+            }
+        row_matches = []
+        rows = self.page.locator("tr")
+        for index in range(min(rows.count(), 500)):
+            row = rows.nth(index)
+            try:
+                if not row.is_visible() or row.locator("td").count() == 0:
+                    continue
+                cells = row.locator(":scope > td, :scope > th").all_inner_texts()
+                row_text = " ".join((row.inner_text() or "").split())
+                matched = (
+                    any(" ".join(cell.split()) == wanted for cell in cells)
+                    if exact
+                    else wanted.casefold() in row_text.casefold()
+                )
+                if matched:
+                    row_matches.append(row)
+            except Exception:
+                continue
+        if len(row_matches) != 1:
+            return {
+                "error": (
+                    "table_row_not_found"
+                    if not row_matches
+                    else "ambiguous_table_row"
+                ),
+                "name": name,
+                "matches": len(row_matches),
+                "executed": False,
+            }
+
+        row = row_matches[0]
+        controls = row.locator(
+            'input[type="checkbox"], [role="checkbox"]'
+        )
+        checkboxes = []
+        for index in range(min(controls.count(), 20)):
+            candidate = controls.nth(index)
+            if candidate.is_visible():
+                checkboxes.append(candidate)
+        if len(checkboxes) != 1:
+            return {
+                "error": (
+                    "table_row_checkbox_not_found"
+                    if not checkboxes
+                    else "ambiguous_table_row_checkbox"
+                ),
+                "name": name,
+                "matches": len(checkboxes),
+                "executed": False,
+            }
+
+        checkbox = checkboxes[0]
+        try:
+            previous = bool(checkbox.is_checked())
+        except Exception:
+            previous = (
+                str(checkbox.get_attribute("aria-checked") or "").casefold()
+                == "true"
+            )
+        desired = bool(selected)
+        if previous == desired:
+            result = self._capture_state("set-table-row-selected")
+            result.update(
+                {
+                    "table_row_name": name,
+                    "previous_selected": previous,
+                    "selected": previous,
+                    "row_selection_status": "already_satisfied",
+                    "mutation_executed": False,
+                }
+            )
+            return result
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        checkbox.click()
+        self.page.wait_for_timeout(300)
+        try:
+            actual = bool(checkbox.is_checked())
+        except Exception:
+            actual = (
+                str(checkbox.get_attribute("aria-checked") or "").casefold()
+                == "true"
+            )
+        result = self._capture_state("set-table-row-selected")
+        result.update(
+            {
+                "table_row_name": name,
+                "previous_selected": previous,
+                "selected": actual,
+                "row_selection_status": (
+                    "selected" if actual == desired else "not_applied"
+                ),
+                "mutation_executed": False,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if actual != desired:
+            result["error"] = "table_row_selection_not_applied"
+        return result
+
+    def table_page_semantic(
+        self,
+        control: str,
+        table: str = None,
+        exact: bool = True,
+    ):
+        """Activate one exact pagination control and verify row-set change."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        table_locator, error = self._resolve_table(table, exact)
+        if error:
+            return error
+        before = self._table_snapshot(table_locator)
+        candidates = []
+        for role in ("button", "link"):
+            locator = self.page.get_by_role(
+                role,
+                name=control,
+                exact=exact,
+            )
+            matches = []
+            for index in range(min(locator.count(), 50)):
+                candidate = locator.nth(index)
+                if candidate.is_visible():
+                    matches.append(candidate)
+            if matches:
+                candidates = matches
+                break
+        if len(candidates) != 1:
+            return {
+                "error": (
+                    "table_page_control_not_found"
+                    if not candidates
+                    else "ambiguous_table_page_control"
+                ),
+                "control": control,
+                "matches": len(candidates),
+                "executed": False,
+            }
+        control_locator = candidates[0]
+        if not control_locator.is_enabled():
+            return {
+                "error": "table_page_control_disabled",
+                "control": control,
+                "executed": False,
+            }
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        control_locator.click()
+        self.page.wait_for_timeout(700)
+        after = self._table_snapshot(table_locator)
+        changed = before.get("row_signature") != after.get("row_signature")
+        result = self._capture_state("table-page-semantic")
+        result.update(
+            {
+                "table_name": table,
+                "table_page_control": control,
+                "table_page_status": "changed" if changed else "not_changed",
+                "table_before": before,
+                "table_after": after,
+                "mutation_executed": False,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if not changed:
+            result["error"] = "table_page_not_changed"
+        return result
+
     def delete_json_resource(
         self,
         collection_endpoint: str,
@@ -4895,6 +5294,43 @@ def resize_semantic(
         exact,
         role,
     )
+
+
+def inspect_table_semantic(
+    table: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.inspect_table_semantic(table, exact)
+
+
+def sort_table_semantic(
+    column: str,
+    direction: str,
+    table: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.sort_table_semantic(
+        column,
+        direction,
+        table,
+        exact,
+    )
+
+
+def set_table_row_selected(
+    name: str,
+    selected: bool,
+    exact: bool = True,
+) -> dict:
+    return _session.set_table_row_selected(name, selected, exact)
+
+
+def table_page_semantic(
+    control: str,
+    table: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.table_page_semantic(control, table, exact)
 
 
 def fill(element_id: str, text: str) -> dict:

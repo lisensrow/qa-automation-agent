@@ -14,6 +14,10 @@ from tools.browser import (
     check_focus_order_semantic,
     drag_semantic,
     resize_semantic,
+    inspect_table_semantic,
+    sort_table_semantic,
+    set_table_row_selected,
+    table_page_semantic,
     get_network_detail,
     delete_json_resource,
     archive_json_resource,
@@ -641,6 +645,84 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_table_semantic",
+            "description": (
+                "Read-only структурированный снимок одной видимой таблицы: "
+                "headers, aria-sort, строки, cells и values_by_header."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "table": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_sort_table_semantic",
+            "description": (
+                "Сортирует одну таблицу по точному column header и направлению. "
+                "Проверяет aria-sort либо фактическое изменение порядка строк."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "column": {"type": "string"},
+                    "direction": {
+                        "type": "string",
+                        "enum": ["asc", "desc", "ascending", "descending"]
+                    },
+                    "table": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["column", "direction"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_set_table_row_selected",
+            "description": (
+                "Идемпотентно устанавливает checkbox выбора ровно одной строки, "
+                "найденной по точному значению ячейки. Не запускает bulk action."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "selected": {"type": "boolean"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["name", "selected"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_table_page_semantic",
+            "description": (
+                "Активирует точный pagination control и проверяет, что набор "
+                "видимых строк выбранной таблицы действительно изменился."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "control": {"type": "string"},
+                    "table": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["control"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_table_row",
             "description": (
                 "Read-only проверка одной видимой строки таблицы. При exact=true "
@@ -943,6 +1025,34 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("edge", "right"),
             arguments.get("exact", True),
             arguments.get("role"),
+        )
+
+    if name == "browser_inspect_table_semantic":
+        return inspect_table_semantic(
+            arguments.get("table"),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_sort_table_semantic":
+        return sort_table_semantic(
+            arguments["column"],
+            arguments["direction"],
+            arguments.get("table"),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_set_table_row_selected":
+        return set_table_row_selected(
+            arguments["name"],
+            arguments["selected"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_table_page_semantic":
+        return table_page_semantic(
+            arguments["control"],
+            arguments.get("table"),
+            arguments.get("exact", True),
         )
 
     return {

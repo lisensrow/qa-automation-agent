@@ -97,3 +97,10 @@
 - Resize проверяет фактическое изменение bounding box.
 - Pointer mutations относятся к WRITE и блокируются read-only policy.
 - Добавлен изолированный drag/resize smoke.
+# v071e — table controls
+
+- Добавлен ограниченный структурированный snapshot одной таблицы.
+- Добавлена сортировка по точному header с проверкой aria-sort или изменения row order.
+- Добавлен идемпотентный выбор checkbox точной строки без запуска bulk action.
+- Добавлена пагинация с проверкой изменения row signature.
+- Добавлен изолированный table-controls smoke.

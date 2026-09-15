@@ -518,6 +518,7 @@ def extract_observations(
     if tool_name in {
         "browser_inspect_semantic",
         "browser_inspect_table_row",
+        "browser_inspect_table_semantic",
     }:
         return [
             _browser_semantic_observation(
@@ -539,6 +540,9 @@ def extract_observations(
         "browser_check_focus_order_semantic",
         "browser_drag_semantic",
         "browser_resize_semantic",
+        "browser_sort_table_semantic",
+        "browser_set_table_row_selected",
+        "browser_table_page_semantic",
     }:
         return [
             _browser_state_observation(
