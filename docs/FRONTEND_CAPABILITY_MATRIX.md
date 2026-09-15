@@ -12,6 +12,8 @@
 - Идемпотентный выбор radio option внутри именованной группы.
 - Точная установка полного набора native HTML multi-select.
 - Выбор единственной точной option в поисковом ARIA autocomplete.
+- Проверка фактического forward Tab focus order.
+- Ограниченные keyboard actions с отдельной классификацией риска.
 - Проверка точной строки таблицы и работа с её context menu.
 - Фиксация screenshot, browser state, XHR/fetch и console/network errors.
 - Action policy v069 для OBSERVE, INTERACT, WRITE и DESTRUCTIVE.
@@ -19,7 +21,7 @@
 ## Следующие этапы frontend-покрытия
 
 1. Составные ARIA multi-select и chip-based selectors.
-2. Клавиатурные действия, hotkeys, focus order и tab navigation.
+2. Составные hotkeys/chords с отдельной безопасной моделью clipboard.
 3. Drag-and-drop, изменение порядка и размеров колонок/полей.
 4. Табличные фильтры, сортировка, пагинация и массовый выбор.
 5. Date/time pickers, sliders, tree controls и complex popovers.

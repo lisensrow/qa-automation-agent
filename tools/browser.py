@@ -2816,6 +2816,273 @@ class BrowserSession:
             result["error"] = "multiselect_state_not_applied"
         return result
 
+    def _focused_element_summary(self):
+        return self.page.evaluate(
+            """
+            () => {
+                const el = document.activeElement;
+                if (!el || el === document.body) return null;
+                const labels = el.labels
+                    ? Array.from(el.labels)
+                        .map(label => (label.innerText || label.textContent || '').trim())
+                        .filter(Boolean)
+                    : [];
+                const text = (el.innerText || el.textContent || '').trim();
+                const name = (
+                    el.getAttribute('aria-label')
+                    || labels.join(' ')
+                    || text
+                    || el.getAttribute('placeholder')
+                    || el.getAttribute('name')
+                    || el.id
+                    || ''
+                ).trim();
+                return {
+                    tag: el.tagName.toLowerCase(),
+                    type: el.getAttribute('type') || '',
+                    role: el.getAttribute('role') || '',
+                    name: name.slice(0, 300),
+                    id: el.id || '',
+                    aria_label: el.getAttribute('aria-label') || '',
+                    disabled: el.disabled === true
+                        || el.getAttribute('aria-disabled') === 'true'
+                };
+            }
+            """
+        )
+
+    def _keyboard_target(self, name, exact=True, role=None):
+        def visible_matches(locator):
+            matches = []
+            for index in range(min(locator.count(), 100)):
+                candidate = locator.nth(index)
+                try:
+                    if candidate.is_visible():
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            return matches
+
+        roles = (
+            [role]
+            if role
+            else [
+                "button",
+                "link",
+                "textbox",
+                "searchbox",
+                "combobox",
+                "checkbox",
+                "switch",
+                "radio",
+                "tab",
+                "menuitem",
+                "treeitem",
+                "listbox",
+                "spinbutton",
+            ]
+        )
+        for candidate_role in roles:
+            matches = visible_matches(
+                self.page.get_by_role(
+                    candidate_role,
+                    name=name,
+                    exact=exact,
+                )
+            )
+            if len(matches) == 1:
+                return matches[0], f"role:{candidate_role}", None
+            if len(matches) > 1:
+                return None, None, {
+                    "error": "ambiguous_keyboard_target",
+                    "target": name,
+                    "role": candidate_role,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        matches = visible_matches(
+            self.page.get_by_label(name, exact=exact)
+        )
+        if len(matches) == 1:
+            return matches[0], "label", None
+        if len(matches) > 1:
+            return None, None, {
+                "error": "ambiguous_keyboard_target",
+                "target": name,
+                "matches": len(matches),
+                "executed": False,
+            }
+        return None, None, {
+            "error": "keyboard_target_not_found",
+            "target": name,
+            "role": role,
+            "executed": False,
+        }
+
+    def press_key_semantic(
+        self,
+        key: str,
+        target: str = None,
+        exact: bool = True,
+        role: str = None,
+    ):
+        """Press one policy-classified key, optionally on an exact target."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        allowed = {
+            "Tab",
+            "Shift+Tab",
+            "Escape",
+            "Enter",
+            "Space",
+            "ArrowUp",
+            "ArrowDown",
+            "ArrowLeft",
+            "ArrowRight",
+            "Home",
+            "End",
+            "PageUp",
+            "PageDown",
+            "Backspace",
+            "Delete",
+        }
+        normalized = str(key or "").strip()
+        canonical = next(
+            (
+                value
+                for value in allowed
+                if value.casefold() == normalized.casefold()
+            ),
+            None,
+        )
+        if canonical is None:
+            return {
+                "error": "unsupported_keyboard_key",
+                "key": key,
+                "allowed_keys": sorted(allowed),
+                "executed": False,
+            }
+
+        target_strategy = None
+        if target:
+            locator, target_strategy, error = self._keyboard_target(
+                target,
+                exact,
+                role,
+            )
+            if error:
+                return error
+            try:
+                if not locator.is_enabled():
+                    return {
+                        "error": "keyboard_target_disabled",
+                        "target": target,
+                        "executed": False,
+                    }
+            except Exception:
+                pass
+            locator.focus()
+
+        focus_before = self._focused_element_summary()
+        if target and not focus_before:
+            return {
+                "error": "keyboard_target_focus_failed",
+                "target": target,
+                "executed": False,
+            }
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        self.page.keyboard.press(canonical)
+        self.page.wait_for_timeout(300)
+        focus_after = self._focused_element_summary()
+        result = self._capture_state("press-key-semantic")
+        result.update(
+            {
+                "pressed_key": canonical,
+                "keyboard_target": target,
+                "keyboard_target_strategy": target_strategy,
+                "focus_before": focus_before,
+                "focus_after": focus_after,
+                "keyboard_event_executed": True,
+                "post_action_wait_ms": 300,
+            }
+        )
+        return self._finish_action_execution(result)
+
+    def check_focus_order_semantic(
+        self,
+        targets: list,
+        exact: bool = True,
+    ):
+        """Verify forward Tab order for an exact list of semantic names."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        expected = [
+            str(value or "").strip()
+            for value in (targets or [])
+            if str(value or "").strip()
+        ]
+        if len(expected) < 2:
+            return {
+                "error": "focus_order_requires_two_targets",
+                "executed": False,
+            }
+        if len(expected) > 50:
+            return {
+                "error": "focus_order_too_large",
+                "target_count": len(expected),
+                "executed": False,
+            }
+
+        first, strategy, error = self._keyboard_target(
+            expected[0],
+            exact,
+        )
+        if error:
+            return error
+        first.focus()
+        sequence = [self._focused_element_summary()]
+        self._reset_diagnostics()
+        self._begin_action_execution()
+
+        mismatch = None
+        for index, wanted in enumerate(expected[1:], start=1):
+            self.page.keyboard.press("Tab")
+            self.page.wait_for_timeout(100)
+            actual = self._focused_element_summary()
+            sequence.append(actual)
+            actual_name = str((actual or {}).get("name") or "").strip()
+            matched = (
+                actual_name.casefold() == wanted.casefold()
+                if exact
+                else wanted.casefold() in actual_name.casefold()
+            )
+            if not matched:
+                mismatch = {
+                    "index": index,
+                    "expected": wanted,
+                    "actual": actual_name,
+                }
+                break
+
+        result = self._capture_state("check-focus-order-semantic")
+        result.update(
+            {
+                "expected_focus_order": expected,
+                "observed_focus_order": sequence,
+                "focus_order_status": (
+                    "matched" if mismatch is None else "mismatch"
+                ),
+                "focus_order_mismatch": mismatch,
+                "initial_target_strategy": strategy,
+                "keyboard_event_executed": True,
+                "mutation_executed": False,
+            }
+        )
+        return self._finish_action_execution(result)
+
     def delete_json_resource(
         self,
         collection_endpoint: str,
@@ -4327,6 +4594,22 @@ def select_many_semantic(
     exact: bool = True,
 ) -> dict:
     return _session.select_many_semantic(field, options, exact)
+
+
+def press_key_semantic(
+    key: str,
+    target: str = None,
+    exact: bool = True,
+    role: str = None,
+) -> dict:
+    return _session.press_key_semantic(key, target, exact, role)
+
+
+def check_focus_order_semantic(
+    targets: list,
+    exact: bool = True,
+) -> dict:
+    return _session.check_focus_order_semantic(targets, exact)
 
 
 def fill(element_id: str, text: str) -> dict:

@@ -10,6 +10,8 @@ from tools.browser import (
     set_checked_semantic,
     choose_radio_semantic,
     select_many_semantic,
+    press_key_semantic,
+    check_focus_order_semantic,
     get_network_detail,
     delete_json_resource,
     archive_json_resource,
@@ -527,6 +529,60 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_press_key_semantic",
+            "description": (
+                "Нажимает одну разрешённую клавишу, опционально после точного "
+                "фокуса на смысловом target. Tab/Shift+Tab/Escape безопасны; "
+                "клавиши, способные изменить control или отправить форму, "
+                "проходят WRITE/DESTRUCTIVE policy."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "enum": [
+                            "Tab", "Shift+Tab", "Escape", "Enter", "Space",
+                            "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+                            "Home", "End", "PageUp", "PageDown",
+                            "Backspace", "Delete"
+                        ]
+                    },
+                    "target": {"type": "string"},
+                    "exact": {"type": "boolean"},
+                    "role": {"type": "string"}
+                },
+                "required": ["key"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_check_focus_order_semantic",
+            "description": (
+                "Read-only по данным проверка ожидаемого forward Tab order. "
+                "Фокусирует первый точный target, проходит Tab и возвращает "
+                "полную наблюдаемую последовательность и первое расхождение."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "targets": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 2,
+                        "maxItems": 50
+                    },
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["targets"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_table_row",
             "description": (
                 "Read-only проверка одной видимой строки таблицы. При exact=true "
@@ -795,6 +851,20 @@ def execute_tool(name: str, arguments: dict):
         return select_many_semantic(
             arguments["field"],
             arguments["options"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_press_key_semantic":
+        return press_key_semantic(
+            arguments["key"],
+            arguments.get("target"),
+            arguments.get("exact", True),
+            arguments.get("role"),
+        )
+
+    if name == "browser_check_focus_order_semantic":
+        return check_focus_order_semantic(
+            arguments["targets"],
             arguments.get("exact", True),
         )
 

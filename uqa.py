@@ -369,6 +369,10 @@ SYSTEM_PROMPT = """
   когда она известна, точное имя group.
 - Для native multiple select используй browser_select_many_semantic и передавай
   полный ожидаемый набор значений.
+- Для одиночного клавиатурного действия используй browser_press_key_semantic.
+  Указывай target, если клавиша должна сработать на конкретном control.
+- Для проверки последовательности Tab используй browser_check_focus_order_semantic,
+  а не делай вывод только по DOM-порядку.
 - Если после перехода фактически появилась форма Login/Password, а UQA Core
   разрешил повторное использование сохранённых credentials, вызови
   browser_authenticate_saved_stand с точным stand_id. Никогда не запрашивай,
@@ -949,6 +953,9 @@ def classify_tool_action(
     if name in observe_tools:
         return "observe"
 
+    if name == "browser_check_focus_order_semantic":
+        return "interact"
+
     # Ledger updates are internal QA bookkeeping. They do not mutate
     # the tested stand and need no second confirmation after the
     # already-confirmed stand action that created or changed a resource.
@@ -993,6 +1000,28 @@ def classify_tool_action(
             return "interact"
 
         return "write"
+
+    if name == "browser_press_key_semantic":
+        key = str(arguments.get("key") or "").strip().casefold()
+        if key in {"tab", "shift+tab", "escape"}:
+            return "interact"
+        if key == "delete":
+            return "destructive"
+        if key in {
+            "enter",
+            "space",
+            "arrowup",
+            "arrowdown",
+            "arrowleft",
+            "arrowright",
+            "home",
+            "end",
+            "pageup",
+            "pagedown",
+            "backspace",
+        }:
+            return "write"
+        return "unknown"
 
     if name in {
         "browser_select_semantic",
@@ -1081,6 +1110,28 @@ def tool_policy_check(
             "reason": (
                 "STRICT_READ_ONLY regression mode "
                 "forbids browser clicks."
+            ),
+        }
+
+    if (
+        name == "browser_press_key_semantic"
+        and classify_tool_action(name, arguments)
+        in {"write", "destructive", "unknown"}
+    ):
+        return {
+            "error": "tool_policy_blocked",
+            "status": "blocked_by_policy",
+            "policy": (
+                "strict_read_only"
+                if force_read_only
+                else "read_only_request"
+            ),
+            "tool": name,
+            "executed": False,
+            "requested_key": arguments.get("key") or "",
+            "reason": (
+                "This keyboard action can change UI or application state "
+                "and is forbidden by the current read-only QA request."
             ),
         }
 
@@ -4276,6 +4327,10 @@ def _historical_browser_result_summary(tool_name, content):
         "exact_match_count",
         "matched_count",
         "selection_status",
+        "pressed_key",
+        "keyboard_target",
+        "focus_order_status",
+        "focus_order_mismatch",
         "action_policy_status",
         "auth_challenge_status",
         "network_request_count",

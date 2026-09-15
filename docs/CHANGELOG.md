@@ -83,3 +83,10 @@
 - Одиночный semantic select поддерживает поисковый ARIA autocomplete.
 - Все новые действия относятся к WRITE, блокируются read-only policy и входят в evidence pipeline.
 - Добавлен изолированный advanced form-controls smoke.
+# v071c — keyboard and focus order
+
+- Добавлен закрытый whitelist клавиатурных действий.
+- Добавлена risk-aware классификация: safe focus navigation, WRITE-capable keys и DESTRUCTIVE Delete.
+- Добавлена проверка фактической последовательности Tab focus.
+- Read-only задачи блокируют изменяющие keyboard events.
+- Добавлен изолированный keyboard/focus smoke.
