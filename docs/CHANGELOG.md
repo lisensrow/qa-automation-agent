@@ -29,6 +29,15 @@
 - Planner Core распознаёт формулировки вида «один последовательный test case» и автоматически объединяет ошибочно разделённые моделью шаги lifecycle в один case с несколькими checks.
 - Реальный Location Job подтвердил create, точное table-row evidence, persistent registration и успешный Cleanup Manager archive; ложный `external_id`, совпавший с именем, очищен из ledger. Verdict остался `BLOCKED` только из-за повторной direct-архивации после policy denial.
 - Planned-check coverage допускает только детерминированное исправление ID: если модель заменила `planned-*` на свои `check-*`, но все точные уникальные titles совпадают один к одному, Core восстанавливает авторитетные IDs без fuzzy matching.
+- Cleanup verifier принимает точный `browser_inspect_table_row / table_row_not_found` как post-action доказательство отсутствия табличного ресурса в активном списке. Найденная строка или неточный semantic result по-прежнему не позволяют пометить ресурс `cleaned`.
+- Свежий end-to-end Location case впервые завершён с `PASS=1`: create, machine-locked table evidence и persistent registration прошли; обнаруженный разрыв table-row post-check исправлен отдельным regression smoke.
+- Recovery cleanup запрещает вторую WRITE/DESTRUCTIVE-операцию, если история ledger уже содержит подтверждённую destructive mutation для этого ресурса. Повторный запуск может только подтвердить точное отсутствие или оставить ресурс pending.
+- Для ресурса с provenance `table_row_exact_cell` recovery выполняет детерминированный `browser_inspect_table_row(exact=true)` до model-call: not-found закрывает ledger, найденная строка оставляет cleanup pending без повторной mutation.
+- Destructive UI intent-click больше не равен выполненной мутации: если post-click state содержит одноимённую кнопку подтверждения, Core сохраняет `confirmation_pending=true` и разрешает отдельный policy-controlled confirm-click. Guard повторной mutation активируется только после `mutation_executed=true`.
+- Если destructive intent-click открыл наблюдённую одноимённую confirm-кнопку, Core детерминированно вызывает её точными аргументами через второе v069-подтверждение. Модель больше не может пропустить обязательный второй шаг и преждевременно заявить cleanup.
+- Browser Runtime возвращает `post_click_same_name_button_count`: этот Core-only признак обнаруживает confirm-popover даже когда общий список interactive elements пуст или сокращён.
+- Для UI archive, который оставляет строку в таблице, Core выполняет точный post-check context menu и считает cleanup подтверждённым только при замене исходного действия на обратное `Unarchive`. Это не зависит от цвета статусной точки или текстового вывода модели.
+- Контрольный Job `20260915-065244-a7d0dddf` завершён полностью зелёным lifecycle: case и все три planned checks — passed, resource — cleaned, cleanup — completed. Recovery подтвердил точную строку через обратное действие `Unarchive` без повторной mutation.
 
 ## v069 — General Action Policy
 

@@ -7537,8 +7537,11 @@ CLEANUP_SYSTEM_PROMPT = """
 - Используй browser tools для фактической проверки и удаления.
 - Любые WRITE/DESTRUCTIVE действия контролирует UQA Core.
 - Если Core заблокировал действие, не обходи policy другим способом.
-- После удаления обязательно вызови browser_inspect_semantic с точным
-  именем/идентификатором ресурса и подтверди semantic_element_not_found.
+- После удаления или архивирования сначала вызови browser_inspect_table_row
+  с точным именем ресурса и exact=true. Для табличного ресурса подтверди
+  table_row_not_found в активном списке. Если ресурс не представлен строкой
+  таблицы, используй browser_inspect_semantic с точным именем/идентификатором
+  и подтверди semantic_element_not_found.
 - Если Core передал core_observed_rest_cleanup, разрешён универсальный
   browser_delete_json_resource/browser_archive_json_resource только с этими
   точными аргументами. Его
@@ -7739,6 +7742,7 @@ def _cleanup_history_has_confirmed_destructive(
             if (
                 result.get("action_class") == "destructive"
                 and result.get("action_policy_status") == "confirmed"
+                and result.get("mutation_executed") is True
                 and result.get("executed") is not False
                 and not result.get("error")
                 and result.get("click_status")
@@ -7749,6 +7753,101 @@ def _cleanup_history_has_confirmed_destructive(
                 return True
 
     return False
+
+
+def _cleanup_followup_confirmation_present(
+    tool_name,
+    arguments,
+    result,
+):
+    if (
+        tool_name != "browser_click_semantic"
+        or not isinstance(arguments, dict)
+        or not isinstance(result, dict)
+    ):
+        return False
+
+    action_name = " ".join(
+        str(arguments.get("name") or "").split()
+    ).casefold()
+
+    if not action_name:
+        return False
+
+    if int(
+        result.get(
+            "post_click_same_name_button_count"
+        )
+        or 0
+    ) > 0:
+        return True
+
+    for item in result.get(
+        "interactive_elements",
+        [],
+    ):
+        if not isinstance(item, dict):
+            continue
+
+        role = str(
+            item.get("role")
+            or ""
+        ).strip().casefold()
+        label = " ".join(
+            str(
+                item.get("aria_label")
+                or item.get("text")
+                or ""
+            ).split()
+        ).casefold()
+
+        if role == "button" and label == action_name:
+            return True
+
+    return False
+
+
+def _annotate_cleanup_mutation_result(
+    tool_name,
+    arguments,
+    result,
+):
+    if not isinstance(result, dict):
+        return result
+
+    if (
+        result.get("action_class") != "destructive"
+        or result.get("action_policy_status")
+        != "confirmed"
+        or result.get("executed") is False
+        or result.get("error")
+    ):
+        return result
+
+    if tool_name in {
+        "browser_delete_json_resource",
+        "browser_archive_json_resource",
+    }:
+        result.setdefault(
+            "mutation_executed",
+            result.get("already_satisfied") is not True,
+        )
+        return result
+
+    confirmation_pending = (
+        _cleanup_followup_confirmation_present(
+            tool_name,
+            arguments,
+            result,
+        )
+    )
+    result["confirmation_pending"] = (
+        confirmation_pending
+    )
+    result["mutation_executed"] = (
+        not confirmation_pending
+    )
+    return result
 
 
 def _cleanup_browser_verification_succeeded(
@@ -7783,13 +7882,164 @@ def _cleanup_browser_verification_succeeded(
             )
         )
 
-    if tool_name != "browser_inspect_semantic":
+    expected_not_found_errors = {
+        "browser_inspect_semantic": (
+            "semantic_element_not_found"
+        ),
+        "browser_inspect_table_row": (
+            "table_row_not_found"
+        ),
+    }
+
+    expected_error = expected_not_found_errors.get(
+        tool_name
+    )
+
+    return bool(
+        expected_error
+        and result.get("error") == expected_error
+    )
+
+
+def _cleanup_can_reconcile_exact_absence(
+    resource,
+    tool_name,
+    result,
+):
+    return (
+        _cleanup_history_has_confirmed_destructive(
+            resource
+        )
+        and _cleanup_browser_verification_succeeded(
+            tool_name,
+            result,
+        )
+    )
+
+
+def _cleanup_resource_was_exact_table_row(
+    job,
+    resource,
+):
+    case_id = str(
+        resource.get("created_by_case")
+        or ""
+    ).strip()
+    exact_name = str(
+        resource.get("name")
+        or ""
+    ).strip()
+
+    if not case_id or not exact_name:
         return False
 
-    return (
-        result.get("error")
-        == "semantic_element_not_found"
+    for case in job.get("test_cases", []):
+        if str(case.get("case_id") or "") != case_id:
+            continue
+
+        for observation in case.get(
+            "observations",
+            [],
+        ):
+            data = observation.get("data") or {}
+
+            if (
+                observation.get("type")
+                == "ui_element"
+                or observation.get("source")
+                == "browser_semantic"
+            ):
+                if (
+                    data.get("strategy")
+                    == "table_row_exact_cell"
+                    and data.get("exact") is True
+                    and str(
+                        data.get("subject")
+                        or ""
+                    ).strip() == exact_name
+                    and data.get("visible") is True
+                ):
+                    return True
+
+    return False
+
+
+def _cleanup_inverse_action_visible(
+    result,
+    action_name,
+):
+    normalized_action = "".join(
+        str(action_name or "")
+        .strip()
+        .casefold()
+        .split()
     )
+
+    if not normalized_action:
+        return False
+
+    expected_inverse = "un" + normalized_action
+
+    for item in result.get(
+        "interactive_elements",
+        [],
+    ):
+        if not isinstance(item, dict):
+            continue
+
+        role = str(
+            item.get("role")
+            or ""
+        ).strip().casefold()
+        label = "".join(
+            str(
+                item.get("aria_label")
+                or item.get("text")
+                or ""
+            )
+            .strip()
+            .casefold()
+            .split()
+        )
+
+        if (
+            role == "menuitem"
+            and label == expected_inverse
+        ):
+            return True
+
+    return False
+
+
+def _cleanup_last_confirmed_action_name(
+    resource,
+):
+    for attempt in reversed(
+        resource.get("cleanup_attempts", [])
+    ):
+        for event in reversed(
+            attempt.get("events", [])
+        ):
+            data = event.get("data") or {}
+            result = data.get("result") or {}
+
+            if (
+                result.get("action_class")
+                == "destructive"
+                and result.get(
+                    "action_policy_status"
+                ) == "confirmed"
+                and result.get(
+                    "mutation_executed"
+                ) is True
+            ):
+                return str(
+                    (data.get("arguments") or {})
+                    .get("name")
+                    or ""
+                ).strip()
+
+    return ""
 
 
 def _cleanup_event_summary(
@@ -7814,6 +8064,7 @@ def _cleanup_event_summary(
         "name",
         "field",
         "exact",
+        "role",
         "request_id",
         "stand",
         "container",
@@ -7842,6 +8093,8 @@ def _cleanup_event_summary(
         "mutation_method",
         "operation_suffix",
         "mutation_executed",
+        "confirmation_pending",
+        "post_click_same_name_button_count",
         "already_satisfied",
         "post_delete_status",
         "post_delete_match_count",
@@ -8455,6 +8708,144 @@ def run_cleanup_resource(
                 ),
             })
 
+        if (
+            destructive_executed
+            and _cleanup_resource_was_exact_table_row(
+                job,
+                resource,
+            )
+        ):
+            recovery_arguments = {
+                "name": str(
+                    resource.get("name")
+                    or ""
+                ).strip(),
+                "exact": True,
+            }
+            recovery_result = execute_tool_with_policy(
+                "browser_inspect_table_row",
+                recovery_arguments,
+                messages,
+                action_policy="confirm_mutations",
+            )
+            add_cleanup_attempt_event(
+                job_id,
+                resource_id,
+                attempt_id,
+                _cleanup_event_summary(
+                    "browser_inspect_table_row",
+                    recovery_arguments,
+                    recovery_result,
+                ),
+            )
+
+            if _cleanup_can_reconcile_exact_absence(
+                resource,
+                "browser_inspect_table_row",
+                recovery_result,
+            ):
+                reason = (
+                    "confirmed destructive cleanup verified "
+                    "by exact table-row absence"
+                )
+                finish_cleanup_attempt(
+                    job_id,
+                    resource_id,
+                    attempt_id,
+                    outcome="cleaned",
+                    reason=reason,
+                    result={
+                        "status": "cleaned",
+                        "reason": reason,
+                    },
+                )
+                return {
+                    "status": "cleaned",
+                    "reason": reason,
+                }
+
+            if _cleanup_tool_succeeded(
+                recovery_result
+            ):
+                previous_action = (
+                    _cleanup_last_confirmed_action_name(
+                        resource
+                    )
+                )
+                context_arguments = {
+                    "name": str(
+                        resource.get("name")
+                        or ""
+                    ).strip(),
+                    "exact": True,
+                }
+                context_result = (
+                    execute_tool_with_policy(
+                        "browser_context_menu_semantic",
+                        context_arguments,
+                        messages,
+                        action_policy=(
+                            "confirm_mutations"
+                        ),
+                    )
+                )
+                add_cleanup_attempt_event(
+                    job_id,
+                    resource_id,
+                    attempt_id,
+                    _cleanup_event_summary(
+                        "browser_context_menu_semantic",
+                        context_arguments,
+                        context_result,
+                    ),
+                )
+
+                if _cleanup_inverse_action_visible(
+                    context_result,
+                    previous_action,
+                ):
+                    reason = (
+                        "confirmed destructive cleanup "
+                        "verified by inverse row action"
+                    )
+                    finish_cleanup_attempt(
+                        job_id,
+                        resource_id,
+                        attempt_id,
+                        outcome="cleaned",
+                        reason=reason,
+                        result={
+                            "status": "cleaned",
+                            "reason": reason,
+                        },
+                    )
+                    return {
+                        "status": "cleaned",
+                        "reason": reason,
+                    }
+
+            reason = (
+                "cleanup_post_destructive_table_row_"
+                "still_present"
+                if _cleanup_tool_succeeded(
+                    recovery_result
+                )
+                else
+                "cleanup_post_destructive_table_"
+                "verification_failed"
+            )
+            finish_cleanup_attempt(
+                job_id,
+                resource_id,
+                attempt_id,
+                outcome="pending",
+                reason=reason,
+            )
+            return {
+                "status": "pending",
+                "reason": reason,
+            }
+
         row_state = execute_tool_with_policy(
             "browser_get_state",
             {},
@@ -8555,6 +8946,31 @@ def run_cleanup_resource(
             )
 
             if not _cleanup_tool_succeeded(inspect_result):
+                if _cleanup_can_reconcile_exact_absence(
+                    resource,
+                    "browser_inspect_semantic",
+                    inspect_result,
+                ):
+                    reason = (
+                        "confirmed destructive cleanup verified "
+                        "by exact absence on resumed attempt"
+                    )
+                    finish_cleanup_attempt(
+                        job_id,
+                        resource_id,
+                        attempt_id,
+                        outcome="cleaned",
+                        reason=reason,
+                        result={
+                            "status": "cleaned",
+                            "reason": reason,
+                        },
+                    )
+                    return {
+                        "status": "cleaned",
+                        "reason": reason,
+                    }
+
                 reason = "cleanup_exact_resource_not_visible"
                 finish_cleanup_attempt(
                     job_id,
@@ -8769,6 +9185,27 @@ def run_cleanup_resource(
                         "tool": name,
                     }
                 elif (
+                    destructive_executed
+                    and action_class in {
+                        "write",
+                        "destructive",
+                    }
+                ):
+                    result = {
+                        "error": (
+                            "cleanup_repeat_mutation_forbidden"
+                        ),
+                        "status": "blocked_by_policy",
+                        "executed": False,
+                        "tool": name,
+                        "reason": (
+                            "A confirmed destructive cleanup action "
+                            "already exists for this resource. Only "
+                            "read-only post-action verification is "
+                            "allowed."
+                        ),
+                    }
+                elif (
                     exact_rest_cleanup_target
                     and action_class in {"write", "destructive"}
                     and not (
@@ -8806,6 +9243,12 @@ def run_cleanup_resource(
                             ),
                         }
 
+                result = _annotate_cleanup_mutation_result(
+                    name,
+                    arguments,
+                    result,
+                )
+
                 add_cleanup_attempt_event(
                     job_id,
                     resource_id,
@@ -8816,6 +9259,71 @@ def run_cleanup_resource(
                         result,
                     ),
                 )
+
+                if (
+                    result.get("confirmation_pending")
+                    is True
+                ):
+                    confirmation_arguments = {
+                        "name": str(
+                            arguments.get("name")
+                            or ""
+                        ).strip(),
+                        "exact": True,
+                        "role": "button",
+                    }
+
+                    try:
+                        confirmation_result = (
+                            execute_tool_with_policy(
+                                "browser_click_semantic",
+                                confirmation_arguments,
+                                messages,
+                                action_policy=(
+                                    "confirm_mutations"
+                                ),
+                            )
+                        )
+                    except Exception as exc:
+                        confirmation_result = {
+                            "error": (
+                                "cleanup_confirmation_"
+                                "tool_error"
+                            ),
+                            "status": "error",
+                            "executed": False,
+                            "tool": (
+                                "browser_click_semantic"
+                            ),
+                            "reason": (
+                                f"{type(exc).__name__}: "
+                                f"{str(exc)[:500]}"
+                            ),
+                        }
+
+                    confirmation_result = (
+                        _annotate_cleanup_mutation_result(
+                            "browser_click_semantic",
+                            confirmation_arguments,
+                            confirmation_result,
+                        )
+                    )
+                    add_cleanup_attempt_event(
+                        job_id,
+                        resource_id,
+                        attempt_id,
+                        _cleanup_event_summary(
+                            "browser_click_semantic",
+                            confirmation_arguments,
+                            confirmation_result,
+                        ),
+                    )
+                    arguments = confirmation_arguments
+                    result = confirmation_result
+                    action_class = classify_tool_action(
+                        name,
+                        arguments,
+                    )
 
                 if (
                     result.get("status")
@@ -8847,6 +9355,9 @@ def run_cleanup_resource(
                         and result.get(
                             "action_policy_status"
                         ) == "confirmed"
+                        and result.get(
+                            "mutation_executed"
+                        ) is True
                     ):
                         destructive_executed = True
                         browser_verified_after_destructive = (
@@ -8855,6 +9366,80 @@ def run_cleanup_resource(
                                 result,
                             )
                         )
+
+                        if (
+                            not browser_verified_after_destructive
+                            and _cleanup_resource_was_exact_table_row(
+                                job,
+                                resource,
+                            )
+                        ):
+                            post_arguments = {
+                                "name": str(
+                                    resource.get("name")
+                                    or ""
+                                ).strip(),
+                                "exact": True,
+                            }
+                            post_result = (
+                                execute_tool_with_policy(
+                                    "browser_inspect_table_row",
+                                    post_arguments,
+                                    messages,
+                                    action_policy=(
+                                        "confirm_mutations"
+                                    ),
+                                )
+                            )
+                            add_cleanup_attempt_event(
+                                job_id,
+                                resource_id,
+                                attempt_id,
+                                _cleanup_event_summary(
+                                    "browser_inspect_table_row",
+                                    post_arguments,
+                                    post_result,
+                                ),
+                            )
+                            browser_verified_after_destructive = (
+                                _cleanup_browser_verification_succeeded(
+                                    "browser_inspect_table_row",
+                                    post_result,
+                                )
+                            )
+
+                            if (
+                                not browser_verified_after_destructive
+                                and _cleanup_tool_succeeded(
+                                    post_result
+                                )
+                            ):
+                                context_result = (
+                                    execute_tool_with_policy(
+                                        "browser_context_menu_semantic",
+                                        post_arguments,
+                                        messages,
+                                        action_policy=(
+                                            "confirm_mutations"
+                                        ),
+                                    )
+                                )
+                                add_cleanup_attempt_event(
+                                    job_id,
+                                    resource_id,
+                                    attempt_id,
+                                    _cleanup_event_summary(
+                                        "browser_context_menu_semantic",
+                                        post_arguments,
+                                        context_result,
+                                    ),
+                                )
+                                browser_verified_after_destructive = (
+                                    _cleanup_inverse_action_visible(
+                                        context_result,
+                                        arguments.get("name"),
+                                    )
+                                )
                     elif (
                         destructive_executed
                         and action_class == "observe"

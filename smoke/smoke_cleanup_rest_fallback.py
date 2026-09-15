@@ -96,6 +96,258 @@ assert uqa._cleanup_browser_verification_succeeded(
     "browser_archive_json_resource",
     {
         "status": "ok",
+        "mutation_status": 202,
+        "post_delete_status": 200,
+        "post_delete_match_count": 1,
+        "post_delete_archived_match_count": 1,
+        "post_delete_verified": True,
+    },
+)
+assert uqa._cleanup_browser_verification_succeeded(
+    "browser_inspect_table_row",
+    {
+        "status": "error",
+        "error": "table_row_not_found",
+    },
+)
+assert not uqa._cleanup_browser_verification_succeeded(
+    "browser_inspect_table_row",
+    {
+        "status": "ok",
+        "inspection_status": "observed",
+        "visible": True,
+    },
+)
+assert uqa._cleanup_browser_verification_succeeded(
+    "browser_inspect_semantic",
+    {
+        "status": "error",
+        "error": "semantic_element_not_found",
+    },
+)
+confirmed_resource = {
+    "cleanup_attempts": [
+        {
+            "events": [
+                {
+                    "data": {
+                        "result": {
+                            "action_class": "destructive",
+                            "action_policy_status": "confirmed",
+                            "click_status": "executed",
+                            "mutation_executed": True,
+                        },
+                    },
+                },
+            ],
+        },
+    ],
+}
+assert uqa._cleanup_can_reconcile_exact_absence(
+    confirmed_resource,
+    "browser_inspect_semantic",
+    {
+        "status": "error",
+        "error": "semantic_element_not_found",
+    },
+)
+assert uqa._cleanup_can_reconcile_exact_absence(
+    confirmed_resource,
+    "browser_inspect_table_row",
+    {
+        "status": "error",
+        "error": "table_row_not_found",
+    },
+)
+assert not uqa._cleanup_can_reconcile_exact_absence(
+    {"cleanup_attempts": []},
+    "browser_inspect_table_row",
+    {
+        "status": "error",
+        "error": "table_row_not_found",
+    },
+)
+assert not uqa._cleanup_can_reconcile_exact_absence(
+    confirmed_resource,
+    "browser_inspect_table_row",
+    {
+        "status": "ok",
+        "inspection_status": "observed",
+        "visible": True,
+    },
+)
+assert uqa._cleanup_history_has_confirmed_destructive(
+    confirmed_resource
+)
+assert not uqa._cleanup_history_has_confirmed_destructive(
+    {"cleanup_attempts": []}
+)
+first_archive_click = {
+    "action_class": "destructive",
+    "action_policy_status": "confirmed",
+    "click_status": "executed",
+    "interactive_elements": [
+        {
+            "role": "button",
+            "text": "Archive",
+        },
+    ],
+}
+uqa._annotate_cleanup_mutation_result(
+    "browser_click_semantic",
+    {
+        "name": "Archive",
+        "role": "menuitem",
+        "exact": True,
+    },
+    first_archive_click,
+)
+assert first_archive_click["confirmation_pending"] is True
+assert first_archive_click["mutation_executed"] is False
+counted_archive_click = {
+    "action_class": "destructive",
+    "action_policy_status": "confirmed",
+    "click_status": "executed",
+    "post_click_same_name_button_count": 1,
+    "interactive_elements": [],
+}
+uqa._annotate_cleanup_mutation_result(
+    "browser_click_semantic",
+    {
+        "name": "Archive",
+        "role": "menuitem",
+        "exact": True,
+    },
+    counted_archive_click,
+)
+assert counted_archive_click["confirmation_pending"] is True
+assert counted_archive_click["mutation_executed"] is False
+assert uqa._cleanup_inverse_action_visible(
+    {
+        "interactive_elements": [
+            {
+                "role": "menuitem",
+                "text": "Unarchive",
+            },
+        ],
+    },
+    "Archive",
+)
+assert not uqa._cleanup_inverse_action_visible(
+    {
+        "interactive_elements": [
+            {
+                "role": "menuitem",
+                "text": "Archive",
+            },
+        ],
+    },
+    "Archive",
+)
+confirmed_archive_click = {
+    "action_class": "destructive",
+    "action_policy_status": "confirmed",
+    "click_status": "executed",
+    "interactive_elements": [],
+}
+uqa._annotate_cleanup_mutation_result(
+    "browser_click_semantic",
+    {
+        "name": "Archive",
+        "role": "button",
+        "exact": True,
+    },
+    confirmed_archive_click,
+)
+assert confirmed_archive_click["confirmation_pending"] is False
+assert confirmed_archive_click["mutation_executed"] is True
+history_with_action = {
+    "cleanup_attempts": [
+        {
+            "events": [
+                {
+                    "data": {
+                        "arguments": {
+                            "name": "Archive",
+                        },
+                        "result": {
+                            "action_class": "destructive",
+                            "action_policy_status": "confirmed",
+                            "mutation_executed": True,
+                        },
+                    },
+                },
+            ],
+        },
+    ],
+}
+assert (
+    uqa._cleanup_last_confirmed_action_name(
+        history_with_action
+    )
+    == "Archive"
+)
+table_job = {
+    "test_cases": [
+        {
+            "case_id": "case-1",
+            "observations": [
+                {
+                    "source": "browser_semantic",
+                    "type": "ui_element",
+                    "data": {
+                        "strategy": "table_row_exact_cell",
+                        "exact": True,
+                        "subject": "uqa-exact-resource",
+                        "visible": True,
+                    },
+                },
+            ],
+        },
+    ],
+}
+table_resource = {
+    "created_by_case": "case-1",
+    "name": "uqa-exact-resource",
+}
+assert uqa._cleanup_resource_was_exact_table_row(
+    table_job,
+    table_resource,
+)
+assert not uqa._cleanup_resource_was_exact_table_row(
+    table_job,
+    {
+        **table_resource,
+        "name": "another-resource",
+    },
+)
+assert uqa._cleanup_browser_verification_succeeded(
+    "browser_archive_json_resource",
+    {
+        "status": "ok",
+        "mutation_status": None,
+        "mutation_executed": False,
+        "already_satisfied": True,
+        "post_delete_status": 200,
+        "post_delete_match_count": 1,
+        "post_delete_archived_match_count": 1,
+        "post_delete_verified": True,
+    },
+)
+assert not uqa._cleanup_browser_verification_succeeded(
+    "browser_delete_json_resource",
+    {
+        "status": "ok",
+        "mutation_status": 204,
+        "post_delete_status": 200,
+        "post_delete_match_count": 1,
+        "post_delete_verified": False,
+    },
+)
+assert uqa._cleanup_browser_verification_succeeded(
+    "browser_archive_json_resource",
+    {
+        "status": "ok",
         "mutation_status": 200,
         "post_delete_status": 200,
         "post_delete_match_count": 0,

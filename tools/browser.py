@@ -3228,6 +3228,31 @@ class BrowserSession:
 
         self.page.wait_for_timeout(1000)
 
+        post_click_same_name_button_count = 0
+
+        try:
+            confirmation_buttons = self.page.get_by_role(
+                "button",
+                name=name,
+                exact=exact,
+            )
+
+            for index in range(
+                min(
+                    confirmation_buttons.count(),
+                    20,
+                )
+            ):
+                try:
+                    if confirmation_buttons.nth(
+                        index
+                    ).is_visible():
+                        post_click_same_name_button_count += 1
+                except Exception:
+                    continue
+        except Exception:
+            post_click_same_name_button_count = 0
+
         result = self._capture_state(
             "click-semantic"
         )
@@ -3237,6 +3262,9 @@ class BrowserSession:
         result["semantic_container"] = container
         result["click_status"] = "executed"
         result["post_action_wait_ms"] = 1000
+        result[
+            "post_click_same_name_button_count"
+        ] = post_click_same_name_button_count
 
         result = self._finish_action_execution(
             result
