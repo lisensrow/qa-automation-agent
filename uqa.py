@@ -388,6 +388,10 @@ SYSTEM_PROMPT = """
   browser_sort_table_semantic, browser_set_table_row_selected и
   browser_table_page_semantic; bulk Save/Delete остаётся отдельным policy action.
 - Для column filter используй browser_fill_table_filter_semantic.
+- Если filter скрыт в header popover, используй browser_apply_table_filter_popover_semantic
+  только с фактически наблюдёнными trigger/operator/apply labels.
+- Для server-side total, диапазона и current page используй
+  browser_inspect_table_pagination_semantic; visible rows не равны total.
 - Для select-all используй browser_set_table_all_selected, затем проверяй
   доступность массовой кнопки через browser_inspect_bulk_action_semantic.
   Этот inspect-инструмент никогда не нажимает bulk action.
@@ -971,6 +975,7 @@ def classify_tool_action(
         "browser_inspect_semantic",
         "browser_inspect_table_row",
         "browser_inspect_table_semantic",
+        "browser_inspect_table_pagination_semantic",
         "browser_inspect_order_semantic",
         "browser_inspect_bulk_action_semantic",
         "resource_list",
@@ -987,6 +992,7 @@ def classify_tool_action(
         "browser_set_table_row_selected",
         "browser_table_page_semantic",
         "browser_fill_table_filter_semantic",
+        "browser_apply_table_filter_popover_semantic",
         "browser_set_table_all_selected",
     }:
         return "interact"

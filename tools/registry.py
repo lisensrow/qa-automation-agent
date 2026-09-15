@@ -24,6 +24,8 @@ from tools.browser import (
     set_table_row_selected,
     table_page_semantic,
     fill_table_filter_semantic,
+    apply_table_filter_popover_semantic,
+    inspect_table_pagination_semantic,
     set_table_all_selected,
     inspect_bulk_action_semantic,
     get_network_detail,
@@ -863,6 +865,48 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_apply_table_filter_popover_semantic",
+            "description": (
+                "Открывает единственный filter popover точной колонки, "
+                "опционально выбирает точный native operator, заполняет "
+                "единственное value field и нажимает точную Apply-кнопку. "
+                "Возвращает rows before/after без изменения данных сущностей."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "column": {"type": "string"},
+                    "value": {"type": "string"},
+                    "table": {"type": "string"},
+                    "trigger": {"type": "string"},
+                    "operator": {"type": "string"},
+                    "apply_button": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["column", "value"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_table_pagination_semantic",
+            "description": (
+                "Read-only возвращает visible row count, server-side total, "
+                "видимый диапазон, current page и состояния pagination controls."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "table": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_set_table_all_selected",
             "description": (
                 "Идемпотентно устанавливает header select-all checkbox и "
@@ -1274,6 +1318,23 @@ def execute_tool(name: str, arguments: dict):
         return fill_table_filter_semantic(
             arguments["column"],
             arguments["text"],
+            arguments.get("table"),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_apply_table_filter_popover_semantic":
+        return apply_table_filter_popover_semantic(
+            arguments["column"],
+            arguments["value"],
+            arguments.get("table"),
+            arguments.get("trigger"),
+            arguments.get("operator"),
+            arguments.get("apply_button"),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_table_pagination_semantic":
+        return inspect_table_pagination_semantic(
             arguments.get("table"),
             arguments.get("exact", True),
         )

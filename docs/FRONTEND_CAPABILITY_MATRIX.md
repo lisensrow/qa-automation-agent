@@ -21,6 +21,7 @@
 - Resize панели или колонки с проверкой bounding box до и после.
 - Структурированный снимок таблицы, сортировка, выбор точной строки и проверяемая пагинация.
 - Column filters, select-all и read-only bulk-action preview.
+- Filter popovers и read-only server-side total/range/current-page metadata.
 - UI-contract fingerprint, adapter discovery и persistent compatibility history.
 - Обязательный compatibility preflight перед первой мутацией и fail-closed блокировка несовместимого UI.
 - Проверка точной строки таблицы и работа с её context menu.
@@ -29,7 +30,7 @@
 
 ## Следующие этапы frontend-покрытия
 
-1. Сложные filter popovers, server-side totals и cross-page selection.
+1. Cross-page table selection с persistent selection ledger.
 2. Date/time pickers, sliders, tree controls и complex popovers.
 3. Upload/download с проверкой имени, типа и содержимого файла.
 4. Modal/dialog, toast/notification, responsive и accessibility checks.

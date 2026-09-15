@@ -547,6 +547,8 @@ def extract_observations(
         "browser_set_table_row_selected",
         "browser_table_page_semantic",
         "browser_fill_table_filter_semantic",
+        "browser_apply_table_filter_popover_semantic",
+        "browser_inspect_table_pagination_semantic",
         "browser_set_table_all_selected",
     }:
         return [

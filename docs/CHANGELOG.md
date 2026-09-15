@@ -155,3 +155,14 @@
 - Несовпадение после drag возвращается как ошибка, не скрывая факт уже выполненной мутации.
 - Архитектура отличает immediate UI order от persisted order: сохранение подтверждается только отдельной read-only проверкой после reload.
 - Добавлен изолированный persisted-order smoke без обращения к тестовому стенду.
+
+# v074a — table filter popovers and server totals
+
+- Добавлен scoped filter-popover primitive для точного table header.
+- Popover разрешается через `aria-controls` или единственный видимый overlay; неоднозначность блокируется.
+- Поддержан точный native operator, единственное value field и точная Apply-кнопка.
+- Результат разделяет submitted filter и фактическое изменение rows, не выдавая клик за доказательство server-side фильтрации.
+- Добавлен read-only inspector server-side total, visible range, current page и pagination controls.
+- Visible DOM row count больше не используется как замена server-side total.
+- Header resolver умеет исключать вложенные buttons/inputs из имени колонки.
+- Добавлен изолированный table popover/totals smoke.

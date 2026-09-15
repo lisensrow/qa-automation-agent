@@ -4411,6 +4411,34 @@ class BrowserSession:
             candidate = header_locator.nth(index)
             if candidate.is_visible():
                 headers.append(candidate)
+        if not headers:
+            raw_headers = table_locator.locator(
+                'thead th, [role="columnheader"]'
+            )
+            for index in range(min(raw_headers.count(), 100)):
+                candidate = raw_headers.nth(index)
+                if not candidate.is_visible():
+                    continue
+                plain_name = candidate.evaluate(
+                    """
+                    el => {
+                        const clone = el.cloneNode(true);
+                        clone.querySelectorAll(
+                            'button, input, select, textarea, '
+                            + '[role="button"], [role="combobox"]'
+                        ).forEach(node => node.remove());
+                        return (clone.innerText || clone.textContent || '')
+                            .replace(/\s+/g, ' ').trim();
+                    }
+                    """
+                )
+                matched = (
+                    plain_name.casefold() == str(column).casefold()
+                    if exact
+                    else str(column).casefold() in plain_name.casefold()
+                )
+                if matched:
+                    headers.append(candidate)
         if len(headers) != 1:
             return {
                 "error": (
@@ -4808,6 +4836,395 @@ class BrowserSession:
         result = self._finish_action_execution(result)
         if not applied:
             result["error"] = "table_filter_not_applied"
+        return result
+
+    def apply_table_filter_popover_semantic(
+        self,
+        column: str,
+        value: str,
+        table: str = None,
+        trigger: str = None,
+        operator: str = None,
+        apply_button: str = None,
+        exact: bool = True,
+    ):
+        """Submit one explicit filter popover scoped to an exact column."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        table_locator, error = self._resolve_table(table, exact)
+        if error:
+            return error
+        headers = []
+        header_locator = table_locator.get_by_role(
+            "columnheader",
+            name=column,
+            exact=exact,
+        )
+        for index in range(min(header_locator.count(), 50)):
+            candidate = header_locator.nth(index)
+            if candidate.is_visible():
+                headers.append(candidate)
+        if not headers:
+            raw_headers = table_locator.locator(
+                'thead th, [role="columnheader"]'
+            )
+            for index in range(min(raw_headers.count(), 100)):
+                candidate = raw_headers.nth(index)
+                if not candidate.is_visible():
+                    continue
+                plain_name = candidate.evaluate(
+                    """
+                    el => {
+                        const clone = el.cloneNode(true);
+                        clone.querySelectorAll(
+                            'button, input, select, textarea, '
+                            + '[role="button"], [role="combobox"]'
+                        ).forEach(node => node.remove());
+                        return (clone.innerText || clone.textContent || '')
+                            .replace(/\s+/g, ' ').trim();
+                    }
+                    """
+                )
+                matched = (
+                    plain_name.casefold() == str(column).casefold()
+                    if exact
+                    else str(column).casefold() in plain_name.casefold()
+                )
+                if matched:
+                    headers.append(candidate)
+        if len(headers) != 1:
+            return {
+                "error": (
+                    "table_column_not_found"
+                    if not headers
+                    else "ambiguous_table_column"
+                ),
+                "column": column,
+                "matches": len(headers),
+                "executed": False,
+            }
+        header = headers[0]
+        trigger_locator = (
+            header.get_by_role("button", name=trigger, exact=exact)
+            if trigger
+            else header.get_by_role("button")
+        )
+        triggers = []
+        for index in range(min(trigger_locator.count(), 20)):
+            candidate = trigger_locator.nth(index)
+            if candidate.is_visible():
+                triggers.append(candidate)
+        if len(triggers) != 1:
+            return {
+                "error": (
+                    "table_filter_trigger_not_found"
+                    if not triggers
+                    else "ambiguous_table_filter_trigger"
+                ),
+                "column": column,
+                "trigger": trigger,
+                "matches": len(triggers),
+                "executed": False,
+            }
+        filter_trigger = triggers[0]
+        controlled_id = str(
+            filter_trigger.get_attribute("aria-controls") or ""
+        ).strip()
+        before = self._table_snapshot(table_locator)
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        filter_trigger.click()
+        self.page.wait_for_timeout(200)
+
+        popup = None
+        popup_strategy = None
+        if controlled_id:
+            controlled = self.page.locator(
+                "[id=" + json.dumps(controlled_id) + "]"
+            )
+            visible = [
+                controlled.nth(index)
+                for index in range(min(controlled.count(), 10))
+                if controlled.nth(index).is_visible()
+            ]
+            if len(visible) == 1:
+                popup = visible[0]
+                popup_strategy = "aria-controls"
+
+        if popup is None:
+            overlays = self.page.locator(
+                '[role="dialog"], [role="menu"], [popover]'
+            )
+            visible = []
+            for index in range(min(overlays.count(), 50)):
+                candidate = overlays.nth(index)
+                if candidate.is_visible():
+                    visible.append(candidate)
+            if len(visible) == 1:
+                popup = visible[0]
+                popup_strategy = "single-visible-overlay"
+
+        if popup is None:
+            result = self._capture_state("apply-table-filter-popover")
+            result.update(
+                {
+                    "error": "table_filter_popover_not_unique",
+                    "column": column,
+                    "trigger": trigger,
+                    "mutation_executed": False,
+                }
+            )
+            return self._finish_action_execution(result)
+
+        operator_observed = None
+        if operator is not None:
+            selects = popup.locator("select")
+            matching_selects = []
+            for index in range(min(selects.count(), 20)):
+                candidate = selects.nth(index)
+                if not candidate.is_visible():
+                    continue
+                options = [
+                    (candidate.locator("option").nth(option_index).inner_text() or "").strip()
+                    for option_index in range(
+                        min(candidate.locator("option").count(), 100)
+                    )
+                ]
+                matches = [
+                    item
+                    for item in options
+                    if (
+                        item.casefold() == str(operator).casefold()
+                        if exact
+                        else str(operator).casefold() in item.casefold()
+                    )
+                ]
+                if len(matches) == 1:
+                    matching_selects.append((candidate, matches[0]))
+            if len(matching_selects) != 1:
+                result = self._capture_state("apply-table-filter-popover")
+                result.update(
+                    {
+                        "error": (
+                            "table_filter_operator_not_found"
+                            if not matching_selects
+                            else "ambiguous_table_filter_operator"
+                        ),
+                        "column": column,
+                        "operator": operator,
+                        "matches": len(matching_selects),
+                        "mutation_executed": False,
+                    }
+                )
+                return self._finish_action_execution(result)
+            operator_control, operator_observed = matching_selects[0]
+            operator_control.select_option(label=operator_observed)
+
+        inputs = popup.locator(
+            'input:not([type="hidden"]):not([type="button"]):not([type="submit"]), '
+            'textarea, [contenteditable="true"], [role="textbox"], '
+            '[role="searchbox"]'
+        )
+        editable = []
+        seen = set()
+        for index in range(min(inputs.count(), 30)):
+            candidate = inputs.nth(index)
+            try:
+                if not candidate.is_visible():
+                    continue
+                key = candidate.evaluate("el => el.id || el.name || el.outerHTML")
+                if key not in seen:
+                    seen.add(key)
+                    editable.append(candidate)
+            except Exception:
+                continue
+        if len(editable) != 1:
+            result = self._capture_state("apply-table-filter-popover")
+            result.update(
+                {
+                    "error": (
+                        "table_filter_value_control_not_found"
+                        if not editable
+                        else "ambiguous_table_filter_value_control"
+                    ),
+                    "column": column,
+                    "matches": len(editable),
+                    "mutation_executed": False,
+                }
+            )
+            return self._finish_action_execution(result)
+        value_control = editable[0]
+        if (value_control.get_attribute("type") or "").casefold() == "password":
+            result = self._capture_state("apply-table-filter-popover")
+            result.update(
+                {
+                    "error": "table_filter_password_forbidden",
+                    "column": column,
+                    "mutation_executed": False,
+                }
+            )
+            return self._finish_action_execution(result)
+        wanted = str(value or "")
+        value_control.fill(wanted)
+        observed_value = value_control.input_value()
+
+        button_locator = (
+            popup.get_by_role("button", name=apply_button, exact=exact)
+            if apply_button
+            else popup.get_by_role("button")
+        )
+        buttons = []
+        for index in range(min(button_locator.count(), 20)):
+            candidate = button_locator.nth(index)
+            if candidate.is_visible() and candidate.is_enabled():
+                buttons.append(candidate)
+        if len(buttons) != 1:
+            result = self._capture_state("apply-table-filter-popover")
+            result.update(
+                {
+                    "error": (
+                        "table_filter_apply_button_not_found"
+                        if not buttons
+                        else "ambiguous_table_filter_apply_button"
+                    ),
+                    "column": column,
+                    "apply_button": apply_button,
+                    "matches": len(buttons),
+                    "observed_filter_value": observed_value,
+                    "mutation_executed": False,
+                }
+            )
+            return self._finish_action_execution(result)
+
+        buttons[0].click()
+        self.page.wait_for_timeout(500)
+        after = self._table_snapshot(table_locator)
+        result = self._capture_state("apply-table-filter-popover")
+        result.update(
+            {
+                "table_name": table,
+                "filtered_column": column,
+                "filter_trigger": trigger,
+                "filter_operator": operator_observed,
+                "filter_value": wanted,
+                "observed_filter_value": observed_value,
+                "filter_apply_button": apply_button,
+                "filter_popover_strategy": popup_strategy,
+                "filter_submission_status": "submitted",
+                "rows_changed": (
+                    before.get("row_signature")
+                    != after.get("row_signature")
+                ),
+                "table_before": before,
+                "table_after": after,
+                "mutation_executed": False,
+                "post_action_wait_ms": 500,
+            }
+        )
+        return self._finish_action_execution(result)
+
+    def inspect_table_pagination_semantic(
+        self,
+        table: str = None,
+        exact: bool = True,
+    ):
+        """Read total/range/current-page metadata without activating controls."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        table_locator, error = self._resolve_table(table, exact)
+        if error:
+            return error
+        snapshot = self._table_snapshot(table_locator)
+        metadata = table_locator.evaluate(
+            """
+            table => {
+                const scope = table.parentElement || table;
+                const text = (scope.innerText || '').replace(/\s+/g, ' ').trim();
+                const integer = value => {
+                    const parsed = Number.parseInt(String(value || ''), 10);
+                    return Number.isFinite(parsed) ? parsed : null;
+                };
+                let total = null;
+                let totalSource = null;
+                for (const [name, value] of [
+                    ['aria-rowcount', table.getAttribute('aria-rowcount')],
+                    ['data-total-count', table.getAttribute('data-total-count')],
+                    ['data-total', table.getAttribute('data-total')],
+                    ['data-count', table.getAttribute('data-count')]
+                ]) {
+                    const parsed = integer(value);
+                    if (parsed !== null && parsed >= 0) {
+                        total = parsed;
+                        totalSource = name;
+                        break;
+                    }
+                }
+                let rangeStart = null;
+                let rangeEnd = null;
+                const range = text.match(/(\d+)\s*[-–]\s*(\d+)\s*(?:of|из)\s*(\d+)/i);
+                if (range) {
+                    rangeStart = integer(range[1]);
+                    rangeEnd = integer(range[2]);
+                    if (total === null) {
+                        total = integer(range[3]);
+                        totalSource = 'visible-range-text';
+                    }
+                }
+                if (total === null) {
+                    const labelled = text.match(/(?:total|всего)\s*:?\s*(\d+)/i);
+                    if (labelled) {
+                        total = integer(labelled[1]);
+                        totalSource = 'visible-total-text';
+                    }
+                }
+                const current = scope.querySelector('[aria-current="page"]');
+                const currentPage = current
+                    ? integer(current.innerText || current.textContent || current.getAttribute('aria-label'))
+                    : null;
+                const controls = Array.from(scope.querySelectorAll('button, a[href]'))
+                    .filter(el => {
+                        const style = window.getComputedStyle(el);
+                        const box = el.getBoundingClientRect();
+                        return style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && box.width > 0 && box.height > 0;
+                    })
+                    .slice(0, 50)
+                    .map(el => ({
+                        name: (el.getAttribute('aria-label') || el.innerText || el.textContent || '').trim(),
+                        current: el.getAttribute('aria-current') === 'page',
+                        disabled: Boolean(el.disabled) || el.getAttribute('aria-disabled') === 'true'
+                    }))
+                    .filter(item => item.name);
+                return {
+                    total,
+                    total_source: totalSource,
+                    range_start: rangeStart,
+                    range_end: rangeEnd,
+                    current_page: currentPage,
+                    pagination_controls: controls
+                };
+            }
+            """
+        )
+        result = self._capture_state("inspect-table-pagination")
+        result.update(
+            {
+                "table_name": table,
+                "visible_row_count": snapshot.get("visible_row_count"),
+                "row_signature": snapshot.get("row_signature"),
+                "total_row_count": metadata.get("total"),
+                "total_source": metadata.get("total_source"),
+                "visible_range_start": metadata.get("range_start"),
+                "visible_range_end": metadata.get("range_end"),
+                "current_page": metadata.get("current_page"),
+                "pagination_controls": metadata.get("pagination_controls"),
+                "pagination_status": "observed",
+                "mutation_executed": False,
+                "executed": True,
+            }
+        )
         return result
 
     def set_table_all_selected(
@@ -6642,6 +7059,33 @@ def fill_table_filter_semantic(
         table,
         exact,
     )
+
+
+def apply_table_filter_popover_semantic(
+    column: str,
+    value: str,
+    table: str = None,
+    trigger: str = None,
+    operator: str = None,
+    apply_button: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.apply_table_filter_popover_semantic(
+        column,
+        value,
+        table,
+        trigger,
+        operator,
+        apply_button,
+        exact,
+    )
+
+
+def inspect_table_pagination_semantic(
+    table: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.inspect_table_pagination_semantic(table, exact)
 
 
 def set_table_all_selected(
