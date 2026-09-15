@@ -12,7 +12,7 @@
 - Выбирает radio option внутри точной именованной группы и устанавливает точный набор в native или ARIA multi-select, включая chip-based combobox.
 - Работает с поисковым ARIA autocomplete: вводит точный запрос и выбирает единственную совпавшую option.
 - Проверяет фактический Tab focus order, выполняет закрытый набор keyboard chords и тестирует copy/paste через изолированный session-private clipboard без доступа к системному буферу.
-- Перетаскивает точный semantic source на точный target и проверяет фактическое изменение размеров UI-элементов.
+- Перетаскивает точный semantic source на точный target, проверяет итоговый порядок и отдельно подтверждает его сохранение после повторной загрузки.
 - Получает структурированный снимок таблицы, управляет сортировкой, выбором точной строки и проверяемой пагинацией.
 - Применяет column filters, управляет select-all и проверяет bulk-action preview без запуска массовой операции.
 - Снимает fingerprint фактических UI-контрактов, сохраняет историю по Job и обнаруживает смену совместимых adapters между прогонами; несовместимый контракт блокирует WRITE/DESTRUCTIVE до исполнения.
@@ -113,7 +113,7 @@ Keyboard primitive принимает только закрытый список
 
 Для copy/paste используется отдельный private clipboard внутри памяти текущей browser session. Copy принимает только точный input, textarea или contenteditable, блокирует password/token/secret-like source, ограничивает значение 4096 символами и возвращает только размер и статус — не содержимое. Paste использует только этот private buffer, блокирует sensitive или non-editable target и классифицируется как WRITE. Системный clipboard ОС не читается и не изменяется; private buffer не сохраняется в Job, evidence или artifacts и может быть явно очищен.
 
-Pointer primitives используют только однозначно найденные видимые endpoints. Drag-and-drop требует разные source/target и сохраняет bounding boxes до и после. Resize ограничивает delta диапазоном, поддерживает правую, нижнюю и угловую границы и считается успешным только при фактически изменившемся bounding box. Оба действия относятся к WRITE и блокируются read-only policy.
+Pointer primitives используют только однозначно найденные видимые endpoints. Drag-and-drop требует разные source/target и сохраняет bounding boxes до и после. Для reorder он до мутации снимает порядок верхнеуровневых semantic items в точном container, а после действия сравнивает весь exact order либо заданную subsequence. Несовпадение возвращается как ошибка при честно отмеченной выполненной мутации. Отдельный read-only order inspector позволяет повторить ту же проверку после reload: только этот второй match доказывает сохранение порядка, тогда как результат drag доказывает лишь состояние текущего UI. Resize ограничивает delta диапазоном, поддерживает правую, нижнюю и угловую границы и считается успешным только при фактически изменившемся bounding box. Изменяющие pointer actions относятся к WRITE и блокируются read-only policy.
 
 Table primitives работают с одной однозначно найденной таблицей. Snapshot ограничивает объём и сохраняет headers, aria-sort, cells, values_by_header и row signature. Sort принимает точный header и подтверждает направление через aria-sort; при отсутствии ARIA отдельно сообщает только наблюдаемое изменение порядка. Row selection ищет строку по точной ячейке и единственный checkbox, не запуская bulk action. Pagination считается успешной только если после точного control изменился row signature.
 

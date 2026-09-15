@@ -146,3 +146,12 @@
 - Paste принимает данные только из private clipboard, проверяет exact editable target и проходит WRITE policy.
 - Private clipboard ограничен 4096 символами и поддерживает явную очистку.
 - Добавлен изолированный keyboard/private-clipboard smoke без доступа к пользовательскому clipboard.
+
+# v073c — persisted drag order verification
+
+- Добавлен read-only `browser_inspect_order_semantic` для порядка top-level list/row/option/tree/tab/draggable items.
+- Inspector сравнивает полный exact order либо требуемую subsequence и возвращает первое расхождение.
+- Drag primitive принимает exact order container и ожидаемый итоговый порядок, снимает order before/after и проверяет результат в том же действии.
+- Несовпадение после drag возвращается как ошибка, не скрывая факт уже выполненной мутации.
+- Архитектура отличает immediate UI order от persisted order: сохранение подтверждается только отдельной read-only проверкой после reload.
+- Добавлен изолированный persisted-order smoke без обращения к тестовому стенду.

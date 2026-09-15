@@ -29,6 +29,7 @@ SMOKES = [
     "smoke_keyboard_focus.py",
     "smoke_keyboard_chords_clipboard.py",
     "smoke_drag_resize.py",
+    "smoke_drag_persisted_order.py",
     "smoke_table_controls.py",
     "smoke_table_filters_bulk.py",
     "smoke_compatibility_layer.py",

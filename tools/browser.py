@@ -3836,6 +3836,172 @@ class BrowserSession:
             "executed": False,
         }
 
+    @staticmethod
+    def _ordered_semantic_items(container_locator):
+        return container_locator.evaluate(
+            """
+            root => {
+                const selector = [
+                    '[role="listitem"]', 'li', '[role="row"]', 'tr',
+                    '[role="option"]', '[role="treeitem"]', '[role="tab"]',
+                    '[draggable="true"]', '[aria-grabbed]'
+                ].join(',');
+                const visible = el => {
+                    const style = window.getComputedStyle(el);
+                    const box = el.getBoundingClientRect();
+                    return !el.hidden
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && box.width > 0
+                        && box.height > 0;
+                };
+                const name = el => {
+                    const labels = el.labels
+                        ? Array.from(el.labels)
+                            .map(label => label.innerText || label.textContent || '')
+                        : [];
+                    return (
+                        el.getAttribute('aria-label')
+                        || el.getAttribute('title')
+                        || labels.join(' ')
+                        || el.innerText
+                        || el.textContent
+                        || ''
+                    ).replace(/\s+/g, ' ').trim();
+                };
+                return Array.from(root.querySelectorAll(selector))
+                    .filter(visible)
+                    .filter(el => {
+                        const parentItem = el.parentElement
+                            ? el.parentElement.closest(selector)
+                            : null;
+                        return !parentItem || !root.contains(parentItem);
+                    })
+                    .slice(0, 200)
+                    .map(el => ({
+                        name: name(el),
+                        role: el.getAttribute('role') || el.tagName.toLowerCase()
+                    }))
+                    .filter(item => item.name);
+            }
+            """
+        )
+
+    @staticmethod
+    def _order_comparison(actual, expected, mode):
+        actual_keys = [str(value).casefold() for value in actual]
+        expected_keys = [str(value).casefold() for value in expected]
+        if mode == "subsequence":
+            cursor = 0
+            for expected_index, wanted in enumerate(expected_keys):
+                try:
+                    actual_index = actual_keys.index(wanted, cursor)
+                except ValueError:
+                    return False, {
+                        "expected_index": expected_index,
+                        "expected": expected[expected_index],
+                        "actual_index": None,
+                    }
+                cursor = actual_index + 1
+            return True, None
+
+        limit = max(len(actual_keys), len(expected_keys))
+        for index in range(limit):
+            actual_value = actual[index] if index < len(actual) else None
+            expected_value = expected[index] if index < len(expected) else None
+            if (
+                index >= len(actual_keys)
+                or index >= len(expected_keys)
+                or actual_keys[index] != expected_keys[index]
+            ):
+                return False, {
+                    "index": index,
+                    "expected": expected_value,
+                    "actual": actual_value,
+                }
+        return True, None
+
+    def inspect_order_semantic(
+        self,
+        container: str,
+        expected_order: list = None,
+        mode: str = "exact",
+        exact: bool = True,
+        role: str = None,
+    ):
+        """Read the visual/DOM order of top-level semantic items."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        canonical_mode = str(mode or "exact").strip().casefold()
+        if canonical_mode not in {"exact", "subsequence"}:
+            return {
+                "error": "unsupported_order_comparison_mode",
+                "mode": mode,
+                "executed": False,
+            }
+        expected = [
+            str(value or "").strip()
+            for value in (expected_order or [])
+            if str(value or "").strip()
+        ]
+        if expected_order is not None and len(expected) < 2:
+            return {
+                "error": "expected_order_requires_two_items",
+                "executed": False,
+            }
+        if len(expected) > 100:
+            return {
+                "error": "expected_order_too_large",
+                "item_count": len(expected),
+                "executed": False,
+            }
+        locator, strategy, error = self._pointer_target(
+            container,
+            exact,
+            role,
+        )
+        if error:
+            error["order_endpoint"] = "container"
+            return error
+        items = self._ordered_semantic_items(locator)
+        observed = [item["name"] for item in items]
+        if not observed:
+            return {
+                "error": "ordered_items_not_found",
+                "container": container,
+                "executed": False,
+            }
+        matched = None
+        mismatch = None
+        if expected_order is not None:
+            matched, mismatch = self._order_comparison(
+                observed,
+                expected,
+                canonical_mode,
+            )
+        result = self._capture_state("inspect-order-semantic")
+        result.update(
+            {
+                "order_container": container,
+                "container_match_strategy": strategy,
+                "observed_order": observed,
+                "ordered_items": items,
+                "expected_order": expected if expected_order is not None else None,
+                "order_comparison_mode": canonical_mode,
+                "order_status": (
+                    "observed"
+                    if expected_order is None
+                    else "matched"
+                    if matched
+                    else "mismatch"
+                ),
+                "order_mismatch": mismatch,
+                "mutation_executed": False,
+                "executed": True,
+            }
+        )
+        return result
+
     def drag_semantic(
         self,
         source: str,
@@ -3843,6 +4009,10 @@ class BrowserSession:
         exact: bool = True,
         source_role: str = None,
         target_role: str = None,
+        order_container: str = None,
+        expected_order: list = None,
+        order_mode: str = "exact",
+        container_role: str = None,
     ):
         """Drag one exact visible semantic source onto one exact target."""
         self._ensure_started()
@@ -3856,6 +4026,51 @@ class BrowserSession:
                 "target": target,
                 "executed": False,
             }
+        if expected_order is not None and not order_container:
+            return {
+                "error": "drag_order_container_required",
+                "executed": False,
+            }
+
+        order_locator = None
+        order_before = None
+        order_strategy = None
+        canonical_order_mode = str(order_mode or "exact").strip().casefold()
+        if canonical_order_mode not in {"exact", "subsequence"}:
+            return {
+                "error": "unsupported_order_comparison_mode",
+                "mode": order_mode,
+                "executed": False,
+            }
+        normalized_expected_order = [
+            str(value or "").strip()
+            for value in (expected_order or [])
+            if str(value or "").strip()
+        ]
+        if expected_order is not None and len(normalized_expected_order) < 2:
+            return {
+                "error": "expected_order_requires_two_items",
+                "executed": False,
+            }
+        if order_container:
+            order_locator, order_strategy, error = self._pointer_target(
+                order_container,
+                exact,
+                container_role,
+            )
+            if error:
+                error["drag_endpoint"] = "order_container"
+                return error
+            order_before = [
+                item["name"]
+                for item in self._ordered_semantic_items(order_locator)
+            ]
+            if not order_before:
+                return {
+                    "error": "ordered_items_not_found",
+                    "container": order_container,
+                    "executed": False,
+                }
 
         source_locator, source_strategy, error = self._pointer_target(
             source,
@@ -3890,6 +4105,22 @@ class BrowserSession:
         self.page.wait_for_timeout(500)
         source_after = source_locator.bounding_box()
         target_after = target_locator.bounding_box()
+        order_after = (
+            [
+                item["name"]
+                for item in self._ordered_semantic_items(order_locator)
+            ]
+            if order_locator is not None
+            else None
+        )
+        order_matched = None
+        order_mismatch = None
+        if expected_order is not None:
+            order_matched, order_mismatch = self._order_comparison(
+                order_after or [],
+                normalized_expected_order,
+                canonical_order_mode,
+            )
         result = self._capture_state("drag-semantic")
         result.update(
             {
@@ -3902,11 +4133,32 @@ class BrowserSession:
                 "source_box_after": source_after,
                 "target_box_after": target_after,
                 "drag_status": "performed",
+                "order_container": order_container,
+                "order_container_match_strategy": order_strategy,
+                "order_before": order_before,
+                "order_after": order_after,
+                "expected_order": (
+                    normalized_expected_order
+                    if expected_order is not None
+                    else None
+                ),
+                "order_comparison_mode": canonical_order_mode,
+                "order_status": (
+                    None
+                    if expected_order is None
+                    else "matched"
+                    if order_matched
+                    else "mismatch"
+                ),
+                "order_mismatch": order_mismatch,
                 "mutation_executed": True,
                 "post_action_wait_ms": 500,
             }
         )
-        return self._finish_action_execution(result)
+        result = self._finish_action_execution(result)
+        if expected_order is not None and not order_matched:
+            result["error"] = "drag_order_not_applied"
+        return result
 
     def resize_semantic(
         self,
@@ -6289,6 +6541,10 @@ def drag_semantic(
     exact: bool = True,
     source_role: str = None,
     target_role: str = None,
+    order_container: str = None,
+    expected_order: list = None,
+    order_mode: str = "exact",
+    container_role: str = None,
 ) -> dict:
     return _session.drag_semantic(
         source,
@@ -6296,6 +6552,26 @@ def drag_semantic(
         exact,
         source_role,
         target_role,
+        order_container,
+        expected_order,
+        order_mode,
+        container_role,
+    )
+
+
+def inspect_order_semantic(
+    container: str,
+    expected_order: list = None,
+    mode: str = "exact",
+    exact: bool = True,
+    role: str = None,
+) -> dict:
+    return _session.inspect_order_semantic(
+        container,
+        expected_order,
+        mode,
+        exact,
+        role,
     )
 
 

@@ -17,6 +17,7 @@
 - Ограниченные keyboard actions с отдельной классификацией риска.
 - Закрытый allowlist keyboard chords и session-private clipboard для безопасных copy/paste проверок.
 - Drag-and-drop между точными semantic endpoints.
+- Exact/subsequence order snapshot и проверка порядка сразу после drag и после reload.
 - Resize панели или колонки с проверкой bounding box до и после.
 - Структурированный снимок таблицы, сортировка, выбор точной строки и проверяемая пагинация.
 - Column filters, select-all и read-only bulk-action preview.
@@ -28,10 +29,9 @@
 
 ## Следующие этапы frontend-покрытия
 
-1. Специализированная проверка сохранённого порядка после drag-and-drop.
-2. Сложные filter popovers, server-side totals и cross-page selection.
-6. Date/time pickers, sliders, tree controls и complex popovers.
-7. Upload/download с проверкой имени, типа и содержимого файла.
-8. Modal/dialog, toast/notification, responsive и accessibility checks.
+1. Сложные filter popovers, server-side totals и cross-page selection.
+2. Date/time pickers, sliders, tree controls и complex popovers.
+3. Upload/download с проверкой имени, типа и содержимого файла.
+4. Modal/dialog, toast/notification, responsive и accessibility checks.
 
 Каждый новый control добавляется универсальным browser primitive без ветвлений по сущностям U-Connect и обязательно включается в action-policy, evidence pipeline и изолированный smoke-test.

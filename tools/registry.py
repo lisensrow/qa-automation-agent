@@ -17,6 +17,7 @@ from tools.browser import (
     clear_private_clipboard,
     check_focus_order_semantic,
     drag_semantic,
+    inspect_order_semantic,
     resize_semantic,
     inspect_table_semantic,
     sort_table_semantic,
@@ -664,11 +665,42 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_order_semantic",
+            "description": (
+                "Read-only возвращает фактический порядок верхнеуровневых "
+                "semantic items внутри точного container и при необходимости "
+                "сравнивает его с exact order или subsequence."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "container": {"type": "string"},
+                    "expected_order": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 2,
+                        "maxItems": 100
+                    },
+                    "mode": {
+                        "type": "string",
+                        "enum": ["exact", "subsequence"]
+                    },
+                    "exact": {"type": "boolean"},
+                    "role": {"type": "string"}
+                },
+                "required": ["container"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_drag_semantic",
             "description": (
                 "Перетаскивает ровно один видимый semantic source на ровно "
                 "один semantic target. Используется для порядка полей, строк, "
-                "карточек и других drag-and-drop интерфейсов."
+                "карточек и других drag-and-drop интерфейсов. При переданном "
+                "expected_order проверяет фактический порядок после действия."
             ),
             "parameters": {
                 "type": "object",
@@ -677,7 +709,19 @@ TOOLS = [
                     "target": {"type": "string"},
                     "exact": {"type": "boolean"},
                     "source_role": {"type": "string"},
-                    "target_role": {"type": "string"}
+                    "target_role": {"type": "string"},
+                    "order_container": {"type": "string"},
+                    "expected_order": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 2,
+                        "maxItems": 100
+                    },
+                    "order_mode": {
+                        "type": "string",
+                        "enum": ["exact", "subsequence"]
+                    },
+                    "container_role": {"type": "string"}
                 },
                 "required": ["source", "target"]
             }
@@ -1173,6 +1217,19 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("exact", True),
             arguments.get("source_role"),
             arguments.get("target_role"),
+            arguments.get("order_container"),
+            arguments.get("expected_order"),
+            arguments.get("order_mode", "exact"),
+            arguments.get("container_role"),
+        )
+
+    if name == "browser_inspect_order_semantic":
+        return inspect_order_semantic(
+            arguments["container"],
+            arguments.get("expected_order"),
+            arguments.get("mode", "exact"),
+            arguments.get("exact", True),
+            arguments.get("role"),
         )
 
     if name == "browser_resize_semantic":

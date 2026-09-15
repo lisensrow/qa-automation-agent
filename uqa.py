@@ -378,6 +378,9 @@ SYSTEM_PROMPT = """
 - Для проверки последовательности Tab используй browser_check_focus_order_semantic,
   а не делай вывод только по DOM-порядку.
 - Для drag-and-drop используй browser_drag_semantic с точными source и target.
+- Для reorder передай order_container и полный expected_order; после reload
+  отдельно вызови browser_inspect_order_semantic. Только post-reload match
+  доказывает сохранение порядка, а immediate match — лишь изменение текущего UI.
 - Для изменения ширины/высоты панели или колонки используй browser_resize_semantic
   с точным target, edge и ограниченным delta.
 - Для общего снимка таблицы используй browser_inspect_table_semantic.
@@ -968,6 +971,7 @@ def classify_tool_action(
         "browser_inspect_semantic",
         "browser_inspect_table_row",
         "browser_inspect_table_semantic",
+        "browser_inspect_order_semantic",
         "browser_inspect_bulk_action_semantic",
         "resource_list",
     }

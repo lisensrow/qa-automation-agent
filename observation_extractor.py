@@ -541,6 +541,7 @@ def extract_observations(
         "browser_press_key_semantic",
         "browser_check_focus_order_semantic",
         "browser_drag_semantic",
+        "browser_inspect_order_semantic",
         "browser_resize_semantic",
         "browser_sort_table_semantic",
         "browser_set_table_row_selected",
