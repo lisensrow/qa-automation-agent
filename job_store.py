@@ -662,6 +662,12 @@ def create_job(
         "updated_at": now,
         "test_cases": [],
         "resources": [],
+        "compatibility": {
+            "snapshots": [],
+            "current_fingerprint": None,
+            "status": "unknown",
+            "changed": False,
+        },
         "cleanup_status": "not_required",
         "cleanup_started_at": None,
         "cleanup_finished_at": None,
@@ -711,6 +717,111 @@ def save_job(job: dict):
     )
 
     return deepcopy(job)
+
+
+def record_compatibility_snapshot(
+    job_id: str,
+    case_id: str,
+    snapshot: dict,
+):
+    """Persist a bounded UI-contract snapshot and compare prior jobs."""
+    if not isinstance(snapshot, dict):
+        raise ValueError("compatibility snapshot must be dict")
+    job = get_job(job_id)
+    if job is None:
+        raise FileNotFoundError(job_id)
+
+    fingerprint = str(
+        snapshot.get("contract_fingerprint") or ""
+    ).strip()
+    page_key = str(
+        snapshot.get("page_contract_key") or ""
+    ).strip()
+    contract = snapshot.get("capability_contract")
+    if not fingerprint or not page_key or not isinstance(contract, dict):
+        raise ValueError("invalid compatibility snapshot")
+
+    baseline = None
+    stand = str(job.get("stand") or "").strip()
+    for candidate in list_jobs(limit=100):
+        if candidate.get("job_id") == job_id:
+            continue
+        if stand and str(candidate.get("stand") or "").strip() != stand:
+            continue
+        compatibility = candidate.get("compatibility") or {}
+        for item in reversed(compatibility.get("snapshots") or []):
+            if item.get("page_contract_key") == page_key:
+                baseline = item
+                break
+        if baseline:
+            break
+
+    baseline_fingerprint = (
+        str((baseline or {}).get("contract_fingerprint") or "").strip()
+        or None
+    )
+    changed = bool(
+        baseline_fingerprint
+        and baseline_fingerprint != fingerprint
+    )
+    changed_contract_sections = []
+    baseline_contract = (baseline or {}).get("capability_contract") or {}
+    if changed:
+        for key in sorted(set(baseline_contract) | set(contract)):
+            if baseline_contract.get(key) != contract.get(key):
+                changed_contract_sections.append(key)
+
+    gaps = [
+        str(value).strip()
+        for value in (snapshot.get("capability_gaps") or [])
+        if str(value).strip()
+    ]
+    status = (
+        "incompatible"
+        if gaps
+        else "changed"
+        if changed
+        else "compatible"
+    )
+    item = {
+        "snapshot_id": "compat-" + uuid.uuid4().hex[:10],
+        "case_id": str(case_id or "").strip() or None,
+        "page_contract_key": page_key,
+        "contract_fingerprint": fingerprint,
+        "baseline_fingerprint": baseline_fingerprint,
+        "changed": changed,
+        "changed_contract_sections": changed_contract_sections,
+        "status": status,
+        "capability_gaps": gaps,
+        "capability_contract": deepcopy(contract),
+        "recommended_adapters": deepcopy(
+            snapshot.get("recommended_adapters") or {}
+        ),
+        "semantic_name_coverage": snapshot.get(
+            "semantic_name_coverage"
+        ),
+        "created_at": _now(),
+    }
+    compatibility = job.setdefault(
+        "compatibility",
+        {
+            "snapshots": [],
+            "current_fingerprint": None,
+            "status": "unknown",
+            "changed": False,
+        },
+    )
+    snapshots = compatibility.setdefault("snapshots", [])
+    snapshots.append(item)
+    if len(snapshots) > 100:
+        del snapshots[:-100]
+    compatibility["current_fingerprint"] = fingerprint
+    compatibility["status"] = status
+    compatibility["changed"] = changed
+    compatibility["last_snapshot_id"] = item["snapshot_id"]
+    compatibility["last_checked_at"] = item["created_at"]
+    save_job(job)
+    return deepcopy(item)
 
 
 def set_job_status(

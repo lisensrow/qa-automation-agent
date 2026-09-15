@@ -1,4 +1,6 @@
 import atexit
+import hashlib
+import json
 import os
 import re
 import uuid
@@ -1818,6 +1820,218 @@ class BrowserSession:
         self._ensure_started()
         self._reset_diagnostics()
         return self._capture_state("state")
+
+    def probe_capabilities(self):
+        """Inspect generic UI contracts without interacting with the page."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        raw = self.page.evaluate(
+            """
+            () => {
+                const visible = el => {
+                    const style = window.getComputedStyle(el);
+                    const box = el.getBoundingClientRect();
+                    return !el.hidden
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && box.width > 0
+                        && box.height > 0;
+                };
+                const accessibleName = el => {
+                    const labels = el.labels
+                        ? Array.from(el.labels)
+                            .map(label => label.innerText || label.textContent || '')
+                        : [];
+                    return (
+                        el.getAttribute('aria-label')
+                        || el.getAttribute('title')
+                        || labels.join(' ')
+                        || el.innerText
+                        || el.textContent
+                        || el.getAttribute('placeholder')
+                        || ''
+                    ).trim();
+                };
+                const countVisible = selector => Array.from(
+                    document.querySelectorAll(selector)
+                ).filter(visible).length;
+                const interactive = Array.from(document.querySelectorAll(
+                    'button, a[href], input:not([type="hidden"]), select, textarea, '
+                    + '[contenteditable="true"], [role="button"], [role="link"], '
+                    + '[role="textbox"], [role="searchbox"], [role="combobox"], '
+                    + '[role="checkbox"], [role="radio"], [role="switch"], '
+                    + '[role="tab"], [role="menuitem"], [role="treeitem"], '
+                    + '[role="slider"], [role="option"]'
+                )).filter(visible);
+                const named = interactive.filter(el => accessibleName(el));
+                const shadowRoots = Array.from(
+                    document.querySelectorAll('*')
+                ).filter(el => Boolean(el.shadowRoot)).length;
+                return {
+                    counts: {
+                        visible_interactive: interactive.length,
+                        named_interactive: named.length,
+                        native_tables: countVisible('table'),
+                        aria_grids: countVisible('[role="grid"], [role="treegrid"]'),
+                        native_selects: countVisible('select:not([multiple])'),
+                        native_multiselects: countVisible('select[multiple]'),
+                        aria_comboboxes: countVisible('[role="combobox"]'),
+                        aria_listboxes: countVisible('[role="listbox"]'),
+                        checkboxes: countVisible('input[type="checkbox"], [role="checkbox"]'),
+                        radios: countVisible('input[type="radio"], [role="radio"]'),
+                        switches: countVisible('[role="switch"]'),
+                        sliders: countVisible('input[type="range"], [role="slider"]'),
+                        trees: countVisible('[role="tree"], [role="treegrid"]'),
+                        dialogs: countVisible('dialog, [role="dialog"], [role="alertdialog"]'),
+                        date_inputs: countVisible('input[type="date"], input[type="datetime-local"], input[type="time"]'),
+                        file_inputs: countVisible('input[type="file"]'),
+                        contenteditables: countVisible('[contenteditable="true"]'),
+                        canvases: countVisible('canvas'),
+                        open_shadow_roots: shadowRoots
+                    },
+                    document: {
+                        lang: document.documentElement.lang || '',
+                        title: document.title || ''
+                    }
+                };
+            }
+            """
+        )
+        counts = raw.get("counts") or {}
+        visible_count = int(counts.get("visible_interactive") or 0)
+        named_count = int(counts.get("named_interactive") or 0)
+        coverage = (
+            round(named_count / visible_count, 3)
+            if visible_count
+            else 1.0
+        )
+        coverage_bucket = (
+            "high"
+            if coverage >= 0.85
+            else "medium"
+            if coverage >= 0.5
+            else "low"
+        )
+        adapters = {
+            "table": [
+                name
+                for name, available in (
+                    ("html_table", counts.get("native_tables")),
+                    ("aria_grid", counts.get("aria_grids")),
+                )
+                if available
+            ],
+            "selection": [
+                name
+                for name, available in (
+                    ("native_select", counts.get("native_selects")),
+                    ("native_multiselect", counts.get("native_multiselects")),
+                    ("aria_combobox", counts.get("aria_comboboxes")),
+                    ("aria_listbox", counts.get("aria_listboxes")),
+                )
+                if available
+            ],
+            "form": [
+                name
+                for name, available in (
+                    ("checkbox", counts.get("checkboxes")),
+                    ("radio", counts.get("radios")),
+                    ("switch", counts.get("switches")),
+                    ("slider", counts.get("sliders")),
+                    ("native_date_time", counts.get("date_inputs")),
+                    ("file_input", counts.get("file_inputs")),
+                    ("contenteditable", counts.get("contenteditables")),
+                )
+                if available
+            ],
+            "structure": [
+                name
+                for name, available in (
+                    ("tree", counts.get("trees")),
+                    ("dialog", counts.get("dialogs")),
+                    ("open_shadow_dom", counts.get("open_shadow_roots")),
+                    ("canvas", counts.get("canvases")),
+                )
+                if available
+            ],
+        }
+        capability_gaps = []
+        if (
+            counts.get("canvases")
+            and visible_count == 0
+        ):
+            capability_gaps.append("canvas_only_ui")
+        if visible_count >= 4 and coverage_bucket == "low":
+            capability_gaps.append("low_semantic_name_coverage")
+
+        feature_flags = {
+            key: bool(value)
+            for key, value in counts.items()
+            if key not in {
+                "visible_interactive",
+                "named_interactive",
+            }
+        }
+        contract = {
+            "schema_version": 1,
+            "adapters": adapters,
+            "feature_flags": feature_flags,
+            "semantic_name_coverage_bucket": coverage_bucket,
+        }
+        fingerprint = hashlib.sha256(
+            json.dumps(
+                contract,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        safe_url = self._safe_network_url(self.page.url)
+        parsed = urlsplit(safe_url)
+        normalized_segments = []
+        for segment in parsed.path.split("/"):
+            if (
+                re.fullmatch(r"\d+", segment)
+                or re.fullmatch(
+                    r"[0-9a-f]{8}-[0-9a-f-]{20,}",
+                    segment,
+                    flags=re.IGNORECASE,
+                )
+            ):
+                normalized_segments.append("{id}")
+            else:
+                normalized_segments.append(segment)
+        normalized_path = "/".join(normalized_segments) or "/"
+        page_key = (
+            f"{parsed.scheme}://{parsed.netloc}{normalized_path}"
+            if parsed.scheme and parsed.netloc
+            else normalized_path
+        )
+
+        result = self._capture_state("probe-capabilities")
+        result.update(
+            {
+                "compatibility_probe_status": "observed",
+                "compatibility_status": (
+                    "incompatible"
+                    if capability_gaps
+                    else "compatible"
+                ),
+                "contract_schema_version": 1,
+                "contract_fingerprint": fingerprint,
+                "page_contract_key": page_key,
+                "capability_contract": contract,
+                "capability_counts": counts,
+                "semantic_name_coverage": coverage,
+                "recommended_adapters": adapters,
+                "capability_gaps": capability_gaps,
+                "document_language": (
+                    raw.get("document") or {}
+                ).get("lang") or None,
+                "mutation_executed": False,
+            }
+        )
+        return result
 
     def fill_semantic(
         self,
@@ -5489,6 +5703,10 @@ def open_page(url: str) -> dict:
 
 def get_state() -> dict:
     return _session.get_state()
+
+
+def probe_capabilities() -> dict:
+    return _session.probe_capabilities()
 
 
 def get_network_detail(request_id: str) -> dict:

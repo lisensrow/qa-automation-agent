@@ -15,6 +15,7 @@
 - Перетаскивает точный semantic source на точный target и проверяет фактическое изменение размеров UI-элементов.
 - Получает структурированный снимок таблицы, управляет сортировкой, выбором точной строки и проверяемой пагинацией.
 - Применяет column filters, управляет select-all и проверяет bulk-action preview без запуска массовой операции.
+- Снимает fingerprint фактических UI-контрактов, сохраняет историю по Job и обнаруживает смену совместимых adapters между прогонами; несовместимый контракт блокирует WRITE/DESTRUCTIVE до исполнения.
 - Связывает видимую метку формы с единственным соседним полем даже в интерфейсах с неполной accessibility-разметкой.
 - Умеет проверять ожидаемый результат и выносить итог `PASS`, `FAIL` или `BLOCKED` по фактическим данным.
 - Не считает клик или отправку формы доказательством успеха: требуется последующая runtime-проверка результата.
@@ -115,6 +116,14 @@ Pointer primitives используют только однозначно най
 Table primitives работают с одной однозначно найденной таблицей. Snapshot ограничивает объём и сохраняет headers, aria-sort, cells, values_by_header и row signature. Sort принимает точный header и подтверждает направление через aria-sort; при отсутствии ARIA отдельно сообщает только наблюдаемое изменение порядка. Row selection ищет строку по точной ячейке и единственный checkbox, не запуская bulk action. Pagination считается успешной только если после точного control изменился row signature.
 
 Column filter связывается с точным header по cell index и допускается только при единственном видимом filter control в соответствующей header-cell. Select-all управляет только header checkbox и проверяет все видимые row checkboxes. Bulk preview является строго read-only: он возвращает enabled/disabled action state и число выбранных строк, но никогда не нажимает кнопку. Любая массовая операция остаётся отдельным вызовом и классифицируется обычной policy по её смысловому имени.
+
+### Compatibility Layer
+
+Compatibility probe является read-only операцией и выполняется после навигации на целевую страницу до первого WRITE. Он определяет доступные стандартные контракты: HTML table, ARIA grid, native select/multiselect, ARIA combobox/listbox, checkbox/radio/switch, slider, tree, dialog, date/file inputs, contenteditable, Shadow DOM и canvas. Дополнительно вычисляется доля видимых интерактивных элементов с semantic name.
+
+Из устойчивых признаков строится version-independent capability contract и SHA-256 fingerprint. Динамические количества строк и значения данных в fingerprint не входят. Page key нормализует числовые и UUID path segments. Snapshot сохраняется в текущем Job и сравнивается с последним snapshot того же стенда и page key. Изменение adapters, feature flags или semantic coverage фиксируется явно; canvas-only UI и низкое semantic-name coverage помечаются как capability gaps. Это позволяет менять browser adapter, не переписывая Planner, policy, Job Store, evidence и cleanup.
+
+В управляемом regression case после первого открытия страницы Core требует успешный capability probe до первого WRITE или DESTRUCTIVE. Если snapshot отсутствует, агент получает единственный обязательный OBSERVE-кандидат `browser_probe_capabilities`; если probe вернул capability gaps, мутация блокируется fail-closed. Совместимый, но изменившийся fingerprint сохраняется как риск и не блокирует сценарий. Guard включён только для основного case execution; Cleanup Manager остаётся в собственном более строгом контуре exact-target и v069 confirmation.
 
 Табличная проверка вынесена в отдельный read-only инструмент: уникальная строка определяется по точному значению одной ячейки, после чего в evidence сохраняются полный текст строки, массив ячеек, заголовки и отображение значений по заголовкам. Проверка не требует и не предполагает ARIA role строки.
 

@@ -1,6 +1,7 @@
 from tools.browser import (
     open_page,
     get_state,
+    probe_capabilities,
     inspect_semantic,
     inspect_table_row,
     click_semantic,
@@ -38,6 +39,22 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_probe_capabilities",
+            "description": (
+                "Read-only снимает fingerprint фактических UI-контрактов "
+                "текущей страницы: semantic-name coverage, HTML table/ARIA grid, "
+                "select/combobox, Shadow DOM, canvas и доступные adapters. "
+                "Используй после навигации и до первого WRITE."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
+        }
+    },
     {
         "type": "function",
         "function": {
@@ -974,6 +991,9 @@ def execute_tool(name: str, arguments: dict):
 
     if name == "browser_get_state":
         return get_state()
+
+    if name == "browser_probe_capabilities":
+        return probe_capabilities()
 
     if name == "browser_authenticate_saved_stand":
         return authenticate_saved_stand(

@@ -531,6 +531,7 @@ def extract_observations(
     if tool_name in {
         "browser_open_page",
         "browser_get_state",
+        "browser_probe_capabilities",
         "browser_click_semantic",
         "browser_fill_semantic",
         "browser_select_semantic",

@@ -111,3 +111,19 @@
 - Добавлен read-only bulk-action preview без возможности нажать массовую кнопку.
 - Bulk mutation остаётся отдельным WRITE/DESTRUCTIVE policy action.
 - Добавлен изолированный table filters/bulk smoke.
+# v072a — compatibility fingerprint and history
+
+- Добавлен read-only UI capability probe и version-independent contract fingerprint.
+- Обнаруживаются HTML/ARIA adapters, semantic-name coverage, Shadow DOM и canvas.
+- Compatibility snapshots сохраняются в Job Store и сравниваются с прошлыми jobs того же стенда/page key.
+- Изменённые contract sections и capability gaps фиксируются явно.
+- Добавлен изолированный compatibility-layer smoke.
+
+# v072b — mandatory compatibility preflight
+
+- После первого browser open основной regression case требует read-only capability probe до первой мутации.
+- Отсутствующий snapshot возвращает обязательный OBSERVE-кандидат вместо выполнения WRITE/DESTRUCTIVE.
+- Несовместимый snapshot блокирует мутацию fail-closed и сообщает capability gaps.
+- Совместимый изменившийся fingerprint сохраняется в истории, но не останавливает сценарий.
+- Cleanup Manager не переведён в этот guard и сохраняет собственный exact-target/v069 policy contour.
+- Добавлен изолированный compatibility-guard smoke.

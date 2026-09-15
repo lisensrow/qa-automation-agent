@@ -18,6 +18,8 @@
 - Resize панели или колонки с проверкой bounding box до и после.
 - Структурированный снимок таблицы, сортировка, выбор точной строки и проверяемая пагинация.
 - Column filters, select-all и read-only bulk-action preview.
+- UI-contract fingerprint, adapter discovery и persistent compatibility history.
+- Обязательный compatibility preflight перед первой мутацией и fail-closed блокировка несовместимого UI.
 - Проверка точной строки таблицы и работа с её context menu.
 - Фиксация screenshot, browser state, XHR/fetch и console/network errors.
 - Action policy v069 для OBSERVE, INTERACT, WRITE и DESTRUCTIVE.
@@ -28,9 +30,8 @@
 2. Составные hotkeys/chords с отдельной безопасной моделью clipboard.
 3. Специализированная проверка сохранённого порядка после drag-and-drop.
 4. Сложные filter popovers, server-side totals и cross-page selection.
-5. Date/time pickers, sliders, tree controls и complex popovers.
-6. Upload/download с проверкой имени, типа и содержимого файла.
-7. Modal/dialog, toast/notification и validation errors.
-8. Responsive layout, visual comparison и accessibility checks.
+6. Date/time pickers, sliders, tree controls и complex popovers.
+7. Upload/download с проверкой имени, типа и содержимого файла.
+8. Modal/dialog, toast/notification, responsive и accessibility checks.
 
 Каждый новый control добавляется универсальным browser primitive без ветвлений по сущностям U-Connect и обязательно включается в action-policy, evidence pipeline и изолированный smoke-test.

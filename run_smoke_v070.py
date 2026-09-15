@@ -29,6 +29,8 @@ SMOKES = [
     "smoke_drag_resize.py",
     "smoke_table_controls.py",
     "smoke_table_filters_bulk.py",
+    "smoke_compatibility_layer.py",
+    "smoke_compatibility_guard.py",
     "smoke_labeled_field_fallback.py",
     "smoke_browser_navigation_labels.py",
     "smoke_browser_container_scope.py",

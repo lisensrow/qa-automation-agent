@@ -45,6 +45,7 @@ from job_store import (
     recompute_cleanup_status,
     list_product_blockers,
     mark_product_blockers_for_version_change,
+    record_compatibility_snapshot,
     _normalize_checks,
 )
 from observation_extractor import (
@@ -384,6 +385,10 @@ SYSTEM_PROMPT = """
 - Для select-all используй browser_set_table_all_selected, затем проверяй
   доступность массовой кнопки через browser_inspect_bulk_action_semantic.
   Этот inspect-инструмент никогда не нажимает bulk action.
+- После перехода на целевую страницу и до первого WRITE вызови
+  browser_probe_capabilities. Если compatibility_status=incompatible,
+  не пытайся угадывать элементы: заверши case как BLOCKED с capability_gaps.
+  Если contract_changed=true, явно сохрани это как риск совместимости.
 - Если после перехода фактически появилась форма Login/Password, а UQA Core
   разрешил повторное использование сохранённых credentials, вызови
   browser_authenticate_saved_stand с точным stand_id. Никогда не запрашивай,
@@ -955,6 +960,7 @@ def classify_tool_action(
         "ssh_docker_logs",
         "browser_open_page",
         "browser_get_state",
+        "browser_probe_capabilities",
         "browser_get_network_detail",
         "browser_inspect_semantic",
         "browser_inspect_table_row",
@@ -2197,6 +2203,7 @@ def managed_navigation_preflight_check(
 
 _PENDING_NAVIGATION_CANDIDATES = {}
 _MANAGED_BROWSER_OPENED_CASES = set()
+_COMPATIBILITY_PREFLIGHT_BY_CASE = {}
 
 
 def _managed_initial_browser_open_url(
@@ -2931,6 +2938,7 @@ def execute_tool_with_policy(
     action_policy="legacy",
     job_id=None,
     case_id=None,
+    require_compatibility_probe=False,
 ):
     action_class = classify_tool_action(
         name,
@@ -3238,6 +3246,74 @@ def execute_tool_with_policy(
     if blocked is not None:
         return blocked
 
+    compatibility_key = (
+        str(job_id),
+        str(case_id),
+    )
+    compatibility_state = _COMPATIBILITY_PREFLIGHT_BY_CASE.get(
+        compatibility_key
+    )
+
+    if (
+        require_compatibility_probe
+        and action_policy == "confirm_mutations"
+        and job_id
+        and case_id
+        and compatibility_key in _MANAGED_BROWSER_OPENED_CASES
+        and action_class in {"write", "destructive"}
+    ):
+        if compatibility_state is None:
+            return {
+                "error": "managed_compatibility_probe_required",
+                "status": "blocked_by_policy",
+                "policy": action_policy,
+                "tool": name,
+                "executed": False,
+                "action_class": action_class,
+                "action_policy_status": (
+                    "blocked_by_compatibility_preflight"
+                ),
+                "compatibility_preflight_status": "required",
+                "required_action_candidate": {
+                    "tool": "browser_probe_capabilities",
+                    "arguments": {},
+                    "action_class": "observe",
+                    "basis": (
+                        "The current frontend contract must be observed "
+                        "before the first managed mutation."
+                    ),
+                },
+                "reason": (
+                    "UQA Core has not verified the current frontend "
+                    "capabilities after navigation."
+                ),
+            }
+
+        if compatibility_state.get("status") != "compatible":
+            return {
+                "error": "managed_frontend_incompatible",
+                "status": "blocked_by_policy",
+                "policy": action_policy,
+                "tool": name,
+                "executed": False,
+                "action_class": action_class,
+                "action_policy_status": (
+                    "blocked_by_compatibility_preflight"
+                ),
+                "compatibility_preflight_status": "incompatible",
+                "capability_gaps": compatibility_state.get(
+                    "capability_gaps",
+                    [],
+                ),
+                "contract_fingerprint": compatibility_state.get(
+                    "contract_fingerprint"
+                ),
+                "reason": (
+                    "The current frontend does not satisfy the semantic "
+                    "automation contract. No mutation was executed."
+                ),
+            }
+
     decision = (
         managed_action_policy_decision(
             name,
@@ -3330,6 +3406,26 @@ def execute_tool_with_policy(
             name,
             effective_arguments,
         )
+
+    if (
+        require_compatibility_probe
+        and name == "browser_probe_capabilities"
+        and job_id
+        and case_id
+        and isinstance(result, dict)
+        and not result.get("error")
+    ):
+        _COMPATIBILITY_PREFLIGHT_BY_CASE[compatibility_key] = {
+            "status": str(
+                result.get("compatibility_status") or "unknown"
+            ).strip().casefold(),
+            "capability_gaps": list(
+                result.get("capability_gaps") or []
+            ),
+            "contract_fingerprint": result.get(
+                "contract_fingerprint"
+            ),
+        }
 
     if isinstance(result, dict):
         result = dict(result)
@@ -3976,6 +4072,28 @@ def record_tool_observations(
     created = []
 
     try:
+        if (
+            tool_name == "browser_probe_capabilities"
+            and isinstance(result, dict)
+            and not result.get("error")
+        ):
+            stored_snapshot = record_compatibility_snapshot(
+                job_id,
+                case_id,
+                result,
+            )
+            result["compatibility_snapshot_id"] = stored_snapshot.get(
+                "snapshot_id"
+            )
+            result["contract_changed"] = stored_snapshot.get("changed")
+            result["baseline_fingerprint"] = stored_snapshot.get(
+                "baseline_fingerprint"
+            )
+            result["changed_contract_sections"] = stored_snapshot.get(
+                "changed_contract_sections"
+            )
+            result["compatibility_status"] = stored_snapshot.get("status")
+
         observations = (
             extract_observations(
                 tool_name,
@@ -4394,6 +4512,12 @@ def _historical_browser_result_summary(tool_name, content):
         "bulk_action_status",
         "bulk_action_enabled",
         "selected_row_count",
+        "compatibility_probe_status",
+        "compatibility_status",
+        "contract_fingerprint",
+        "contract_changed",
+        "capability_gaps",
+        "compatibility_snapshot_id",
         "action_policy_status",
         "auth_challenge_status",
         "network_request_count",
@@ -11029,6 +11153,13 @@ def run_turn(
                 ),
                 None,
             )
+            _COMPATIBILITY_PREFLIGHT_BY_CASE.pop(
+                (
+                    str(job_id),
+                    str(case_id),
+                ),
+                None,
+            )
             compact_completed_history(messages)
             return
 
@@ -11127,6 +11258,9 @@ def run_turn(
                         action_policy=action_policy,
                         job_id=job_id,
                         case_id=case_id,
+                        require_compatibility_probe=(
+                            action_policy == "confirm_mutations"
+                        ),
                     )
                 record_required_selection_result(
                     job_id,
