@@ -11,6 +11,7 @@
 - Идемпотентная установка checkbox/switch в `checked=true/false`.
 - Идемпотентный выбор radio option внутри именованной группы.
 - Точная установка полного набора native HTML multi-select.
+- Точная установка полного набора ARIA multi-select и chip-based combobox.
 - Выбор единственной точной option в поисковом ARIA autocomplete.
 - Проверка фактического forward Tab focus order.
 - Ограниченные keyboard actions с отдельной классификацией риска.
@@ -26,10 +27,9 @@
 
 ## Следующие этапы frontend-покрытия
 
-1. Составные ARIA multi-select и chip-based selectors.
-2. Составные hotkeys/chords с отдельной безопасной моделью clipboard.
-3. Специализированная проверка сохранённого порядка после drag-and-drop.
-4. Сложные filter popovers, server-side totals и cross-page selection.
+1. Составные hotkeys/chords с отдельной безопасной моделью clipboard.
+2. Специализированная проверка сохранённого порядка после drag-and-drop.
+3. Сложные filter popovers, server-side totals и cross-page selection.
 6. Date/time pickers, sliders, tree controls и complex popovers.
 7. Upload/download с проверкой имени, типа и содержимого файла.
 8. Modal/dialog, toast/notification, responsive и accessibility checks.

@@ -534,8 +534,9 @@ TOOLS = [
             "name": "browser_select_many_semantic",
             "description": (
                 "Устанавливает точный набор выбранных значений native HTML "
-                "multiple select. Проверяет все option до изменения и не "
-                "выполняет повторную мутацию при уже правильном наборе."
+                "multiple select, ARIA multiselect listbox или составного "
+                "combobox/listbox с chips. Проверяет все option до изменения "
+                "и не выполняет повторную мутацию при правильном наборе."
             ),
             "parameters": {
                 "type": "object",

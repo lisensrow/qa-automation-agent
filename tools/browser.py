@@ -1877,6 +1877,12 @@ class BrowserSession:
                         native_multiselects: countVisible('select[multiple]'),
                         aria_comboboxes: countVisible('[role="combobox"]'),
                         aria_listboxes: countVisible('[role="listbox"]'),
+                        aria_multiselects: countVisible(
+                            '[role="listbox"][aria-multiselectable="true"]'
+                        ),
+                        aria_multiselects: countVisible(
+                            '[role="listbox"][aria-multiselectable="true"]'
+                        ),
                         checkboxes: countVisible('input[type="checkbox"], [role="checkbox"]'),
                         radios: countVisible('input[type="radio"], [role="radio"]'),
                         switches: countVisible('[role="switch"]'),
@@ -1928,6 +1934,8 @@ class BrowserSession:
                     ("native_multiselect", counts.get("native_multiselects")),
                     ("aria_combobox", counts.get("aria_comboboxes")),
                     ("aria_listbox", counts.get("aria_listboxes")),
+                    ("aria_multiselect", counts.get("aria_multiselects")),
+                    ("aria_multiselect", counts.get("aria_multiselects")),
                 )
                 if available
             ],
@@ -2942,11 +2950,11 @@ class BrowserSession:
                 }
 
         if target is None:
-            return {
-                "error": "native_multiselect_field_not_found",
-                "field": field,
-                "executed": False,
-            }
+            return self._select_many_aria_semantic(
+                field,
+                requested,
+                exact,
+            )
 
         available = []
         option_nodes = target.locator("option")
@@ -3027,6 +3035,255 @@ class BrowserSession:
         )
         result = self._finish_action_execution(result)
         if actual_set != expected_set:
+            result["error"] = "multiselect_state_not_applied"
+        return result
+
+    def _select_many_aria_semantic(
+        self,
+        field: str,
+        requested: list,
+        exact: bool = True,
+    ):
+        """Set the exact value set of one ARIA multi-select contract."""
+
+        def visible_matches(locator, limit=100):
+            matches = []
+            for index in range(min(locator.count(), limit)):
+                candidate = locator.nth(index)
+                try:
+                    if candidate.is_visible():
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            return matches
+
+        direct = [
+            item
+            for item in visible_matches(
+                self.page.get_by_role(
+                    "listbox",
+                    name=field,
+                    exact=exact,
+                )
+            )
+            if str(
+                item.get_attribute("aria-multiselectable") or ""
+            ).casefold() == "true"
+        ]
+        if len(direct) > 1:
+            return {
+                "error": "ambiguous_aria_multiselect_field",
+                "field": field,
+                "matches": len(direct),
+                "executed": False,
+            }
+
+        comboboxes = visible_matches(
+            self.page.get_by_role(
+                "combobox",
+                name=field,
+                exact=exact,
+            )
+        )
+        if not comboboxes:
+            comboboxes = [
+                item
+                for item in visible_matches(
+                    self.page.get_by_label(field, exact=exact)
+                )
+                if str(
+                    item.get_attribute("role") or ""
+                ).casefold() == "combobox"
+            ]
+
+        if not direct and len(comboboxes) > 1:
+            return {
+                "error": "ambiguous_aria_multiselect_field",
+                "field": field,
+                "matches": len(comboboxes),
+                "executed": False,
+            }
+        if not direct and not comboboxes:
+            return {
+                "error": "multiselect_field_not_found",
+                "field": field,
+                "executed": False,
+            }
+
+        control = comboboxes[0] if comboboxes else None
+        controlled_id = (
+            str(control.get_attribute("aria-controls") or "").strip()
+            if control is not None
+            else ""
+        )
+
+        def resolve_listbox(open_if_needed=True):
+            if direct:
+                return direct[0]
+
+            candidates = []
+            if controlled_id:
+                controlled = self.page.locator(
+                    "[id=" + json.dumps(controlled_id) + "]"
+                )
+                candidates = [
+                    item
+                    for item in visible_matches(controlled)
+                    if str(item.get_attribute("role") or "").casefold()
+                    == "listbox"
+                ]
+
+            if not candidates:
+                candidates = visible_matches(
+                    self.page.get_by_role("listbox")
+                )
+
+            if len(candidates) == 1:
+                return candidates[0]
+            if len(candidates) > 1:
+                return None
+            if not open_if_needed:
+                return None
+
+            control.click()
+            self.page.wait_for_timeout(200)
+            return resolve_listbox(False)
+
+        def option_snapshot(listbox):
+            values = []
+            options = listbox.get_by_role("option")
+            for index in range(min(options.count(), 500)):
+                option = options.nth(index)
+                try:
+                    if not option.is_visible():
+                        continue
+                    label = (option.inner_text() or "").strip()
+                    selected = any(
+                        str(option.get_attribute(attribute) or "").casefold()
+                        == "true"
+                        for attribute in ("aria-selected", "aria-checked")
+                    )
+                    values.append((label, selected))
+                except Exception:
+                    continue
+            return values
+
+        listbox = resolve_listbox()
+        if listbox is None:
+            return {
+                "error": "aria_multiselect_listbox_not_unique",
+                "field": field,
+                "executed": False,
+            }
+
+        initial = option_snapshot(listbox)
+        available = [label for label, _selected in initial]
+        resolved = []
+        for requested_label in requested:
+            matches = [
+                label
+                for label in available
+                if (
+                    label.casefold() == requested_label.casefold()
+                    if exact
+                    else requested_label.casefold() in label.casefold()
+                )
+            ]
+            if len(matches) != 1:
+                return {
+                    "error": (
+                        "multiselect_option_not_found"
+                        if not matches
+                        else "ambiguous_multiselect_option"
+                    ),
+                    "field": field,
+                    "option": requested_label,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+            resolved.append(matches[0])
+
+        expected_set = {value.casefold() for value in resolved}
+        current = [label for label, selected in initial if selected]
+        current_set = {value.casefold() for value in current}
+        strategy = (
+            "aria-multiselectable-listbox"
+            if direct
+            else "aria-combobox-listbox"
+        )
+        if current_set == expected_set:
+            result = self._capture_state("select-many-semantic")
+            result.update(
+                {
+                    "selected_field": field,
+                    "selected_options": current,
+                    "selection_status": "already_satisfied",
+                    "field_match_strategy": strategy,
+                    "mutation_executed": False,
+                }
+            )
+            return result
+
+        toggles = [
+            label
+            for label, selected in initial
+            if selected != (label.casefold() in expected_set)
+        ]
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        executed_toggles = []
+        mutation_error = None
+        for label in toggles:
+            listbox = resolve_listbox()
+            if listbox is None:
+                mutation_error = {
+                    "error": "aria_multiselect_listbox_not_unique",
+                    "option": label,
+                }
+                break
+            candidates = visible_matches(
+                listbox.get_by_role("option", name=label, exact=True)
+            )
+            if len(candidates) != 1:
+                mutation_error = {
+                    "error": "aria_multiselect_option_changed",
+                    "option": label,
+                    "matches": len(candidates),
+                }
+                break
+            candidates[0].click()
+            executed_toggles.append(label)
+            self.page.wait_for_timeout(200)
+
+        listbox = resolve_listbox()
+        actual = (
+            [
+                label
+                for label, selected in option_snapshot(listbox)
+                if selected
+            ]
+            if listbox is not None
+            else []
+        )
+        actual_set = {value.casefold() for value in actual}
+        result = self._capture_state("select-many-semantic")
+        result.update(
+            {
+                "selected_field": field,
+                "selected_options": actual,
+                "selection_status": (
+                    "selected" if actual_set == expected_set else "not_applied"
+                ),
+                "field_match_strategy": strategy,
+                "mutation_executed": bool(executed_toggles),
+                "changed_options": executed_toggles,
+                "post_action_wait_ms": 200 * len(executed_toggles),
+            }
+        )
+        result = self._finish_action_execution(result)
+        if mutation_error:
+            result.update(mutation_error)
+        elif actual_set != expected_set:
             result["error"] = "multiselect_state_not_applied"
         return result
 

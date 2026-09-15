@@ -9,7 +9,7 @@
 - Выполняет UI-проверки в браузере по смысловым названиям элементов, а не по хрупким координатам.
 - Выбирает значения native select и ARIA combobox по точным видимым именам без ручного угадывания option.
 - Идемпотентно устанавливает checkbox/switch в требуемое состояние и не переключает уже правильное значение.
-- Выбирает radio option внутри точной именованной группы и поддерживает точный набор native multi-select.
+- Выбирает radio option внутри точной именованной группы и устанавливает точный набор в native или ARIA multi-select, включая chip-based combobox.
 - Работает с поисковым ARIA autocomplete: вводит точный запрос и выбирает единственную совпавшую option.
 - Проверяет фактический Tab focus order и выполняет ограниченный набор клавиатурных действий с risk-aware policy.
 - Перетаскивает точный semantic source на точный target и проверяет фактическое изменение размеров UI-элементов.
@@ -107,7 +107,7 @@ Policy — обязательный шлюз между намерением а�
 
 Обязательные field/value constraints теперь направляют модель одним атомарным вызовом `browser_select_semantic`. Успешный вызов регистрирует выполненную пару field/value в Core, поэтому последующий Save не заставляет агента повторно раскрывать поле и вручную угадывать role option.
 
-Radio primitive сначала сужает поиск именованной группой через `radiogroup`/group либо `fieldset/legend`, затем требует единственную option. Native multi-select до мутации проверяет существование и однозначность всего запрошенного набора и после изменения сверяет полный фактический набор. Для ARIA autocomplete одиночный selection primitive может ввести поисковое значение в combobox, дождаться option и выбрать её в рамках одного policy-controlled действия.
+Radio primitive сначала сужает поиск именованной группой через `radiogroup`/group либо `fieldset/legend`, затем требует единственную option. Multi-select primitive до мутации проверяет существование и однозначность всего запрошенного набора и после изменения сверяет полный фактический набор. Он поддерживает native `select[multiple]`, постоянный ARIA listbox с `aria-multiselectable=true` и составной combobox/listbox, где выбранные значения отображаются chips. Лишнее выбранное значение снимается только через его точную ARIA option; отдельная кнопка удаления по приблизительному тексту не угадывается. Для ARIA autocomplete одиночный selection primitive может ввести поисковое значение в combobox, дождаться option и выбрать её в рамках одного policy-controlled действия.
 
 Keyboard primitive принимает только закрытый список клавиш. Tab, Shift+Tab и Escape классифицируются как INTERACT. Enter, Space, стрелки, Home/End/Page и Backspace считаются WRITE, потому что способны изменить focused control или отправить форму. Delete считается DESTRUCTIVE. Неизвестные сочетания не исполняются. Focus-order primitive фокусирует первый точный semantic target, проходит реальный Tab sequence и возвращает наблюдаемые focused elements и первое расхождение.
 

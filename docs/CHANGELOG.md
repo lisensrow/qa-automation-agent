@@ -127,3 +127,12 @@
 - Совместимый изменившийся fingerprint сохраняется в истории, но не останавливает сценарий.
 - Cleanup Manager не переведён в этот guard и сохраняет собственный exact-target/v069 policy contour.
 - Добавлен изолированный compatibility-guard smoke.
+
+# v073a — ARIA multi-select and chips
+
+- `browser_select_many_semantic` расширен с native multiple select на ARIA listbox и combobox/listbox contracts.
+- Перед изменением проверяется полный набор доступных options и однозначность каждого запрошенного значения.
+- Primitive атомарно добавляет отсутствующие и снимает лишние точные options, затем проверяет весь итоговый набор.
+- Уже правильный набор возвращает `already_satisfied` без повторной мутации.
+- Capability fingerprint теперь отдельно фиксирует ARIA multi-select contract.
+- Добавлен изолированный smoke для постоянного listbox и раскрываемого chip-based combobox.
