@@ -90,3 +90,10 @@
 - Добавлена проверка фактической последовательности Tab focus.
 - Read-only задачи блокируют изменяющие keyboard events.
 - Добавлен изолированный keyboard/focus smoke.
+# v071d — drag-and-drop and resize
+
+- Добавлен semantic drag-and-drop с точными source/target.
+- Добавлен resize по правой, нижней и угловой границе с ограниченным delta.
+- Resize проверяет фактическое изменение bounding box.
+- Pointer mutations относятся к WRITE и блокируются read-only policy.
+- Добавлен изолированный drag/resize smoke.

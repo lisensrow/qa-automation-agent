@@ -14,6 +14,8 @@
 - Выбор единственной точной option в поисковом ARIA autocomplete.
 - Проверка фактического forward Tab focus order.
 - Ограниченные keyboard actions с отдельной классификацией риска.
+- Drag-and-drop между точными semantic endpoints.
+- Resize панели или колонки с проверкой bounding box до и после.
 - Проверка точной строки таблицы и работа с её context menu.
 - Фиксация screenshot, browser state, XHR/fetch и console/network errors.
 - Action policy v069 для OBSERVE, INTERACT, WRITE и DESTRUCTIVE.
@@ -22,7 +24,7 @@
 
 1. Составные ARIA multi-select и chip-based selectors.
 2. Составные hotkeys/chords с отдельной безопасной моделью clipboard.
-3. Drag-and-drop, изменение порядка и размеров колонок/полей.
+3. Специализированная проверка сохранённого порядка после drag-and-drop.
 4. Табличные фильтры, сортировка, пагинация и массовый выбор.
 5. Date/time pickers, sliders, tree controls и complex popovers.
 6. Upload/download с проверкой имени, типа и содержимого файла.

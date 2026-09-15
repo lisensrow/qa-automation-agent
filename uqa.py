@@ -373,6 +373,9 @@ SYSTEM_PROMPT = """
   Указывай target, если клавиша должна сработать на конкретном control.
 - Для проверки последовательности Tab используй browser_check_focus_order_semantic,
   а не делай вывод только по DOM-порядку.
+- Для drag-and-drop используй browser_drag_semantic с точными source и target.
+- Для изменения ширины/высоты панели или колонки используй browser_resize_semantic
+  с точным target, edge и ограниченным delta.
 - Если после перехода фактически появилась форма Login/Password, а UQA Core
   разрешил повторное использование сохранённых credentials, вызови
   browser_authenticate_saved_stand с точным stand_id. Никогда не запрашивай,
@@ -1028,6 +1031,8 @@ def classify_tool_action(
         "browser_set_checked_semantic",
         "browser_choose_radio_semantic",
         "browser_select_many_semantic",
+        "browser_drag_semantic",
+        "browser_resize_semantic",
     }:
         return "write"
 
@@ -1192,6 +1197,26 @@ def tool_policy_check(
             ),
             "reason": (
                 "Form state changes are forbidden by the current "
+                "read-only QA request."
+            ),
+        }
+
+    if name in {
+        "browser_drag_semantic",
+        "browser_resize_semantic",
+    }:
+        return {
+            "error": "tool_policy_blocked",
+            "status": "blocked_by_policy",
+            "policy": (
+                "strict_read_only"
+                if force_read_only
+                else "read_only_request"
+            ),
+            "tool": name,
+            "executed": False,
+            "reason": (
+                "Pointer mutation is forbidden by the current "
                 "read-only QA request."
             ),
         }
@@ -4331,6 +4356,11 @@ def _historical_browser_result_summary(tool_name, content):
         "keyboard_target",
         "focus_order_status",
         "focus_order_mismatch",
+        "drag_source",
+        "drag_target",
+        "drag_status",
+        "resized_target",
+        "resize_status",
         "action_policy_status",
         "auth_challenge_status",
         "network_request_count",

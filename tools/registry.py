@@ -12,6 +12,8 @@ from tools.browser import (
     select_many_semantic,
     press_key_semantic,
     check_focus_order_semantic,
+    drag_semantic,
+    resize_semantic,
     get_network_detail,
     delete_json_resource,
     archive_json_resource,
@@ -583,6 +585,62 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_drag_semantic",
+            "description": (
+                "Перетаскивает ровно один видимый semantic source на ровно "
+                "один semantic target. Используется для порядка полей, строк, "
+                "карточек и других drag-and-drop интерфейсов."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "source": {"type": "string"},
+                    "target": {"type": "string"},
+                    "exact": {"type": "boolean"},
+                    "source_role": {"type": "string"},
+                    "target_role": {"type": "string"}
+                },
+                "required": ["source", "target"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_resize_semantic",
+            "description": (
+                "Изменяет размер ровно одного semantic target перетаскиванием "
+                "правой, нижней или нижней-правой границы. Проверяет фактическое "
+                "изменение bounding box после действия."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "target": {"type": "string"},
+                    "delta_x": {
+                        "type": "integer",
+                        "minimum": -1000,
+                        "maximum": 1000
+                    },
+                    "delta_y": {
+                        "type": "integer",
+                        "minimum": -1000,
+                        "maximum": 1000
+                    },
+                    "edge": {
+                        "type": "string",
+                        "enum": ["right", "bottom", "bottom-right"]
+                    },
+                    "exact": {"type": "boolean"},
+                    "role": {"type": "string"}
+                },
+                "required": ["target"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_table_row",
             "description": (
                 "Read-only проверка одной видимой строки таблицы. При exact=true "
@@ -866,6 +924,25 @@ def execute_tool(name: str, arguments: dict):
         return check_focus_order_semantic(
             arguments["targets"],
             arguments.get("exact", True),
+        )
+
+    if name == "browser_drag_semantic":
+        return drag_semantic(
+            arguments["source"],
+            arguments["target"],
+            arguments.get("exact", True),
+            arguments.get("source_role"),
+            arguments.get("target_role"),
+        )
+
+    if name == "browser_resize_semantic":
+        return resize_semantic(
+            arguments["target"],
+            arguments.get("delta_x", 0),
+            arguments.get("delta_y", 0),
+            arguments.get("edge", "right"),
+            arguments.get("exact", True),
+            arguments.get("role"),
         )
 
     return {

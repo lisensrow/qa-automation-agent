@@ -3083,6 +3083,257 @@ class BrowserSession:
         )
         return self._finish_action_execution(result)
 
+    def _pointer_target(self, name, exact=True, role=None):
+        def visible_matches(locator):
+            matches = []
+            for index in range(min(locator.count(), 150)):
+                candidate = locator.nth(index)
+                try:
+                    if candidate.is_visible():
+                        matches.append(candidate)
+                except Exception:
+                    continue
+            return matches
+
+        roles = (
+            [role]
+            if role
+            else [
+                "button",
+                "link",
+                "tab",
+                "menuitem",
+                "treeitem",
+                "listitem",
+                "row",
+                "columnheader",
+                "rowheader",
+                "gridcell",
+                "option",
+                "checkbox",
+                "radio",
+                "switch",
+                "slider",
+                "separator",
+                "region",
+                "img",
+            ]
+        )
+        for candidate_role in roles:
+            matches = visible_matches(
+                self.page.get_by_role(
+                    candidate_role,
+                    name=name,
+                    exact=exact,
+                )
+            )
+            if len(matches) == 1:
+                return matches[0], f"role:{candidate_role}", None
+            if len(matches) > 1:
+                return None, None, {
+                    "error": "ambiguous_pointer_target",
+                    "target": name,
+                    "role": candidate_role,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+
+        matches = visible_matches(
+            self.page.get_by_text(name, exact=exact)
+        )
+        if len(matches) == 1:
+            return matches[0], "visible-text", None
+        if len(matches) > 1:
+            return None, None, {
+                "error": "ambiguous_pointer_target",
+                "target": name,
+                "matches": len(matches),
+                "executed": False,
+            }
+        return None, None, {
+            "error": "pointer_target_not_found",
+            "target": name,
+            "role": role,
+            "executed": False,
+        }
+
+    def drag_semantic(
+        self,
+        source: str,
+        target: str,
+        exact: bool = True,
+        source_role: str = None,
+        target_role: str = None,
+    ):
+        """Drag one exact visible semantic source onto one exact target."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if str(source or "").strip().casefold() == (
+            str(target or "").strip().casefold()
+        ):
+            return {
+                "error": "drag_source_equals_target",
+                "source": source,
+                "target": target,
+                "executed": False,
+            }
+
+        source_locator, source_strategy, error = self._pointer_target(
+            source,
+            exact,
+            source_role,
+        )
+        if error:
+            error["drag_endpoint"] = "source"
+            return error
+        target_locator, target_strategy, error = self._pointer_target(
+            target,
+            exact,
+            target_role,
+        )
+        if error:
+            error["drag_endpoint"] = "target"
+            return error
+
+        source_before = source_locator.bounding_box()
+        target_before = target_locator.bounding_box()
+        if not source_before or not target_before:
+            return {
+                "error": "drag_bounding_box_unavailable",
+                "source": source,
+                "target": target,
+                "executed": False,
+            }
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        source_locator.drag_to(target_locator)
+        self.page.wait_for_timeout(500)
+        source_after = source_locator.bounding_box()
+        target_after = target_locator.bounding_box()
+        result = self._capture_state("drag-semantic")
+        result.update(
+            {
+                "drag_source": source,
+                "drag_target": target,
+                "source_match_strategy": source_strategy,
+                "target_match_strategy": target_strategy,
+                "source_box_before": source_before,
+                "target_box_before": target_before,
+                "source_box_after": source_after,
+                "target_box_after": target_after,
+                "drag_status": "performed",
+                "mutation_executed": True,
+                "post_action_wait_ms": 500,
+            }
+        )
+        return self._finish_action_execution(result)
+
+    def resize_semantic(
+        self,
+        target: str,
+        delta_x: int = 0,
+        delta_y: int = 0,
+        edge: str = "right",
+        exact: bool = True,
+        role: str = None,
+    ):
+        """Resize one exact target by dragging one of its visible edges."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        try:
+            dx = int(delta_x)
+            dy = int(delta_y)
+        except (TypeError, ValueError):
+            return {
+                "error": "resize_delta_must_be_integer",
+                "target": target,
+                "executed": False,
+            }
+        if dx == 0 and dy == 0:
+            return {
+                "error": "resize_delta_required",
+                "target": target,
+                "executed": False,
+            }
+        if abs(dx) > 1000 or abs(dy) > 1000:
+            return {
+                "error": "resize_delta_out_of_range",
+                "target": target,
+                "executed": False,
+            }
+        canonical_edge = str(edge or "").strip().casefold()
+        if canonical_edge not in {"right", "bottom", "bottom-right"}:
+            return {
+                "error": "unsupported_resize_edge",
+                "target": target,
+                "edge": edge,
+                "executed": False,
+            }
+
+        locator, strategy, error = self._pointer_target(
+            target,
+            exact,
+            role,
+        )
+        if error:
+            return error
+        before = locator.bounding_box()
+        if not before:
+            return {
+                "error": "resize_bounding_box_unavailable",
+                "target": target,
+                "executed": False,
+            }
+
+        start_x = (
+            before["x"] + before["width"] - 2
+            if canonical_edge in {"right", "bottom-right"}
+            else before["x"] + before["width"] / 2
+        )
+        start_y = (
+            before["y"] + before["height"] - 2
+            if canonical_edge in {"bottom", "bottom-right"}
+            else before["y"] + before["height"] / 2
+        )
+        end_x = start_x + dx
+        end_y = start_y + dy
+
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        self.page.mouse.move(start_x, start_y)
+        self.page.mouse.down()
+        self.page.mouse.move(end_x, end_y, steps=10)
+        self.page.mouse.up()
+        self.page.wait_for_timeout(500)
+        after = locator.bounding_box()
+        changed = bool(
+            after
+            and (
+                abs(after["width"] - before["width"]) >= 1
+                or abs(after["height"] - before["height"]) >= 1
+            )
+        )
+        result = self._capture_state("resize-semantic")
+        result.update(
+            {
+                "resized_target": target,
+                "resize_edge": canonical_edge,
+                "resize_delta_x": dx,
+                "resize_delta_y": dy,
+                "target_match_strategy": strategy,
+                "target_box_before": before,
+                "target_box_after": after,
+                "resize_status": "resized" if changed else "not_observed",
+                "mutation_executed": True,
+                "post_action_wait_ms": 500,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if not changed:
+            result["error"] = "resize_not_observed"
+        return result
+
     def delete_json_resource(
         self,
         collection_endpoint: str,
@@ -4610,6 +4861,40 @@ def check_focus_order_semantic(
     exact: bool = True,
 ) -> dict:
     return _session.check_focus_order_semantic(targets, exact)
+
+
+def drag_semantic(
+    source: str,
+    target: str,
+    exact: bool = True,
+    source_role: str = None,
+    target_role: str = None,
+) -> dict:
+    return _session.drag_semantic(
+        source,
+        target,
+        exact,
+        source_role,
+        target_role,
+    )
+
+
+def resize_semantic(
+    target: str,
+    delta_x: int = 0,
+    delta_y: int = 0,
+    edge: str = "right",
+    exact: bool = True,
+    role: str = None,
+) -> dict:
+    return _session.resize_semantic(
+        target,
+        delta_x,
+        delta_y,
+        edge,
+        exact,
+        role,
+    )
 
 
 def fill(element_id: str, text: str) -> dict:

@@ -537,6 +537,8 @@ def extract_observations(
         "browser_select_many_semantic",
         "browser_press_key_semantic",
         "browser_check_focus_order_semantic",
+        "browser_drag_semantic",
+        "browser_resize_semantic",
     }:
         return [
             _browser_state_observation(
