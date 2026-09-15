@@ -11,7 +11,7 @@
 - Идемпотентно устанавливает checkbox/switch в требуемое состояние и не переключает уже правильное значение.
 - Выбирает radio option внутри точной именованной группы и устанавливает точный набор в native или ARIA multi-select, включая chip-based combobox.
 - Работает с поисковым ARIA autocomplete: вводит точный запрос и выбирает единственную совпавшую option.
-- Проверяет фактический Tab focus order и выполняет ограниченный набор клавиатурных действий с risk-aware policy.
+- Проверяет фактический Tab focus order, выполняет закрытый набор keyboard chords и тестирует copy/paste через изолированный session-private clipboard без доступа к системному буферу.
 - Перетаскивает точный semantic source на точный target и проверяет фактическое изменение размеров UI-элементов.
 - Получает структурированный снимок таблицы, управляет сортировкой, выбором точной строки и проверяемой пагинацией.
 - Применяет column filters, управляет select-all и проверяет bulk-action preview без запуска массовой операции.
@@ -109,7 +109,9 @@ Policy — обязательный шлюз между намерением а�
 
 Radio primitive сначала сужает поиск именованной группой через `radiogroup`/group либо `fieldset/legend`, затем требует единственную option. Multi-select primitive до мутации проверяет существование и однозначность всего запрошенного набора и после изменения сверяет полный фактический набор. Он поддерживает native `select[multiple]`, постоянный ARIA listbox с `aria-multiselectable=true` и составной combobox/listbox, где выбранные значения отображаются chips. Лишнее выбранное значение снимается только через его точную ARIA option; отдельная кнопка удаления по приблизительному тексту не угадывается. Для ARIA autocomplete одиночный selection primitive может ввести поисковое значение в combobox, дождаться option и выбрать её в рамках одного policy-controlled действия.
 
-Keyboard primitive принимает только закрытый список клавиш. Tab, Shift+Tab и Escape классифицируются как INTERACT. Enter, Space, стрелки, Home/End/Page и Backspace считаются WRITE, потому что способны изменить focused control или отправить форму. Delete считается DESTRUCTIVE. Неизвестные сочетания не исполняются. Focus-order primitive фокусирует первый точный semantic target, проходит реальный Tab sequence и возвращает наблюдаемые focused elements и первое расхождение.
+Keyboard primitive принимает только закрытый список клавиш и chords. Tab, Shift+Tab, Escape и Control+A классифицируются как INTERACT. Enter, Space, стрелки, Home/End/Page, Backspace, Undo/Redo chords, Shift+Enter и Alt+ArrowDown считаются WRITE, потому что способны изменить focused control или отправить форму. Delete считается DESTRUCTIVE. Control-based chord требует точный semantic target; неизвестные сочетания, включая прямые Control+C/X/V, не исполняются. Focus-order primitive фокусирует первый точный semantic target, проходит реальный Tab sequence и возвращает наблюдаемые focused elements и первое расхождение.
+
+Для copy/paste используется отдельный private clipboard внутри памяти текущей browser session. Copy принимает только точный input, textarea или contenteditable, блокирует password/token/secret-like source, ограничивает значение 4096 символами и возвращает только размер и статус — не содержимое. Paste использует только этот private buffer, блокирует sensitive или non-editable target и классифицируется как WRITE. Системный clipboard ОС не читается и не изменяется; private buffer не сохраняется в Job, evidence или artifacts и может быть явно очищен.
 
 Pointer primitives используют только однозначно найденные видимые endpoints. Drag-and-drop требует разные source/target и сохраняет bounding boxes до и после. Resize ограничивает delta диапазоном, поддерживает правую, нижнюю и угловую границы и считается успешным только при фактически изменившемся bounding box. Оба действия относятся к WRITE и блокируются read-only policy.
 

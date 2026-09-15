@@ -136,3 +136,13 @@
 - Уже правильный набор возвращает `already_satisfied` без повторной мутации.
 - Capability fingerprint теперь отдельно фиксирует ARIA multi-select contract.
 - Добавлен изолированный smoke для постоянного listbox и раскрываемого chip-based combobox.
+
+# v073b — keyboard chords and private clipboard
+
+- Keyboard primitive получил закрытый allowlist Control+A, Undo/Redo, Shift+Enter и Alt+ArrowDown.
+- Control-based chords требуют точный semantic target; неизвестные chords и прямые Control+C/X/V блокируются.
+- Добавлен session-private clipboard, который не обращается к clipboard операционной системы.
+- Copy не раскрывает содержимое модели, не сохраняет его на диск и блокирует sensitive-looking fields.
+- Paste принимает данные только из private clipboard, проверяет exact editable target и проходит WRITE policy.
+- Private clipboard ограничен 4096 символами и поддерживает явную очистку.
+- Добавлен изолированный keyboard/private-clipboard smoke без доступа к пользовательскому clipboard.

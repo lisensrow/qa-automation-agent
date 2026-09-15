@@ -15,6 +15,7 @@
 - Выбор единственной точной option в поисковом ARIA autocomplete.
 - Проверка фактического forward Tab focus order.
 - Ограниченные keyboard actions с отдельной классификацией риска.
+- Закрытый allowlist keyboard chords и session-private clipboard для безопасных copy/paste проверок.
 - Drag-and-drop между точными semantic endpoints.
 - Resize панели или колонки с проверкой bounding box до и после.
 - Структурированный снимок таблицы, сортировка, выбор точной строки и проверяемая пагинация.
@@ -27,9 +28,8 @@
 
 ## Следующие этапы frontend-покрытия
 
-1. Составные hotkeys/chords с отдельной безопасной моделью clipboard.
-2. Специализированная проверка сохранённого порядка после drag-and-drop.
-3. Сложные filter popovers, server-side totals и cross-page selection.
+1. Специализированная проверка сохранённого порядка после drag-and-drop.
+2. Сложные filter popovers, server-side totals и cross-page selection.
 6. Date/time pickers, sliders, tree controls и complex popovers.
 7. Upload/download с проверкой имени, типа и содержимого файла.
 8. Modal/dialog, toast/notification, responsive и accessibility checks.

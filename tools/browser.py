@@ -105,6 +105,10 @@ class BrowserSession:
         self.active_action_execution_id = None
 
         self.last_uc_auth = None
+        # Session-private clipboard. It never reads from or writes to the
+        # operating-system clipboard and is never persisted to artifacts.
+        self._private_clipboard_text = None
+        self._private_clipboard_source = None
 
     def _context_kwargs(self):
         context_kwargs = {
@@ -3417,8 +3421,14 @@ class BrowserSession:
             "PageDown",
             "Backspace",
             "Delete",
+            "Control+A",
+            "Control+Z",
+            "Control+Y",
+            "Control+Shift+Z",
+            "Shift+Enter",
+            "Alt+ArrowDown",
         }
-        normalized = str(key or "").strip()
+        normalized = str(key or "").strip().replace("Ctrl+", "Control+")
         canonical = next(
             (
                 value
@@ -3432,6 +3442,13 @@ class BrowserSession:
                 "error": "unsupported_keyboard_key",
                 "key": key,
                 "allowed_keys": sorted(allowed),
+                "executed": False,
+            }
+
+        if canonical.startswith("Control+") and not target:
+            return {
+                "error": "keyboard_chord_target_required",
+                "key": canonical,
                 "executed": False,
             }
 
@@ -3481,6 +3498,197 @@ class BrowserSession:
             }
         )
         return self._finish_action_execution(result)
+
+    @staticmethod
+    def _clipboard_target_is_sensitive(locator, semantic_name):
+        attributes = [str(semantic_name or "")]
+        for attribute in (
+            "type",
+            "name",
+            "id",
+            "autocomplete",
+            "aria-label",
+            "placeholder",
+        ):
+            try:
+                attributes.append(locator.get_attribute(attribute) or "")
+            except Exception:
+                continue
+        normalized = " ".join(attributes).casefold()
+        sensitive_markers = (
+            "password",
+            "passwd",
+            "passphrase",
+            "token",
+            "secret",
+            "credential",
+            "api-key",
+            "apikey",
+            "парол",
+            "токен",
+            "секрет",
+        )
+        return (
+            str(locator.get_attribute("type") or "").casefold()
+            == "password"
+            or any(marker in normalized for marker in sensitive_markers)
+        )
+
+    def copy_value_semantic(
+        self,
+        source: str,
+        exact: bool = True,
+        role: str = None,
+    ):
+        """Copy a non-secret control value to session-private memory."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        locator, strategy, error = self._keyboard_target(
+            source,
+            exact,
+            role,
+        )
+        if error:
+            return error
+        if self._clipboard_target_is_sensitive(locator, source):
+            return {
+                "error": "private_clipboard_sensitive_source_blocked",
+                "source": source,
+                "executed": False,
+            }
+        payload = locator.evaluate(
+            """
+            el => {
+                const tag = el.tagName.toLowerCase();
+                if (tag === 'input' || tag === 'textarea') {
+                    const value = String(el.value || '');
+                    const start = Number.isInteger(el.selectionStart)
+                        ? el.selectionStart : 0;
+                    const end = Number.isInteger(el.selectionEnd)
+                        ? el.selectionEnd : 0;
+                    return {
+                        supported: true,
+                        text: end > start ? value.slice(start, end) : value,
+                        mode: end > start ? 'selection' : 'value'
+                    };
+                }
+                if (el.isContentEditable) {
+                    const selection = window.getSelection();
+                    const selected = selection ? selection.toString() : '';
+                    return {
+                        supported: true,
+                        text: selected || el.innerText || '',
+                        mode: selected ? 'selection' : 'contenteditable'
+                    };
+                }
+                return {supported: false, text: '', mode: null};
+            }
+            """
+        )
+        if not payload.get("supported"):
+            return {
+                "error": "private_clipboard_source_not_editable",
+                "source": source,
+                "executed": False,
+            }
+        text = str(payload.get("text") or "")
+        if len(text) > 4096:
+            return {
+                "error": "private_clipboard_value_too_large",
+                "source": source,
+                "character_count": len(text),
+                "maximum_characters": 4096,
+                "executed": False,
+            }
+        self._private_clipboard_text = text
+        self._private_clipboard_source = source
+        return {
+            "status": "copied_to_private_clipboard",
+            "source": source,
+            "source_strategy": strategy,
+            "copy_mode": payload.get("mode"),
+            "character_count": len(text),
+            "clipboard_scope": "browser_session_private",
+            "clipboard_content_exposed": False,
+            "mutation_executed": False,
+            "executed": True,
+        }
+
+    def paste_private_semantic(
+        self,
+        target: str,
+        replace: bool = False,
+        exact: bool = True,
+        role: str = None,
+    ):
+        """Insert the private clipboard without touching the OS clipboard."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if self._private_clipboard_text is None:
+            return {
+                "error": "private_clipboard_empty",
+                "target": target,
+                "executed": False,
+            }
+        locator, strategy, error = self._keyboard_target(
+            target,
+            exact,
+            role,
+        )
+        if error:
+            return error
+        if self._clipboard_target_is_sensitive(locator, target):
+            return {
+                "error": "private_clipboard_sensitive_target_blocked",
+                "target": target,
+                "executed": False,
+            }
+        editable = locator.evaluate(
+            "el => !el.disabled && !el.readOnly && "
+            "(el.matches('input, textarea') || el.isContentEditable)"
+        )
+        if not editable:
+            return {
+                "error": "private_clipboard_target_not_editable",
+                "target": target,
+                "executed": False,
+            }
+
+        self._begin_action_execution()
+        locator.focus()
+        if replace:
+            locator.fill(self._private_clipboard_text)
+        else:
+            self.page.keyboard.insert_text(self._private_clipboard_text)
+        self.page.wait_for_timeout(300)
+        result = self._capture_state("paste-private-semantic")
+        result.update(
+            {
+                "status": "pasted_from_private_clipboard",
+                "clipboard_source": self._private_clipboard_source,
+                "clipboard_target": target,
+                "clipboard_target_strategy": strategy,
+                "replace": bool(replace),
+                "character_count": len(self._private_clipboard_text),
+                "clipboard_scope": "browser_session_private",
+                "clipboard_content_exposed": False,
+                "mutation_executed": True,
+                "post_action_wait_ms": 300,
+            }
+        )
+        return self._finish_action_execution(result)
+
+    def clear_private_clipboard(self):
+        had_value = self._private_clipboard_text is not None
+        self._private_clipboard_text = None
+        self._private_clipboard_source = None
+        return {
+            "status": "private_clipboard_cleared",
+            "had_value": had_value,
+            "clipboard_scope": "browser_session_private",
+            "mutation_executed": False,
+            "executed": True,
+        }
 
     def check_focus_order_semantic(
         self,
@@ -6045,6 +6253,27 @@ def press_key_semantic(
     role: str = None,
 ) -> dict:
     return _session.press_key_semantic(key, target, exact, role)
+
+
+def copy_value_semantic(
+    source: str,
+    exact: bool = True,
+    role: str = None,
+) -> dict:
+    return _session.copy_value_semantic(source, exact, role)
+
+
+def paste_private_semantic(
+    target: str,
+    replace: bool = False,
+    exact: bool = True,
+    role: str = None,
+) -> dict:
+    return _session.paste_private_semantic(target, replace, exact, role)
+
+
+def clear_private_clipboard() -> dict:
+    return _session.clear_private_clipboard()
 
 
 def check_focus_order_semantic(

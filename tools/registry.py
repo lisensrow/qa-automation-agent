@@ -12,6 +12,9 @@ from tools.browser import (
     choose_radio_semantic,
     select_many_semantic,
     press_key_semantic,
+    copy_value_semantic,
+    paste_private_semantic,
+    clear_private_clipboard,
     check_focus_order_semantic,
     drag_semantic,
     resize_semantic,
@@ -572,7 +575,9 @@ TOOLS = [
                             "Tab", "Shift+Tab", "Escape", "Enter", "Space",
                             "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
                             "Home", "End", "PageUp", "PageDown",
-                            "Backspace", "Delete"
+                            "Backspace", "Delete", "Control+A", "Control+Z",
+                            "Control+Y",
+                            "Control+Shift+Z", "Shift+Enter", "Alt+ArrowDown"
                         ]
                     },
                     "target": {"type": "string"},
@@ -581,6 +586,55 @@ TOOLS = [
                 },
                 "required": ["key"]
             }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_copy_value_semantic",
+            "description": (
+                "Копирует значение точного несекретного input/textarea или "
+                "contenteditable только во временный private clipboard "
+                "текущей browser session. Содержимое не возвращается модели, "
+                "не сохраняется и не попадает в системный clipboard."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "source": {"type": "string"},
+                    "exact": {"type": "boolean"},
+                    "role": {"type": "string"}
+                },
+                "required": ["source"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_paste_private_semantic",
+            "description": (
+                "Вставляет private clipboard в точное несекретное редактируемое "
+                "поле без чтения или записи системного clipboard. Это WRITE."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "target": {"type": "string"},
+                    "replace": {"type": "boolean"},
+                    "exact": {"type": "boolean"},
+                    "role": {"type": "string"}
+                },
+                "required": ["target"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_clear_private_clipboard",
+            "description": "Очищает временный private clipboard browser session.",
+            "parameters": {"type": "object", "properties": {}}
         }
     },
     {
@@ -1087,6 +1141,24 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("exact", True),
             arguments.get("role"),
         )
+
+    if name == "browser_copy_value_semantic":
+        return copy_value_semantic(
+            arguments["source"],
+            arguments.get("exact", True),
+            arguments.get("role"),
+        )
+
+    if name == "browser_paste_private_semantic":
+        return paste_private_semantic(
+            arguments["target"],
+            arguments.get("replace", False),
+            arguments.get("exact", True),
+            arguments.get("role"),
+        )
+
+    if name == "browser_clear_private_clipboard":
+        return clear_private_clipboard()
 
     if name == "browser_check_focus_order_semantic":
         return check_focus_order_semantic(

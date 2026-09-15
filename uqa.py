@@ -368,10 +368,13 @@ SYSTEM_PROMPT = """
   не переключай элемент вслепую повторным кликом.
 - Для radio group используй browser_choose_radio_semantic, указывая option и,
   когда она известна, точное имя group.
-- Для native multiple select используй browser_select_many_semantic и передавай
+- Для native или ARIA multi-select используй browser_select_many_semantic и передавай
   полный ожидаемый набор значений.
-- Для одиночного клавиатурного действия используй browser_press_key_semantic.
+- Для одиночной клавиши или разрешённого chord используй browser_press_key_semantic.
   Указывай target, если клавиша должна сработать на конкретном control.
+- Для проверки copy/paste используй только browser_copy_value_semantic и
+  browser_paste_private_semantic. Они не обращаются к системному clipboard,
+  не возвращают его содержимое модели и блокируют secret-like поля.
 - Для проверки последовательности Tab используй browser_check_focus_order_semantic,
   а не делай вывод только по DOM-порядку.
 - Для drag-and-drop используй browser_drag_semantic с точными source и target.
@@ -988,6 +991,8 @@ def classify_tool_action(
     # the tested stand and need no second confirmation after the
     # already-confirmed stand action that created or changed a resource.
     if name in {
+        "browser_copy_value_semantic",
+        "browser_clear_private_clipboard",
         "resource_register",
         "resource_update",
         "browser_authenticate_saved_stand",
@@ -1031,7 +1036,7 @@ def classify_tool_action(
 
     if name == "browser_press_key_semantic":
         key = str(arguments.get("key") or "").strip().casefold()
-        if key in {"tab", "shift+tab", "escape"}:
+        if key in {"tab", "shift+tab", "escape", "control+a", "ctrl+a"}:
             return "interact"
         if key == "delete":
             return "destructive"
@@ -1047,11 +1052,20 @@ def classify_tool_action(
             "pageup",
             "pagedown",
             "backspace",
+            "control+z",
+            "ctrl+z",
+            "control+y",
+            "ctrl+y",
+            "control+shift+z",
+            "ctrl+shift+z",
+            "shift+enter",
+            "alt+arrowdown",
         }:
             return "write"
         return "unknown"
 
     if name in {
+        "browser_paste_private_semantic",
         "browser_select_semantic",
         "browser_set_checked_semantic",
         "browser_choose_radio_semantic",
