@@ -56,7 +56,7 @@ try:
     assert verified["download_format_matches"] is True, verified
     assert verified["download_hash_matches"] is True, verified
     assert verified["download_sha256"] == EXPECTED_SHA, verified
-    artifact = Path(verified["download_artifact"])
+    artifact = Path(session.download_artifacts[verified["download_id"]]["path"])
     assert artifact.is_file() and artifact.read_bytes() == CONTENT
     assert artifact.stat().st_mode & 0o077 == 0
 

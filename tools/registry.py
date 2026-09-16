@@ -6,6 +6,7 @@ from tools.browser import (
     inspect_table_row,
     click_semantic,
     download_semantic,
+    verify_download_structure_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -375,6 +376,27 @@ TOOLS = [
                 },
                 "required": ["collection_endpoint", "exact_name"]
             }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_verify_download_structure_semantic",
+            "description": (
+                "Read-only проверяет только download_id, выданный этой браузерной "
+                "сессией: CSV — точные заголовки и диапазон строк, PDF — число "
+                "страниц. Строки CSV и содержимое PDF не возвращаются."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "download_id": {"type": "string"},
+                "format": {"type": "string", "enum": ["csv", "pdf"]},
+                "expected_headers": {
+                    "type": "array", "items": {"type": "string"}
+                },
+                "min_rows": {"type": "integer"},
+                "max_rows": {"type": "integer"},
+                "expected_pages": {"type": "integer"}
+            }, "required": ["download_id", "format"]}
         }
     },
     {
@@ -1428,6 +1450,16 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("expected_format"),
             arguments.get("expected_sha256"),
             arguments.get("exact", True),
+        )
+
+    if name == "browser_verify_download_structure_semantic":
+        return verify_download_structure_semantic(
+            arguments["download_id"],
+            arguments["format"],
+            arguments.get("expected_headers"),
+            arguments.get("min_rows"),
+            arguments.get("max_rows"),
+            arguments.get("expected_pages"),
         )
 
     if name == "browser_context_menu_semantic":

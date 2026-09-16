@@ -390,10 +390,16 @@ SYSTEM_PROMPT = """
   точным числом; не эмулируй произвольные клики по координатам шкалы.
 - Для file input сначала используй browser_inspect_file_input_semantic.
   browser_set_upload_fixture_semantic допускает только встроенный sample-text,
-  не произвольный путь; это WRITE, а выбор файла ещё не доказывает upload.
+  не произвольный путь; это WRITE. Даже accepted_response_observed не
+  доказывает сохранение на сервере: после действия проверь ресурс через
+  независимое read-only открытие списка или страницы и точное совпадение.
 - Для скачивания используй browser_download_semantic с ожидаемым именем и
   SHA-256, если он известен. metadata_only не является доказательством
   содержимого; скачанный файл не возвращается в контекст модели.
+- Для CSV/PDF после скачивания используй
+  browser_verify_download_structure_semantic по выданному download_id.
+  Он сверяет ожидаемые заголовки/число строк или число страниц без
+  чтения произвольных файлов и без возврата содержимого модели.
 - Для ARIA tree сначала используй browser_inspect_tree_semantic, затем
   browser_set_tree_item_expanded для точного expand/collapse. Раскрытие узла
   не означает выбор значения или сохранение формы.
@@ -1030,6 +1036,7 @@ def classify_tool_action(
         "browser_inspect_tree_semantic",
         "browser_inspect_popover_semantic",
         "browser_inspect_file_input_semantic",
+        "browser_verify_download_structure_semantic",
         "resource_list",
         "table_selection_list",
     }

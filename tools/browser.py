@@ -1,4 +1,5 @@
 import atexit
+import csv
 import hashlib
 import json
 import os
@@ -106,6 +107,7 @@ class BrowserSession:
         # Ссылки на конкретные fetch/XHR храним всю браузерную сессию.
         # В модель они не попадают, пока она явно не запросит nXX.
         self.network_details = {}
+        self.download_artifacts = {}
 
         # Идентичность конкретного UI-действия.
         # Отдельный counter нужен потому, что action_counter
@@ -232,6 +234,7 @@ class BrowserSession:
 
         self.network_events = []
         self.network_details = {}
+        self.download_artifacts = {}
 
         self.active_action_execution_id = None
         self.last_uc_auth = None
@@ -2410,7 +2413,30 @@ class BrowserSession:
             }
         self._begin_action_execution()
         target.set_input_files(payload)
-        self.page.wait_for_timeout(200)
+        self.page.wait_for_timeout(500)
+        matching_statuses = []
+        for event in self.network_events:
+            if (
+                event.get("action_execution_id") != self.active_action_execution_id
+                or event.get("method") not in {"POST", "PUT", "PATCH"}
+            ):
+                continue
+            detail = self.network_details.get(event.get("request_id"))
+            if not detail:
+                continue
+            try:
+                body = detail["request"].post_data_buffer or b""
+            except Exception:
+                continue
+            if payload["buffer"] in body:
+                matching_statuses.append(event["status"])
+        transport_status = (
+            "accepted_response_observed"
+            if any(200 <= status < 300 for status in matching_statuses)
+            else "rejected_response_observed"
+            if any(status >= 400 for status in matching_statuses)
+            else "not_observed"
+        )
         after = target.evaluate(
             """el => {
                 const file = el.files && el.files[0];
@@ -2435,6 +2461,9 @@ class BrowserSession:
             "file_before": before,
             "file_after": after,
             "file_status": "selected" if selected else "not_selected",
+            "upload_transport_status": transport_status,
+            "upload_transport_http_statuses": matching_statuses,
+            "upload_persistence_verified": False,
             "mutation_executed": True,
         })
         result = self._finish_action_execution(result)
@@ -7545,6 +7574,12 @@ class BrowserSession:
         artifact.chmod(0o600)
         digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
         detected_format = self._download_format(artifact)
+        download_id = f"d{uuid.uuid4().hex[:12]}"
+        self.download_artifacts[download_id] = {
+            "path": artifact,
+            "format": detected_format,
+            "sha256": digest,
+        }
         name_matches = download.suggested_filename == expected_filename
         format_matches = (
             expected_format is None or detected_format == expected_format
@@ -7569,7 +7604,7 @@ class BrowserSession:
             "download_bytes": size,
             "download_sha256": digest,
             "download_hash_matches": hash_matches,
-            "download_artifact": str(artifact),
+            "download_id": download_id,
             "download_status": (
                 "verified" if verified else
                 "mismatch" if not (name_matches and format_matches and hash_matches)
@@ -7578,6 +7613,92 @@ class BrowserSession:
             "mutation_executed": True,
         })
         return self._finish_action_execution(result)
+
+    def verify_download_structure_semantic(
+        self, download_id, format, expected_headers=None,
+        min_rows=None, max_rows=None, expected_pages=None,
+    ):
+        """Inspect only a download captured in this browser case."""
+        record = self.download_artifacts.get(str(download_id or ""))
+        if record is None:
+            return {"error": "download_id_unknown", "executed": False}
+        path = record["path"]
+        if not path.resolve().is_relative_to(self.session_dir.resolve()):
+            return {"error": "download_artifact_outside_session", "executed": False}
+        if format == "csv":
+            if record["format"] != "text":
+                return {"error": "download_not_text", "executed": False}
+            if (
+                not isinstance(expected_headers, list)
+                or not expected_headers
+                or len(expected_headers) > 100
+                or any(not isinstance(x, str) or not x or len(x) > 200 for x in expected_headers)
+            ):
+                return {"error": "csv_expected_headers_invalid", "executed": False}
+            if (
+                min_rows is not None and
+                (type(min_rows) is not int or min_rows < 0)
+            ) or (
+                max_rows is not None and
+                (type(max_rows) is not int or max_rows < 0)
+            ) or (
+                min_rows is not None and max_rows is not None
+                and min_rows > max_rows
+            ):
+                return {"error": "csv_row_bounds_invalid", "executed": False}
+            try:
+                with path.open("r", encoding="utf-8-sig", newline="") as source:
+                    reader = csv.reader(source, strict=True)
+                    headers = next(reader)
+                    header_matches = headers == expected_headers
+                    row_count = 0
+                    widths_valid = True
+                    for row in reader:
+                        row_count += 1
+                        if row_count > 100000:
+                            return {"error": "csv_row_limit_exceeded", "executed": False}
+                        if len(row) != len(headers):
+                            widths_valid = False
+            except (UnicodeDecodeError, csv.Error, StopIteration):
+                return {"error": "csv_parse_failed", "executed": False}
+            row_count_matches = (
+                (min_rows is None or row_count >= min_rows)
+                and (max_rows is None or row_count <= max_rows)
+            )
+            verified = header_matches and widths_valid and row_count_matches
+            return {
+                "download_id": download_id,
+                "format": "csv",
+                "header_matches": header_matches,
+                "row_count": row_count,
+                "row_count_matches": row_count_matches,
+                "row_widths_valid": widths_valid,
+                "verification_status": "verified" if verified else "mismatch",
+                "mutation_executed": False,
+            }
+        if format == "pdf":
+            if record["format"] != "pdf":
+                return {"error": "download_not_pdf", "executed": False}
+            if type(expected_pages) is not int or not 1 <= expected_pages <= 1000:
+                return {"error": "pdf_expected_pages_invalid", "executed": False}
+            try:
+                from pypdf import PdfReader
+                reader = PdfReader(str(path), strict=True)
+                if reader.is_encrypted:
+                    return {"error": "pdf_encrypted", "executed": False}
+                page_count = len(reader.pages)
+            except Exception:
+                return {"error": "pdf_parse_failed", "executed": False}
+            verified = page_count == expected_pages
+            return {
+                "download_id": download_id,
+                "format": "pdf",
+                "page_count": page_count,
+                "page_count_matches": verified,
+                "verification_status": "verified" if verified else "mismatch",
+                "mutation_executed": False,
+            }
+        return {"error": "download_verification_format_unsupported", "executed": False}
 
     def click_semantic(
         self,
@@ -8504,6 +8625,19 @@ def download_semantic(
 ) -> dict:
     return _session.download_semantic(
         name, expected_filename, expected_format, expected_sha256, exact,
+    )
+
+
+def verify_download_structure_semantic(
+    download_id: str,
+    format: str,
+    expected_headers=None,
+    min_rows=None,
+    max_rows=None,
+    expected_pages=None,
+) -> dict:
+    return _session.verify_download_structure_semantic(
+        download_id, format, expected_headers, min_rows, max_rows, expected_pages,
     )
 
 

@@ -41,6 +41,8 @@ try:
     selected = session.set_upload_fixture_semantic("Document", "sample-text")
     assert selected["file_status"] == "selected", selected
     assert selected["file_after"]["name"] == "uqa-sample.txt", selected
+    assert selected["upload_transport_status"] == "not_observed", selected
+    assert selected["upload_persistence_verified"] is False, selected
     assert session.page.evaluate("window.changeCount") == 1
     assert session.page.evaluate("window.lastName") == "uqa-sample.txt"
     content = session.page.evaluate(
@@ -56,6 +58,28 @@ try:
     names = {item["function"]["name"] for item in TOOLS}
     assert "browser_inspect_file_input_semantic" in names
     assert "browser_set_upload_fixture_semantic" in names
+
+    def fake_server(route):
+        if route.request.url.endswith("/upload"):
+            route.fulfill(status=201, body="accepted")
+        else:
+            route.fulfill(status=200, body="<html><body>fixture</body></html>")
+
+    session.page.route("https://uqa-fixture.invalid/**", fake_server)
+    session.page.goto("https://uqa-fixture.invalid/")
+    session.page.set_content(
+        """
+        <label for="auto-upload">Auto upload</label>
+        <input id="auto-upload" type="file"
+               onchange="fetch('/upload', {method: 'POST', body: this.files[0]})">
+        """
+    )
+    transported = session.set_upload_fixture_semantic(
+        "Auto upload", "sample-text"
+    )
+    assert transported["upload_transport_status"] == "accepted_response_observed", transported
+    assert transported["upload_transport_http_statuses"] == [201], transported
+    assert transported["upload_persistence_verified"] is False, transported
 finally:
     session.close()
 
