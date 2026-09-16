@@ -5733,6 +5733,75 @@ class BrowserSession:
             result["error"] = "popover_open_not_observed"
         return result
 
+    def select_popover_option_semantic(
+        self, trigger, option, exact=True,
+    ):
+        """Select one explicit ARIA option inside an already-open popup."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        _, popup, error = self._controlled_popover(trigger, exact)
+        if error:
+            return error
+        if not popup.is_visible():
+            return {"error": "popover_not_open", "executed": False}
+        candidates = popup.get_by_role("option", name=option, exact=exact)
+        visible = [
+            candidates.nth(i)
+            for i in range(min(candidates.count(), 100))
+            if candidates.nth(i).is_visible()
+        ]
+        if len(visible) != 1:
+            return {
+                "error": "popover_option_not_unique",
+                "option": option,
+                "matches": len(visible),
+                "executed": False,
+            }
+        target = visible[0]
+        prior = target.get_attribute("aria-selected")
+        if prior not in {"true", "false"}:
+            return {
+                "error": "popover_option_selection_contract_missing",
+                "option": option,
+                "executed": False,
+            }
+        if target.get_attribute("aria-disabled") == "true" or not target.is_enabled():
+            return {
+                "error": "popover_option_disabled",
+                "option": option,
+                "executed": False,
+            }
+        if prior == "true":
+            result = self._capture_state("select-popover-option-semantic")
+            result.update({
+                "popover_trigger": trigger,
+                "popover_option": option,
+                "popover_option_status": "already_selected",
+                "selected": True,
+                "mutation_executed": False,
+            })
+            return result
+        before = self._popover_snapshot(popup)
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        target.click()
+        self.page.wait_for_timeout(200)
+        selected = target.get_attribute("aria-selected") == "true"
+        result = self._capture_state("select-popover-option-semantic")
+        result.update({
+            "popover_trigger": trigger,
+            "popover_option": option,
+            "popover_option_status": "selected" if selected else "not_selected",
+            "selected": selected,
+            "popover_before": before,
+            "popover_after": self._popover_snapshot(popup) if popup.is_visible() else None,
+            "mutation_executed": True,
+        })
+        result = self._finish_action_execution(result)
+        if not selected:
+            result["error"] = "popover_option_selection_not_observed"
+        return result
+
     def close_popover_semantic(self, trigger, exact=True):
         self._ensure_started()
         self._reset_diagnostics()
@@ -8029,6 +8098,12 @@ def inspect_popover_semantic(trigger: str, exact: bool = True) -> dict:
 
 def open_popover_semantic(trigger: str, exact: bool = True) -> dict:
     return _session.open_popover_semantic(trigger, exact)
+
+
+def select_popover_option_semantic(
+    trigger: str, option: str, exact: bool = True,
+) -> dict:
+    return _session.select_popover_option_semantic(trigger, option, exact)
 
 
 def close_popover_semantic(trigger: str, exact: bool = True) -> dict:

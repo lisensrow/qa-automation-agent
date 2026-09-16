@@ -218,3 +218,11 @@
 - Инструменты не выполняют Apply/Save и проверяют фактическое открытие/исчезновение.
 - Открытие наследует v069-классификацию фактического trigger: Delete остаётся DESTRUCTIVE, Apply — WRITE.
 - Добавлен изолированный smoke с проверкой нулевого числа Apply clicks.
+
+# v076b — scoped popover option selection
+
+- Добавлен выбор единственной точной `role=option` внутри уже открытого popup, связанного через `aria-controls`.
+- Требуется явный boolean `aria-selected`; disabled, отсутствие контракта и неоднозначность блокируются до клика.
+- Повторный выбор идемпотентен; после клика проверяется фактический `aria-selected=true`.
+- Обычный выбор — WRITE, destructive-имя option сохраняет DESTRUCTIVE; Apply/Save остаётся отдельным действием.
+- Изолированный smoke расширен select, idempotency и fail-closed проверками.

@@ -32,6 +32,7 @@ from tools.browser import (
     apply_table_filter_popover_semantic,
     inspect_popover_semantic,
     open_popover_semantic,
+    select_popover_option_semantic,
     close_popover_semantic,
     inspect_table_pagination_semantic,
     set_table_all_selected,
@@ -1017,6 +1018,21 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_select_popover_option_semantic",
+            "description": (
+                "Выбирает единственную точную role=option с явным aria-selected "
+                "в уже открытом aria-controls popup. Это WRITE; Apply/Save отдельно."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"},
+                "option": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["trigger", "option"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_apply_table_filter_popover_semantic",
             "description": (
                 "Открывает единственный filter popover точной колонки, "
@@ -1524,6 +1540,13 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_close_popover_semantic":
         return close_popover_semantic(
             arguments["trigger"], arguments.get("exact", True),
+        )
+
+    if name == "browser_select_popover_option_semantic":
+        return select_popover_option_semantic(
+            arguments["trigger"],
+            arguments["option"],
+            arguments.get("exact", True),
         )
 
     if name == "browser_apply_table_filter_popover_semantic":

@@ -18,6 +18,7 @@
 - Read-only ARIA tree snapshot и точный идемпотентный expand/collapse узлов.
 - Идемпотентный WRITE-выбор treeitem через явный aria-selected/aria-checked contract.
 - Lifecycle aria-controls popup: открыть, read-only inspect, закрыть через Escape без Apply.
+- Scoped выбор единственной ARIA option внутри открытого popup с проверкой aria-selected и отдельной WRITE-policy.
 - Проверка фактического forward Tab focus order.
 - Ограниченные keyboard actions с отдельной классификацией риска.
 - Закрытый allowlist keyboard chords и session-private clipboard для безопасных copy/paste проверок.
@@ -36,7 +37,7 @@
 
 ## Следующие этапы frontend-покрытия
 
-1. Выбор значений и Apply внутри complex popovers.
+1. Apply и другие действия внутри complex popovers.
 2. Кастомные calendar/time picker overlays.
 3. Upload/download с проверкой имени, типа и содержимого файла.
 4. Modal/dialog, toast/notification, responsive и accessibility checks.

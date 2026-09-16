@@ -11,6 +11,11 @@ try:
                 onclick="document.getElementById('settings-popup').hidden = false">Settings</button>
         <div id="settings-popup" role="dialog" aria-label="Settings panel" hidden>
           <label>Theme<input value="light"></label>
+          <div role="listbox" aria-label="Mode">
+            <div role="option" aria-selected="false" onclick="this.setAttribute('aria-selected', 'true')">Dark</div>
+            <div role="option" aria-selected="false" aria-disabled="true">Disabled mode</div>
+            <div role="option">Unsupported mode</div>
+          </div>
           <button onclick="window.applyClicks += 1">Apply</button>
         </div>
         <button aria-label="Unlinked">Unlinked</button>
@@ -39,6 +44,16 @@ try:
     assert again.get("popover_status") == "already_open", again
     observed = session.inspect_popover_semantic("Settings")
     assert observed.get("popover_status") == "observed", observed
+    chosen = session.select_popover_option_semantic("Settings", "Dark")
+    assert chosen.get("popover_option_status") == "selected", chosen
+    chosen_again = session.select_popover_option_semantic("Settings", "Dark")
+    assert chosen_again.get("popover_option_status") == "already_selected", chosen_again
+    disabled = session.select_popover_option_semantic("Settings", "Disabled mode")
+    assert disabled.get("error") == "popover_option_disabled", disabled
+    unsupported = session.select_popover_option_semantic("Settings", "Unsupported mode")
+    assert unsupported.get("error") == "popover_option_selection_contract_missing", unsupported
+    absent = session.select_popover_option_semantic("Settings", "Missing")
+    assert absent.get("error") == "popover_option_not_unique", absent
     dismissed = session.close_popover_semantic("Settings")
     assert dismissed.get("popover_status") == "closed", dismissed
     dismissed_again = session.close_popover_semantic("Settings")
@@ -55,6 +70,12 @@ try:
         "browser_open_popover_semantic", {"trigger": "Apply filter"}
     ) == "write"
     assert classify_tool_action("browser_close_popover_semantic", {}) == "interact"
+    assert classify_tool_action(
+        "browser_select_popover_option_semantic", {"option": "Dark"}
+    ) == "write"
+    assert classify_tool_action(
+        "browser_select_popover_option_semantic", {"option": "Delete record"}
+    ) == "destructive"
 finally:
     session.close()
 

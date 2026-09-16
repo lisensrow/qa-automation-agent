@@ -396,6 +396,8 @@ SYSTEM_PROMPT = """
 - Для popup с aria-controls используй browser_open_popover_semantic,
   browser_inspect_popover_semantic и browser_close_popover_semantic.
   Открытие и Escape не означают Apply/Save.
+- В уже открытом popup используй browser_select_popover_option_semantic
+  только для точной role=option с явным aria-selected. Это WRITE; Apply отдельно.
 - Для выбора значения dropdown/combobox используй browser_select_semantic; не кликай
   по предполагаемой role=option вручную.
 - Для checkbox/switch используй browser_set_checked_semantic с требуемым состоянием;
@@ -1039,6 +1041,13 @@ def classify_tool_action(
 
     if name == "browser_close_popover_semantic":
         return "interact"
+
+    if name == "browser_select_popover_option_semantic":
+        option_action = classify_tool_action(
+            "browser_click_semantic",
+            {"name": arguments.get("option")},
+        )
+        return "destructive" if option_action == "destructive" else "write"
 
     if name in {
         "browser_sort_table_semantic",
