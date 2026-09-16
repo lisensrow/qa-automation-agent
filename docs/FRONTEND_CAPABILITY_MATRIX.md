@@ -20,6 +20,7 @@
 - Lifecycle aria-controls popup: открыть, read-only inspect, закрыть через Escape без Apply.
 - Scoped выбор единственной ARIA option внутри открытого popup с проверкой aria-selected и отдельной WRITE-policy.
 - Точное нажатие единственной кнопки внутри открытого aria-controls popup с WRITE/DESTRUCTIVE-policy и снимком до/после.
+- Read-only inspection нативного file input и WRITE-выбор встроенного безопасного текстового fixture с проверкой выбранного имени, MIME и размера.
 - Проверка фактического forward Tab focus order.
 - Ограниченные keyboard actions с отдельной классификацией риска.
 - Закрытый allowlist keyboard chords и session-private clipboard для безопасных copy/paste проверок.
@@ -40,7 +41,7 @@
 
 1. Другие типы выбора значений и многошаговые действия внутри complex popovers.
 2. Кастомные calendar/time picker overlays.
-3. Upload/download с проверкой имени, типа и содержимого файла.
+3. Download с проверкой имени, типа и содержимого; расширение каталога безопасных upload fixtures и проверка фактической серверной загрузки.
 4. Modal/dialog, toast/notification, responsive и accessibility checks.
 
 Каждый новый control добавляется универсальным browser primitive без ветвлений по сущностям U-Connect и обязательно включается в action-policy, evidence pipeline и изолированный smoke-test.

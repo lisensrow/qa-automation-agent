@@ -7,6 +7,8 @@ from tools.browser import (
     click_semantic,
     context_menu_semantic,
     fill_semantic,
+    inspect_file_input_semantic,
+    set_upload_fixture_semantic,
     set_temporal_semantic,
     set_slider_semantic,
     inspect_tree_semantic,
@@ -483,6 +485,36 @@ TOOLS = [
                     "text"
                 ]
             }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_file_input_semantic",
+            "description": (
+                "Read-only проверяет единственное file-поле по видимой метке: "
+                "accept, multiple и число выбранных файлов без содержимого."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "field": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["field"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_set_upload_fixture_semantic",
+            "description": (
+                "Выбирает встроенный безопасный fixture sample-text в точном "
+                "file-поле. Не принимает путь к файлу. Это WRITE: change может "
+                "сразу запустить upload; успех на backend проверяй отдельно."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "field": {"type": "string"},
+                "fixture": {"type": "string", "enum": ["sample-text"]},
+                "exact": {"type": "boolean"}
+            }, "required": ["field", "fixture"]}
         }
     },
     {
@@ -1376,6 +1408,19 @@ def execute_tool(name: str, arguments: dict):
         return fill_semantic(
             arguments["field"],
             arguments["text"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_file_input_semantic":
+        return inspect_file_input_semantic(
+            arguments["field"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_set_upload_fixture_semantic":
+        return set_upload_fixture_semantic(
+            arguments["field"],
+            arguments["fixture"],
             arguments.get("exact", True),
         )
 

@@ -35,6 +35,14 @@ UC_ORIGIN = "https://uc.lab.local"
 UC_PFX = Path("/opt/uqa/secrets/Realm-manager.pfx")
 UC_PFX_PASSWORD = Path("/opt/uqa/secrets/password.txt")
 
+UPLOAD_FIXTURES = {
+    "sample-text": {
+        "name": "uqa-sample.txt",
+        "mimeType": "text/plain",
+        "buffer": b"UQA harmless upload fixture\n",
+    },
+}
+
 
 def _field_metadata_matches(values, field, exact=True):
     normalized_field = str(field or "").strip().casefold()
@@ -2303,6 +2311,134 @@ class BrowserSession:
             result
         )
 
+        return result
+
+    def _file_input_target(self, field, exact=True):
+        matches = self.page.get_by_label(field, exact=exact)
+        candidates = []
+        for index in range(min(matches.count(), 50)):
+            candidate = matches.nth(index)
+            usable = candidate.evaluate(
+                """el => {
+                    if (el.tagName !== 'INPUT' || el.type !== 'file') return false;
+                    const visible = node => {
+                        const style = getComputedStyle(node);
+                        return !node.hidden && style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && node.getClientRects().length > 0;
+                    };
+                    return visible(el) || Array.from(el.labels || []).some(visible);
+                }"""
+            )
+            if usable:
+                candidates.append(candidate)
+        if len(candidates) != 1:
+            return None, {
+                "error": "file_input_not_unique",
+                "field": field,
+                "matches": len(candidates),
+                "executed": False,
+            }
+        target = candidates[0]
+        if target.get_attribute("disabled") is not None or target.get_attribute("aria-disabled") == "true":
+            return None, {
+                "error": "file_input_disabled",
+                "field": field,
+                "executed": False,
+            }
+        return target, None
+
+    @staticmethod
+    def _file_input_metadata(target):
+        return target.evaluate(
+            """el => ({
+                accept: el.accept || '',
+                multiple: el.multiple,
+                file_count: el.files ? el.files.length : 0
+            })"""
+        )
+
+    def inspect_file_input_semantic(self, field, exact=True):
+        self._ensure_started()
+        self._reset_diagnostics()
+        target, error = self._file_input_target(field, exact)
+        if error:
+            return error
+        result = self._capture_state("inspect-file-input-semantic")
+        result.update({
+            "file_field": field,
+            "file_input": self._file_input_metadata(target),
+            "mutation_executed": False,
+        })
+        return result
+
+    def set_upload_fixture_semantic(self, field, fixture, exact=True):
+        """Select a built-in harmless fixture; never read an arbitrary path."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        payload = UPLOAD_FIXTURES.get(str(fixture or ""))
+        if payload is None:
+            return {
+                "error": "upload_fixture_not_allowed",
+                "fixture": fixture,
+                "executed": False,
+            }
+        target, error = self._file_input_target(field, exact)
+        if error:
+            return error
+        before = self._file_input_metadata(target)
+        accepted = [
+            token.strip().casefold()
+            for token in before["accept"].split(",")
+            if token.strip()
+        ]
+        mime = payload["mimeType"].casefold()
+        extension = Path(payload["name"]).suffix.casefold()
+        if accepted and not any(
+            token == mime
+            or token == extension
+            or (token.endswith("/*") and mime.startswith(token[:-1]))
+            for token in accepted
+        ):
+            return {
+                "error": "upload_fixture_type_not_accepted",
+                "field": field,
+                "fixture": fixture,
+                "accept": before["accept"],
+                "executed": False,
+            }
+        self._begin_action_execution()
+        target.set_input_files(payload)
+        self.page.wait_for_timeout(200)
+        after = target.evaluate(
+            """el => {
+                const file = el.files && el.files[0];
+                return {
+                    count: el.files ? el.files.length : 0,
+                    name: file ? file.name : null,
+                    type: file ? file.type : null,
+                    size: file ? file.size : null
+                };
+            }"""
+        )
+        selected = (
+            after["count"] == 1
+            and after["name"] == payload["name"]
+            and after["type"] == payload["mimeType"]
+            and after["size"] == len(payload["buffer"])
+        )
+        result = self._capture_state("set-upload-fixture-semantic")
+        result.update({
+            "file_field": field,
+            "upload_fixture": fixture,
+            "file_before": before,
+            "file_after": after,
+            "file_status": "selected" if selected else "not_selected",
+            "mutation_executed": True,
+        })
+        result = self._finish_action_execution(result)
+        if not selected:
+            result["error"] = "upload_fixture_selection_not_observed"
         return result
 
     def set_temporal_semantic(
@@ -7923,6 +8059,16 @@ def fill_semantic(
         text,
         exact,
     )
+
+
+def inspect_file_input_semantic(field: str, exact: bool = True) -> dict:
+    return _session.inspect_file_input_semantic(field, exact)
+
+
+def set_upload_fixture_semantic(
+    field: str, fixture: str, exact: bool = True,
+) -> dict:
+    return _session.set_upload_fixture_semantic(field, fixture, exact)
 
 
 def set_temporal_semantic(

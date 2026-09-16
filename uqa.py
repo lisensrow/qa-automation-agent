@@ -388,6 +388,9 @@ SYSTEM_PROMPT = """
   строку вручную и не обходи возвращённые min/max/step ограничения.
 - Для native range или ARIA slider используй browser_set_slider_semantic с
   точным числом; не эмулируй произвольные клики по координатам шкалы.
+- Для file input сначала используй browser_inspect_file_input_semantic.
+  browser_set_upload_fixture_semantic допускает только встроенный sample-text,
+  не произвольный путь; это WRITE, а выбор файла ещё не доказывает upload.
 - Для ARIA tree сначала используй browser_inspect_tree_semantic, затем
   browser_set_tree_item_expanded для точного expand/collapse. Раскрытие узла
   не означает выбор значения или сохранение формы.
@@ -1023,6 +1026,7 @@ def classify_tool_action(
         "browser_inspect_bulk_action_semantic",
         "browser_inspect_tree_semantic",
         "browser_inspect_popover_semantic",
+        "browser_inspect_file_input_semantic",
         "resource_list",
         "table_selection_list",
     }
@@ -1148,6 +1152,7 @@ def classify_tool_action(
 
     if name in {
         "browser_paste_private_semantic",
+        "browser_set_upload_fixture_semantic",
         "browser_set_temporal_semantic",
         "browser_set_slider_semantic",
         "browser_set_tree_item_selected",
