@@ -662,6 +662,7 @@ def create_job(
         "updated_at": now,
         "test_cases": [],
         "resources": [],
+        "staged_artifacts": [],
         "table_selections": [],
         "compatibility": {
             "snapshots": [],

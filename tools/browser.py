@@ -2,6 +2,7 @@ import atexit
 import csv
 import hashlib
 import json
+import mimetypes
 import os
 import re
 import uuid
@@ -2556,6 +2557,109 @@ class BrowserSession:
         result = self._finish_action_execution(result)
         if not selected:
             result["error"] = "upload_fixture_selection_not_observed"
+        return result
+
+    def set_staged_file_semantic(
+        self, artifact_id, filename, content, field=None, trigger=None,
+        exact=True,
+    ):
+        """Select only bytes supplied by trusted Job staging, never an LLM path."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if (bool(field) + bool(trigger)) != 1:
+            return {"error": "file_field_or_trigger_required", "executed": False}
+        if (
+            not isinstance(filename, str)
+            or not filename
+            or Path(filename).name != filename
+            or "\\" in filename
+            or not isinstance(content, bytes)
+            or not content
+        ):
+            return {"error": "staged_file_payload_invalid", "executed": False}
+        guessed_mime, encoding = mimetypes.guess_type(filename)
+        mime = (
+            "application/gzip" if encoding == "gzip"
+            else guessed_mime or "application/octet-stream"
+        )
+        payload = {"name": filename, "mimeType": mime, "buffer": content}
+        target = None
+        if field:
+            target, error = self._file_input_target(field, exact)
+            if error:
+                return error
+            accept = target.get_attribute("accept") or ""
+            allowed = [value.strip().casefold() for value in accept.split(",") if value.strip()]
+            if allowed and not any(
+                filename.casefold().endswith(value) if value.startswith(".")
+                else mime.casefold().startswith(value[:-1]) if value.endswith("/*")
+                else value == mime.casefold()
+                for value in allowed
+            ):
+                return {"error": "staged_file_type_not_accepted", "executed": False}
+        else:
+            buttons = self.page.get_by_role("button", name=trigger, exact=exact)
+            visible = [
+                buttons.nth(i) for i in range(min(buttons.count(), 50))
+                if buttons.nth(i).is_visible()
+            ]
+            if len(visible) != 1:
+                return {
+                    "error": "file_chooser_trigger_not_unique",
+                    "matches": len(visible), "executed": False,
+                }
+            button = visible[0]
+            if not button.is_enabled() or button.get_attribute("aria-disabled") == "true":
+                return {"error": "file_chooser_trigger_disabled", "executed": False}
+        self._begin_action_execution()
+        if trigger:
+            try:
+                with self.page.expect_file_chooser(timeout=5000) as event:
+                    button.click()
+                chooser = event.value
+                target = chooser.element
+                chooser.set_files(payload)
+            except PlaywrightTimeoutError:
+                result = self._capture_state("file-chooser-not-observed")
+                result.update({
+                    "error": "file_chooser_not_observed_after_click",
+                    "artifact_id": artifact_id,
+                    "mutation_executed": True,
+                })
+                return self._finish_action_execution(result)
+        else:
+            target.set_input_files(payload)
+        self.page.wait_for_timeout(500)
+        actual = target.evaluate(
+            """el => {
+                const file = el.files && el.files[0];
+                return {
+                    count: el.files ? el.files.length : 0,
+                    name: file ? file.name : null,
+                    type: file ? file.type : null,
+                    size: file ? file.size : null
+                };
+            }"""
+        )
+        selected = (
+            actual["count"] == 1
+            and actual["name"] == filename
+            and actual["type"] == mime
+            and actual["size"] == len(content)
+        )
+        result = self._capture_state("set-staged-file-semantic")
+        result.update({
+            "artifact_id": artifact_id,
+            "file_field": field,
+            "file_trigger": trigger,
+            "file_after": actual,
+            "file_status": "selected" if selected else "not_selected",
+            "server_persistence_verified": False,
+            "mutation_executed": True,
+        })
+        result = self._finish_action_execution(result)
+        if not selected:
+            result["error"] = "staged_file_selection_not_observed"
         return result
 
     def set_temporal_semantic(
@@ -8409,6 +8513,19 @@ def set_upload_fixture_semantic(
     field: str, fixture: str, exact: bool = True,
 ) -> dict:
     return _session.set_upload_fixture_semantic(field, fixture, exact)
+
+
+def set_staged_file_semantic(
+    artifact_id: str,
+    filename: str,
+    content: bytes,
+    field: str = None,
+    trigger: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.set_staged_file_semantic(
+        artifact_id, filename, content, field, trigger, exact,
+    )
 
 
 def set_temporal_semantic(

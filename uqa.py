@@ -3,6 +3,7 @@
 import json
 import os
 import re
+from pathlib import Path
 
 import httpx
 from rich.console import Console
@@ -25,6 +26,8 @@ from stands import (
 )
 
 from ssh_worker import probe_stand
+from artifact_staging import stage_test_artifact, get_verified_staged_artifact
+from tools.browser import set_staged_file_semantic
 from job_store import (
     create_job,
     add_test_case,
@@ -187,6 +190,40 @@ CORE_RESOURCE_TOOLS = [
                 },
             },
         },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "stage_test_artifact",
+            "description": (
+                "Через сохранённые SSH credentials читает файл только из "
+                "uqa-input сохранённого стенда в закрытый workspace текущего Job. "
+                "Обязательная SHA-256 проверка до регистрации. Возвращает "
+                "artifact_id, не локальный путь и не содержимое."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "stand": {"type": "string"},
+                "source_path": {"type": "string"},
+                "expected_sha256": {"type": "string"}
+            }, "required": ["stand", "source_path", "expected_sha256"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_upload_staged_artifact_semantic",
+            "description": (
+                "Выбирает проверенный artifact_id текущего Job через точное "
+                "file-поле или точную кнопку file chooser. Не принимает путь. "
+                "Это WRITE; выбор файла не доказывает server upload."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "artifact_id": {"type": "string"},
+                "field": {"type": "string"},
+                "trigger": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["artifact_id"]}
+        }
     },
 ]
 
@@ -1078,6 +1115,9 @@ def classify_tool_action(
             {"name": arguments.get("name")},
         )
         return "destructive" if trigger_action == "destructive" else "write"
+
+    if name in {"stage_test_artifact", "browser_upload_staged_artifact_semantic"}:
+        return "write"
 
     if name == "browser_click_popover_button_semantic":
         button_action = classify_tool_action(
@@ -2927,6 +2967,28 @@ def execute_resource_tool(
         }
 
     try:
+        if name == "stage_test_artifact":
+            return stage_test_artifact(
+                job_id,
+                arguments.get("stand"),
+                arguments.get("source_path"),
+                arguments.get("expected_sha256"),
+            )
+
+        if name == "browser_upload_staged_artifact_semantic":
+            item = get_verified_staged_artifact(
+                job_id,
+                arguments.get("artifact_id"),
+            )
+            return set_staged_file_semantic(
+                item["artifact_id"],
+                item["filename"],
+                Path(item["path"]).read_bytes(),
+                arguments.get("field"),
+                arguments.get("trigger"),
+                arguments.get("exact", True),
+            )
+
         if name == "resource_register":
             resource = add_test_resource(
                 job_id=job_id,
@@ -3401,6 +3463,7 @@ def execute_tool_with_policy(
     if (
         require_compatibility_probe
         and action_policy == "confirm_mutations"
+        and name != "stage_test_artifact"
         and job_id
         and case_id
         and compatibility_key in _MANAGED_BROWSER_OPENED_CASES
@@ -3539,6 +3602,8 @@ def execute_tool_with_policy(
         "resource_update",
         "resource_list",
         "table_selection_list",
+        "stage_test_artifact",
+        "browser_upload_staged_artifact_semantic",
     }:
         result = execute_resource_tool(
             name,
@@ -8074,6 +8139,8 @@ def _cleanup_tools():
         "resource_update",
         "resource_list",
         "table_selection_list",
+        "stage_test_artifact",
+        "browser_upload_staged_artifact_semantic",
         # Core opens an exact row menu once. Exposing this toggle to the
         # worker could immediately close the already-open menu.
         "browser_context_menu_semantic",
