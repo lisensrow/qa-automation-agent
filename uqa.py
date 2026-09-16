@@ -391,6 +391,9 @@ SYSTEM_PROMPT = """
 - Для file input сначала используй browser_inspect_file_input_semantic.
   browser_set_upload_fixture_semantic допускает только встроенный sample-text,
   не произвольный путь; это WRITE, а выбор файла ещё не доказывает upload.
+- Для скачивания используй browser_download_semantic с ожидаемым именем и
+  SHA-256, если он известен. metadata_only не является доказательством
+  содержимого; скачанный файл не возвращается в контекст модели.
 - Для ARIA tree сначала используй browser_inspect_tree_semantic, затем
   browser_set_tree_item_expanded для точного expand/collapse. Раскрытие узла
   не означает выбор значения или сохранение формы.
@@ -1055,6 +1058,13 @@ def classify_tool_action(
             {"name": arguments.get("option")},
         )
         return "destructive" if option_action == "destructive" else "write"
+
+    if name == "browser_download_semantic":
+        trigger_action = classify_tool_action(
+            "browser_click_semantic",
+            {"name": arguments.get("name")},
+        )
+        return "destructive" if trigger_action == "destructive" else "write"
 
     if name == "browser_click_popover_button_semantic":
         button_action = classify_tool_action(

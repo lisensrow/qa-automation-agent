@@ -5,6 +5,7 @@ from tools.browser import (
     inspect_semantic,
     inspect_table_row,
     click_semantic,
+    download_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -374,6 +375,28 @@ TOOLS = [
                 },
                 "required": ["collection_endpoint", "exact_name"]
             }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_download_semantic",
+            "description": (
+                "Нажимает единственную точную button/link и ждёт download. "
+                "Сохраняет файл приватно (до 10 MiB), проверяет имя, сигнатуру "
+                "формата и опциональный SHA-256 без возврата содержимого. "
+                "Без expected_sha256 результат только metadata_only, не PASS. "
+                "Действие проходит WRITE/DESTRUCTIVE policy."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "name": {"type": "string"},
+                "expected_filename": {"type": "string"},
+                "expected_format": {
+                    "type": "string", "enum": ["text", "pdf", "png", "jpeg"]
+                },
+                "expected_sha256": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["name", "expected_filename"]}
         }
     },
     {
@@ -1396,6 +1419,15 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("exact", True),
             arguments.get("role"),
             arguments.get("container"),
+        )
+
+    if name == "browser_download_semantic":
+        return download_semantic(
+            arguments["name"],
+            arguments["expected_filename"],
+            arguments.get("expected_format"),
+            arguments.get("expected_sha256"),
+            arguments.get("exact", True),
         )
 
     if name == "browser_context_menu_semantic":

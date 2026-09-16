@@ -11,7 +11,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit
 
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/opt/uqa/browsers")
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 
 ARTIFACTS_BASE = Path("/opt/uqa/artifacts/browser")
@@ -122,6 +122,7 @@ class BrowserSession:
     def _context_kwargs(self):
         context_kwargs = {
             "ignore_https_errors": True,
+            "accept_downloads": True,
             "viewport": {
                 "width": 1920,
                 "height": 1080,
@@ -7453,6 +7454,131 @@ class BrowserSession:
 
         return result
 
+    @staticmethod
+    def _download_format(path):
+        with Path(path).open("rb") as source:
+            prefix = source.read(4096)
+        if prefix.startswith(b"%PDF-"):
+            return "pdf"
+        if prefix.startswith(b"\x89PNG\r\n\x1a\n"):
+            return "png"
+        if prefix.startswith(b"\xff\xd8\xff"):
+            return "jpeg"
+        if prefix and b"\x00" not in prefix:
+            try:
+                prefix.decode("utf-8")
+                return "text"
+            except UnicodeDecodeError:
+                pass
+        return "unknown"
+
+    def download_semantic(
+        self, name, expected_filename, expected_format=None,
+        expected_sha256=None, exact=True,
+    ):
+        """Capture one exact UI download without exposing file contents."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if not isinstance(expected_filename, str) or not expected_filename.strip():
+            return {"error": "download_expected_filename_required", "executed": False}
+        if expected_format not in {None, "text", "pdf", "png", "jpeg"}:
+            return {"error": "download_expected_format_invalid", "executed": False}
+        if expected_sha256 is not None and not re.fullmatch(
+            r"[0-9a-fA-F]{64}", str(expected_sha256)
+        ):
+            return {"error": "download_expected_sha256_invalid", "executed": False}
+        candidates = []
+        for role in ("button", "link"):
+            locator = self.page.get_by_role(role, name=name, exact=exact)
+            for index in range(min(locator.count(), 50)):
+                target = locator.nth(index)
+                if target.is_visible():
+                    candidates.append((role, target))
+        if len(candidates) != 1:
+            return {
+                "error": "download_trigger_not_unique",
+                "name": name,
+                "matches": len(candidates),
+                "executed": False,
+            }
+        role, target = candidates[0]
+        if target.get_attribute("aria-disabled") == "true" or not target.is_enabled():
+            return {"error": "download_trigger_disabled", "executed": False}
+        self._begin_action_execution()
+        try:
+            with self.page.expect_download(timeout=10000) as event:
+                target.click()
+            download = event.value
+        except PlaywrightTimeoutError:
+            result = self._capture_state("download-not-observed")
+            result.update({
+                "download_trigger": name,
+                "download_status": "not_observed",
+                "mutation_executed": True,
+                "error": "download_not_observed_after_click",
+            })
+            return self._finish_action_execution(result)
+        failure = download.failure()
+        if failure:
+            result = self._capture_state("download-failed")
+            result.update({
+                "download_trigger": name,
+                "download_status": "failed",
+                "mutation_executed": True,
+                "error": "download_failed",
+            })
+            return self._finish_action_execution(result)
+        source = Path(download.path())
+        size = source.stat().st_size
+        if size > 10 * 1024 * 1024:
+            result = self._capture_state("download-too-large")
+            result.update({
+                "download_trigger": name,
+                "download_status": "too_large",
+                "download_bytes": size,
+                "mutation_executed": True,
+                "error": "download_size_limit_exceeded",
+            })
+            return self._finish_action_execution(result)
+        artifact = self.session_dir / f"download-{uuid.uuid4().hex}.bin"
+        download.save_as(str(artifact))
+        artifact.chmod(0o600)
+        digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+        detected_format = self._download_format(artifact)
+        name_matches = download.suggested_filename == expected_filename
+        format_matches = (
+            expected_format is None or detected_format == expected_format
+        )
+        hash_matches = (
+            expected_sha256 is None
+            or digest == str(expected_sha256).casefold()
+        )
+        verified = (
+            name_matches and format_matches and hash_matches
+            and expected_sha256 is not None
+        )
+        result = self._capture_state("download-semantic")
+        result.update({
+            "download_trigger": name,
+            "download_trigger_role": role,
+            "download_suggested_filename": download.suggested_filename,
+            "download_expected_filename": expected_filename,
+            "download_name_matches": name_matches,
+            "download_detected_format": detected_format,
+            "download_format_matches": format_matches,
+            "download_bytes": size,
+            "download_sha256": digest,
+            "download_hash_matches": hash_matches,
+            "download_artifact": str(artifact),
+            "download_status": (
+                "verified" if verified else
+                "mismatch" if not (name_matches and format_matches and hash_matches)
+                else "metadata_only"
+            ),
+            "mutation_executed": True,
+        })
+        return self._finish_action_execution(result)
+
     def click_semantic(
         self,
         name: str,
@@ -8367,6 +8493,18 @@ def fill(element_id: str, text: str) -> dict:
 
 def click(element_id: str) -> dict:
     return _session.click(element_id)
+
+
+def download_semantic(
+    name: str,
+    expected_filename: str,
+    expected_format: str = None,
+    expected_sha256: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.download_semantic(
+        name, expected_filename, expected_format, expected_sha256, exact,
+    )
 
 
 def click_semantic(
