@@ -1,4 +1,5 @@
 from tools.browser import BrowserSession
+from tools.registry import TOOLS
 from uqa import classify_tool_action
 
 
@@ -17,6 +18,8 @@ try:
             <div role="option">Unsupported mode</div>
           </div>
           <button onclick="window.applyClicks += 1">Apply</button>
+          <button disabled>Disabled action</button>
+          <button>Duplicate</button><button>Duplicate</button>
         </div>
         <button aria-label="Unlinked">Unlinked</button>
         <script>
@@ -86,6 +89,36 @@ try:
     assert classify_tool_action(
         "browser_select_popover_option_semantic", {"option": "Delete record"}
     ) == "destructive"
+    assert session.click_popover_button_semantic(
+        "Settings", "Apply"
+    ).get("error") == "popover_not_open"
+    session.open_popover_semantic("Settings")
+    assert session.click_popover_button_semantic(
+        "Settings", "Missing"
+    ).get("error") == "popover_button_not_unique"
+    assert session.click_popover_button_semantic(
+        "Settings", "Duplicate"
+    ).get("error") == "popover_button_not_unique"
+    assert session.click_popover_button_semantic(
+        "Settings", "Disabled action"
+    ).get("error") == "popover_button_disabled"
+    applied = session.click_popover_button_semantic("Settings", "Apply")
+    assert applied.get("popover_button_status") == "clicked", applied
+    assert applied.get("popover_open_after") is True, applied
+    assert session.page.evaluate("window.applyClicks") == 1
+    assert classify_tool_action(
+        "browser_click_popover_button_semantic", {"button": "Apply"}
+    ) == "write"
+    assert classify_tool_action(
+        "browser_click_popover_button_semantic", {"button": "Delete record"}
+    ) == "destructive"
+    assert classify_tool_action(
+        "browser_click_popover_button_semantic", {"button": "Details"}
+    ) == "write"
+    assert any(
+        item["function"]["name"] == "browser_click_popover_button_semantic"
+        for item in TOOLS
+    )
 finally:
     session.close()
 

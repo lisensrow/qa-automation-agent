@@ -129,6 +129,8 @@ Popover lifecycle primitives требуют единственную видим�
 
 Popover option primitive действует только внутри уже открытого и однозначно связанного popup. Он требует единственную видимую `role=option` с явным boolean `aria-selected`, нажимает её и подтверждает состояние. Без контракта выбора, при disabled или неоднозначности действие блокируется; Apply/Save остаётся отдельным шагом. Обычное значение классифицируется как WRITE, destructive-имя не понижается ниже DESTRUCTIVE.
 
+Popover button primitive нажимает только единственную видимую enabled-кнопку с точным именем внутри уже открытого popup, однозначно связанного с trigger через `aria-controls`. Любая такая кнопка проходит WRITE-policy, destructive-имя — DESTRUCTIVE-policy; это не обход подтверждения обычного клика. Возвращается снимок до/после и факт клика, но не делается вывод об успешной бизнес-мутации: её нужно проверить отдельным наблюдением. Отсутствующая, неоднозначная и disabled-кнопка блокируется до действия.
+
 Keyboard primitive принимает только закрытый список клавиш и chords. Tab, Shift+Tab, Escape и Control+A классифицируются как INTERACT. Enter, Space, стрелки, Home/End/Page, Backspace, Undo/Redo chords, Shift+Enter и Alt+ArrowDown считаются WRITE, потому что способны изменить focused control или отправить форму. Delete считается DESTRUCTIVE. Control-based chord требует точный semantic target; неизвестные сочетания, включая прямые Control+C/X/V, не исполняются. Focus-order primitive фокусирует первый точный semantic target, проходит реальный Tab sequence и возвращает наблюдаемые focused elements и первое расхождение.
 
 Для copy/paste используется отдельный private clipboard внутри памяти текущей browser session. Copy принимает только точный input, textarea или contenteditable, блокирует password/token/secret-like source, ограничивает значение 4096 символами и возвращает только размер и статус — не содержимое. Paste использует только этот private buffer, блокирует sensitive или non-editable target и классифицируется как WRITE. Системный clipboard ОС не читается и не изменяется; private buffer не сохраняется в Job, evidence или artifacts и может быть явно очищен.
@@ -323,7 +325,7 @@ Observations извлекаются из фактических результа
 
 ## Следующий этап frontend-покрытия
 
-- Выбор значений и Apply внутри complex popovers.
+- Другие типы выбора значений и многошаговые действия внутри complex popovers.
 - Кастомные calendar/time picker overlays поверх native temporal fields.
 - Upload/download с проверкой имени, типа и содержимого файла.
 - Modal/dialog, toast/notification, responsive и accessibility checks.

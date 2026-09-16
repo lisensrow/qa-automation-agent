@@ -5804,6 +5804,54 @@ class BrowserSession:
             result["error"] = "popover_option_selection_not_observed"
         return result
 
+    def click_popover_button_semantic(
+        self, trigger, button, exact=True,
+    ):
+        """Click one enabled button in an already-open controlled popup."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        _, popup, error = self._controlled_popover(trigger, exact)
+        if error:
+            return error
+        if not popup.is_visible():
+            return {"error": "popover_not_open", "executed": False}
+        candidates = popup.get_by_role("button", name=button, exact=exact)
+        visible = [
+            candidates.nth(i)
+            for i in range(min(candidates.count(), 100))
+            if candidates.nth(i).is_visible()
+        ]
+        if len(visible) != 1:
+            return {
+                "error": "popover_button_not_unique",
+                "button": button,
+                "matches": len(visible),
+                "executed": False,
+            }
+        target = visible[0]
+        if target.get_attribute("aria-disabled") == "true" or not target.is_enabled():
+            return {
+                "error": "popover_button_disabled",
+                "button": button,
+                "executed": False,
+            }
+        before = self._popover_snapshot(popup)
+        self._begin_action_execution()
+        target.click()
+        self.page.wait_for_timeout(200)
+        still_open = popup.is_visible()
+        result = self._capture_state("click-popover-button-semantic")
+        result.update({
+            "popover_trigger": trigger,
+            "popover_button": button,
+            "popover_button_status": "clicked",
+            "popover_before": before,
+            "popover_after": self._popover_snapshot(popup) if still_open else None,
+            "popover_open_after": still_open,
+            "mutation_executed": True,
+        })
+        return self._finish_action_execution(result)
+
     def close_popover_semantic(self, trigger, exact=True):
         self._ensure_started()
         self._reset_diagnostics()
@@ -8106,6 +8154,12 @@ def select_popover_option_semantic(
     trigger: str, option: str, exact: bool = True,
 ) -> dict:
     return _session.select_popover_option_semantic(trigger, option, exact)
+
+
+def click_popover_button_semantic(
+    trigger: str, button: str, exact: bool = True,
+) -> dict:
+    return _session.click_popover_button_semantic(trigger, button, exact)
 
 
 def close_popover_semantic(trigger: str, exact: bool = True) -> dict:

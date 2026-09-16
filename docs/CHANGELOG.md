@@ -227,3 +227,11 @@
 - Обычный выбор — WRITE, destructive-имя option сохраняет DESTRUCTIVE; Apply/Save остаётся отдельным действием.
 - Изолированный smoke расширен select, idempotency и fail-closed проверками.
 - Read-only snapshot popup теперь показывает `aria-selected` для проверяемых options.
+
+# v076c — scoped popover button action
+
+- Добавлено точное нажатие единственной enabled-кнопки внутри уже открытого popup, связанного через `aria-controls`.
+- Отсутствие popup, неоднозначная или disabled-кнопка блокируют действие до клика.
+- Кнопка проходит WRITE-policy, destructive-имя сохраняет DESTRUCTIVE-policy.
+- Возвращаются снимки до/после и факт клика; успешная бизнес-мутация требует отдельной проверки.
+- Изолированный smoke и полный набор 34 smoke-тестов прошли без действий на тестовом стенде.
