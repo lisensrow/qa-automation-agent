@@ -400,6 +400,11 @@ SYSTEM_PROMPT = """
   browser_verify_download_structure_semantic по выданному download_id.
   Он сверяет ожидаемые заголовки/число строк или число страниц без
   чтения произвольных файлов и без возврата содержимого модели.
+- Для проверки КЕ агента открой точную карточку в CMDB и вызови
+  browser_inspect_agent_telemetry_semantic. Сравни UI, CI API, agent API
+  и свежую monitoring sample; не считай инвентарные CPU/RAM живой нагрузкой.
+  BLOCKED при offline, расхождении статусов или устаревшей телеметрии
+  не превращай в FAIL функции плагина/VNC.
 - Для ARIA tree сначала используй browser_inspect_tree_semantic, затем
   browser_set_tree_item_expanded для точного expand/collapse. Раскрытие узла
   не означает выбор значения или сохранение формы.
@@ -1037,6 +1042,7 @@ def classify_tool_action(
         "browser_inspect_popover_semantic",
         "browser_inspect_file_input_semantic",
         "browser_verify_download_structure_semantic",
+        "browser_inspect_agent_telemetry_semantic",
         "resource_list",
         "table_selection_list",
     }

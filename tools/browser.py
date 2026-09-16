@@ -14,6 +14,8 @@ os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/opt/uqa/browsers")
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
+from tools.agent_observability import summarize_agent_observation
+
 
 ARTIFACTS_BASE = Path("/opt/uqa/artifacts/browser")
 
@@ -1832,6 +1834,91 @@ class BrowserSession:
             "response_body": safe_body(response_body),
             "response_body_note": response_body_note,
         }
+
+    def inspect_agent_telemetry_semantic(
+        self, ci_name: str, max_age_seconds: int = 300,
+    ):
+        """Correlate the selected CI with responses already seen by this page."""
+        self._ensure_started()
+        if not isinstance(ci_name, str) or not ci_name.strip():
+            return {"error": "ci_name_required", "executed": False}
+        try:
+            ui_statuses = self.page.evaluate(
+                """
+                name => {
+                    const clean = x => String(x || '').replace(/\\s+/g, ' ').trim();
+                    const visible = el => {
+                        const style = getComputedStyle(el);
+                        return !el.hidden && style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && el.getClientRects().length > 0;
+                    };
+                    const found = new Set();
+                    for (const el of document.querySelectorAll('span,div,h1,h2,h3,td')) {
+                        if (el.children.length || clean(el.textContent) !== name || !visible(el))
+                            continue;
+                        let parent = el.parentElement;
+                        for (let depth = 0; depth < 2 && parent; depth++, parent = parent.parentElement) {
+                            const lines = String(parent.innerText || '')
+                                .split(/\\n+/).map(clean).filter(Boolean);
+                            if (lines.length === 2 && lines.includes(name)) {
+                                for (const status of ['online', 'offline']) {
+                                    if (lines.includes(status)) found.add(status);
+                                }
+                            }
+                        }
+                    }
+                    return Array.from(found);
+                }
+                """,
+                ci_name,
+            )
+        except Exception:
+            ui_statuses = []
+        ui_status = ui_statuses[0] if len(ui_statuses) == 1 else None
+        observed = []
+        for request_id, detail in list(self.network_details.items())[-150:]:
+            try:
+                if detail["request"].method != "GET" or detail["response"].status != 200:
+                    continue
+                payload = detail["response"].json()
+                if isinstance(payload, dict):
+                    observed.append((request_id, payload))
+            except Exception:
+                continue
+        ci_id = agent_id = None
+        ci = agent = monitoring = None
+        source_ids = {}
+        for request_id, payload in reversed(observed):
+            if payload.get("name") == ci_name and payload.get("agent_id") and payload.get("id"):
+                ci = payload
+                ci_id, agent_id = payload["id"], payload["agent_id"]
+                source_ids["ci"] = request_id
+                break
+        if agent_id:
+            for request_id, payload in reversed(observed):
+                if payload.get("id") == agent_id and "status" in payload and "version" in payload:
+                    agent = payload
+                    source_ids["agent"] = request_id
+                    break
+        if ci_id:
+            for request_id, payload in reversed(observed):
+                if payload.get("uid") == ci_id and "cpu_usage" in payload and "created_at" in payload:
+                    monitoring = payload
+                    source_ids["monitoring"] = request_id
+                    break
+        try:
+            summary = summarize_agent_observation(
+                ci_name, ci, agent, monitoring, ui_status,
+                max_age_seconds=max_age_seconds,
+            )
+        except ValueError:
+            return {"error": "monitoring_age_limit_invalid", "executed": False}
+        result = self._capture_state("inspect-agent-telemetry-semantic")
+        result.update(summary)
+        result["source_request_ids"] = source_ids
+        result["mutation_executed"] = False
+        return result
 
     def get_state(self):
         self._ensure_started()
@@ -8270,6 +8357,12 @@ def probe_capabilities() -> dict:
 
 def get_network_detail(request_id: str) -> dict:
     return _session.get_network_detail(request_id)
+
+
+def inspect_agent_telemetry_semantic(
+    ci_name: str, max_age_seconds: int = 300,
+) -> dict:
+    return _session.inspect_agent_telemetry_semantic(ci_name, max_age_seconds)
 
 
 def delete_json_resource(

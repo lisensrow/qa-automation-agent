@@ -24,6 +24,7 @@
 - Контролируемое скачивание через точную кнопку/ссылку с проверкой имени, ограниченной сигнатуры формата, размера и SHA-256 без раскрытия содержимого.
 - Структурная read-only проверка скачанного CSV по заголовкам/числу строк и PDF по числу страниц через session-only download ID.
 - Для auto-upload различает локальный выбор файла, наблюдённый HTTP-ответ на запрос с fixture и пока не доказанное сохранение ресурса.
+- Read-only сопоставление UI-статуса КЕ, agent/CI API и свежей CPU/RAM-телеметрии из запросов открытой карточки.
 - Проверка фактического forward Tab focus order.
 - Ограниченные keyboard actions с отдельной классификацией риска.
 - Закрытый allowlist keyboard chords и session-private clipboard для безопасных copy/paste проверок.
@@ -46,5 +47,6 @@
 2. Кастомные calendar/time picker overlays.
 3. Проверка бизнес-содержимого CSV/PDF и фактической сохранности загрузки после независимого повторного чтения; расширение каталога безопасных upload fixtures.
 4. Modal/dialog, toast/notification, responsive и accessibility checks.
+5. Переиспользуемые workflows плагинов, задач и VNC с job/task correlation, prerequisite checks и evidence.
 
 Каждый новый control добавляется универсальным browser primitive без ветвлений по сущностям U-Connect и обязательно включается в action-policy, evidence pipeline и изолированный smoke-test.

@@ -3,6 +3,7 @@ from tools.browser import (
     get_state,
     probe_capabilities,
     inspect_semantic,
+    inspect_agent_telemetry_semantic,
     inspect_table_row,
     click_semantic,
     download_semantic,
@@ -1236,6 +1237,23 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_agent_telemetry_semantic",
+            "description": (
+                "Read-only связывает открытую карточку точной КЕ с уже "
+                "наблюдёнными браузером ответами CI, agent и monitoring. "
+                "Возвращает UI/API статусы, ОС, архитектуру, версию и свежесть "
+                "CPU/RAM. Противоречие или устаревшие данные дают BLOCKED, "
+                "не PASS. Не открывает Monitoring dashboard и не запускает задач."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "ci_name": {"type": "string"},
+                "max_age_seconds": {"type": "integer"}
+            }, "required": ["ci_name"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_semantic",
             "description": (
                 "Read-only проверка фактического состояния "
@@ -1427,6 +1445,12 @@ def execute_tool(name: str, arguments: dict):
             arguments["name"],
             arguments.get("exact", True),
             arguments.get("role"),
+        )
+
+    if name == "browser_inspect_agent_telemetry_semantic":
+        return inspect_agent_telemetry_semantic(
+            arguments["ci_name"],
+            arguments.get("max_age_seconds", 300),
         )
 
     if name == "browser_inspect_table_row":
