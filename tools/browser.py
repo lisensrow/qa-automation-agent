@@ -5633,6 +5633,134 @@ class BrowserSession:
             result["error"] = "table_filter_not_applied"
         return result
 
+    def _controlled_popover(self, trigger, exact=True):
+        buttons = self.page.get_by_role("button", name=trigger, exact=exact)
+        visible = [
+            buttons.nth(i)
+            for i in range(min(buttons.count(), 50))
+            if buttons.nth(i).is_visible()
+        ]
+        if len(visible) != 1:
+            return None, None, {
+                "error": "popover_trigger_not_unique",
+                "matches": len(visible), "executed": False,
+            }
+        button = visible[0]
+        controlled_id = str(button.get_attribute("aria-controls") or "").strip()
+        if not controlled_id or any(ch.isspace() for ch in controlled_id):
+            return None, None, {
+                "error": "popover_missing_aria_controls", "executed": False,
+            }
+        popup = self.page.locator("[id=" + json.dumps(controlled_id) + "]")
+        if popup.count() != 1:
+            return None, None, {
+                "error": "popover_target_not_unique",
+                "matches": popup.count(), "executed": False,
+            }
+        return button, popup, None
+
+    @staticmethod
+    def _popover_snapshot(popup):
+        return popup.evaluate(
+            """
+            root => {
+                const clean = x => String(x || '').replace(/\s+/g, ' ').trim();
+                const controls = Array.from(root.querySelectorAll(
+                    'button, input, select, textarea, [role="menuitem"], '
+                    + '[role="option"], [role="checkbox"]'
+                )).filter(el => {
+                    const style = getComputedStyle(el);
+                    return !el.hidden && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && el.getClientRects().length > 0;
+                }).slice(0, 100).map(el => ({
+                    role: el.getAttribute('role'),
+                    type: el.getAttribute('type'),
+                    name: clean(el.getAttribute('aria-label') || el.innerText
+                        || el.getAttribute('placeholder') || el.textContent).slice(0, 200),
+                    disabled: el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true'
+                }));
+                return {
+                    role: root.getAttribute('role'),
+                    name: clean(root.getAttribute('aria-label')).slice(0, 200),
+                    text: clean(root.innerText || root.textContent).slice(0, 2000),
+                    controls
+                };
+            }
+            """
+        )
+
+    def inspect_popover_semantic(self, trigger, exact=True):
+        self._ensure_started()
+        self._reset_diagnostics()
+        _, popup, error = self._controlled_popover(trigger, exact)
+        if error:
+            return error
+        if not popup.is_visible():
+            return {"error": "popover_not_open", "executed": False}
+        result = self._capture_state("inspect-popover-semantic")
+        result.update({
+            "popover_trigger": trigger,
+            "popover_id": popup.get_attribute("id"),
+            "popover_snapshot": self._popover_snapshot(popup),
+            "popover_status": "observed", "mutation_executed": False,
+        })
+        return result
+
+    def open_popover_semantic(self, trigger, exact=True):
+        self._ensure_started()
+        self._reset_diagnostics()
+        button, popup, error = self._controlled_popover(trigger, exact)
+        if error:
+            return error
+        if popup.is_visible():
+            result = self.inspect_popover_semantic(trigger, exact)
+            result["popover_status"] = "already_open"
+            return result
+        self._begin_action_execution()
+        button.click()
+        self.page.wait_for_timeout(200)
+        opened = popup.is_visible()
+        result = self._capture_state("open-popover-semantic")
+        result.update({
+            "popover_trigger": trigger, "popover_id": popup.get_attribute("id"),
+            "popover_status": "opened" if opened else "not_opened",
+            "popover_snapshot": self._popover_snapshot(popup) if opened else None,
+            "mutation_executed": False,
+        })
+        result = self._finish_action_execution(result)
+        if not opened:
+            result["error"] = "popover_open_not_observed"
+        return result
+
+    def close_popover_semantic(self, trigger, exact=True):
+        self._ensure_started()
+        self._reset_diagnostics()
+        button, popup, error = self._controlled_popover(trigger, exact)
+        if error:
+            return error
+        if not popup.is_visible():
+            result = self._capture_state("close-popover-semantic")
+            result.update({"popover_status": "already_closed", "mutation_executed": False})
+            return result
+        before = self._popover_snapshot(popup)
+        self._begin_action_execution()
+        button.focus()
+        button.press("Escape")
+        self.page.wait_for_timeout(200)
+        closed = not popup.is_visible()
+        result = self._capture_state("close-popover-semantic")
+        result.update({
+            "popover_trigger": trigger, "popover_id": popup.get_attribute("id"),
+            "popover_before": before,
+            "popover_status": "closed" if closed else "not_closed",
+            "mutation_executed": False,
+        })
+        result = self._finish_action_execution(result)
+        if not closed:
+            result["error"] = "popover_close_not_observed"
+        return result
+
     def apply_table_filter_popover_semantic(
         self,
         column: str,
@@ -7893,6 +8021,18 @@ def fill_table_filter_semantic(
         table,
         exact,
     )
+
+
+def inspect_popover_semantic(trigger: str, exact: bool = True) -> dict:
+    return _session.inspect_popover_semantic(trigger, exact)
+
+
+def open_popover_semantic(trigger: str, exact: bool = True) -> dict:
+    return _session.open_popover_semantic(trigger, exact)
+
+
+def close_popover_semantic(trigger: str, exact: bool = True) -> dict:
+    return _session.close_popover_semantic(trigger, exact)
 
 
 def apply_table_filter_popover_semantic(

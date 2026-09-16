@@ -15,6 +15,7 @@
 - Устанавливает точное значение native range или ARIA slider через bounded keyboard steps с проверкой min/max/step и итогового значения.
 - Читает структуру ARIA tree и идемпотентно раскрывает/сворачивает точный узел с проверкой aria-expanded.
 - Идемпотентно выбирает или снимает точный treeitem при явном aria-selected/aria-checked, не нажимая Save.
+- Открывает, осматривает и закрывает popup, однозначно связанный с точной кнопкой через aria-controls, без Apply/Save.
 - Проверяет фактический Tab focus order, выполняет закрытый набор keyboard chords и тестирует copy/paste через изолированный session-private clipboard без доступа к системному буферу.
 - Перетаскивает точный semantic source на точный target, проверяет итоговый порядок и отдельно подтверждает его сохранение после повторной загрузки.
 - Получает структурированный снимок таблицы, управляет сортировкой, выбором точной строки и проверяемой пагинацией.
@@ -122,6 +123,9 @@ Slider primitive поддерживает native `input[type=range]` и `role=sl
 Tree inspector возвращает ограниченный список видимых `treeitem` с именем, level, expanded, selected, checked и disabled. Expand primitive требует единственное точное дерево и item с явным `aria-expanded`, использует стандартные ArrowRight/ArrowLeft и сверяет состояние после события. Раскрытие ветки относится к INTERACT, не выбирает значение и не сохраняет форму.
 
 Tree selection primitive требует явный boolean-контракт `aria-selected` или `aria-checked`, использует Space и повторно читает тот же атрибут. Отсутствующий контракт, disabled item и неоднозначность блокируются до действия. Selection относится к WRITE; раскрытие ветки и последующий Save остаются отдельными действиями.
+
+Popover lifecycle primitives требуют единственную видимую кнопку и единственный элемент, связанный через её `aria-controls`. Открытие проверяет появление popup, read-only inspector возвращает ограниченный снимок содержимого и controls, закрытие отправляет Escape и проверяет исчезновение. Эти действия не нажимают Apply/Save; popup без явной связи блокируется.
+Класс открытия определяется тем же v069-классификатором, что и обычный клик по имени trigger: опасная кнопка не становится безопасной только из-за `aria-controls`.
 
 Keyboard primitive принимает только закрытый список клавиш и chords. Tab, Shift+Tab, Escape и Control+A классифицируются как INTERACT. Enter, Space, стрелки, Home/End/Page, Backspace, Undo/Redo chords, Shift+Enter и Alt+ArrowDown считаются WRITE, потому что способны изменить focused control или отправить форму. Delete считается DESTRUCTIVE. Control-based chord требует точный semantic target; неизвестные сочетания, включая прямые Control+C/X/V, не исполняются. Focus-order primitive фокусирует первый точный semantic target, проходит реальный Tab sequence и возвращает наблюдаемые focused elements и первое расхождение.
 
@@ -317,7 +321,7 @@ Observations извлекаются из фактических результа
 
 ## Следующий этап frontend-покрытия
 
-- Complex popovers.
+- Выбор значений и Apply внутри complex popovers.
 - Кастомные calendar/time picker overlays поверх native temporal fields.
 - Upload/download с проверкой имени, типа и содержимого файла.
 - Modal/dialog, toast/notification, responsive и accessibility checks.

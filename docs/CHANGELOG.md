@@ -210,3 +210,11 @@
 - Отсутствующий selection contract, disabled item и неоднозначность блокируются до изменения.
 - Selection классифицируется как WRITE; expand/collapse остаётся INTERACT, Save выполняется отдельно.
 - Tree smoke расширен selected/checked, deselect и idempotency сценариями.
+
+# v076a — controlled popover lifecycle
+
+- Добавлены точное открытие, read-only inspection и закрытие popup через Escape.
+- Требуется однозначная связь trigger с popup через `aria-controls`; неоднозначность блокируется.
+- Инструменты не выполняют Apply/Save и проверяют фактическое открытие/исчезновение.
+- Открытие наследует v069-классификацию фактического trigger: Delete остаётся DESTRUCTIVE, Apply — WRITE.
+- Добавлен изолированный smoke с проверкой нулевого числа Apply clicks.

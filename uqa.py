@@ -393,6 +393,9 @@ SYSTEM_PROMPT = """
   не означает выбор значения или сохранение формы.
 - Для выбора treeitem используй browser_set_tree_item_selected только когда
   snapshot подтвердил aria-selected или aria-checked. Это WRITE, но не Save.
+- Для popup с aria-controls используй browser_open_popover_semantic,
+  browser_inspect_popover_semantic и browser_close_popover_semantic.
+  Открытие и Escape не означают Apply/Save.
 - Для выбора значения dropdown/combobox используй browser_select_semantic; не кликай
   по предполагаемой role=option вручную.
 - Для checkbox/switch используй browser_set_checked_semantic с требуемым состоянием;
@@ -1014,6 +1017,7 @@ def classify_tool_action(
         "browser_inspect_order_semantic",
         "browser_inspect_bulk_action_semantic",
         "browser_inspect_tree_semantic",
+        "browser_inspect_popover_semantic",
         "resource_list",
         "table_selection_list",
     }
@@ -1025,6 +1029,15 @@ def classify_tool_action(
         return "interact"
 
     if name == "browser_set_tree_item_expanded":
+        return "interact"
+
+    if name == "browser_open_popover_semantic":
+        return classify_tool_action(
+            "browser_click_semantic",
+            {"name": arguments.get("trigger")},
+        )
+
+    if name == "browser_close_popover_semantic":
         return "interact"
 
     if name in {

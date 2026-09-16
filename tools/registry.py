@@ -30,6 +30,9 @@ from tools.browser import (
     table_page_semantic,
     fill_table_filter_semantic,
     apply_table_filter_popover_semantic,
+    inspect_popover_semantic,
+    open_popover_semantic,
+    close_popover_semantic,
     inspect_table_pagination_semantic,
     set_table_all_selected,
     inspect_bulk_action_semantic,
@@ -984,6 +987,36 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_popover_semantic",
+            "description": "Read-only снимок открытого popup, связанного с точной кнопкой через aria-controls.",
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"}, "exact": {"type": "boolean"}
+            }, "required": ["trigger"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_open_popover_semantic",
+            "description": "Открывает однозначный aria-controls popup по точной кнопке без Apply/Save.",
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"}, "exact": {"type": "boolean"}
+            }, "required": ["trigger"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_close_popover_semantic",
+            "description": "Закрывает однозначный popup клавишей Escape и проверяет исчезновение без Apply/Save.",
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"}, "exact": {"type": "boolean"}
+            }, "required": ["trigger"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_apply_table_filter_popover_semantic",
             "description": (
                 "Открывает единственный filter popover точной колонки, "
@@ -1476,6 +1509,21 @@ def execute_tool(name: str, arguments: dict):
             arguments["text"],
             arguments.get("table"),
             arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_popover_semantic":
+        return inspect_popover_semantic(
+            arguments["trigger"], arguments.get("exact", True),
+        )
+
+    if name == "browser_open_popover_semantic":
+        return open_popover_semantic(
+            arguments["trigger"], arguments.get("exact", True),
+        )
+
+    if name == "browser_close_popover_semantic":
+        return close_popover_semantic(
+            arguments["trigger"], arguments.get("exact", True),
         )
 
     if name == "browser_apply_table_filter_popover_semantic":
