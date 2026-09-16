@@ -119,6 +119,7 @@ class BrowserSession:
         self.active_action_execution_id = None
 
         self.last_uc_auth = None
+        self._last_semantic_role_fallback = None
         # Session-private clipboard. It never reads from or writes to the
         # operating-system clipboard and is never persisted to artifacts.
         self._private_clipboard_text = None
@@ -1603,6 +1604,7 @@ class BrowserSession:
 
     def open_page(self, url: str):
         self._ensure_started()
+        self._last_semantic_role_fallback = None
 
         self._reset_diagnostics()
 
@@ -7282,6 +7284,7 @@ class BrowserSession:
     ):
         self._ensure_started()
         self._reset_diagnostics()
+        self._last_semantic_role_fallback = None
 
         def visible_matches(locator):
             matches = []
@@ -7726,6 +7729,14 @@ class BrowserSession:
             }
         )
 
+        if result["semantic_role_fallback"] and visible and enabled and exact:
+            self._last_semantic_role_fallback = {
+                "name": name,
+                "role": requested_role,
+                "exact": exact,
+                "url": self.page.url,
+            }
+
         return result
 
     @staticmethod
@@ -7968,6 +7979,16 @@ class BrowserSession:
         ]
 
         requested_role = str(role or "").strip().casefold()
+        inspected_role_fallback = bool(
+            requested_role and exact and not container
+            and self._last_semantic_role_fallback == {
+                "name": name,
+                "role": requested_role,
+                "exact": exact,
+                "url": self.page.url,
+            }
+        )
+        self._last_semantic_role_fallback = None
 
         if requested_role and requested_role not in supported_roles:
             return {
@@ -8102,7 +8123,7 @@ class BrowserSession:
             }
 
         else:
-            if requested_role:
+            if requested_role and not inspected_role_fallback:
                 return {
                     "error": "semantic_element_not_found",
                     "name": name,
@@ -8110,8 +8131,9 @@ class BrowserSession:
                     "container": container,
                 }
 
-            icon_matches = self._visible_icon_matches(
-                name
+            icon_matches = (
+                [] if inspected_role_fallback
+                else self._visible_icon_matches(name)
             )
 
             if len(icon_matches) == 1:
@@ -8250,6 +8272,7 @@ class BrowserSession:
         result["semantic_name"] = name
         result["semantic_strategy"] = strategy
         result["semantic_container"] = container
+        result["role_hint_ignored_after_inspection"] = inspected_role_fallback
         result["click_status"] = "executed"
         result["post_action_wait_ms"] = 1000
         result[
