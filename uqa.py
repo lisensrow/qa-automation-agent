@@ -10902,7 +10902,8 @@ def run_turn(
     force_read_only=False,
     action_policy="legacy",
 ):
-    failed_semantic_inspections = set()
+    failed_semantic_inspections = {}
+    last_browser_fingerprint = None
     blocked_mutation_calls = set()
 
     for _ in range(MAX_TOOL_STEPS):
@@ -11501,6 +11502,8 @@ def run_turn(
                 repeated_semantic_inspection = (
                     semantic_inspection_key
                     in failed_semantic_inspections
+                    and failed_semantic_inspections[semantic_inspection_key]
+                    == last_browser_fingerprint
                 )
 
             if action_class in {"write", "destructive"}:
@@ -11728,6 +11731,16 @@ def run_turn(
                 }
             )
 
+            if (
+                str(name or "").startswith("browser_")
+                and isinstance(result, dict)
+                and (result.get("current_url") or result.get("text_preview"))
+            ):
+                last_browser_fingerprint = (
+                    str(result.get("current_url") or ""),
+                    str(result.get("text_preview") or "")[:2500],
+                )
+
             if repeated_semantic_inspection:
                 if job_id and case_id:
                     finalize_case_blocked(
@@ -11788,8 +11801,8 @@ def run_turn(
                 and result.get("error")
                 == "semantic_element_not_found"
             ):
-                failed_semantic_inspections.add(
-                    semantic_inspection_key
+                failed_semantic_inspections[semantic_inspection_key] = (
+                    last_browser_fingerprint
                 )
                 messages.append(
                     {
@@ -11797,9 +11810,10 @@ def run_turn(
                         "content": (
                             "[UQA CORE: SEMANTIC TARGET NOT FOUND]\n"
                             "Do not repeat browser_inspect_semantic for the "
-                            "same name, including with another guessed role. "
-                            "Inspect a different actually observed target or "
-                            "return BLOCKED with the missing evidence."
+                            "same name on an unchanged page, including with "
+                            "another guessed role. Navigate to the observed "
+                            "parent section first, inspect a different target, "
+                            "or return BLOCKED with the missing evidence."
                         ),
                     }
                 )

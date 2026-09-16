@@ -6,7 +6,8 @@ import uqa
 
 
 uqa_source = open(uqa.__file__, encoding="utf-8").read()
-assert "failed_semantic_inspections = set()" in uqa_source
+assert "failed_semantic_inspections = {}" in uqa_source
+assert "last_browser_fingerprint" in uqa_source
 assert "repeated_semantic_inspection_blocked" in uqa_source
 assert "Do not repeat browser_inspect_semantic" in uqa_source
 
@@ -59,6 +60,50 @@ semantic_messages = []
 uqa.run_turn(semantic_messages)
 assert len(executed_semantic_calls) == 1
 assert next(semantic_turns, None) is None
+
+changed_page_turns = iter([
+    {"message": {"content": "", "tool_calls": [{"function": {
+        "name": "browser_inspect_semantic",
+        "arguments": {"name": "Plugins", "role": "tab"},
+    }}]}},
+    {"message": {"content": "", "tool_calls": [{"function": {
+        "name": "browser_click_semantic",
+        "arguments": {"name": "Agent", "role": "tab"},
+    }}]}},
+    {"message": {"content": "", "tool_calls": [{"function": {
+        "name": "browser_inspect_semantic",
+        "arguments": {"name": "Plugins", "role": "tab"},
+    }}]}},
+    {"message": {"content": "Observed"}},
+])
+executed_after_navigation = []
+uqa.ask_ollama = lambda messages: next(changed_page_turns)
+
+
+def fake_changed_page(name, arguments, messages, **kwargs):
+    executed_after_navigation.append(name)
+    if len(executed_after_navigation) == 1:
+        return {
+            "error": "semantic_element_not_found", "status": "error",
+            "current_url": "https://stand/cmdb", "text_preview": "Summary",
+        }
+    if len(executed_after_navigation) == 2:
+        return {
+            "click_status": "executed", "current_url": "https://stand/cmdb",
+            "text_preview": "Summary Agent Plugins",
+        }
+    return {
+        "inspection_status": "observed", "current_url": "https://stand/cmdb",
+        "text_preview": "Summary Agent Plugins",
+    }
+
+
+uqa.execute_tool_with_policy = fake_changed_page
+uqa.run_turn([])
+assert executed_after_navigation == [
+    "browser_inspect_semantic", "browser_click_semantic",
+    "browser_inspect_semantic",
+]
 
 mutation_turns = iter([
     {
