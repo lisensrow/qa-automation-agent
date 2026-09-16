@@ -226,3 +226,4 @@
 - Повторный выбор идемпотентен; после клика проверяется фактический `aria-selected=true`.
 - Обычный выбор — WRITE, destructive-имя option сохраняет DESTRUCTIVE; Apply/Save остаётся отдельным действием.
 - Изолированный smoke расширен select, idempotency и fail-closed проверками.
+- Read-only snapshot popup теперь показывает `aria-selected` для проверяемых options.

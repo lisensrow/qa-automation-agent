@@ -44,8 +44,18 @@ try:
     assert again.get("popover_status") == "already_open", again
     observed = session.inspect_popover_semantic("Settings")
     assert observed.get("popover_status") == "observed", observed
+    dark_before = next(
+        control for control in observed["popover_snapshot"]["controls"]
+        if control["name"] == "Dark"
+    )
+    assert dark_before["selected"] is False, observed
     chosen = session.select_popover_option_semantic("Settings", "Dark")
     assert chosen.get("popover_option_status") == "selected", chosen
+    dark_after = next(
+        control for control in chosen["popover_after"]["controls"]
+        if control["name"] == "Dark"
+    )
+    assert dark_after["selected"] is True, chosen
     chosen_again = session.select_popover_option_semantic("Settings", "Dark")
     assert chosen_again.get("popover_option_status") == "already_selected", chosen_again
     disabled = session.select_popover_option_semantic("Settings", "Disabled mode")

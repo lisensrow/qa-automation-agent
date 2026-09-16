@@ -5676,6 +5676,8 @@ class BrowserSession:
                 }).slice(0, 100).map(el => ({
                     role: el.getAttribute('role'),
                     type: el.getAttribute('type'),
+                    selected: el.hasAttribute('aria-selected')
+                        ? el.getAttribute('aria-selected') === 'true' : null,
                     name: clean(el.getAttribute('aria-label') || el.innerText
                         || el.getAttribute('placeholder') || el.textContent).slice(0, 200),
                     disabled: el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true'
