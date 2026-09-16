@@ -119,7 +119,7 @@ class BrowserSession:
         self.active_action_execution_id = None
 
         self.last_uc_auth = None
-        self._last_semantic_role_fallback = None
+        self._last_inspected_exact_target = None
         # Session-private clipboard. It never reads from or writes to the
         # operating-system clipboard and is never persisted to artifacts.
         self._private_clipboard_text = None
@@ -1604,7 +1604,7 @@ class BrowserSession:
 
     def open_page(self, url: str):
         self._ensure_started()
-        self._last_semantic_role_fallback = None
+        self._last_inspected_exact_target = None
 
         self._reset_diagnostics()
 
@@ -7284,7 +7284,7 @@ class BrowserSession:
     ):
         self._ensure_started()
         self._reset_diagnostics()
-        self._last_semantic_role_fallback = None
+        self._last_inspected_exact_target = None
 
         def visible_matches(locator):
             matches = []
@@ -7729,10 +7729,9 @@ class BrowserSession:
             }
         )
 
-        if result["semantic_role_fallback"] and visible and enabled and exact:
-            self._last_semantic_role_fallback = {
+        if visible and enabled and exact:
+            self._last_inspected_exact_target = {
                 "name": name,
-                "role": requested_role,
                 "exact": exact,
                 "url": self.page.url,
             }
@@ -7980,15 +7979,15 @@ class BrowserSession:
 
         requested_role = str(role or "").strip().casefold()
         inspected_role_fallback = bool(
-            requested_role and exact and not container
-            and self._last_semantic_role_fallback == {
+            requested_role and exact
+            and (not container or str(container).strip() == str(name).strip())
+            and self._last_inspected_exact_target == {
                 "name": name,
-                "role": requested_role,
                 "exact": exact,
                 "url": self.page.url,
             }
         )
-        self._last_semantic_role_fallback = None
+        self._last_inspected_exact_target = None
 
         if requested_role and requested_role not in supported_roles:
             return {
@@ -8273,6 +8272,9 @@ class BrowserSession:
         result["semantic_strategy"] = strategy
         result["semantic_container"] = container
         result["role_hint_ignored_after_inspection"] = inspected_role_fallback
+        result["self_container_hint_ignored_after_inspection"] = bool(
+            inspected_role_fallback and container
+        )
         result["click_status"] = "executed"
         result["post_action_wait_ms"] = 1000
         result[
