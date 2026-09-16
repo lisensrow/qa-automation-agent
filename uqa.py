@@ -997,6 +997,17 @@ def _request_has_explicit_mutation_intent(text):
             if negation_before_action.search(prefix):
                 continue
 
+            # Evidence and reports are local Job outputs, not mutations of
+            # the tested product. Keep an otherwise read-only test read-only.
+            if re.fullmatch(
+                r"(?iu)(?:сохрани(?:те)?|сохранить|save)",
+                match.group(),
+            ) and re.match(
+                r"(?iu)\s+(?:evidence|доказательства|отч[её]т|report|результат)\b",
+                clause[match.end():],
+            ):
+                continue
+
             return True
 
     return False
@@ -1645,6 +1656,25 @@ def _generic_create_requires_navigation_preflight(
             flags=re.IGNORECASE,
         )
     )
+
+
+def _request_has_explicit_create_intent(text):
+    """Preflight advisory is relevant only to a positive create/add task."""
+    for clause in re.split(r"[\n\r.!?;]+", str(text or "").casefold()):
+        for match in re.finditer(
+            r"(?iu)\b(?:создай(?:те)?|создать|добавь(?:те)?|добавить|create|add)\b",
+            clause,
+        ):
+            prefix = clause[max(0, match.start() - 80):match.start()]
+            if re.search(
+                r"(?iu)(?:\bне\b|\bнельзя\b|\bбез\b|\bdo\s+not\b|"
+                r"\bdon't\b|\bnever\b|\bwithout\b)"
+                r"(?:\s+[\w-]+){0,3}\s*$",
+                prefix,
+            ):
+                continue
+            return True
+    return False
 
 
 def _history_has_successful_interact_navigation(messages):
@@ -2515,6 +2545,9 @@ def add_managed_navigation_preflight_advisory(
         not isinstance(result, dict)
         or not str(name or "").startswith("browser_")
         or action_policy != "confirm_mutations"
+        or not _request_has_explicit_create_intent(
+            _navigation_task_text(messages)
+        )
         or not job_id
         or not case_id
         or result.get("executed") is False

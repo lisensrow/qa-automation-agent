@@ -7,6 +7,7 @@ from pathlib import Path
 tree = ast.parse(Path("uqa.py").read_text(encoding="utf-8"))
 names = {
     "_latest_user_text",
+    "_request_has_explicit_create_intent",
     "_generic_create_requires_navigation_preflight",
     "_history_has_successful_interact_navigation",
     "_latest_browser_state_for_navigation",
@@ -223,6 +224,20 @@ assert open_advisory["required_navigation_candidate"]["arguments"] == {
     "name": "plus",
     "exact": True,
 }
+
+read_only_advisory = add_advisory(
+    "browser_open_page",
+    open_result,
+    [{"role": "user", "content": (
+        "Read-only: inspect a CI already visible in CMDB. "
+        "Do not create resources. Save evidence."
+    )}],
+    "confirm_mutations",
+    "readonly-job",
+    "case",
+)
+assert "navigation_preflight_status" not in read_only_advisory
+assert ("readonly-job", "case") not in scope["_PENDING_NAVIGATION_CANDIDATES"]
 
 menu_state = [{
     "role": "user",

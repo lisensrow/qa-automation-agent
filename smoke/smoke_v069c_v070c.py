@@ -50,6 +50,9 @@ assert is_read_only(messages("Не изменяй существующие об�
 assert is_read_only(messages("Create one object; do not modify existing objects.")) is False
 assert is_read_only(messages("Только проверь, ничего не меняй и не создавай.")) is True
 assert is_read_only(messages("Do not create or change anything; read-only.")) is True
+assert is_read_only(messages(
+    "Только read-only. Ничего не создавай и не изменяй. Сохрани evidence и результат."
+)) is True
 
 workflow = """Проведи контролируемый regression-тест жизненного цикла ресурса.
 
