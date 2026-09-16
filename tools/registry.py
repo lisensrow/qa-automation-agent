@@ -4,6 +4,7 @@ from tools.browser import (
     probe_capabilities,
     inspect_semantic,
     inspect_agent_telemetry_semantic,
+    inspect_agent_plugins_semantic,
     inspect_table_row,
     click_semantic,
     download_semantic,
@@ -1254,6 +1255,23 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_agent_plugins_semantic",
+            "description": (
+                "Read-only проверка plugin audit открытой КЕ по уже наблюдённому "
+                "GET ответу. Проверяет agent ID, давность аудита, точное имя, "
+                "версию и load_status. Старый аудит не подтверждает установку."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "ci_name": {"type": "string"},
+                "plugin_name": {"type": "string"},
+                "expected_version": {"type": "string"},
+                "max_age_seconds": {"type": "integer"}
+            }, "required": ["ci_name"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_semantic",
             "description": (
                 "Read-only проверка фактического состояния "
@@ -1451,6 +1469,13 @@ def execute_tool(name: str, arguments: dict):
         return inspect_agent_telemetry_semantic(
             arguments["ci_name"],
             arguments.get("max_age_seconds", 300),
+        )
+
+    if name == "browser_inspect_agent_plugins_semantic":
+        return inspect_agent_plugins_semantic(
+            arguments["ci_name"], arguments.get("plugin_name"),
+            arguments.get("expected_version"),
+            arguments.get("max_age_seconds", 3600),
         )
 
     if name == "browser_inspect_table_row":

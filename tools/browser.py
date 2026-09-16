@@ -1921,6 +1921,60 @@ class BrowserSession:
         result["mutation_executed"] = False
         return result
 
+    def inspect_agent_plugins_semantic(
+        self, ci_name: str, plugin_name: str = None,
+        expected_version: str = None, max_age_seconds: int = 3600,
+    ):
+        """Inspect the selected CI's already-observed plugin audit GET response."""
+        from tools.agent_plugins import summarize_plugin_audit
+
+        self._ensure_started()
+        if not isinstance(ci_name, str) or not ci_name.strip():
+            return {"error": "ci_name_required", "executed": False}
+        if plugin_name is not None and (not isinstance(plugin_name, str) or not plugin_name.strip()):
+            return {"error": "plugin_name_invalid", "executed": False}
+        if ci_name not in self.page.locator("body").inner_text():
+            return {"error": "ci_not_visible", "executed": False}
+        ci = audit = None
+        source_ids = {}
+        observed = []
+        for request_id, detail in list(self.network_details.items())[-200:]:
+            try:
+                request, response = detail["request"], detail["response"]
+                if request.method != "GET" or response.status != 200:
+                    continue
+                payload = response.json()
+                if isinstance(payload, dict):
+                    observed.append((request_id, request.url, payload))
+            except Exception:
+                continue
+        for request_id, url, payload in reversed(observed):
+            if payload.get("name") == ci_name and payload.get("agent_id") and payload.get("id"):
+                ci = payload
+                source_ids["ci"] = request_id
+                break
+        if ci:
+            agent_id = ci["agent_id"]
+            for request_id, url, payload in reversed(observed):
+                if (payload.get("agent_id") == agent_id
+                    and isinstance(payload.get("detail"), list)
+                    and "/agents/" in url and url.split("?")[0].endswith("/plugin")):
+                    audit = payload
+                    source_ids["plugin_audit"] = request_id
+                    break
+        try:
+            summary = summarize_plugin_audit(
+                ci, audit, plugin_name, expected_version,
+                max_age_seconds=max_age_seconds,
+            )
+        except ValueError:
+            return {"error": "plugin_audit_age_limit_invalid", "executed": False}
+        result = self._capture_state("inspect-agent-plugins-semantic")
+        result.update(summary)
+        result["source_request_ids"] = source_ids
+        result["mutation_executed"] = False
+        return result
+
     def get_state(self):
         self._ensure_started()
         self._reset_diagnostics()
@@ -8467,6 +8521,15 @@ def inspect_agent_telemetry_semantic(
     ci_name: str, max_age_seconds: int = 300,
 ) -> dict:
     return _session.inspect_agent_telemetry_semantic(ci_name, max_age_seconds)
+
+
+def inspect_agent_plugins_semantic(
+    ci_name: str, plugin_name: str = None, expected_version: str = None,
+    max_age_seconds: int = 3600,
+) -> dict:
+    return _session.inspect_agent_plugins_semantic(
+        ci_name, plugin_name, expected_version, max_age_seconds,
+    )
 
 
 def delete_json_resource(

@@ -26,6 +26,7 @@
 - Для auto-upload различает локальный выбор файла, наблюдённый HTTP-ответ на запрос с fixture и пока не доказанное сохранение ресурса.
 - Job-scoped staging тестового пакета с SHA-256 и выбор по artifact ID через точное file-поле или file chooser; server-side upload/deploy требует отдельного evidence.
 - Read-only сопоставление UI-статуса КЕ, agent/CI API и свежей CPU/RAM-телеметрии из запросов открытой карточки.
+- Read-only проверка списка плагинов КЕ по связанному agent ID и свежему plugin audit, включая точную версию и load status.
 - Проверка фактического forward Tab focus order.
 - Ограниченные keyboard actions с отдельной классификацией риска.
 - Закрытый allowlist keyboard chords и session-private clipboard для безопасных copy/paste проверок.

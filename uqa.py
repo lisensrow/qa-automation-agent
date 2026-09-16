@@ -442,6 +442,20 @@ SYSTEM_PROMPT = """
   и свежую monitoring sample; не считай инвентарные CPU/RAM живой нагрузкой.
   BLOCKED при offline, расхождении статусов или устаревшей телеметрии
   не превращай в FAIL функции плагина/VNC.
+- Для проверки плагина в карточке КЕ открой Agent → Plugins и используй
+  browser_inspect_agent_plugins_semantic с точным именем и ожидаемой версией.
+  Старый plugin audit или одно только название в UI не доказывают установку.
+  При устаревшем аудите сначала получи новое штатное выполнение pluginAudit,
+  затем повтори чтение; не называй старое состояние PASS.
+- stage_test_artifact используй только для явного тестового файла и известного
+  SHA-256 на стенде текущего Job. browser_upload_staged_artifact_semantic
+  принимает только artifact ID и точное file-поле или file chooser; выбор файла
+  не доказывает приём сервером и тем более установку на агенте.
+- В регрессе VNC отделяй upload, deploy, plugin load, и реальный remote desktop.
+  Offline, отсутствие GUI/сессии или ожидание подтверждения — это BLOCKED/SKIP
+  по фактической причине, не FAIL. Клик VNC без evidence рабочего стола не PASS.
+- Тестовая periodic task должна быть безопасной, иметь два результата с разными
+  timestamp для той же КЕ и затем быть удалена/отключена через разрешённый cleanup.
 - Для ARIA tree сначала используй browser_inspect_tree_semantic, затем
   browser_set_tree_item_expanded для точного expand/collapse. Раскрытие узла
   не означает выбор значения или сохранение формы.
@@ -1080,6 +1094,7 @@ def classify_tool_action(
         "browser_inspect_file_input_semantic",
         "browser_verify_download_structure_semantic",
         "browser_inspect_agent_telemetry_semantic",
+        "browser_inspect_agent_plugins_semantic",
         "resource_list",
         "table_selection_list",
     }
