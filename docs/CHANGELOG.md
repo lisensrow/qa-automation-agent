@@ -202,3 +202,11 @@
 - Leaf без `aria-expanded`, disabled item и неоднозначные tree/item блокируются до действия.
 - Раскрытие дерева классифицируется как INTERACT и не считается выбором или Save.
 - Добавлен изолированный tree-controls smoke.
+
+# v075d — ARIA tree selection
+
+- Добавлен идемпотентный выбор/снятие точного treeitem через Space.
+- Поддерживаются только явные boolean contracts `aria-selected` и `aria-checked`.
+- Отсутствующий selection contract, disabled item и неоднозначность блокируются до изменения.
+- Selection классифицируется как WRITE; expand/collapse остаётся INTERACT, Save выполняется отдельно.
+- Tree smoke расширен selected/checked, deselect и idempotency сценариями.

@@ -15,7 +15,10 @@ try:
               <div role="treeitem" aria-label="Servers" aria-level="2">Servers</div>
             </div>
           </div>
-          <div role="treeitem" aria-label="Standalone" aria-level="1">Standalone</div>
+          <div id="standalone" role="treeitem" aria-label="Standalone"
+               aria-level="1" aria-selected="false" tabindex="0">Standalone</div>
+          <div id="checkable" role="treeitem" aria-label="Checkable"
+               aria-level="1" aria-checked="false" tabindex="0">Checkable</div>
         </div>
         <button onclick="window.saveClicks += 1">Save</button>
         <script>
@@ -32,12 +35,21 @@ try:
               document.getElementById('children').hidden = true;
             }
           });
+          for (const id of ['standalone', 'checkable']) {
+            document.getElementById(id).addEventListener('keydown', event => {
+              if (event.key !== ' ') return;
+              const attr = event.currentTarget.hasAttribute('aria-selected')
+                ? 'aria-selected' : 'aria-checked';
+              const next = event.currentTarget.getAttribute(attr) !== 'true';
+              event.currentTarget.setAttribute(attr, String(next));
+            });
+          }
         </script>
         """
     )
 
     before = session.inspect_tree_semantic("Categories")
-    assert before.get("visible_tree_item_count") == 2, before
+    assert before.get("visible_tree_item_count") == 3, before
     assert before["tree_items"][0]["expanded"] is False, before
 
     opened = session.set_tree_item_expanded(
@@ -45,7 +57,7 @@ try:
     )
     assert opened.get("tree_expand_status") == "applied", opened
     assert opened.get("expanded") is True, opened
-    assert len(opened.get("tree_after") or []) == 3, opened
+    assert len(opened.get("tree_after") or []) == 4, opened
 
     opened_again = session.set_tree_item_expanded(
         "Systems", True, tree="Categories"
@@ -57,16 +69,39 @@ try:
     )
     assert leaf.get("error") == "tree_item_not_expandable", leaf
 
+    selected = session.set_tree_item_selected(
+        "Standalone", True, tree="Categories"
+    )
+    assert selected.get("tree_selection_status") == "applied", selected
+    assert selected.get("tree_selection_attribute") == "aria-selected", selected
+    selected_again = session.set_tree_item_selected(
+        "Standalone", True, tree="Categories"
+    )
+    assert selected_again.get("tree_selection_status") == "already_satisfied", selected_again
+    deselected = session.set_tree_item_selected(
+        "Standalone", False, tree="Categories"
+    )
+    assert deselected.get("selected") is False, deselected
+    checked = session.set_tree_item_selected(
+        "Checkable", True, tree="Categories"
+    )
+    assert checked.get("tree_selection_attribute") == "aria-checked", checked
+    missing_contract = session.set_tree_item_selected(
+        "Servers", True, tree="Categories"
+    )
+    assert missing_contract.get("error") == "tree_item_selection_contract_missing", missing_contract
+
     closed = session.set_tree_item_expanded(
         "Systems", False, tree="Categories"
     )
     assert closed.get("tree_expand_status") == "applied", closed
     assert closed.get("expanded") is False, closed
-    assert len(closed.get("tree_after") or []) == 2, closed
+    assert len(closed.get("tree_after") or []) == 3, closed
     assert session.page.evaluate("window.saveClicks") == 0
 
     assert classify_tool_action("browser_inspect_tree_semantic", {}) == "observe"
     assert classify_tool_action("browser_set_tree_item_expanded", {}) == "interact"
+    assert classify_tool_action("browser_set_tree_item_selected", {}) == "write"
 finally:
     session.close()
 

@@ -2872,6 +2872,113 @@ class BrowserSession:
             result["error"] = "tree_item_expand_not_applied"
         return result
 
+    def set_tree_item_selected(
+        self,
+        item: str,
+        selected: bool,
+        tree: str = None,
+        exact: bool = True,
+    ):
+        """Set an explicit aria-selected/aria-checked treeitem contract."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        tree_locator, error = self._resolve_tree(tree, exact)
+        if error:
+            return error
+        locator = tree_locator.get_by_role("treeitem", name=item, exact=exact)
+        matches = []
+        for index in range(min(locator.count(), 100)):
+            candidate = locator.nth(index)
+            try:
+                if candidate.is_visible():
+                    matches.append(candidate)
+            except Exception:
+                continue
+        if len(matches) != 1:
+            return {
+                "error": (
+                    "tree_item_not_found"
+                    if not matches
+                    else "ambiguous_tree_item"
+                ),
+                "tree": tree,
+                "item": item,
+                "matches": len(matches),
+                "executed": False,
+            }
+        target = matches[0]
+        selected_attr = target.get_attribute("aria-selected")
+        checked_attr = target.get_attribute("aria-checked")
+        if selected_attr in {"true", "false"}:
+            state_attribute = "aria-selected"
+            previous = selected_attr == "true"
+        elif checked_attr in {"true", "false"}:
+            state_attribute = "aria-checked"
+            previous = checked_attr == "true"
+        else:
+            return {
+                "error": "tree_item_selection_contract_missing",
+                "tree": tree,
+                "item": item,
+                "executed": False,
+            }
+        if (
+            target.get_attribute("aria-disabled") == "true"
+            or not target.is_enabled()
+        ):
+            return {
+                "error": "tree_item_not_enabled",
+                "tree": tree,
+                "item": item,
+                "executed": False,
+            }
+        desired = bool(selected)
+        before = self._tree_snapshot(tree_locator)
+        if previous == desired:
+            result = self._capture_state("set-tree-item-selected")
+            result.update(
+                {
+                    "tree_name": tree,
+                    "tree_item": item,
+                    "tree_selection_attribute": state_attribute,
+                    "previous_selected": previous,
+                    "selected": previous,
+                    "tree_selection_status": "already_satisfied",
+                    "tree_before": before,
+                    "tree_after": before,
+                    "mutation_executed": False,
+                }
+            )
+            return result
+        self._reset_diagnostics()
+        self._begin_action_execution()
+        target.focus()
+        target.press("Space")
+        self.page.wait_for_timeout(300)
+        actual = target.get_attribute(state_attribute) == "true"
+        after = self._tree_snapshot(tree_locator)
+        result = self._capture_state("set-tree-item-selected")
+        result.update(
+            {
+                "tree_name": tree,
+                "tree_item": item,
+                "tree_selection_attribute": state_attribute,
+                "previous_selected": previous,
+                "selected": actual,
+                "tree_selection_status": (
+                    "applied" if actual == desired else "not_applied"
+                ),
+                "tree_key": "Space",
+                "tree_before": before,
+                "tree_after": after,
+                "mutation_executed": True,
+            }
+        )
+        result = self._finish_action_execution(result)
+        if actual != desired:
+            result["error"] = "tree_item_selection_not_applied"
+        return result
+
     def select_semantic(
         self,
         field: str,
@@ -7598,6 +7705,15 @@ def set_tree_item_expanded(
     exact: bool = True,
 ) -> dict:
     return _session.set_tree_item_expanded(item, expanded, tree, exact)
+
+
+def set_tree_item_selected(
+    item: str,
+    selected: bool,
+    tree: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.set_tree_item_selected(item, selected, tree, exact)
 
 
 def select_semantic(

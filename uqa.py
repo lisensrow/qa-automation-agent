@@ -391,6 +391,8 @@ SYSTEM_PROMPT = """
 - Для ARIA tree сначала используй browser_inspect_tree_semantic, затем
   browser_set_tree_item_expanded для точного expand/collapse. Раскрытие узла
   не означает выбор значения или сохранение формы.
+- Для выбора treeitem используй browser_set_tree_item_selected только когда
+  snapshot подтвердил aria-selected или aria-checked. Это WRITE, но не Save.
 - Для выбора значения dropdown/combobox используй browser_select_semantic; не кликай
   по предполагаемой role=option вручную.
 - Для checkbox/switch используй browser_set_checked_semantic с требуемым состоянием;
@@ -1116,6 +1118,7 @@ def classify_tool_action(
         "browser_paste_private_semantic",
         "browser_set_temporal_semantic",
         "browser_set_slider_semantic",
+        "browser_set_tree_item_selected",
         "browser_select_semantic",
         "browser_set_checked_semantic",
         "browser_choose_radio_semantic",

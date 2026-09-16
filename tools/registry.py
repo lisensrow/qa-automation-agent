@@ -11,6 +11,7 @@ from tools.browser import (
     set_slider_semantic,
     inspect_tree_semantic,
     set_tree_item_expanded,
+    set_tree_item_selected,
     select_semantic,
     set_checked_semantic,
     choose_radio_semantic,
@@ -560,6 +561,27 @@ TOOLS = [
                     "exact": {"type": "boolean"}
                 },
                 "required": ["item", "expanded"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_set_tree_item_selected",
+            "description": (
+                "Идемпотентно устанавливает selected state одного точного "
+                "treeitem только при явном aria-selected или aria-checked. "
+                "Использует Space и проверяет итоговое состояние; не сохраняет форму."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "item": {"type": "string"},
+                    "selected": {"type": "boolean"},
+                    "tree": {"type": "string"},
+                    "exact": {"type": "boolean"}
+                },
+                "required": ["item", "selected"]
             }
         }
     },
@@ -1315,6 +1337,14 @@ def execute_tool(name: str, arguments: dict):
         return set_tree_item_expanded(
             arguments["item"],
             arguments["expanded"],
+            arguments.get("tree"),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_set_tree_item_selected":
+        return set_tree_item_selected(
+            arguments["item"],
+            arguments["selected"],
             arguments.get("tree"),
             arguments.get("exact", True),
         )
