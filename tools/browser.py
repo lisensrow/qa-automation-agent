@@ -121,6 +121,7 @@ class BrowserSession:
         self.last_uc_auth = None
         self._last_inspected_exact_target = None
         self._last_inspected_exact_row = None
+        self._last_agent_task_inspection = None
         # Session-private clipboard. It never reads from or writes to the
         # operating-system clipboard and is never persisted to artifacts.
         self._private_clipboard_text = None
@@ -1607,6 +1608,7 @@ class BrowserSession:
         self._ensure_started()
         self._last_inspected_exact_target = None
         self._last_inspected_exact_row = None
+        self._last_agent_task_inspection = None
 
         self._reset_diagnostics()
 
@@ -1977,6 +1979,75 @@ class BrowserSession:
         result.update(summary)
         result["source_request_ids"] = source_ids
         result["mutation_executed"] = False
+        return result
+
+    def inspect_agent_tasks_semantic(
+        self, ci_name: str, task_name: str = None,
+    ):
+        """Summarize an already-observed task-list GET for the selected agent."""
+        from tools.agent_tasks import summarize_agent_tasks
+
+        self._ensure_started()
+        if not isinstance(ci_name, str) or not ci_name.strip():
+            return {"error": "ci_name_required", "executed": False}
+        if task_name is not None and (
+            not isinstance(task_name, str) or not task_name.strip()
+        ):
+            return {"error": "task_name_invalid", "executed": False}
+        if ci_name not in self.page.locator("body").inner_text():
+            return {"error": "ci_not_visible", "executed": False}
+
+        observed = []
+        for request_id, detail in list(self.network_details.items())[-200:]:
+            try:
+                request, response = detail["request"], detail["response"]
+                if request.method != "GET" or response.status != 200:
+                    continue
+                payload = response.json()
+                if isinstance(payload, dict):
+                    observed.append((request_id, urlsplit(request.url).path, payload))
+            except Exception:
+                continue
+
+        ci = task_page = None
+        source_ids = {}
+        for request_id, path, payload in reversed(observed):
+            if (
+                payload.get("name") == ci_name
+                and payload.get("id") and payload.get("agent_id")
+            ):
+                ci = payload
+                source_ids["ci"] = request_id
+                break
+        if ci:
+            expected_path = f"/agents/{ci['agent_id']}/tasks"
+            for request_id, path, payload in reversed(observed):
+                if path.endswith(expected_path) and isinstance(payload.get("items"), list):
+                    task_page = payload
+                    source_ids["tasks"] = request_id
+                    break
+
+        summary = summarize_agent_tasks(ci, task_page, task_name)
+        if summary.get("reason") == "task_list_get_not_observed":
+            summary["next_step_hint"] = (
+                "Open the selected CI's Agent → Tasks tab, then inspect again."
+            )
+        inspection_key = (
+            ci_name, task_name, source_ids.get("tasks"), self.page.url,
+        )
+        if self._last_agent_task_inspection == inspection_key:
+            return {
+                "error": "identical_task_inspection_no_new_data",
+                "executed": False,
+                "ci_name": ci_name,
+                "task_name": task_name,
+                "reason": summary.get("reason"),
+                "available_task_names": summary.get("available_task_names"),
+            }
+        self._last_agent_task_inspection = inspection_key
+        result = self._capture_state("inspect-agent-tasks-semantic")
+        result.update(summary)
+        result["source_request_ids"] = source_ids
         return result
 
     def get_state(self):
@@ -8613,6 +8684,12 @@ def inspect_agent_plugins_semantic(
     return _session.inspect_agent_plugins_semantic(
         ci_name, plugin_name, expected_version, max_age_seconds,
     )
+
+
+def inspect_agent_tasks_semantic(
+    ci_name: str, task_name: str = None,
+) -> dict:
+    return _session.inspect_agent_tasks_semantic(ci_name, task_name)
 
 
 def delete_json_resource(

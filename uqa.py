@@ -418,6 +418,9 @@ SYSTEM_PROMPT = """
   Не кликай по элементу только ради проверки его состояния.
 - Для проверки записи в таблице используй browser_inspect_table_row с точным значением
   уникальной ячейки. Не придумывай для строки accessibility role.
+- Чтобы открыть уже проверенную строку, затем вызови browser_click_semantic
+  с тем же точным name, exact=true и role="row"; container не нужен.
+  Не угадывай роли button/link и не используй заголовок колонки как container.
 - Для нажатия известного элемента используй browser_click_semantic.
 - Для ввода текста используй browser_fill_semantic и смысловое имя поля.
 - Для native date/time/datetime-local/month/week используй
@@ -447,6 +450,11 @@ SYSTEM_PROMPT = """
   Старый plugin audit или одно только название в UI не доказывают установку.
   При устаревшем аудите сначала получи новое штатное выполнение pluginAudit,
   затем повтори чтение; не называй старое состояние PASS.
+- Для задач агента открой Agent → Tasks и используй
+  browser_inspect_agent_tasks_semantic с обязательным ci_name. Список и статус задачи — только
+  метаданные; они не подтверждают вывод команды или два выполнения periodic.
+  Если tool вернул task_list_get_not_observed, сначала фактически открой
+  Agent → Tasks и повтори чтение. Это не означает, что задач нет.
 - stage_test_artifact используй только для явного тестового файла и известного
   SHA-256 на стенде текущего Job. browser_upload_staged_artifact_semantic
   принимает только artifact ID и точное file-поле или file chooser; выбор файла
@@ -1106,6 +1114,7 @@ def classify_tool_action(
         "browser_verify_download_structure_semantic",
         "browser_inspect_agent_telemetry_semantic",
         "browser_inspect_agent_plugins_semantic",
+        "browser_inspect_agent_tasks_semantic",
         "resource_list",
         "table_selection_list",
     }
@@ -4600,6 +4609,9 @@ def record_tool_evidence(
             result
         )
     )
+    if tool_name == "browser_inspect_agent_tasks_semantic":
+        eligibility["usable_for_pass"] = False
+        eligibility["reason"] = "task_list_metadata_only"
 
     return add_evidence(
         job_id,
@@ -5324,6 +5336,9 @@ def verify_structured_check_evidence(
             "browser_inspect_agent_plugins_semantic": (
                 "agent_plugin_audit", "Agent plugin audit",
             ),
+            "browser_inspect_agent_tasks_semantic": (
+                "agent_task_list", "Agent tasks",
+            ),
         }
         core_refs = [
             ref for ref in refs
@@ -5349,7 +5364,10 @@ def verify_structured_check_evidence(
                 ]
                 if len(matching) != 1:
                     core_issue = "agent_observation_missing_or_ambiguous"
-                elif evidence_item.get("usable_for_verdict") is not True:
+                elif (
+                    evidence_item.get("usable_for_verdict") is not True
+                    and observation_type != "agent_task_list"
+                ):
                     core_issue = "agent_observation_evidence_unusable"
                 else:
                     core_observation = matching[0]
@@ -5365,6 +5383,18 @@ def verify_structured_check_evidence(
                 })
                 continue
             data = core_observation["data"]
+            if core_observation["type"] == "agent_task_list":
+                check["title"] = "Agent tasks"
+                check["subject"] = data.get("ci_name")
+                check["observations"] = [core_observation["observation_id"]]
+                check["assertions"] = []
+                check["actual"] = json.dumps(data, ensure_ascii=False, default=str)
+                check["status"] = "blocked"
+                check["reason"] = (
+                    "UQA CORE: "
+                    + str(data.get("reason") or "task_list_metadata_only")
+                )
+                continue
             outcome = data.get("observation_result")
             if outcome not in ("PASS", "BLOCKED"):
                 check["status"] = "blocked"
@@ -11214,6 +11244,7 @@ def run_turn(
                     item.get("type") in (
                         "browser_inspect_agent_telemetry_semantic",
                         "browser_inspect_agent_plugins_semantic",
+                        "browser_inspect_agent_tasks_semantic",
                     )
                     for item in current_case.get("evidence", [])
                 )
@@ -11336,6 +11367,7 @@ def run_turn(
                             item.get("title") in (
                                 "Agent telemetry",
                                 "Agent plugin audit",
+                                "Agent tasks",
                             )
                             for item in structured_checks
                         )

@@ -5,6 +5,7 @@ from tools.browser import (
     inspect_semantic,
     inspect_agent_telemetry_semantic,
     inspect_agent_plugins_semantic,
+    inspect_agent_tasks_semantic,
     inspect_table_row,
     click_semantic,
     download_semantic,
@@ -1272,6 +1273,24 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_agent_tasks_semantic",
+            "description": (
+                "Read-only список задач выбранного агента по уже увиденному "
+                "GET ответу после открытия Agent → Tasks. Можно указать точное "
+                "имя задачи. Возвращает только безопасные метаданные: enabled, "
+                "period, status и last_processed_at. Не запускает задачу и "
+                "не подтверждает результат её выполнения. Если GET ещё не "
+                "наблюдался, открой вкладку Agent → Tasks и повтори."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "ci_name": {"type": "string"},
+                "task_name": {"type": "string"},
+            }, "required": ["ci_name"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_semantic",
             "description": (
                 "Read-only проверка фактического состояния "
@@ -1476,6 +1495,11 @@ def execute_tool(name: str, arguments: dict):
             arguments["ci_name"], arguments.get("plugin_name"),
             arguments.get("expected_version"),
             arguments.get("max_age_seconds", 3600),
+        )
+
+    if name == "browser_inspect_agent_tasks_semantic":
+        return inspect_agent_tasks_semantic(
+            arguments.get("ci_name"), arguments.get("task_name"),
         )
 
     if name == "browser_inspect_table_row":

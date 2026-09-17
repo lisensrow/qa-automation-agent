@@ -529,6 +529,14 @@ def extract_observations(
              "audit_fresh", "plugin_count", "matched_plugins",
              "observation_result", "reason", "source_request_ids"),
         ),
+        "browser_inspect_agent_tasks_semantic": (
+            "agent_task_list",
+            ("ci_name", "agent_id", "task_name", "task_count",
+             "page_count", "matched_tasks", "task_names",
+             "available_task_names",
+             "inspection_status", "task_list_observed", "next_step_hint",
+             "reason", "execution_result_verified", "source_request_ids"),
+        ),
     }
     if tool_name in agent_observation_fields and not result.get("error"):
         observation_type, fields = agent_observation_fields[tool_name]
