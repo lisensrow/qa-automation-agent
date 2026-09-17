@@ -3665,6 +3665,34 @@ def execute_tool_with_policy(
             effective_arguments,
         )
 
+    # A self-container does not narrow a target: it repeats the target's
+    # own name. For a managed INTERACT only, a failed role-qualified lookup
+    # may be retried once using the runtime's strict unique exact-text
+    # matcher. WRITE/DESTRUCTIVE calls never take this automatic path.
+    if (
+        action_policy == "confirm_mutations"
+        and action_class == "interact"
+        and name == "browser_click_semantic"
+        and isinstance(result, dict)
+        and result.get("error") == "semantic_element_not_found"
+        and result.get("mutation_executed") is not True
+        and arguments.get("exact", True) is True
+        and str(arguments.get("name") or "").strip()
+        and str(arguments.get("container") or "").strip()
+        == str(arguments.get("name") or "").strip()
+        and str(arguments.get("role") or "").strip()
+    ):
+        fallback_arguments = dict(arguments)
+        fallback_arguments.pop("role", None)
+        fallback_arguments.pop("container", None)
+        result = execute_tool(name, fallback_arguments)
+        if isinstance(result, dict):
+            result = dict(result)
+            result["semantic_hint_retry"] = {
+                "reason": "self_container_and_unconfirmed_role",
+                "retry_exact_name_only": True,
+            }
+
     if (
         require_compatibility_probe
         and name == "browser_probe_capabilities"
