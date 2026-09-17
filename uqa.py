@@ -5314,6 +5314,85 @@ def verify_structured_check_evidence(
 
         issues = []
 
+        # Agent summaries are Core-owned observations. The model may describe
+        # them, but it cannot transfer a stale plugin-audit timestamp to the
+        # independent telemetry check (or manufacture observation IDs).
+        core_agent_types = {
+            "browser_inspect_agent_telemetry_semantic": (
+                "agent_telemetry", "Agent telemetry",
+            ),
+            "browser_inspect_agent_plugins_semantic": (
+                "agent_plugin_audit", "Agent plugin audit",
+            ),
+        }
+        core_refs = [
+            ref for ref in refs
+            if evidence_by_id.get(ref, {}).get("type") in core_agent_types
+        ]
+        if core_refs:
+            core_issue = None
+            core_observation = None
+            if len(refs) != 1 or len(core_refs) != 1:
+                core_issue = "agent_observation_evidence_ambiguous"
+            else:
+                evidence_item = evidence_by_id[core_refs[0]]
+                observation_type, core_title = core_agent_types[
+                    evidence_item["type"]
+                ]
+                linked = [
+                    observation_by_id.get(str(observation_id))
+                    for observation_id in evidence_item.get("observation_ids", [])
+                ]
+                matching = [
+                    item for item in linked
+                    if item and item.get("type") == observation_type
+                ]
+                if len(matching) != 1:
+                    core_issue = "agent_observation_missing_or_ambiguous"
+                elif evidence_item.get("usable_for_verdict") is not True:
+                    core_issue = "agent_observation_evidence_unusable"
+                else:
+                    core_observation = matching[0]
+            if core_issue:
+                check["status"] = "blocked"
+                check["reason"] = "UQA CORE: " + core_issue
+                check["actual"] = None
+                errors.append({
+                    "check_id": check.get("check_id"),
+                    "title": check.get("title"),
+                    "original_status": status,
+                    "issues": [core_issue],
+                })
+                continue
+            data = core_observation["data"]
+            outcome = data.get("observation_result")
+            if outcome not in ("PASS", "BLOCKED"):
+                check["status"] = "blocked"
+                check["reason"] = "UQA CORE: agent_observation_invalid"
+                check["actual"] = None
+                errors.append({
+                    "check_id": check.get("check_id"),
+                    "title": check.get("title"),
+                    "original_status": status,
+                    "issues": ["agent_observation_invalid"],
+                })
+                continue
+            check["title"] = core_title
+            check["subject"] = (
+                data.get("plugin_name")
+                if observation_type == "agent_plugin_audit"
+                else data.get("ci_name")
+            )
+            check["observations"] = [core_observation["observation_id"]]
+            check["assertions"] = []
+            check["actual"] = json.dumps(data, ensure_ascii=False, default=str)
+            check["status"] = "passed" if outcome == "PASS" else "blocked"
+            check["reason"] = (
+                None if outcome == "PASS"
+                else "UQA CORE: " + str(data.get("reason") or "agent_observation_blocked")
+            )
+            continue
+
         if (
             status in (
                 "passed",
@@ -11121,7 +11200,25 @@ def run_turn(
                 content
             )
 
-            if visible_content.strip():
+            agent_check_case = False
+            if job_id and case_id:
+                current_job = get_job(job_id) or {}
+                current_case = next(
+                    (
+                        item for item in current_job.get("test_cases", [])
+                        if item.get("case_id") == case_id
+                    ),
+                    {},
+                )
+                agent_check_case = any(
+                    item.get("type") in (
+                        "browser_inspect_agent_telemetry_semantic",
+                        "browser_inspect_agent_plugins_semantic",
+                    )
+                    for item in current_case.get("evidence", [])
+                )
+
+            if visible_content.strip() and not agent_check_case:
                 console.print()
                 console.print(
                     Markdown(visible_content)
@@ -11231,6 +11328,34 @@ def run_turn(
                                 evidence_errors,
                                 ensure_ascii=False,
                             )[:2000]
+                        )
+
+                    elif (
+                        structured_checks
+                        and all(
+                            item.get("title") in (
+                                "Agent telemetry",
+                                "Agent plugin audit",
+                            )
+                            for item in structured_checks
+                        )
+                    ):
+                        # Do not publish the model's pre-verification prose:
+                        # it may have confused audit and telemetry dates.
+                        stored_result = (
+                            "[UQA CORE: VERIFIED AGENT CHECKS]\n"
+                            + "\n".join(
+                                "{title}: {status}; reason={reason}; actual={actual}".format(
+                                    title=item["title"],
+                                    status=str(item.get("status", "blocked")).upper(),
+                                    reason=item.get("reason") or "none",
+                                    actual=item.get("actual") or "not observed",
+                                )
+                                for item in structured_checks
+                            )
+                        )
+                        console.print(
+                            Markdown(stored_result)
                         )
 
                 if not case_status:

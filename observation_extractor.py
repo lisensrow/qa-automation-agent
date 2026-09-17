@@ -515,6 +515,33 @@ def extract_observations(
             )
         ]
 
+    agent_observation_fields = {
+        "browser_inspect_agent_telemetry_semantic": (
+            "agent_telemetry",
+            ("ci_name", "agent_version", "os_name", "os_version",
+             "architecture", "statuses", "monitoring_at",
+             "monitoring_age_seconds", "monitoring_fresh",
+             "observation_result", "reason", "source_request_ids"),
+        ),
+        "browser_inspect_agent_plugins_semantic": (
+            "agent_plugin_audit",
+            ("ci_name", "last_audit_at", "audit_age_seconds",
+             "audit_fresh", "plugin_count", "matched_plugins",
+             "observation_result", "reason", "source_request_ids"),
+        ),
+    }
+    if tool_name in agent_observation_fields and not result.get("error"):
+        observation_type, fields = agent_observation_fields[tool_name]
+        return [{
+            "type": observation_type,
+            "source": "browser",
+            "data": {
+                **{key: result.get(key) for key in fields},
+                "plugin_name": arguments.get("plugin_name"),
+                "expected_version": arguments.get("expected_version"),
+            },
+        }]
+
     if tool_name in {
         "browser_inspect_semantic",
         "browser_inspect_table_row",
