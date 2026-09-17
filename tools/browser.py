@@ -120,6 +120,7 @@ class BrowserSession:
 
         self.last_uc_auth = None
         self._last_inspected_exact_target = None
+        self._last_inspected_exact_row = None
         # Session-private clipboard. It never reads from or writes to the
         # operating-system clipboard and is never persisted to artifacts.
         self._private_clipboard_text = None
@@ -1605,6 +1606,7 @@ class BrowserSession:
     def open_page(self, url: str):
         self._ensure_started()
         self._last_inspected_exact_target = None
+        self._last_inspected_exact_row = None
 
         self._reset_diagnostics()
 
@@ -7165,6 +7167,7 @@ class BrowserSession:
         """Inspect one visible table row by an exact cell value."""
         self._ensure_started()
         self._reset_diagnostics()
+        self._last_inspected_exact_row = None
 
         wanted = " ".join(str(name or "").split())
 
@@ -7256,6 +7259,11 @@ class BrowserSession:
 
         _, row_data = matches[0]
         result = self._capture_state("inspect-table-row")
+        if exact:
+            self._last_inspected_exact_row = {
+                "name": name,
+                "url": self.page.url,
+            }
         result.update(
             {
                 "semantic_name": name,
@@ -7285,6 +7293,7 @@ class BrowserSession:
         self._ensure_started()
         self._reset_diagnostics()
         self._last_inspected_exact_target = None
+        self._last_inspected_exact_row = None
 
         def visible_matches(locator):
             matches = []
@@ -7975,9 +7984,19 @@ class BrowserSession:
             "checkbox",
             "radio",
             "combobox",
+            "row",
         ]
 
         requested_role = str(role or "").strip().casefold()
+        inspected_row = (
+            requested_role == "row"
+            and exact
+            and self._last_inspected_exact_row == {
+                "name": name,
+                "url": self.page.url,
+            }
+        )
+        self._last_inspected_exact_row = None
         inspected_role_fallback = bool(
             requested_role and exact
             and (not container or str(container).strip() == str(name).strip())
@@ -8005,6 +8024,45 @@ class BrowserSession:
 
         role_matches = []
         explicit_role_fallback = False
+
+        if requested_role == "row":
+            if not inspected_row:
+                return {
+                    "error": "row_click_requires_exact_inspection",
+                    "name": name,
+                    "executed": False,
+                }
+            if container and str(container).strip() != str(name).strip():
+                return {
+                    "error": "row_container_mismatch",
+                    "name": name,
+                    "container": container,
+                    "executed": False,
+                }
+            # Re-resolve the inspected exact cell immediately before clicking.
+            # A row's accessible name includes every cell, so get_by_role(row,
+            # name=CI) cannot safely identify the intended target.
+            matches = []
+            rows = self.page.locator("tr")
+            for index in range(min(rows.count(), 500)):
+                row = rows.nth(index)
+                if not row.is_visible():
+                    continue
+                cells = row.locator(":scope > th, :scope > td")
+                for cell_index in range(cells.count()):
+                    cell = cells.nth(cell_index)
+                    if " ".join(cell.inner_text().split()) == " ".join(name.split()):
+                        matches.append(cell)
+            if len(matches) != 1:
+                return {
+                    "error": "row_exact_cell_missing_or_ambiguous",
+                    "name": name,
+                    "matches": len(matches),
+                    "executed": False,
+                }
+            role_matches = [("row", matches[0])]
+            roles = []
+            explicit_role_fallback = True
 
         def matches_container(candidate):
             wanted = re.sub(
@@ -8071,7 +8129,7 @@ class BrowserSession:
                 role_matches
             )
 
-        if container:
+        if container and requested_role != "row":
             role_matches = [
                 (matched_role, candidate)
                 for matched_role, candidate in role_matches
