@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urlsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/opt/uqa/browsers")
 
@@ -2052,6 +2052,94 @@ class BrowserSession:
         self._last_agent_task_inspection = inspection_key
         result = self._capture_state("inspect-agent-tasks-semantic")
         result.update(summary)
+        result["source_request_ids"] = source_ids
+        return result
+
+    def inspect_agent_task_result_semantic(self, ci_name: str, task_id: str):
+        """Read one observed task's full GET; return metadata, never its result."""
+        from tools.agent_tasks import summarize_agent_task_full, summarize_agent_tasks
+
+        self._ensure_started()
+        if not isinstance(ci_name, str) or not ci_name.strip():
+            return {"error": "ci_name_required", "executed": False}
+        try:
+            canonical_task_id = str(uuid.UUID(task_id))
+        except (ValueError, TypeError, AttributeError):
+            return {"error": "task_id_invalid", "executed": False}
+        if canonical_task_id != task_id:
+            return {"error": "task_id_invalid", "executed": False}
+        if ci_name not in self.page.locator("body").inner_text():
+            return {"error": "ci_not_visible", "executed": False}
+
+        observed = []
+        for request_id, detail in list(self.network_details.items())[-200:]:
+            try:
+                request, response = detail["request"], detail["response"]
+                if request.method != "GET" or response.status != 200:
+                    continue
+                payload = response.json()
+                if isinstance(payload, dict):
+                    observed.append((request_id, request.url, payload))
+            except Exception:
+                continue
+
+        ci = task_page = task_request_url = None
+        source_ids = {}
+        for request_id, request_url, payload in reversed(observed):
+            if (
+                payload.get("name") == ci_name
+                and payload.get("id") and payload.get("agent_id")
+            ):
+                ci = payload
+                source_ids["ci"] = request_id
+                break
+        if ci is not None:
+            for request_id, request_url, payload in reversed(observed):
+                if (
+                    urlsplit(request_url).path.endswith(
+                        f"/agents/{ci['agent_id']}/tasks"
+                    )
+                    and isinstance(payload.get("items"), list)
+                ):
+                    task_page = payload
+                    task_request_url = request_url
+                    source_ids["tasks"] = request_id
+                    break
+
+        listed = summarize_agent_tasks(ci, task_page, task_id=task_id)
+        if listed["reason"]:
+            result = summarize_agent_task_full(ci, task_page, task_id, None)
+            result["source_request_ids"] = source_ids
+            return result
+        if (
+            not isinstance(task_page.get("total"), int)
+            or isinstance(task_page.get("total"), bool)
+            or task_page["total"] != len(task_page["items"])
+        ):
+            result = summarize_agent_task_full(ci, task_page, task_id, None)
+            result["source_request_ids"] = source_ids
+            return result
+
+        source = urlsplit(task_request_url)
+        current = urlsplit(self.page.url)
+        if (
+            source.scheme != "https" or current.scheme != "https"
+            or source.netloc != current.netloc
+        ):
+            return {"error": "task_result_origin_mismatch", "executed": False}
+        full_path = source.path + f"/{task_id}/full"
+        full_url = urlunsplit((source.scheme, source.netloc, full_path, "", ""))
+        try:
+            response = self.context.request.get(full_url, timeout=15000)
+            status = response.status
+            full = response.json() if status == 200 else None
+        except Exception:
+            status, full = None, None
+        result = summarize_agent_task_full(ci, task_page, task_id, full)
+        if status != 200:
+            result["inspection_status"] = "blocked"
+            result["reason"] = "task_full_get_unavailable"
+        result["full_http_status"] = status
         result["source_request_ids"] = source_ids
         return result
 
@@ -8695,6 +8783,10 @@ def inspect_agent_tasks_semantic(
     ci_name: str, task_name: str = None, task_id: str = None,
 ) -> dict:
     return _session.inspect_agent_tasks_semantic(ci_name, task_name, task_id)
+
+
+def inspect_agent_task_result_semantic(ci_name: str, task_id: str) -> dict:
+    return _session.inspect_agent_task_result_semantic(ci_name, task_id)
 
 
 def delete_json_resource(

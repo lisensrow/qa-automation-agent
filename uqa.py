@@ -456,6 +456,9 @@ SYSTEM_PROMPT = """
   Если имя повторяется, используй точный task_id из уже наблюдённого списка.
   Если tool вернул task_list_get_not_observed, сначала фактически открой
   Agent → Tasks и повтори чтение. Это не означает, что задач нет.
+- Для точного task_id из списка можно вызвать
+  browser_inspect_agent_task_result_semantic: он читает сохранённый GET /full,
+  но не показывает текст результата и не доказывает успех команды.
 - stage_test_artifact используй только для явного тестового файла и известного
   SHA-256 на стенде текущего Job. browser_upload_staged_artifact_semantic
   принимает только artifact ID и точное file-поле или file chooser; выбор файла
@@ -1116,6 +1119,7 @@ def classify_tool_action(
         "browser_inspect_agent_telemetry_semantic",
         "browser_inspect_agent_plugins_semantic",
         "browser_inspect_agent_tasks_semantic",
+        "browser_inspect_agent_task_result_semantic",
         "resource_list",
         "table_selection_list",
     }
@@ -4610,9 +4614,16 @@ def record_tool_evidence(
             result
         )
     )
-    if tool_name == "browser_inspect_agent_tasks_semantic":
+    if tool_name in {
+        "browser_inspect_agent_tasks_semantic",
+        "browser_inspect_agent_task_result_semantic",
+    }:
         eligibility["usable_for_pass"] = False
-        eligibility["reason"] = "task_list_metadata_only"
+        eligibility["reason"] = (
+            "task_list_metadata_only"
+            if tool_name == "browser_inspect_agent_tasks_semantic"
+            else "task_result_metadata_only"
+        )
 
     return add_evidence(
         job_id,
@@ -5340,6 +5351,9 @@ def verify_structured_check_evidence(
             "browser_inspect_agent_tasks_semantic": (
                 "agent_task_list", "Agent tasks",
             ),
+            "browser_inspect_agent_task_result_semantic": (
+                "agent_task_result", "Agent task result",
+            ),
         }
         core_refs = [
             ref for ref in refs
@@ -5367,7 +5381,9 @@ def verify_structured_check_evidence(
                     core_issue = "agent_observation_missing_or_ambiguous"
                 elif (
                     evidence_item.get("usable_for_verdict") is not True
-                    and observation_type != "agent_task_list"
+                    and observation_type not in {
+                        "agent_task_list", "agent_task_result",
+                    }
                 ):
                     core_issue = "agent_observation_evidence_unusable"
                 else:
@@ -5384,8 +5400,10 @@ def verify_structured_check_evidence(
                 })
                 continue
             data = core_observation["data"]
-            if core_observation["type"] == "agent_task_list":
-                check["title"] = "Agent tasks"
+            if core_observation["type"] in {
+                "agent_task_list", "agent_task_result",
+            }:
+                check["title"] = core_title
                 check["subject"] = data.get("ci_name")
                 check["observations"] = [core_observation["observation_id"]]
                 check["assertions"] = []
@@ -5393,7 +5411,11 @@ def verify_structured_check_evidence(
                 check["status"] = "blocked"
                 check["reason"] = (
                     "UQA CORE: "
-                    + str(data.get("reason") or "task_list_metadata_only")
+                    + str(data.get("reason") or (
+                        "task_list_metadata_only"
+                        if core_observation["type"] == "agent_task_list"
+                        else "task_result_metadata_only"
+                    ))
                 )
                 continue
             outcome = data.get("observation_result")

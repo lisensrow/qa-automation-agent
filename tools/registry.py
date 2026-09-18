@@ -6,6 +6,7 @@ from tools.browser import (
     inspect_agent_telemetry_semantic,
     inspect_agent_plugins_semantic,
     inspect_agent_tasks_semantic,
+    inspect_agent_task_result_semantic,
     inspect_table_row,
     click_semantic,
     download_semantic,
@@ -1293,6 +1294,24 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_agent_task_result_semantic",
+            "description": (
+                "Read-only чтение сохранённого результата одной задачи через "
+                "штатный GET /full. Требует точный task_id из уже наблюдённого "
+                "полного списка выбранного агента. Возвращает только наличие, "
+                "тип, время и код ошибки; содержимое результата, параметры "
+                "и текст ошибки не раскрывает. Не запускает задачу и не "
+                "доказывает корректность выполнения."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "ci_name": {"type": "string"},
+                "task_id": {"type": "string"},
+            }, "required": ["ci_name", "task_id"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_semantic",
             "description": (
                 "Read-only проверка фактического состояния "
@@ -1503,6 +1522,11 @@ def execute_tool(name: str, arguments: dict):
         return inspect_agent_tasks_semantic(
             arguments.get("ci_name"), arguments.get("task_name"),
             arguments.get("task_id"),
+        )
+
+    if name == "browser_inspect_agent_task_result_semantic":
+        return inspect_agent_task_result_semantic(
+            arguments.get("ci_name"), arguments.get("task_id"),
         )
 
     if name == "browser_inspect_table_row":

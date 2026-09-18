@@ -1,5 +1,7 @@
 """Bounded, read-only summary of one agent's observed task-list response."""
 
+from datetime import datetime
+
 
 def summarize_agent_tasks(ci, task_page, task_name=None, task_id=None):
     ci = ci if isinstance(ci, dict) else {}
@@ -86,4 +88,77 @@ def summarize_agent_tasks(ci, task_page, task_name=None, task_id=None):
         "task_list_observed": isinstance(items, list),
         "execution_result_verified": False,
         "mutation_executed": False,
+    }
+
+
+def summarize_agent_task_full(ci, task_page, task_id, full):
+    """Describe a full task response without exposing its payload or parameters."""
+    listed = summarize_agent_tasks(ci, task_page, task_id=task_id)
+    base = {
+        "ci_name": listed["ci_name"],
+        "agent_id": listed["agent_id"],
+        "task_id": task_id,
+        "inspection_status": "blocked",
+        "reason": listed["reason"],
+        "full_result_observed": False,
+        "execution_result_verified": False,
+        "mutation_executed": False,
+    }
+    if listed["reason"]:
+        return base
+    total = task_page.get("total") if isinstance(task_page, dict) else None
+    items = task_page.get("items") if isinstance(task_page, dict) else None
+    if (
+        not isinstance(total, int) or isinstance(total, bool)
+        or not isinstance(items, list) or total != len(items)
+    ):
+        return {**base, "reason": "task_list_completeness_unconfirmed"}
+    item = listed["matched_tasks"][0]
+    if not isinstance(full, dict) or (
+        full.get("id") != task_id
+        or full.get("agent_id") != listed["agent_id"]
+        or full.get("name") != item["name"]
+    ):
+        return {**base, "reason": "task_full_identity_mismatch"}
+
+    envelope = full.get("result")
+    if envelope is None:
+        return {
+            **base, "reason": "task_result_not_available",
+            "task_name": item["name"], "task_status": full.get("status"),
+        }
+    if not isinstance(envelope, dict):
+        return {**base, "reason": "task_result_envelope_invalid"}
+
+    processed_at = envelope.get("processed_at")
+    if not isinstance(processed_at, str) or len(processed_at) > 80:
+        return {**base, "reason": "task_result_processed_at_invalid"}
+    try:
+        datetime.fromisoformat(processed_at.replace("Z", "+00:00"))
+    except ValueError:
+        return {**base, "reason": "task_result_processed_at_invalid"}
+
+    payload = envelope.get("result")
+    error_code = envelope.get("error_code")
+    if not isinstance(error_code, int) or isinstance(error_code, bool):
+        error_code = None
+    return {
+        **base,
+        "task_name": item["name"],
+        "task_status": full.get("status"),
+        "listed_status": item["status"],
+        "listed_last_processed_at": item["last_processed_at"],
+        "processed_at": processed_at,
+        "error_code": error_code,
+        "has_error_message": bool(envelope.get("error_msg")),
+        "result_present": payload not in (None, "", [], {}),
+        "result_type": (
+            "text" if isinstance(payload, str)
+            else "object" if isinstance(payload, dict)
+            else "list" if isinstance(payload, list)
+            else "other" if payload is not None else "none"
+        ),
+        "inspection_status": "observed",
+        "reason": None,
+        "full_result_observed": True,
     }
