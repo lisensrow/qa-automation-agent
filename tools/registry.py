@@ -1277,7 +1277,8 @@ TOOLS = [
             "description": (
                 "Read-only список задач выбранного агента по уже увиденному "
                 "GET ответу после открытия Agent → Tasks. Можно указать точное "
-                "имя задачи. Возвращает только безопасные метаданные: enabled, "
+                "имя задачи и/или ID из наблюдённого списка; ID различает "
+                "повторяющиеся имена. Возвращает только безопасные метаданные: enabled, "
                 "period, status и last_processed_at. Не запускает задачу и "
                 "не подтверждает результат её выполнения. Если GET ещё не "
                 "наблюдался, открой вкладку Agent → Tasks и повтори."
@@ -1285,6 +1286,7 @@ TOOLS = [
             "parameters": {"type": "object", "properties": {
                 "ci_name": {"type": "string"},
                 "task_name": {"type": "string"},
+                "task_id": {"type": "string"},
             }, "required": ["ci_name"]}
         }
     },
@@ -1500,6 +1502,7 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_inspect_agent_tasks_semantic":
         return inspect_agent_tasks_semantic(
             arguments.get("ci_name"), arguments.get("task_name"),
+            arguments.get("task_id"),
         )
 
     if name == "browser_inspect_table_row":

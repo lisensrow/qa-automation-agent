@@ -49,6 +49,28 @@ try:
 finally:
     uqa.get_job = original_get_job
 assert summary["matched_tasks"][0]["period_seconds"] == 60
+duplicate_page = {"total": 2, "items": [
+    task_page["items"][0],
+    {**task_page["items"][0], "id": "task-2", "status": "error"},
+]}
+assert summarize_agent_tasks(
+    ci, duplicate_page, "checkAlive",
+)["reason"] == "task_absent_or_ambiguous"
+selected_by_id = summarize_agent_tasks(
+    ci, duplicate_page, "checkAlive", "task-2",
+)
+assert selected_by_id["inspection_status"] == "observed"
+assert selected_by_id["matched_tasks"][0]["task_id"] == "task-2"
+assert selected_by_id["matched_tasks"][0]["status"] == "error"
+assert summarize_agent_tasks(
+    ci, duplicate_page, task_id="task-2",
+)["matched_tasks"][0]["task_id"] == "task-2"
+assert summarize_agent_tasks(
+    ci, {"total": 3, "items": duplicate_page["items"]}, task_id="task-2",
+)["reason"] == "task_list_incomplete"
+assert summarize_agent_tasks(
+    ci, duplicate_page, "other", "task-2",
+)["reason"] == "task_id_absent_or_ambiguous"
 assert "never-expose-command-or-secret" not in str(summary)
 overview = summarize_agent_tasks(ci, task_page)
 assert overview["matched_tasks"] == []
@@ -80,6 +102,9 @@ try:
     session._ensure_started()
     session.page.set_content("<div>test-linux</div><div>Agent</div><div>Tasks</div>")
     assert session.inspect_agent_tasks_semantic(None)["error"] == "ci_name_required"
+    assert session.inspect_agent_tasks_semantic(
+        "test-linux", task_id=" ",
+    )["error"] == "task_id_invalid"
     session.network_details["ci-request"] = {
         "request": SimpleNamespace(method="GET", url="https://stand/api/v1/cis/ci-1"),
         "response": FakeResponse(ci),

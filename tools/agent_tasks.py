@@ -1,7 +1,7 @@
 """Bounded, read-only summary of one agent's observed task-list response."""
 
 
-def summarize_agent_tasks(ci, task_page, task_name=None):
+def summarize_agent_tasks(ci, task_page, task_name=None, task_id=None):
     ci = ci if isinstance(ci, dict) else {}
     task_page = task_page if isinstance(task_page, dict) else {}
     agent_id = ci.get("agent_id")
@@ -33,10 +33,11 @@ def summarize_agent_tasks(ci, task_page, task_name=None):
 
     summaries = []
     if reason is None:
-        selected = (
-            [item for item in items if item.get("name") == task_name]
-            if task_name else []
-        )
+        selected = [
+            item for item in items
+            if (task_name is None or item.get("name") == task_name)
+            and (task_id is None or item.get("id") == task_id)
+        ] if task_name or task_id else []
         for item in selected[:20]:
             summaries.append({
                 "task_id": item.get("id"),
@@ -49,11 +50,14 @@ def summarize_agent_tasks(ci, task_page, task_name=None):
                 "updated_at": item.get("updated_at"),
             })
     exact = summaries
-    if reason is None and task_name:
+    if reason is None and (task_name or task_id):
         if total is not None and total > len(items):
             reason = "task_list_incomplete"
-        elif sum(item.get("name") == task_name for item in items) != 1:
-            reason = "task_absent_or_ambiguous"
+        elif len(selected) != 1:
+            reason = (
+                "task_id_absent_or_ambiguous" if task_id
+                else "task_absent_or_ambiguous"
+            )
 
     available_names = []
     if reason == "task_absent_or_ambiguous":
@@ -68,13 +72,14 @@ def summarize_agent_tasks(ci, task_page, task_name=None):
         "ci_name": ci.get("name"),
         "agent_id": agent_id,
         "task_name": task_name,
+        "task_id": task_id,
         "task_count": total,
         "page_count": len(items) if isinstance(items, list) else None,
         "matched_tasks": exact[:20],
         "task_names": [
             {"name": name, "count": count}
             for name, count in list(name_counts.items())[:30]
-        ] if not task_name else [],
+        ] if not (task_name or task_id) else [],
         "available_task_names": available_names,
         "inspection_status": "observed" if reason is None else "blocked",
         "reason": reason,

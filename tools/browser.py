@@ -1982,7 +1982,7 @@ class BrowserSession:
         return result
 
     def inspect_agent_tasks_semantic(
-        self, ci_name: str, task_name: str = None,
+        self, ci_name: str, task_name: str = None, task_id: str = None,
     ):
         """Summarize an already-observed task-list GET for the selected agent."""
         from tools.agent_tasks import summarize_agent_tasks
@@ -1994,6 +1994,10 @@ class BrowserSession:
             not isinstance(task_name, str) or not task_name.strip()
         ):
             return {"error": "task_name_invalid", "executed": False}
+        if task_id is not None and (
+            not isinstance(task_id, str) or not task_id.strip()
+        ):
+            return {"error": "task_id_invalid", "executed": False}
         if ci_name not in self.page.locator("body").inner_text():
             return {"error": "ci_not_visible", "executed": False}
 
@@ -2027,13 +2031,13 @@ class BrowserSession:
                     source_ids["tasks"] = request_id
                     break
 
-        summary = summarize_agent_tasks(ci, task_page, task_name)
+        summary = summarize_agent_tasks(ci, task_page, task_name, task_id)
         if summary.get("reason") == "task_list_get_not_observed":
             summary["next_step_hint"] = (
                 "Open the selected CI's Agent → Tasks tab, then inspect again."
             )
         inspection_key = (
-            ci_name, task_name, source_ids.get("tasks"), self.page.url,
+            ci_name, task_name, task_id, source_ids.get("tasks"), self.page.url,
         )
         if self._last_agent_task_inspection == inspection_key:
             return {
@@ -2041,6 +2045,7 @@ class BrowserSession:
                 "executed": False,
                 "ci_name": ci_name,
                 "task_name": task_name,
+                "task_id": task_id,
                 "reason": summary.get("reason"),
                 "available_task_names": summary.get("available_task_names"),
             }
@@ -8687,9 +8692,9 @@ def inspect_agent_plugins_semantic(
 
 
 def inspect_agent_tasks_semantic(
-    ci_name: str, task_name: str = None,
+    ci_name: str, task_name: str = None, task_id: str = None,
 ) -> dict:
-    return _session.inspect_agent_tasks_semantic(ci_name, task_name)
+    return _session.inspect_agent_tasks_semantic(ci_name, task_name, task_id)
 
 
 def delete_json_resource(

@@ -531,7 +531,7 @@ def extract_observations(
         ),
         "browser_inspect_agent_tasks_semantic": (
             "agent_task_list",
-            ("ci_name", "agent_id", "task_name", "task_count",
+            ("ci_name", "agent_id", "task_name", "task_id", "task_count",
              "page_count", "matched_tasks", "task_names",
              "available_task_names",
              "inspection_status", "task_list_observed", "next_step_hint",
