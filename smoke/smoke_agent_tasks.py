@@ -85,6 +85,20 @@ assert full_summary["result_present"] is True
 assert full_summary["has_error_message"] is True
 assert "never-expose" not in str(full_summary)
 assert not {"text_excerpt", "screenshot", "additional_params", "result"} & set(full_summary)
+verified_summary = summarize_agent_task_full(
+    ci, task_page, "task-1", full,
+    expected_text="command-output", expected_error_code=0,
+)
+assert verified_summary["execution_result_verified"] is True
+assert verified_summary["assertion_passed"] is True
+assert verified_summary["text_assertion_matched"] is True
+assert "command-output" not in str(verified_summary)
+failed_summary = summarize_agent_task_full(
+    ci, task_page, "task-1", full, expected_text="not present",
+)
+assert failed_summary["execution_result_verified"] is False
+assert failed_summary["assertion_passed"] is False
+assert failed_summary["reason"] == "task_result_assertion_failed"
 assert summarize_agent_task_full(
     ci, task_page, "task-1", {**full, "agent_id": "other"},
 )["reason"] == "task_full_identity_mismatch"
@@ -126,6 +140,34 @@ try:
     assert verified[0]["status"] == "blocked", verified[0]
     assert verified[0]["reason"] == "UQA CORE: task_result_metadata_only"
     assert "command succeeded" not in verified[0]["actual"]
+finally:
+    uqa.get_job = original_get_job
+verified_observation = extract_observations(
+    "browser_inspect_agent_task_result_semantic",
+    {"ci_name": "test-linux", "task_id": "task-1"}, verified_summary,
+)[0]
+verified_observation["observation_id"] = "obs-task-verified"
+verified_job = {"job_type": "regression", "test_cases": [{
+    "case_id": "case-1",
+    "evidence": [{
+        "evidence_id": "ev-task-verified",
+        "type": "browser_inspect_agent_task_result_semantic",
+        "observation_ids": ["obs-task-verified"],
+        "usable_for_verdict": True,
+    }],
+    "observations": [verified_observation],
+}]}
+original_get_job = uqa.get_job
+try:
+    uqa.get_job = lambda job_id: verified_job
+    verified, errors = uqa.verify_structured_check_evidence(
+        "job-1", "case-1",
+        [{"title": "Result", "status": "blocked",
+          "evidence": ["ev-task-verified"]}],
+    )
+    assert not errors, errors
+    assert verified[0]["status"] == "passed", verified[0]
+    assert verified[0]["reason"] == "UQA CORE: task_result_assertion_passed"
 finally:
     uqa.get_job = original_get_job
 assert summarize_agent_tasks(
@@ -215,9 +257,52 @@ try:
         )
         assert full_evidence["usable_for_verdict"] is False
         assert full_evidence["eligibility_reason"] == "task_result_metadata_only"
+        verified_evidence = uqa.record_tool_evidence(
+            "job-1", "case-1", "browser_inspect_agent_task_result_semantic",
+            {"ci_name": "test-linux", "task_id": "task-1"}, verified_summary,
+        )
+        assert verified_evidence["usable_for_verdict"] is True
     finally:
         uqa.add_evidence = original_add_evidence
 finally:
     session.close()
+
+original_get_job = uqa.get_job
+original_execute_tool = uqa.execute_tool
+try:
+    uqa.get_job = lambda job_id: {
+        "request": "Проверь, что результат содержит READY и код 0."
+    }
+    uqa.execute_tool = lambda name, arguments: {"executed": False, "safe": True}
+    denied = uqa.execute_tool_with_policy(
+        "browser_inspect_agent_task_result_semantic",
+        {"ci_name": "test-linux", "task_id": "task-1",
+         "expected_text": "secret guess"},
+        [], action_policy="confirm_mutations", job_id="job-1", case_id="case-1",
+    )
+    assert denied["error"] == "expected_text_not_user_authored", denied
+    denied_code = uqa.execute_tool_with_policy(
+        "browser_inspect_agent_task_result_semantic",
+        {"ci_name": "test-linux", "task_id": "task-1",
+         "expected_text": "READY", "expected_error_code": 2},
+        [], action_policy="confirm_mutations", job_id="job-1", case_id="case-1",
+    )
+    assert denied_code["error"] == "expected_error_code_not_user_authored"
+    allowed = uqa.execute_tool_with_policy(
+        "browser_inspect_agent_task_result_semantic",
+        {"ci_name": "test-linux", "task_id": "task-1",
+         "expected_text": "READY", "expected_error_code": 0},
+        [], action_policy="confirm_mutations", job_id="job-1", case_id="case-1",
+    )
+    assert allowed["safe"] is True, allowed
+    assert uqa._request_explicitly_names_error_code(
+        "Версия 2026.09, ожидается код ошибки -1.", -1,
+    )
+    assert not uqa._request_explicitly_names_error_code(
+        "Версия 2026.09 без ожидаемого кода.", 0,
+    )
+finally:
+    uqa.get_job = original_get_job
+    uqa.execute_tool = original_execute_tool
 
 print("agent tasks smoke: PASS")

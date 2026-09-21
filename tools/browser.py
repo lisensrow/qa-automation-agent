@@ -2055,7 +2055,10 @@ class BrowserSession:
         result["source_request_ids"] = source_ids
         return result
 
-    def inspect_agent_task_result_semantic(self, ci_name: str, task_id: str):
+    def inspect_agent_task_result_semantic(
+        self, ci_name: str, task_id: str,
+        expected_text: str = None, expected_error_code: int = None,
+    ):
         """Read one observed task's full GET; return metadata, never its result."""
         from tools.agent_tasks import summarize_agent_task_full, summarize_agent_tasks
 
@@ -2108,7 +2111,10 @@ class BrowserSession:
 
         listed = summarize_agent_tasks(ci, task_page, task_id=task_id)
         if listed["reason"]:
-            result = summarize_agent_task_full(ci, task_page, task_id, None)
+            result = summarize_agent_task_full(
+                ci, task_page, task_id, None,
+                expected_text, expected_error_code,
+            )
             result["source_request_ids"] = source_ids
             return result
         if (
@@ -2116,7 +2122,10 @@ class BrowserSession:
             or isinstance(task_page.get("total"), bool)
             or task_page["total"] != len(task_page["items"])
         ):
-            result = summarize_agent_task_full(ci, task_page, task_id, None)
+            result = summarize_agent_task_full(
+                ci, task_page, task_id, None,
+                expected_text, expected_error_code,
+            )
             result["source_request_ids"] = source_ids
             return result
 
@@ -2135,7 +2144,10 @@ class BrowserSession:
             full = response.json() if status == 200 else None
         except Exception:
             status, full = None, None
-        result = summarize_agent_task_full(ci, task_page, task_id, full)
+        result = summarize_agent_task_full(
+            ci, task_page, task_id, full,
+            expected_text, expected_error_code,
+        )
         if status != 200:
             result["inspection_status"] = "blocked"
             result["reason"] = "task_full_get_unavailable"
@@ -8785,8 +8797,13 @@ def inspect_agent_tasks_semantic(
     return _session.inspect_agent_tasks_semantic(ci_name, task_name, task_id)
 
 
-def inspect_agent_task_result_semantic(ci_name: str, task_id: str) -> dict:
-    return _session.inspect_agent_task_result_semantic(ci_name, task_id)
+def inspect_agent_task_result_semantic(
+    ci_name: str, task_id: str,
+    expected_text: str = None, expected_error_code: int = None,
+) -> dict:
+    return _session.inspect_agent_task_result_semantic(
+        ci_name, task_id, expected_text, expected_error_code,
+    )
 
 
 def delete_json_resource(

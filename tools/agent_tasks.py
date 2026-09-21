@@ -1,6 +1,7 @@
 """Bounded, read-only summary of one agent's observed task-list response."""
 
 from datetime import datetime
+import hashlib
 
 
 def summarize_agent_tasks(ci, task_page, task_name=None, task_id=None):
@@ -91,7 +92,10 @@ def summarize_agent_tasks(ci, task_page, task_name=None, task_id=None):
     }
 
 
-def summarize_agent_task_full(ci, task_page, task_id, full):
+def summarize_agent_task_full(
+    ci, task_page, task_id, full,
+    expected_text=None, expected_error_code=None,
+):
     """Describe a full task response without exposing its payload or parameters."""
     listed = summarize_agent_tasks(ci, task_page, task_id=task_id)
     base = {
@@ -142,6 +146,40 @@ def summarize_agent_task_full(ci, task_page, task_id, full):
     error_code = envelope.get("error_code")
     if not isinstance(error_code, int) or isinstance(error_code, bool):
         error_code = None
+    expected_text_valid = (
+        expected_text is None
+        or (
+            isinstance(expected_text, str)
+            and 3 <= len(expected_text) <= 160
+            and not any(ord(ch) < 32 for ch in expected_text)
+        )
+    )
+    if not expected_text_valid:
+        return {**base, "reason": "expected_text_invalid"}
+    if (
+        expected_error_code is not None
+        and (
+            not isinstance(expected_error_code, int)
+            or isinstance(expected_error_code, bool)
+        )
+    ):
+        return {**base, "reason": "expected_error_code_invalid"}
+
+    text_checked = expected_text is not None
+    text_matched = (
+        expected_text in payload
+        if text_checked and isinstance(payload, str)
+        else False if text_checked else None
+    )
+    error_code_matched = (
+        error_code == expected_error_code
+        if expected_error_code is not None else None
+    )
+    checks = [
+        value for value in (text_matched, error_code_matched)
+        if value is not None
+    ]
+    assertion_passed = all(checks) if checks else None
     return {
         **base,
         "task_name": item["name"],
@@ -158,7 +196,23 @@ def summarize_agent_task_full(ci, task_page, task_id, full):
             else "list" if isinstance(payload, list)
             else "other" if payload is not None else "none"
         ),
+        "expected_text_sha256": (
+            hashlib.sha256(expected_text.encode("utf-8")).hexdigest()
+            if expected_text is not None else None
+        ),
+        "expected_text_length": (
+            len(expected_text) if expected_text is not None else None
+        ),
+        "text_assertion_checked": text_checked,
+        "text_assertion_matched": text_matched,
+        "expected_error_code": expected_error_code,
+        "error_code_matched": error_code_matched,
+        "assertion_passed": assertion_passed,
         "inspection_status": "observed",
-        "reason": None,
+        "reason": (
+            None if assertion_passed is not False
+            else "task_result_assertion_failed"
+        ),
         "full_result_observed": True,
+        "execution_result_verified": assertion_passed is True,
     }

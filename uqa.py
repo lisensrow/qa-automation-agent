@@ -458,7 +458,8 @@ SYSTEM_PROMPT = """
   Agent → Tasks и повтори чтение. Это не означает, что задач нет.
 - Для точного task_id из списка можно вызвать
   browser_inspect_agent_task_result_semantic: он читает сохранённый GET /full,
-  но не показывает текст результата и не доказывает успех команды.
+  но не показывает текст результата. expected_text/expected_error_code допустимы
+  только когда точное ожидание явно написано пользователем в исходном Job.
 - stage_test_artifact используй только для явного тестового файла и известного
   SHA-256 на стенде текущего Job. browser_upload_staged_artifact_semantic
   принимает только artifact ID и точное file-поле или file chooser; выбор файла
@@ -959,6 +960,20 @@ def _latest_user_text(messages):
             )
 
     return ""
+
+
+def _request_explicitly_names_error_code(text, expected):
+    if not isinstance(expected, int) or isinstance(expected, bool):
+        return False
+    for match in re.finditer(
+        r"(?iu)(?:error[_ -]?code|exit[_ -]?code|"
+        r"код(?:\s+(?:ошибки|возврата|выхода))?)"
+        r"[^\d-]{0,12}(-?\d+)",
+        str(text or ""),
+    ):
+        if int(match.group(1)) == expected:
+            return True
+    return False
 
 
 def _request_has_explicit_mutation_intent(text):
@@ -3227,6 +3242,44 @@ def execute_tool_with_policy(
         except Exception:
             authoritative_task_text = None
 
+    if name == "browser_inspect_agent_task_result_semantic":
+        expected_text = arguments.get("expected_text")
+        expected_error_code = arguments.get("expected_error_code")
+        source_text = str(authoritative_task_text or "")
+        if expected_text is not None and (
+            not isinstance(expected_text, str)
+            or expected_text.casefold() not in source_text.casefold()
+        ):
+            return {
+                "error": "expected_text_not_user_authored",
+                "status": "blocked_by_policy",
+                "tool": name,
+                "executed": False,
+                "action_class": action_class,
+                "action_policy_status": "blocked_by_assertion_provenance",
+                "reason": (
+                    "The expected text must appear explicitly in the "
+                    "persistent user-authored Job request."
+                ),
+            }
+        if expected_error_code is not None and (
+            not _request_explicitly_names_error_code(
+                source_text, expected_error_code,
+            )
+        ):
+            return {
+                "error": "expected_error_code_not_user_authored",
+                "status": "blocked_by_policy",
+                "tool": name,
+                "executed": False,
+                "action_class": action_class,
+                "action_policy_status": "blocked_by_assertion_provenance",
+                "reason": (
+                    "The expected error code must appear explicitly in the "
+                    "persistent user-authored Job request."
+                ),
+            }
+
     pending_navigation = (
         _PENDING_NAVIGATION_CANDIDATES.get(
             (
@@ -4618,11 +4671,19 @@ def record_tool_evidence(
         "browser_inspect_agent_tasks_semantic",
         "browser_inspect_agent_task_result_semantic",
     }:
-        eligibility["usable_for_pass"] = False
+        eligibility["usable_for_pass"] = (
+            tool_name == "browser_inspect_agent_task_result_semantic"
+            and result.get("full_result_observed") is True
+            and result.get("assertion_passed") in {True, False}
+        )
         eligibility["reason"] = (
             "task_list_metadata_only"
             if tool_name == "browser_inspect_agent_tasks_semantic"
-            else "task_result_metadata_only"
+            else (
+                "task_result_assertion_evaluated"
+                if result.get("assertion_passed") in {True, False}
+                else "task_result_metadata_only"
+            )
         )
 
     return add_evidence(
@@ -5408,15 +5469,24 @@ def verify_structured_check_evidence(
                 check["observations"] = [core_observation["observation_id"]]
                 check["assertions"] = []
                 check["actual"] = json.dumps(data, ensure_ascii=False, default=str)
-                check["status"] = "blocked"
-                check["reason"] = (
-                    "UQA CORE: "
-                    + str(data.get("reason") or (
-                        "task_list_metadata_only"
-                        if core_observation["type"] == "agent_task_list"
-                        else "task_result_metadata_only"
-                    ))
-                )
+                if core_observation["type"] == "agent_task_result":
+                    if data.get("execution_result_verified") is True:
+                        check["status"] = "passed"
+                        check["reason"] = "UQA CORE: task_result_assertion_passed"
+                    elif data.get("assertion_passed") is False:
+                        check["status"] = "failed"
+                        check["reason"] = "UQA CORE: task_result_assertion_failed"
+                    else:
+                        check["status"] = "blocked"
+                        check["reason"] = "UQA CORE: " + str(
+                            data.get("reason") or "task_result_metadata_only"
+                        )
+                else:
+                    check["status"] = "blocked"
+                    check["reason"] = (
+                        "UQA CORE: "
+                        + str(data.get("reason") or "task_list_metadata_only")
+                    )
                 continue
             outcome = data.get("observation_result")
             if outcome not in ("PASS", "BLOCKED"):

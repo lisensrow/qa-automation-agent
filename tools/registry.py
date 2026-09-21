@@ -1301,11 +1301,14 @@ TOOLS = [
                 "полного списка выбранного агента. Возвращает только наличие, "
                 "тип, время и код ошибки; содержимое результата, параметры "
                 "и текст ошибки не раскрывает. Не запускает задачу и не "
-                "доказывает корректность выполнения."
+                "доказывает корректность выполнения без expected_text или "
+                "expected_error_code, явно записанных пользователем в Job."
             ),
             "parameters": {"type": "object", "properties": {
                 "ci_name": {"type": "string"},
                 "task_id": {"type": "string"},
+                "expected_text": {"type": "string"},
+                "expected_error_code": {"type": "integer"},
             }, "required": ["ci_name", "task_id"]}
         }
     },
@@ -1527,6 +1530,7 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_inspect_agent_task_result_semantic":
         return inspect_agent_task_result_semantic(
             arguments.get("ci_name"), arguments.get("task_id"),
+            arguments.get("expected_text"), arguments.get("expected_error_code"),
         )
 
     if name == "browser_inspect_table_row":
