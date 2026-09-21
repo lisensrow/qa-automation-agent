@@ -460,6 +460,8 @@ SYSTEM_PROMPT = """
   browser_inspect_agent_task_result_semantic: он читает сохранённый GET /full,
   но не показывает текст результата. expected_text/expected_error_code допустимы
   только когда точное ожидание явно написано пользователем в исходном Job.
+  verify_periodic используй только по явной просьбе проверить два выполнения:
+  первый вызов фиксирует baseline, второй должен увидеть новый processed_at.
 - stage_test_artifact используй только для явного тестового файла и известного
   SHA-256 на стенде текущего Job. browser_upload_staged_artifact_semantic
   принимает только artifact ID и точное file-поле или file chooser; выбор файла
@@ -974,6 +976,14 @@ def _request_explicitly_names_error_code(text, expected):
         if int(match.group(1)) == expected:
             return True
     return False
+
+
+def _request_explicitly_requires_periodic_verification(text):
+    value = str(text or "").casefold()
+    return any(marker in value for marker in (
+        "periodic", "периодическ", "два запуска", "2 запуска",
+        "два выполнен", "2 выполнен", "повторн",
+    ))
 
 
 def _request_has_explicit_mutation_intent(text):
@@ -3279,6 +3289,21 @@ def execute_tool_with_policy(
                     "persistent user-authored Job request."
                 ),
             }
+        if arguments.get("verify_periodic") is True and not (
+            _request_explicitly_requires_periodic_verification(source_text)
+        ):
+            return {
+                "error": "periodic_verification_not_user_authored",
+                "status": "blocked_by_policy",
+                "tool": name,
+                "executed": False,
+                "action_class": action_class,
+                "action_policy_status": "blocked_by_assertion_provenance",
+                "reason": (
+                    "Periodic verification must be explicitly requested in "
+                    "the persistent user-authored Job request."
+                ),
+            }
 
     pending_navigation = (
         _PENDING_NAVIGATION_CANDIDATES.get(
@@ -4674,7 +4699,10 @@ def record_tool_evidence(
         eligibility["usable_for_pass"] = (
             tool_name == "browser_inspect_agent_task_result_semantic"
             and result.get("full_result_observed") is True
-            and result.get("assertion_passed") in {True, False}
+            and (
+                result.get("assertion_passed") in {True, False}
+                or result.get("periodic_execution_verified") is True
+            )
         )
         eligibility["reason"] = (
             "task_list_metadata_only"
@@ -5470,7 +5498,34 @@ def verify_structured_check_evidence(
                 check["assertions"] = []
                 check["actual"] = json.dumps(data, ensure_ascii=False, default=str)
                 if core_observation["type"] == "agent_task_result":
-                    if data.get("execution_result_verified") is True:
+                    if data.get("periodic_verification_requested") is True:
+                        assertion_requested = (
+                            data.get("text_assertion_checked") is True
+                            or data.get("expected_error_code") is not None
+                        )
+                        if (
+                            data.get("periodic_execution_verified") is True
+                            and (
+                                not assertion_requested
+                                or data.get("assertion_passed") is True
+                            )
+                        ):
+                            check["status"] = "passed"
+                            check["reason"] = (
+                                "UQA CORE: two_distinct_periodic_executions_observed"
+                            )
+                        elif data.get("assertion_passed") is False:
+                            check["status"] = "failed"
+                            check["reason"] = (
+                                "UQA CORE: task_result_assertion_failed"
+                            )
+                        else:
+                            check["status"] = "blocked"
+                            check["reason"] = "UQA CORE: " + str(
+                                data.get("reason")
+                                or "second_distinct_execution_required"
+                            )
+                    elif data.get("execution_result_verified") is True:
                         check["status"] = "passed"
                         check["reason"] = "UQA CORE: task_result_assertion_passed"
                     elif data.get("assertion_passed") is False:

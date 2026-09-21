@@ -122,6 +122,7 @@ class BrowserSession:
         self._last_inspected_exact_target = None
         self._last_inspected_exact_row = None
         self._last_agent_task_inspection = None
+        self._agent_task_result_snapshots = {}
         # Session-private clipboard. It never reads from or writes to the
         # operating-system clipboard and is never persisted to artifacts.
         self._private_clipboard_text = None
@@ -2058,9 +2059,13 @@ class BrowserSession:
     def inspect_agent_task_result_semantic(
         self, ci_name: str, task_id: str,
         expected_text: str = None, expected_error_code: int = None,
+        verify_periodic: bool = False,
     ):
         """Read one observed task's full GET; return metadata, never its result."""
-        from tools.agent_tasks import summarize_agent_task_full, summarize_agent_tasks
+        from tools.agent_tasks import (
+            summarize_agent_task_full, summarize_agent_tasks,
+            summarize_periodic_progress,
+        )
 
         self._ensure_started()
         if not isinstance(ci_name, str) or not ci_name.strip():
@@ -2148,6 +2153,16 @@ class BrowserSession:
             ci, task_page, task_id, full,
             expected_text, expected_error_code,
         )
+        if verify_periodic:
+            snapshot_key = (result.get("agent_id"), task_id)
+            periodic, snapshot = summarize_periodic_progress(
+                listed["matched_tasks"][0],
+                result,
+                self._agent_task_result_snapshots.get(snapshot_key),
+            )
+            result.update(periodic)
+            if snapshot is not None:
+                self._agent_task_result_snapshots[snapshot_key] = snapshot
         if status != 200:
             result["inspection_status"] = "blocked"
             result["reason"] = "task_full_get_unavailable"
@@ -8800,9 +8815,10 @@ def inspect_agent_tasks_semantic(
 def inspect_agent_task_result_semantic(
     ci_name: str, task_id: str,
     expected_text: str = None, expected_error_code: int = None,
+    verify_periodic: bool = False,
 ) -> dict:
     return _session.inspect_agent_task_result_semantic(
-        ci_name, task_id, expected_text, expected_error_code,
+        ci_name, task_id, expected_text, expected_error_code, verify_periodic,
     )
 
 

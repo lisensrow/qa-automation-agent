@@ -1302,13 +1302,16 @@ TOOLS = [
                 "тип, время и код ошибки; содержимое результата, параметры "
                 "и текст ошибки не раскрывает. Не запускает задачу и не "
                 "доказывает корректность выполнения без expected_text или "
-                "expected_error_code, явно записанных пользователем в Job."
+                "expected_error_code, явно записанных пользователем в Job. "
+                "verify_periodic сравнивает два вызова для того же task_id "
+                "и требует явного запроса periodic-проверки в Job."
             ),
             "parameters": {"type": "object", "properties": {
                 "ci_name": {"type": "string"},
                 "task_id": {"type": "string"},
                 "expected_text": {"type": "string"},
                 "expected_error_code": {"type": "integer"},
+                "verify_periodic": {"type": "boolean"},
             }, "required": ["ci_name", "task_id"]}
         }
     },
@@ -1531,6 +1534,7 @@ def execute_tool(name: str, arguments: dict):
         return inspect_agent_task_result_semantic(
             arguments.get("ci_name"), arguments.get("task_id"),
             arguments.get("expected_text"), arguments.get("expected_error_code"),
+            arguments.get("verify_periodic", False),
         )
 
     if name == "browser_inspect_table_row":

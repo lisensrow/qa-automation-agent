@@ -216,3 +216,60 @@ def summarize_agent_task_full(
         "full_result_observed": True,
         "execution_result_verified": assertion_passed is True,
     }
+
+
+def summarize_periodic_progress(task, result_summary, previous=None):
+    """Compare two trusted snapshots of the same exact periodic task."""
+    task = task if isinstance(task, dict) else {}
+    result_summary = result_summary if isinstance(result_summary, dict) else {}
+    public = {
+        "periodic_verification_requested": True,
+        "period_seconds": task.get("period_seconds"),
+        "periodic_verification_status": "blocked",
+        "periodic_execution_verified": False,
+    }
+    period = task.get("period_seconds")
+    if (
+        not isinstance(period, int) or isinstance(period, bool) or period <= 0
+        or task.get("enabled") not in (1, True)
+    ):
+        return {**public, "reason": "task_not_enabled_periodic"}, None
+    if result_summary.get("full_result_observed") is not True:
+        return {
+            **public,
+            "reason": result_summary.get("reason") or "task_result_not_observed",
+        }, None
+    current = result_summary.get("processed_at")
+    try:
+        current_dt = datetime.fromisoformat(current.replace("Z", "+00:00"))
+    except (AttributeError, ValueError):
+        return {**public, "reason": "task_result_processed_at_invalid"}, None
+    snapshot = {"processed_at": current, "processed_dt": current_dt}
+    if not isinstance(previous, dict):
+        return {
+            **public,
+            "current_processed_at": current,
+            "periodic_verification_status": "baseline_recorded",
+            "reason": "second_distinct_execution_required",
+        }, snapshot
+    previous_dt = previous.get("processed_dt")
+    previous_at = previous.get("processed_at")
+    if not isinstance(previous_dt, datetime):
+        return {**public, "reason": "periodic_baseline_invalid"}, snapshot
+    if current_dt <= previous_dt:
+        return {
+            **public,
+            "previous_processed_at": previous_at,
+            "current_processed_at": current,
+            "periodic_verification_status": "awaiting_next_execution",
+            "reason": "second_distinct_execution_required",
+        }, previous
+    return {
+        **public,
+        "previous_processed_at": previous_at,
+        "current_processed_at": current,
+        "observed_interval_seconds": (current_dt - previous_dt).total_seconds(),
+        "periodic_verification_status": "verified",
+        "periodic_execution_verified": True,
+        "reason": None,
+    }, snapshot

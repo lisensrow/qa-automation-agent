@@ -1,6 +1,9 @@
 from types import SimpleNamespace
 
-from tools.agent_tasks import summarize_agent_tasks, summarize_agent_task_full
+from tools.agent_tasks import (
+    summarize_agent_tasks, summarize_agent_task_full,
+    summarize_periodic_progress,
+)
 from tools.browser import BrowserSession
 from tools.registry import TOOLS
 from observation_extractor import extract_observations
@@ -99,6 +102,71 @@ failed_summary = summarize_agent_task_full(
 assert failed_summary["execution_result_verified"] is False
 assert failed_summary["assertion_passed"] is False
 assert failed_summary["reason"] == "task_result_assertion_failed"
+periodic_task = {
+    **summary["matched_tasks"][0], "period_seconds": 10, "enabled": 1,
+}
+baseline, snapshot = summarize_periodic_progress(
+    periodic_task, full_summary,
+)
+assert baseline["periodic_verification_status"] == "baseline_recorded"
+assert baseline["periodic_execution_verified"] is False
+unchanged, _ = summarize_periodic_progress(
+    periodic_task, full_summary, snapshot,
+)
+assert unchanged["periodic_verification_status"] == "awaiting_next_execution"
+older_full = {
+    **full_summary, "processed_at": "2026-09-17T09:59:59Z",
+}
+older, preserved_snapshot = summarize_periodic_progress(
+    periodic_task, older_full, snapshot,
+)
+assert older["periodic_execution_verified"] is False
+assert preserved_snapshot == snapshot
+next_full = {
+    **full_summary, "processed_at": "2026-09-17T10:00:10Z",
+}
+periodic_verified, _ = summarize_periodic_progress(
+    periodic_task, next_full, snapshot,
+)
+assert periodic_verified["periodic_execution_verified"] is True
+assert periodic_verified["observed_interval_seconds"] == 10
+periodic_result = {**next_full, **periodic_verified}
+periodic_observation = extract_observations(
+    "browser_inspect_agent_task_result_semantic",
+    {"ci_name": "test-linux", "task_id": "task-1",
+     "verify_periodic": True},
+    periodic_result,
+)[0]
+periodic_observation["observation_id"] = "obs-task-periodic"
+periodic_job = {"job_type": "regression", "test_cases": [{
+    "case_id": "case-1",
+    "evidence": [{
+        "evidence_id": "ev-task-periodic",
+        "type": "browser_inspect_agent_task_result_semantic",
+        "observation_ids": ["obs-task-periodic"],
+        "usable_for_verdict": True,
+    }],
+    "observations": [periodic_observation],
+}]}
+original_get_job = uqa.get_job
+try:
+    uqa.get_job = lambda job_id: periodic_job
+    verified, errors = uqa.verify_structured_check_evidence(
+        "job-1", "case-1",
+        [{"title": "Periodic", "status": "blocked",
+          "evidence": ["ev-task-periodic"]}],
+    )
+    assert not errors, errors
+    assert verified[0]["status"] == "passed", verified[0]
+    assert verified[0]["reason"] == (
+        "UQA CORE: two_distinct_periodic_executions_observed"
+    )
+finally:
+    uqa.get_job = original_get_job
+disabled_periodic, _ = summarize_periodic_progress(
+    {**periodic_task, "enabled": 0}, full_summary,
+)
+assert disabled_periodic["reason"] == "task_not_enabled_periodic"
 assert summarize_agent_task_full(
     ci, task_page, "task-1", {**full, "agent_id": "other"},
 )["reason"] == "task_full_identity_mismatch"
@@ -295,6 +363,23 @@ try:
         [], action_policy="confirm_mutations", job_id="job-1", case_id="case-1",
     )
     assert allowed["safe"] is True, allowed
+    periodic_denied = uqa.execute_tool_with_policy(
+        "browser_inspect_agent_task_result_semantic",
+        {"ci_name": "test-linux", "task_id": "task-1",
+         "verify_periodic": True},
+        [], action_policy="confirm_mutations", job_id="job-1", case_id="case-1",
+    )
+    assert periodic_denied["error"] == "periodic_verification_not_user_authored"
+    uqa.get_job = lambda job_id: {
+        "request": "Проверь два запуска periodic задачи."
+    }
+    periodic_allowed = uqa.execute_tool_with_policy(
+        "browser_inspect_agent_task_result_semantic",
+        {"ci_name": "test-linux", "task_id": "task-1",
+         "verify_periodic": True},
+        [], action_policy="confirm_mutations", job_id="job-1", case_id="case-1",
+    )
+    assert periodic_allowed["safe"] is True
     assert uqa._request_explicitly_names_error_code(
         "Версия 2026.09, ожидается код ошибки -1.", -1,
     )
