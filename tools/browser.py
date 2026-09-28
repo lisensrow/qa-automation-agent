@@ -47,6 +47,13 @@ UPLOAD_FIXTURES = {
     },
 }
 
+MANAGED_AGENT_TASK_FIXTURES = {
+    "posix_printf_marker_v1": {
+        "task_name": "executeCommand",
+        "program": "/usr/bin/printf",
+    },
+}
+
 
 def _field_metadata_matches(values, field, exact=True):
     normalized_field = str(field or "").strip().casefold()
@@ -123,6 +130,9 @@ class BrowserSession:
         self._last_inspected_exact_row = None
         self._last_agent_task_inspection = None
         self._agent_task_result_snapshots = {}
+        # Expected output is deliberately session-private. The model receives
+        # only hashes and booleans, never the command marker or raw result.
+        self._managed_agent_tasks = {}
         # Session-private clipboard. It never reads from or writes to the
         # operating-system clipboard and is never persisted to artifacts.
         self._private_clipboard_text = None
@@ -2169,6 +2179,231 @@ class BrowserSession:
         result["full_http_status"] = status
         result["source_request_ids"] = source_ids
         return result
+
+    def _observed_agent_task_context(self, ci_name):
+        """Return one exact CI and complete observed task collection."""
+        if not isinstance(ci_name, str) or not ci_name.strip():
+            return None, None, None, {"error": "ci_name_required", "executed": False}
+        if ci_name not in self.page.locator("body").inner_text():
+            return None, None, None, {"error": "ci_not_visible", "executed": False}
+
+        observed = []
+        for request_id, detail in list(self.network_details.items())[-200:]:
+            try:
+                request, response = detail["request"], detail["response"]
+                if request.method != "GET" or response.status != 200:
+                    continue
+                payload = response.json()
+                if isinstance(payload, dict):
+                    observed.append((request_id, request.url, payload))
+            except Exception:
+                continue
+
+        ci = None
+        for _, _, payload in reversed(observed):
+            if (
+                payload.get("name") == ci_name
+                and payload.get("id") and payload.get("agent_id")
+            ):
+                ci = payload
+                break
+        if ci is None:
+            return None, None, None, {
+                "error": "ci_observation_missing_or_mismatched",
+                "executed": False,
+            }
+
+        expected_path = f"/agents/{ci['agent_id']}/tasks"
+        for _, request_url, payload in reversed(observed):
+            if (
+                urlsplit(request_url).path.endswith(expected_path)
+                and isinstance(payload.get("items"), list)
+            ):
+                return ci, payload, request_url, None
+
+        return None, None, None, {
+            "error": "task_list_get_not_observed",
+            "executed": False,
+            "next_step_hint": (
+                "Open the selected CI's Agent → Tasks tab, then retry."
+            ),
+        }
+
+    def _same_https_origin_url(self, observed_url, path):
+        source = urlsplit(observed_url)
+        current = urlsplit(self.page.url)
+        if (
+            source.scheme != "https" or current.scheme != "https"
+            or source.netloc != current.netloc
+        ):
+            return None
+        return urlunsplit((source.scheme, source.netloc, path, "", ""))
+
+    def create_managed_agent_task_semantic(
+        self, ci_name: str, fixture_id: str,
+    ):
+        """Create one fixed harmless task; arbitrary commands are impossible."""
+        self._ensure_started()
+        fixture = MANAGED_AGENT_TASK_FIXTURES.get(str(fixture_id or ""))
+        if fixture is None:
+            return {"error": "managed_task_fixture_not_allowed", "executed": False}
+        ci, _, observed_url, error = self._observed_agent_task_context(ci_name)
+        if error:
+            return error
+        source = urlsplit(observed_url)
+        collection_url = self._same_https_origin_url(
+            observed_url, source.path.rstrip("/"),
+        )
+        if collection_url is None:
+            return {"error": "managed_task_origin_mismatch", "executed": False}
+
+        marker = "UQA_EXEC_OK_" + uuid.uuid4().hex[:16]
+        payload = {
+            "name": fixture["task_name"],
+            "additional_params": {
+                "programm": fixture["program"],
+                "arguments": [marker],
+            },
+        }
+        try:
+            response = self.context.request.post(
+                collection_url, data=payload, timeout=15000,
+            )
+            status = response.status
+            created = response.json() if status == 201 else None
+        except Exception:
+            status, created = None, None
+        if not isinstance(created, dict) or not created.get("id"):
+            return {
+                "error": "managed_task_create_failed",
+                "executed": False,
+                "create_status": status,
+            }
+        task_id = str(created["id"])
+        if (
+            created.get("agent_id") != ci.get("agent_id")
+            or created.get("name") != fixture["task_name"]
+        ):
+            return {
+                "error": "managed_task_create_identity_mismatch",
+                "executed": False,
+                "create_status": status,
+            }
+        self._managed_agent_tasks[task_id] = {
+            "agent_id": ci["agent_id"],
+            "ci_name": ci_name,
+            "fixture_id": fixture_id,
+            "expected_text": marker,
+        }
+        return {
+            "status": "created",
+            "executed": True,
+            "mutation_executed": True,
+            "create_status": status,
+            "ci_name": ci_name,
+            "agent_id": ci["agent_id"],
+            "task_id": task_id,
+            "task_name": fixture["task_name"],
+            "fixture_id": fixture_id,
+            "expected_marker_sha256": hashlib.sha256(marker.encode()).hexdigest(),
+        }
+
+    def inspect_managed_agent_task_result_semantic(
+        self, ci_name: str, task_id: str,
+    ):
+        """Verify a managed task against its private marker."""
+        self._ensure_started()
+        managed = self._managed_agent_tasks.get(str(task_id or ""))
+        if not isinstance(managed, dict) or managed.get("ci_name") != ci_name:
+            return {
+                "error": "managed_task_private_fixture_unavailable",
+                "executed": False,
+            }
+        result = self.inspect_agent_task_result_semantic(
+            ci_name, task_id, expected_text=managed["expected_text"],
+            expected_error_code=0,
+        )
+        if isinstance(result, dict):
+            result["managed_fixture_id"] = managed["fixture_id"]
+            result["managed_fixture_verified"] = (
+                result.get("assertion_passed") is True
+            )
+        return result
+
+    def disable_agent_task_semantic(self, ci_name: str, task_id: str):
+        """Disable one exact observed executeCommand task and verify by GET."""
+        self._ensure_started()
+        try:
+            canonical_task_id = str(uuid.UUID(task_id))
+        except (ValueError, TypeError, AttributeError):
+            return {"error": "task_id_invalid", "executed": False}
+        if canonical_task_id != task_id:
+            return {"error": "task_id_invalid", "executed": False}
+        ci, _, observed_url, error = self._observed_agent_task_context(ci_name)
+        if error:
+            return error
+        source = urlsplit(observed_url)
+        task_url = self._same_https_origin_url(
+            observed_url, source.path.rstrip("/") + f"/{task_id}",
+        )
+        if task_url is None:
+            return {"error": "managed_task_origin_mismatch", "executed": False}
+        try:
+            before_response = self.context.request.get(task_url, timeout=15000)
+            before = before_response.json() if before_response.status == 200 else None
+        except Exception:
+            before = None
+        if (
+            not isinstance(before, dict)
+            or before.get("id") != task_id
+            or before.get("agent_id") != ci.get("agent_id")
+            or before.get("name") != "executeCommand"
+        ):
+            return {"error": "managed_task_cleanup_identity_mismatch", "executed": False}
+        already_disabled = before.get("enabled") in (0, False)
+        mutation_status = None
+        if not already_disabled:
+            try:
+                response = self.context.request.put(
+                    task_url, data={"enabled": 0}, timeout=15000,
+                )
+                mutation_status = response.status
+            except Exception:
+                mutation_status = None
+        try:
+            verify_response = self.context.request.get(task_url, timeout=15000)
+            verified = (
+                verify_response.json() if verify_response.status == 200 else None
+            )
+        except Exception:
+            verify_response, verified = None, None
+        post_verified = bool(
+            isinstance(verified, dict)
+            and verified.get("id") == task_id
+            and verified.get("agent_id") == ci.get("agent_id")
+            and verified.get("name") == "executeCommand"
+            and verified.get("enabled") in (0, False)
+        )
+        if not post_verified:
+            return {
+                "error": "managed_task_disable_not_verified",
+                "executed": not already_disabled and mutation_status is not None,
+                "mutation_status": mutation_status,
+                "post_disable_verified": False,
+            }
+        return {
+            "status": "ok",
+            "executed": True,
+            "mutation_executed": not already_disabled,
+            "already_satisfied": already_disabled,
+            "mutation_status": mutation_status,
+            "post_disable_status": verify_response.status,
+            "post_disable_verified": True,
+            "ci_name": ci_name,
+            "agent_id": ci["agent_id"],
+            "task_id": task_id,
+            "task_name": "executeCommand",
+        }
 
     def get_state(self):
         self._ensure_started()
@@ -8820,6 +9055,22 @@ def inspect_agent_task_result_semantic(
     return _session.inspect_agent_task_result_semantic(
         ci_name, task_id, expected_text, expected_error_code, verify_periodic,
     )
+
+
+def create_managed_agent_task_semantic(
+    ci_name: str, fixture_id: str,
+) -> dict:
+    return _session.create_managed_agent_task_semantic(ci_name, fixture_id)
+
+
+def inspect_managed_agent_task_result_semantic(
+    ci_name: str, task_id: str,
+) -> dict:
+    return _session.inspect_managed_agent_task_result_semantic(ci_name, task_id)
+
+
+def disable_agent_task_semantic(ci_name: str, task_id: str) -> dict:
+    return _session.disable_agent_task_semantic(ci_name, task_id)
 
 
 def delete_json_resource(

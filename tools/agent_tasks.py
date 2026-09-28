@@ -142,8 +142,24 @@ def summarize_agent_task_full(
     except ValueError:
         return {**base, "reason": "task_result_processed_at_invalid"}
 
-    payload = envelope.get("result")
-    error_code = envelope.get("error_code")
+    # Current agents wrap command stdout/stderr/errorlevel in ``data`` while
+    # older tasks expose payload/error_code directly. Normalize both shapes
+    # privately; no command output is returned to the model.
+    agent_data = envelope.get("data")
+    if isinstance(agent_data, dict) and isinstance(agent_data.get("stdout"), str):
+        payload = agent_data.get("stdout")
+        raw_error_code = agent_data.get("errorlevel")
+        error_message = agent_data.get("stderr")
+    else:
+        payload = envelope.get("result")
+        raw_error_code = envelope.get("error_code")
+        error_message = envelope.get("error_msg")
+    error_code = raw_error_code
+    if isinstance(error_code, str):
+        try:
+            error_code = int(error_code.strip())
+        except ValueError:
+            error_code = None
     if not isinstance(error_code, int) or isinstance(error_code, bool):
         error_code = None
     expected_text_valid = (
@@ -188,7 +204,7 @@ def summarize_agent_task_full(
         "listed_last_processed_at": item["last_processed_at"],
         "processed_at": processed_at,
         "error_code": error_code,
-        "has_error_message": bool(envelope.get("error_msg")),
+        "has_error_message": bool(error_message),
         "result_present": payload not in (None, "", [], {}),
         "result_type": (
             "text" if isinstance(payload, str)

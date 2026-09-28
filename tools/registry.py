@@ -7,6 +7,9 @@ from tools.browser import (
     inspect_agent_plugins_semantic,
     inspect_agent_tasks_semantic,
     inspect_agent_task_result_semantic,
+    create_managed_agent_task_semantic,
+    inspect_managed_agent_task_result_semantic,
+    disable_agent_task_semantic,
     inspect_table_row,
     click_semantic,
     download_semantic,
@@ -1318,6 +1321,55 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_create_managed_agent_task_semantic",
+            "description": (
+                "WRITE: создаёт на точно наблюдённом агенте одну безопасную "
+                "executeCommand-фикстуру из закрытого allowlist. Произвольную "
+                "команду, shell, sudo или аргументы передать нельзя. Созданная "
+                "задача автоматически регистрируется Core в resource ledger."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "ci_name": {"type": "string"},
+                "fixture_id": {
+                    "type": "string",
+                    "enum": ["posix_printf_marker_v1"],
+                },
+            }, "required": ["ci_name", "fixture_id"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_managed_agent_task_result_semantic",
+            "description": (
+                "Read-only проверяет результат созданной в текущей browser "
+                "session managed task по приватному маркеру. Содержимое "
+                "команды и результата модели не возвращается."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "ci_name": {"type": "string"},
+                "task_id": {"type": "string"},
+            }, "required": ["ci_name", "task_id"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_disable_agent_task_semantic",
+            "description": (
+                "DESTRUCTIVE cleanup: отключает ровно одну наблюдённую "
+                "executeCommand-задачу по точному UUID и проверяет enabled=0 "
+                "повторным GET. Используется только для ledger-managed cleanup."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "ci_name": {"type": "string"},
+                "task_id": {"type": "string"},
+            }, "required": ["ci_name", "task_id"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_semantic",
             "description": (
                 "Read-only проверка фактического состояния "
@@ -1535,6 +1587,21 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("ci_name"), arguments.get("task_id"),
             arguments.get("expected_text"), arguments.get("expected_error_code"),
             arguments.get("verify_periodic", False),
+        )
+
+    if name == "browser_create_managed_agent_task_semantic":
+        return create_managed_agent_task_semantic(
+            arguments.get("ci_name"), arguments.get("fixture_id"),
+        )
+
+    if name == "browser_inspect_managed_agent_task_result_semantic":
+        return inspect_managed_agent_task_result_semantic(
+            arguments.get("ci_name"), arguments.get("task_id"),
+        )
+
+    if name == "browser_disable_agent_task_semantic":
+        return disable_agent_task_semantic(
+            arguments.get("ci_name"), arguments.get("task_id"),
         )
 
     if name == "browser_inspect_table_row":

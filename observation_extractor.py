@@ -554,6 +554,20 @@ def extract_observations(
              "full_result_observed", "execution_result_verified",
              "full_http_status", "source_request_ids"),
         ),
+        "browser_inspect_managed_agent_task_result_semantic": (
+            "agent_task_result",
+            ("ci_name", "agent_id", "task_id", "task_name", "task_status",
+             "listed_status", "listed_last_processed_at", "processed_at",
+             "error_code", "has_error_message", "result_present",
+             "result_type", "inspection_status", "reason",
+             "expected_text_sha256", "expected_text_length",
+             "text_assertion_checked", "text_assertion_matched",
+             "expected_error_code", "error_code_matched",
+             "assertion_passed", "managed_fixture_id",
+             "managed_fixture_verified", "full_result_observed",
+             "execution_result_verified", "full_http_status",
+             "source_request_ids"),
+        ),
     }
     if tool_name in agent_observation_fields and not result.get("error"):
         observation_type, fields = agent_observation_fields[tool_name]

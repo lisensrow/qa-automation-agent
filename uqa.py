@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import uuid
 from pathlib import Path
 
 import httpx
@@ -462,6 +463,14 @@ SYSTEM_PROMPT = """
   только когда точное ожидание явно написано пользователем в исходном Job.
   verify_periodic используй только по явной просьбе проверить два выполнения:
   первый вызов фиксирует baseline, второй должен увидеть новый processed_at.
+- Для безопасной проверки executeCommand используй только
+  browser_create_managed_agent_task_semantic с fixture_id из allowlist.
+  Он не принимает программу или аргументы модели и автоматически регистрирует
+  созданную задачу в persistent resource ledger. Результат проверяй через
+  browser_inspect_managed_agent_task_result_semantic: приватный маркер и сырой
+  вывод модели не раскрываются. Cleanup такой задачи выполняется только через
+  browser_disable_agent_task_semantic и считается завершённым лишь после GET,
+  подтвердившего enabled=0.
 - stage_test_artifact используй только для явного тестового файла и известного
   SHA-256 на стенде текущего Job. browser_upload_staged_artifact_semantic
   принимает только artifact ID и точное file-поле или file chooser; выбор файла
@@ -1145,6 +1154,7 @@ def classify_tool_action(
         "browser_inspect_agent_plugins_semantic",
         "browser_inspect_agent_tasks_semantic",
         "browser_inspect_agent_task_result_semantic",
+        "browser_inspect_managed_agent_task_result_semantic",
         "resource_list",
         "table_selection_list",
     }
@@ -1217,8 +1227,12 @@ def classify_tool_action(
     if name in {
         "browser_delete_json_resource",
         "browser_archive_json_resource",
+        "browser_disable_agent_task_semantic",
     }:
         return "destructive"
+
+    if name == "browser_create_managed_agent_task_semantic":
+        return "write"
 
     if name == "browser_fill_semantic":
         field = " ".join(
@@ -3757,6 +3771,39 @@ def execute_tool_with_policy(
             effective_arguments,
         )
 
+    if (
+        name == "browser_create_managed_agent_task_semantic"
+        and isinstance(result, dict)
+        and result.get("executed") is True
+        and result.get("mutation_executed") is True
+        and result.get("task_id")
+        and job_id
+        and case_id
+    ):
+        try:
+            resource = add_test_resource(
+                job_id,
+                resource_type="agent_task",
+                name=f"executeCommand:{str(result['task_id'])[:8]}",
+                external_id=str(result["task_id"]),
+                created_by_case=case_id,
+                cleanup_required=True,
+                metadata={
+                    "cleanup_contract": "agent_task_disable_v1",
+                    "ci_name": result.get("ci_name"),
+                    "agent_id": result.get("agent_id"),
+                    "fixture_id": result.get("fixture_id"),
+                },
+            )
+            result = dict(result)
+            result["resource_id"] = resource["resource_id"]
+            result["resource_registered"] = True
+        except Exception as exc:
+            result = dict(result)
+            result["error"] = "managed_task_resource_registration_failed"
+            result["resource_registered"] = False
+            result["reason"] = type(exc).__name__
+
     # A self-container does not narrow a target: it repeats the target's
     # own name. For a managed INTERACT only, a failed role-qualified lookup
     # may be retried once using the runtime's strict unique exact-text
@@ -4695,9 +4742,13 @@ def record_tool_evidence(
     if tool_name in {
         "browser_inspect_agent_tasks_semantic",
         "browser_inspect_agent_task_result_semantic",
+        "browser_inspect_managed_agent_task_result_semantic",
     }:
         eligibility["usable_for_pass"] = (
-            tool_name == "browser_inspect_agent_task_result_semantic"
+            tool_name in {
+                "browser_inspect_agent_task_result_semantic",
+                "browser_inspect_managed_agent_task_result_semantic",
+            }
             and result.get("full_result_observed") is True
             and (
                 result.get("assertion_passed") in {True, False}
@@ -5442,6 +5493,9 @@ def verify_structured_check_evidence(
             ),
             "browser_inspect_agent_task_result_semantic": (
                 "agent_task_result", "Agent task result",
+            ),
+            "browser_inspect_managed_agent_task_result_semantic": (
+                "agent_task_result", "Managed agent task result",
             ),
         }
         core_refs = [
@@ -8445,6 +8499,9 @@ CLEANUP_SYSTEM_PROMPT = """
   browser_delete_json_resource/browser_archive_json_resource только с этими
   точными аргументами. Его
   повторный GET с post_delete_match_count=0 является runtime-проверкой cleanup.
+- Для ledger-managed agent task Core сам вызывает точный
+  browser_disable_agent_task_semantic. Cleanup Worker не создаёт задач и не
+  подменяет task_id; cleanup подтверждён только при post_disable_verified=true.
 - Если Core сообщил, что exact resource row selected, следующим изменяющим
   действием должен быть только Delete/Remove этого выбранного ресурса.
 - Если Core сообщил, что открыл context menu точной строки, используй только
@@ -8474,6 +8531,9 @@ def _cleanup_tools():
         "table_selection_list",
         "stage_test_artifact",
         "browser_upload_staged_artifact_semantic",
+        "browser_create_managed_agent_task_semantic",
+        "browser_inspect_managed_agent_task_result_semantic",
+        "browser_disable_agent_task_semantic",
         # Core opens an exact row menu once. Exposing this toggle to the
         # worker could immediately close the already-open menu.
         "browser_context_menu_semantic",
@@ -8729,6 +8789,7 @@ def _annotate_cleanup_mutation_result(
     if tool_name in {
         "browser_delete_json_resource",
         "browser_archive_json_resource",
+        "browser_disable_agent_task_semantic",
     }:
         result.setdefault(
             "mutation_executed",
@@ -8781,6 +8842,16 @@ def _cleanup_browser_verification_succeeded(
                     "post_delete_verified" not in result
                     and result.get("post_delete_match_count") == 0
                 )
+            )
+        )
+
+    if tool_name == "browser_disable_agent_task_semantic":
+        return (
+            result.get("status") == "ok"
+            and result.get("post_disable_verified") is True
+            and (
+                result.get("already_satisfied") is True
+                or 200 <= int(result.get("mutation_status") or 0) < 300
             )
         )
 
@@ -8974,6 +9045,8 @@ def _cleanup_event_summary(
         "endpoint_contains",
         "collection_endpoint",
         "exact_name",
+        "ci_name",
+        "task_id",
     ):
         if key in arguments:
             safe_arguments[key] = arguments[key]
@@ -9002,6 +9075,8 @@ def _cleanup_event_summary(
         "post_delete_match_count",
         "post_delete_archived_match_count",
         "post_delete_verified",
+        "post_disable_status",
+        "post_disable_verified",
     ):
         if key in result:
             result_summary[key] = result[key]
@@ -9130,6 +9205,20 @@ def _cleanup_observed_create_endpoint(job, resource):
 
 
 def _cleanup_exact_rest_target(job, resource):
+    metadata = resource.get("metadata") or {}
+    if metadata.get("cleanup_contract") == "agent_task_disable_v1":
+        task_id = str(resource.get("external_id") or "").strip()
+        ci_name = str(metadata.get("ci_name") or "").strip()
+        try:
+            canonical_task_id = str(uuid.UUID(task_id))
+        except (ValueError, TypeError, AttributeError):
+            canonical_task_id = None
+        if canonical_task_id == task_id and ci_name:
+            return {
+                "tool": "browser_disable_agent_task_semantic",
+                "arguments": {"ci_name": ci_name, "task_id": task_id},
+            }
+
     endpoint = _cleanup_observed_create_endpoint(job, resource)
     name = str(resource.get("name") or "").strip()
     cleanup_http = (
@@ -9462,6 +9551,8 @@ def run_cleanup_resource(
                 target_arguments,
                 messages,
                 action_policy="confirm_mutations",
+                job_id=job_id,
+                case_id=resource.get("created_by_case"),
             )
             add_cleanup_attempt_event(
                 job_id,

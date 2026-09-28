@@ -390,4 +390,184 @@ finally:
     uqa.get_job = original_get_job
     uqa.execute_tool = original_execute_tool
 
+managed_task_id = "11111111-1111-4111-8111-111111111111"
+
+
+class FakeBody:
+    def inner_text(self):
+        return "test-linux Agent Tasks"
+
+
+class FakePage:
+    url = "https://stand/cmdb/test-linux"
+
+    def locator(self, selector):
+        assert selector == "body"
+        return FakeBody()
+
+
+class ManagedRequest:
+    def __init__(self):
+        self.created_payload = None
+        self.enabled = True
+        self.marker = None
+
+    def post(self, url, data, timeout):
+        assert url == "https://stand/api/v1/agents/agent-1/tasks"
+        assert data["name"] == "executeCommand"
+        assert data["additional_params"]["programm"] == "/usr/bin/printf"
+        self.created_payload = data
+        self.marker = data["additional_params"]["arguments"][0]
+        return SimpleNamespace(
+            status=201,
+            json=lambda: {
+                "id": managed_task_id, "agent_id": "agent-1",
+                "name": "executeCommand", "enabled": 1,
+            },
+        )
+
+    def get(self, url, timeout):
+        if url.endswith("/full"):
+            payload = {
+                "id": managed_task_id, "agent_id": "agent-1",
+                "name": "executeCommand", "status": "success",
+                "result": {
+                    "result": "success",
+                    "data": {
+                        "stdout": self.marker,
+                        "stderr": "",
+                        "errorlevel": "0",
+                    },
+                    "processed_at": "2026-09-27T20:00:00Z",
+                },
+            }
+        else:
+            payload = {
+                "id": managed_task_id, "agent_id": "agent-1",
+                "name": "executeCommand", "enabled": int(self.enabled),
+            }
+        return SimpleNamespace(status=200, json=lambda: payload)
+
+    def put(self, url, data, timeout):
+        assert url.endswith("/" + managed_task_id)
+        assert data == {"enabled": 0}
+        self.enabled = False
+        return SimpleNamespace(status=200, json=lambda: {"enabled": 0})
+
+
+managed_session = object.__new__(BrowserSession)
+managed_session._ensure_started = lambda: None
+managed_session.page = FakePage()
+managed_session.context = SimpleNamespace(request=ManagedRequest())
+managed_session.network_details = {
+    "ci": {
+        "request": SimpleNamespace(method="GET", url="https://stand/api/v1/cis/ci-1"),
+        "response": FakeResponse(ci),
+    },
+    "tasks": {
+        "request": SimpleNamespace(
+            method="GET", url="https://stand/api/v1/agents/agent-1/tasks"
+        ),
+        "response": FakeResponse({"total": 0, "items": []}),
+    },
+}
+managed_session._managed_agent_tasks = {}
+managed_session._agent_task_result_snapshots = {}
+# A large agent task history is paginated in the UI. Creation needs only the
+# exact observed CI/agent collection; cleanup still requires the exact task UUID.
+managed_session.network_details["tasks"]["response"] = FakeResponse(
+    {"total": 664, "items": []}
+)
+assert managed_session.create_managed_agent_task_semantic(
+    "test-linux", "arbitrary-command",
+)["error"] == "managed_task_fixture_not_allowed"
+created = managed_session.create_managed_agent_task_semantic(
+    "test-linux", "posix_printf_marker_v1",
+)
+assert created["task_id"] == managed_task_id, created
+assert created["mutation_executed"] is True
+assert "UQA_EXEC_OK_" not in str(created)
+managed_task = {
+    "id": managed_task_id, "agent_id": "agent-1", "name": "executeCommand",
+    "enabled": 1, "period": None, "status": "success",
+    "last_processed_at": "2026-09-27T20:00:00Z",
+}
+managed_session.network_details["tasks"]["response"] = FakeResponse(
+    {"total": 1, "items": [managed_task]}
+)
+verified_managed = managed_session.inspect_managed_agent_task_result_semantic(
+    "test-linux", managed_task_id,
+)
+assert verified_managed["managed_fixture_verified"] is True, verified_managed
+assert "UQA_EXEC_OK_" not in str(verified_managed)
+# Crash recovery may happen after the task has moved off the current page.
+# Ledger UUID + direct GET identity remain authoritative.
+managed_session.network_details["tasks"]["response"] = FakeResponse(
+    {"total": 665, "items": []}
+)
+disabled = managed_session.disable_agent_task_semantic(
+    "test-linux", managed_task_id,
+)
+assert disabled["post_disable_verified"] is True, disabled
+assert disabled["mutation_executed"] is True
+assert uqa.classify_tool_action(
+    "browser_create_managed_agent_task_semantic", {},
+) == "write"
+assert uqa.classify_tool_action(
+    "browser_inspect_managed_agent_task_result_semantic", {},
+) == "observe"
+assert uqa.classify_tool_action(
+    "browser_disable_agent_task_semantic", {},
+) == "destructive"
+assert all(any(
+    item["function"]["name"] == tool_name for item in TOOLS
+) for tool_name in {
+    "browser_create_managed_agent_task_semantic",
+    "browser_inspect_managed_agent_task_result_semantic",
+    "browser_disable_agent_task_semantic",
+})
+resource = {
+    "external_id": managed_task_id,
+    "metadata": {
+        "cleanup_contract": "agent_task_disable_v1",
+        "ci_name": "test-linux",
+    },
+}
+assert uqa._cleanup_exact_rest_target({}, resource) == {
+    "tool": "browser_disable_agent_task_semantic",
+    "arguments": {"ci_name": "test-linux", "task_id": managed_task_id},
+}
+assert uqa._cleanup_browser_verification_succeeded(
+    "browser_disable_agent_task_semantic", disabled,
+)
+
+original_execute_tool = uqa.execute_tool
+original_add_resource = uqa.add_test_resource
+try:
+    uqa.execute_tool = lambda name, arguments: {
+        **created, "ci_name": "test-linux", "agent_id": "agent-1",
+    }
+    captured_resource = {}
+
+    def fake_add_resource(job_id, **kwargs):
+        captured_resource.update({"job_id": job_id, **kwargs})
+        return {"resource_id": "res-managed-task"}
+
+    uqa.add_test_resource = fake_add_resource
+    registered = uqa.execute_tool_with_policy(
+        "browser_create_managed_agent_task_semantic",
+        {"ci_name": "test-linux", "fixture_id": "posix_printf_marker_v1"},
+        [], action_policy="legacy", job_id="job-1", case_id="case-1",
+    )
+    assert registered["resource_registered"] is True, registered
+    assert registered["resource_id"] == "res-managed-task"
+    assert captured_resource["resource_type"] == "agent_task"
+    assert captured_resource["external_id"] == managed_task_id
+    assert captured_resource["metadata"]["cleanup_contract"] == (
+        "agent_task_disable_v1"
+    )
+finally:
+    uqa.execute_tool = original_execute_tool
+    uqa.add_test_resource = original_add_resource
+
 print("agent tasks smoke: PASS")
