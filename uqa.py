@@ -1060,6 +1060,8 @@ def _managed_agent_workflow_call_allowed(
             == str(ci_name or "").casefold()
             and str(arguments.get("task_id") or "") == str(task_id or "")
         )
+    if phase == "verdict":
+        return False
     return True
 
 
@@ -11458,7 +11460,10 @@ def run_turn(
         messages.append(assistant_message)
 
         if not tool_calls:
-            if managed_agent_workflow_phase:
+            if (
+                managed_agent_workflow_phase
+                and managed_agent_workflow_phase != "verdict"
+            ):
                 messages.append({
                     "role": "user",
                     "content": (
@@ -12449,7 +12454,7 @@ def run_turn(
                 and name == "browser_inspect_managed_agent_task_result_semantic"
                 and result.get("assertion_passed") in {True, False}
             ):
-                managed_agent_workflow_phase = None
+                managed_agent_workflow_phase = "verdict"
                 _PENDING_NAVIGATION_CANDIDATES.pop(
                     (str(job_id), str(case_id)), None,
                 )

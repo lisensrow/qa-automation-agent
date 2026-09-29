@@ -27,6 +27,10 @@ assert not uqa._managed_agent_workflow_call_allowed(
     "create", "test-windows", "windows_cmd_echo_marker_v1", None,
     "browser_click_semantic", {"name": "Create task"},
 )
+assert not uqa._managed_agent_workflow_call_allowed(
+    "verdict", "test-windows", "windows_cmd_echo_marker_v1", "task-id",
+    "resource_register", {"resource_type": "agent_task"},
+)
 assert uqa._managed_agent_ci_name_from_request(
     "Создай windows_cmd_echo_marker_v1 для точной КЕ test-windows."
 ) == "test-windows"

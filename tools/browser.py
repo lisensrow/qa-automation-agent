@@ -2452,12 +2452,6 @@ class BrowserSession:
         )
         if full_url is None:
             return {"error": "task_result_origin_mismatch", "executed": False}
-        try:
-            response = self.context.request.get(full_url, timeout=15000)
-            status = response.status
-            full = response.json() if status == 200 else None
-        except Exception:
-            status, full = None, None
         managed_page = {
             "total": 1,
             "items": [{
@@ -2466,18 +2460,36 @@ class BrowserSession:
                 "name": "executeCommand",
             }],
         }
-        result = summarize_agent_task_full(
-            ci,
-            managed_page,
-            task_id,
-            full,
-            managed["expected_text"],
-            0,
-        )
+        result = None
+        status = None
+        poll_attempts = 0
+        for poll_attempts in range(1, 7):
+            try:
+                response = self.context.request.get(full_url, timeout=15000)
+                status = response.status
+                full = response.json() if status == 200 else None
+            except Exception:
+                status, full = None, None
+            result = summarize_agent_task_full(
+                ci,
+                managed_page,
+                task_id,
+                full,
+                managed["expected_text"],
+                0,
+            )
+            if (
+                result.get("full_result_observed") is True
+                and result.get("assertion_passed") in {True, False}
+            ):
+                break
+            if poll_attempts < 6:
+                self.page.wait_for_timeout(5000)
         if status != 200:
             result["inspection_status"] = "blocked"
             result["reason"] = "task_full_get_unavailable"
         result["full_http_status"] = status
+        result["managed_poll_attempts"] = poll_attempts
         if isinstance(result, dict):
             result["managed_fixture_id"] = managed["fixture_id"]
             result["managed_fixture_verified"] = (
