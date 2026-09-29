@@ -370,6 +370,10 @@ Observations извлекаются из фактических результа
 - сокращение лишних вызовов модели внутри уже детерминированного managed lifecycle без изменения STEP/AUTO и v069 action-policy;
 - расширение закрытого fixture allowlist отдельными фиксированными профилями только после отдельной проверки каждого профиля;
 
+Core формирует для каждой managed-фазы явный next-step contract: точное имя tool и уже связанные с Job безопасные аргументы (`stand URL`, exact CI, capability probe, fixture ID, затем private task ID). Контракт добавляется до первого вызова модели, после каждого успешного одиночного tool-call, при преждевременном финальном ответе и вместе с блокировкой неверной попытки. После фазы `verify` Core переходит в `verdict` и не восстанавливает устаревший generic navigation-preflight из истории сообщений. Это не обходит action-policy: вызов `create` остаётся `WRITE`, а cleanup — отдельным `DESTRUCTIVE` действием; изменение лишь убирает лишний поиск меню и случайные вызовы generic controls.
+
+Planner отделяет критерии продукта от служебного формата ответа агента. Формулировки вроде «вернуть verdict»/«verdict возвращён» удаляются из `planned_checks`: verdict формируется после проверки evidence и не может требовать отдельного evidence сам для себя. Реальные продуктовые assertions — например, создание задачи, закрытый результат и `error code = 0` — сохраняются без изменений.
+
 Текущая история операционной проверки:
 
 - Для зелёного lifecycle выбрана Location: документация подтверждает создание через collection endpoint и архивирование точного объекта через `POST <collection>/<uid>/archive`.
@@ -387,6 +391,7 @@ Observations извлекаются из фактических результа
 - Runtime smoke v078p на `home-server-UC-ubuntu22` прошёл полный managed lifecycle. `WRITE` через v069 создал только allowlisted `posix_printf_marker_v1` и получил HTTP 201; task UUID автоматически попал в ledger. Фактический backend envelope содержал служебный `result` и полезные `data.stdout/data.stderr/data.errorlevel`, поэтому normalizer расширен без раскрытия stdout. После исправления private marker и stdout совпали по SHA-256, `errorlevel` нормализован в 0, а Core получил `assertion_passed=true`.
 - Cleanup той же задачи прошёл отдельный `DESTRUCTIVE` policy gate: точный PUT вернул 200, повторный GET подтвердил `enabled=0`, resource получил `cleaned`, а Job — `cleanup_status=completed`. API удаления agent task на backend 4.9.0 по-прежнему отсутствует, поэтому отключённая демонстрационная задача остаётся в истории продукта.
 - Контрольный Windows lifecycle на `home-server-UC-windows10` также завершён полностью: Job `20260929-224825-0af1c214` получил `PASS=1`, fixture `windows_cmd_echo_marker_v1` создал allowlisted task, приватная проверка подтвердила marker и `error_code=0`, а verdict-phase не позволила модели вручную вмешаться в cleanup. Cleanup Manager сам восстановил точный маршрут, отключил task `978bfb13-b5fe-4ab2-9f73-2dd32bea8568`, повторным GET подтвердил `enabled=0` и завершил Job с `cleaned=1`, `pending=0`, `failed=0`.
+- После введения next-step contract и фильтра служебных checks контрольный Job `20260929-231448-7ce02f71` прошёл без лишних или заблокированных вызовов модели: `browser_open_page → browser_open_agent_tasks_semantic → browser_probe_capabilities → browser_create_managed_agent_task_semantic → browser_inspect_managed_agent_task_result_semantic`. Реальный `WRITE` остался за v069 confirmation, task `6b39f0a3-1edb-4713-9528-f188acaf87d4` автоматически зарегистрирован, exact cleanup прошёл отдельный `DESTRUCTIVE` gate и подтвердил `enabled=0`. Итог: `PASS=1`, `BLOCKED=0`, `cleanup completed`, а полный набор после патча — `45/45` smoke-tests.
 
 ## Следующий этап frontend-покрытия
 

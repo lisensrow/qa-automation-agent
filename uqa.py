@@ -1035,6 +1035,66 @@ def _managed_agent_fixture_from_request(text):
     return None
 
 
+def _managed_agent_stand_url_from_request(text):
+    match = re.search(
+        r"(?i)https?://[^\s<>\"']+",
+        str(text or ""),
+    )
+    return match.group(0).rstrip(".,;)") if match else None
+
+
+def _managed_agent_required_call(
+    phase, ci_name, fixture_id, task_id, request_text="",
+):
+    if phase == "open_page":
+        stand_url = _managed_agent_stand_url_from_request(request_text)
+        return {
+            "tool": "browser_open_page",
+            "arguments": {"url": stand_url} if stand_url else {},
+        }
+    if phase == "route":
+        return {
+            "tool": "browser_open_agent_tasks_semantic",
+            "arguments": {"ci_name": ci_name},
+        }
+    if phase == "probe":
+        return {
+            "tool": "browser_probe_capabilities",
+            "arguments": {},
+        }
+    if phase == "create":
+        return {
+            "tool": "browser_create_managed_agent_task_semantic",
+            "arguments": {
+                "ci_name": ci_name,
+                "fixture_id": fixture_id,
+            },
+        }
+    if phase == "verify":
+        return {
+            "tool": "browser_inspect_managed_agent_task_result_semantic",
+            "arguments": {
+                "ci_name": ci_name,
+                "task_id": task_id,
+            },
+        }
+    return None
+
+
+def _managed_agent_next_step_message(required_call):
+    if not required_call:
+        return None
+    return {
+        "role": "user",
+        "content": (
+            "[UQA CORE: MANAGED AGENT NEXT-STEP CONTRACT]\n"
+            "Use exactly this tool call next. Do not explore alternative "
+            "menus or generic controls:\n"
+            + json.dumps(required_call, ensure_ascii=False)
+        ),
+    }
+
+
 def _managed_agent_workflow_call_allowed(
     phase, ci_name, fixture_id, task_id, tool_name, arguments,
 ):
@@ -1046,8 +1106,10 @@ def _managed_agent_workflow_call_allowed(
             and str(arguments.get("ci_name") or "").casefold()
             == str(ci_name or "").casefold()
         )
+    if phase == "probe":
+        return tool_name == "browser_probe_capabilities"
     if phase == "create":
-        return tool_name == "browser_probe_capabilities" or (
+        return (
             tool_name == "browser_create_managed_agent_task_semantic"
             and str(arguments.get("ci_name") or "").casefold()
             == str(ci_name or "").casefold()
@@ -6436,6 +6498,9 @@ REGRESSION_PLANNER_PROMPT = """
 - Один case должен проверять именно тот критерий, который сформулирован пользователем.
 - Если expected явно не задан, используй null.
 - Если отдельных критериев нет, используй пустой список checks.
+- Не добавляй служебные checks про работу самого QA-агента: вернуть verdict,
+  написать ответ или сформировать итоговый отчёт. Даже если пользователь просит
+  verdict, это формат завершения case, а не проверяемое поведение продукта.
 - Если expected потребуется определить по документации,
   укажи это в task; исполнитель сможет использовать knowledge_search.
 - Сохраняй ограничения пользователя:
@@ -6539,6 +6604,19 @@ def _parse_regression_plan(content: str):
     return cases
 
 
+def _planned_check_is_execution_meta(title, expected=None):
+    text = " ".join(
+        str(value or "")
+        for value in (title, expected)
+    ).casefold()
+    verdict = r"(?:verdict|вердикт)"
+    returned = r"(?:возвращ\w*|верн\w*|сформир\w*|предостав\w*)"
+    return bool(
+        re.search(verdict + r".{0,40}" + returned, text)
+        or re.search(returned + r".{0,40}" + verdict, text)
+    )
+
+
 def _normalize_planned_checks(raw_checks):
     if not isinstance(raw_checks, list):
         return []
@@ -6572,6 +6650,9 @@ def _normalize_planned_checks(raw_checks):
             continue
 
         if not title:
+            continue
+
+        if _planned_check_is_execution_meta(title, expected):
             continue
 
         checks.append(
@@ -11442,6 +11523,18 @@ def run_turn(
             "arguments": {"ci_name": managed_agent_ci_name},
         }
 
+    initial_managed_call = _managed_agent_required_call(
+        managed_agent_workflow_phase,
+        managed_agent_ci_name,
+        managed_agent_fixture_id,
+        managed_agent_task_id,
+        managed_agent_request_text,
+    )
+    if initial_managed_call:
+        messages.append(
+            _managed_agent_next_step_message(initial_managed_call)
+        )
+
     for _ in range(MAX_TOOL_STEPS):
         try:
             data = ask_ollama(messages)
@@ -11486,13 +11579,24 @@ def run_turn(
                 managed_agent_workflow_phase
                 and managed_agent_workflow_phase != "verdict"
             ):
+                required_managed_call = _managed_agent_required_call(
+                    managed_agent_workflow_phase,
+                    managed_agent_ci_name,
+                    managed_agent_fixture_id,
+                    managed_agent_task_id,
+                    managed_agent_request_text,
+                )
                 messages.append({
                     "role": "user",
                     "content": (
                         "[UQA CORE: CONTINUE MANAGED AGENT WORKFLOW]\n"
                         f"Required phase: {managed_agent_workflow_phase}. "
-                        "Do not return a final answer. Use only the matching "
-                        "managed-agent tool for the exact CI and fixture."
+                        "Do not return a final answer or explore alternatives. "
+                        "Use exactly this tool call next:\n"
+                        + json.dumps(
+                            required_managed_call,
+                            ensure_ascii=False,
+                        )
                     ),
                 })
                 continue
@@ -11623,19 +11727,26 @@ def run_turn(
                 )
                 continue
 
-            pending_navigation = (
-                _PENDING_NAVIGATION_CANDIDATES.get(
-                    (
-                        str(job_id),
-                        str(case_id),
+            if managed_agent_workflow_phase == "verdict":
+                pending_navigation = None
+                if job_id and case_id:
+                    _PENDING_NAVIGATION_CANDIDATES.pop(
+                        (str(job_id), str(case_id)), None,
                     )
+            else:
+                pending_navigation = (
+                    _PENDING_NAVIGATION_CANDIDATES.get(
+                        (
+                            str(job_id),
+                            str(case_id),
+                        )
+                    )
+                    or _latest_required_navigation_candidate(
+                        messages
+                    )
+                    if job_id and case_id
+                    else None
                 )
-                or _latest_required_navigation_candidate(
-                    messages
-                )
-                if job_id and case_id
-                else None
-            )
 
             if pending_navigation:
                 console.print(
@@ -12172,6 +12283,13 @@ def run_turn(
                         arguments,
                     )
                 ):
+                    required_managed_call = _managed_agent_required_call(
+                        managed_agent_workflow_phase,
+                        managed_agent_ci_name,
+                        managed_agent_fixture_id,
+                        managed_agent_task_id,
+                        managed_agent_request_text,
+                    )
                     result = {
                         "error": "managed_agent_workflow_step_required",
                         "status": "blocked_by_policy",
@@ -12179,6 +12297,7 @@ def run_turn(
                         "action_class": action_class,
                         "action_policy_status": "blocked_by_managed_workflow",
                         "required_phase": managed_agent_workflow_phase,
+                        "required_tool": required_managed_call,
                         "reason": (
                             "This managed-agent Job is Core-locked to its next "
                             "exact lifecycle step; the requested tool was not "
@@ -12449,10 +12568,16 @@ def run_turn(
                 and name == "browser_open_agent_tasks_semantic"
                 and result.get("navigation_status") == "ready"
             ):
-                managed_agent_workflow_phase = "create"
+                managed_agent_workflow_phase = "probe"
                 _PENDING_NAVIGATION_CANDIDATES.pop(
                     (str(job_id), str(case_id)), None,
                 )
+            elif (
+                managed_agent_workflow_phase == "probe"
+                and name == "browser_probe_capabilities"
+                and not result.get("error")
+            ):
+                managed_agent_workflow_phase = "create"
             elif (
                 managed_agent_workflow_phase == "create"
                 and name == "browser_create_managed_agent_task_semantic"
@@ -12483,6 +12608,24 @@ def run_turn(
                 _PENDING_CONSTRAINED_ACTIONS.pop(
                     (str(job_id), str(case_id)), None,
                 )
+
+            if (
+                len(tool_calls) == 1
+                and managed_agent_workflow_phase
+                and managed_agent_workflow_phase != "verdict"
+                and not result.get("error")
+            ):
+                next_managed_call = _managed_agent_required_call(
+                    managed_agent_workflow_phase,
+                    managed_agent_ci_name,
+                    managed_agent_fixture_id,
+                    managed_agent_task_id,
+                    managed_agent_request_text,
+                )
+                if next_managed_call:
+                    messages.append(
+                        _managed_agent_next_step_message(next_managed_call)
+                    )
 
             if (
                 str(name or "").startswith("browser_")

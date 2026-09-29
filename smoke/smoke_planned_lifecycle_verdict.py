@@ -7,6 +7,7 @@ from pathlib import Path
 source = Path("uqa.py").read_text(encoding="utf-8")
 tree = ast.parse(source)
 names = {
+    "_planned_check_is_execution_meta",
     "_normalize_planned_checks",
     "_planned_check_lifecycle_kind",
     "verify_planned_check_coverage",
@@ -28,6 +29,7 @@ planned = [
     {"title": "Resource registered in UQA ledger", "expected": "registered"},
     {"title": "Cleanup deleted the resource", "expected": "deleted"},
     {"title": "After cleanup the resource does not exist", "expected": "absent"},
+    {"title": "Verdict успешно возвращён", "expected": "вернуть verdict"},
 ]
 job = {
     "job_id": "job-smoke",
@@ -58,6 +60,14 @@ assert [item["check_id"] for item in normalized] == [
     "planned-003",
     "planned-004",
 ]
+assert scope["_planned_check_is_execution_meta"](
+    "Verdict успешно возвращён",
+    "вернуть verdict",
+)
+assert not scope["_planned_check_is_execution_meta"](
+    "Error code выполнения равен 0",
+    "0",
+)
 
 old_false_pass = [{
     "check_id": "check-001",

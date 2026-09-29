@@ -19,7 +19,51 @@ assert uqa._managed_agent_ci_name_from_request(managed_request) == "test-windows
 assert uqa._managed_agent_fixture_from_request(managed_request) == (
     "windows_cmd_echo_marker_v1"
 )
+managed_request_with_url = (
+    managed_request + " on https://uc.lab.local/."
+)
+assert uqa._managed_agent_stand_url_from_request(
+    managed_request_with_url
+) == "https://uc.lab.local/"
+assert uqa._managed_agent_required_call(
+    "open_page", "test-windows", "windows_cmd_echo_marker_v1", None,
+    managed_request_with_url,
+) == {
+    "tool": "browser_open_page",
+    "arguments": {"url": "https://uc.lab.local/"},
+}
+assert uqa._managed_agent_required_call(
+    "route", "test-windows", "windows_cmd_echo_marker_v1", None,
+) == {
+    "tool": "browser_open_agent_tasks_semantic",
+    "arguments": {"ci_name": "test-windows"},
+}
+assert uqa._managed_agent_required_call(
+    "probe", "test-windows", "windows_cmd_echo_marker_v1", None,
+) == {
+    "tool": "browser_probe_capabilities",
+    "arguments": {},
+}
+assert uqa._managed_agent_required_call(
+    "create", "test-windows", "windows_cmd_echo_marker_v1", None,
+) == {
+    "tool": "browser_create_managed_agent_task_semantic",
+    "arguments": {
+        "ci_name": "test-windows",
+        "fixture_id": "windows_cmd_echo_marker_v1",
+    },
+}
+assert uqa._managed_agent_required_call(
+    "verify", "test-windows", "windows_cmd_echo_marker_v1", "task-id",
+) == {
+    "tool": "browser_inspect_managed_agent_task_result_semantic",
+    "arguments": {"ci_name": "test-windows", "task_id": "task-id"},
+}
 assert uqa._managed_agent_workflow_call_allowed(
+    "probe", "test-windows", "windows_cmd_echo_marker_v1", None,
+    "browser_probe_capabilities", {},
+)
+assert not uqa._managed_agent_workflow_call_allowed(
     "create", "test-windows", "windows_cmd_echo_marker_v1", None,
     "browser_probe_capabilities", {},
 )
@@ -27,6 +71,14 @@ assert not uqa._managed_agent_workflow_call_allowed(
     "create", "test-windows", "windows_cmd_echo_marker_v1", None,
     "browser_click_semantic", {"name": "Create task"},
 )
+next_step_message = uqa._managed_agent_next_step_message({
+    "tool": "browser_probe_capabilities",
+    "arguments": {},
+})
+assert next_step_message["role"] == "user"
+assert "browser_probe_capabilities" in next_step_message["content"]
+assert 'managed_agent_workflow_phase == "probe"' in uqa_source
+assert 'managed_agent_workflow_phase == "verdict"' in uqa_source
 assert not uqa._managed_agent_workflow_call_allowed(
     "verdict", "test-windows", "windows_cmd_echo_marker_v1", "task-id",
     "resource_register", {"resource_type": "agent_task"},

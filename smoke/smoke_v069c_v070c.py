@@ -10,6 +10,7 @@ NAMES = {
     "_latest_user_text",
     "_request_has_explicit_mutation_intent",
     "_request_is_read_only",
+    "_planned_check_is_execution_meta",
     "_normalize_planned_checks",
     "_numbered_items_are_workflow_checks",
     "_workflow_case_title",
