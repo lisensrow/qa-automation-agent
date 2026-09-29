@@ -7,6 +7,7 @@ from tools.browser import (
     inspect_agent_plugins_semantic,
     inspect_agent_tasks_semantic,
     inspect_agent_task_result_semantic,
+    open_agent_tasks_semantic,
     create_managed_agent_task_semantic,
     inspect_managed_agent_task_result_semantic,
     disable_agent_task_semantic,
@@ -1277,6 +1278,22 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_open_agent_tasks_semantic",
+            "description": (
+                "INTERACT: детерминированно открывает точную строку КЕ в "
+                "текущей CMDB-таблице, затем вкладки Agent и Tasks. Каждый "
+                "этап использует exact semantic target; в конце подтверждает "
+                "наблюдённый GET списка задач того же agent ID. Ничего не "
+                "создаёт, не запускает и не изменяет."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "ci_name": {"type": "string"},
+            }, "required": ["ci_name"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_agent_tasks_semantic",
             "description": (
                 "Read-only список задач выбранного агента по уже увиденному "
@@ -1581,6 +1598,9 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("ci_name"), arguments.get("task_name"),
             arguments.get("task_id"),
         )
+
+    if name == "browser_open_agent_tasks_semantic":
+        return open_agent_tasks_semantic(arguments.get("ci_name"))
 
     if name == "browser_inspect_agent_task_result_semantic":
         return inspect_agent_task_result_semantic(

@@ -2229,6 +2229,97 @@ class BrowserSession:
             ),
         }
 
+    def open_agent_tasks_semantic(self, ci_name: str):
+        """Open one exact CMDB row's Agent → Tasks tab deterministically."""
+        self._ensure_started()
+        stages = []
+
+        inspected = self.inspect_table_row(ci_name, exact=True)
+        stages.append("ci_row_inspected")
+        if inspected.get("error") or inspected.get("row_match_count") != 1:
+            return {
+                "error": inspected.get("error") or "ci_row_not_unique",
+                "executed": False,
+                "mutation_executed": False,
+                "navigation_status": "blocked",
+                "failed_stage": "ci_row_inspection",
+                "ci_name": ci_name,
+                "row_match_count": inspected.get("row_match_count"),
+                "current_url": inspected.get("current_url"),
+                "screenshot": inspected.get("screenshot"),
+            }
+
+        row_click = self.click_semantic(ci_name, exact=True, role="row")
+        stages.append("ci_row_opened")
+        if row_click.get("error") or row_click.get("click_status") != "executed":
+            return {
+                "error": row_click.get("error") or "ci_row_open_failed",
+                "executed": False,
+                "mutation_executed": False,
+                "navigation_status": "blocked",
+                "failed_stage": "ci_row_open",
+                "ci_name": ci_name,
+                "current_url": row_click.get("current_url"),
+                "screenshot": row_click.get("screenshot"),
+            }
+
+        agent_click = self.click_semantic("Agent", exact=True, role="tab")
+        stages.append("agent_tab_opened")
+        if agent_click.get("error") or agent_click.get("click_status") != "executed":
+            return {
+                "error": agent_click.get("error") or "agent_tab_open_failed",
+                "executed": False,
+                "mutation_executed": False,
+                "navigation_status": "blocked",
+                "failed_stage": "agent_tab",
+                "ci_name": ci_name,
+                "current_url": agent_click.get("current_url"),
+                "screenshot": agent_click.get("screenshot"),
+            }
+
+        tasks_click = self.click_semantic("Tasks", exact=True, role="tab")
+        stages.append("tasks_tab_opened")
+        if tasks_click.get("error") or tasks_click.get("click_status") != "executed":
+            return {
+                "error": tasks_click.get("error") or "tasks_tab_open_failed",
+                "executed": False,
+                "mutation_executed": False,
+                "navigation_status": "blocked",
+                "failed_stage": "tasks_tab",
+                "ci_name": ci_name,
+                "current_url": tasks_click.get("current_url"),
+                "screenshot": tasks_click.get("screenshot"),
+            }
+
+        ci, task_page, _, context_error = self._observed_agent_task_context(ci_name)
+        if context_error:
+            return {
+                **context_error,
+                "mutation_executed": False,
+                "navigation_status": "blocked",
+                "failed_stage": "task_list_observation",
+                "ci_name": ci_name,
+                "navigation_stages": stages,
+                "current_url": tasks_click.get("current_url"),
+                "screenshot": tasks_click.get("screenshot"),
+            }
+
+        return {
+            "status": "ready",
+            "executed": True,
+            "mutation_executed": False,
+            "navigation_status": "ready",
+            "ci_name": ci_name,
+            "ci_id": ci.get("id"),
+            "agent_id": ci.get("agent_id"),
+            "task_count": task_page.get("total"),
+            "page_count": len(task_page.get("items") or []),
+            "task_list_observed": True,
+            "navigation_stages": stages,
+            "current_url": tasks_click.get("current_url"),
+            "screenshot": tasks_click.get("screenshot"),
+        }
+
     def _same_https_origin_url(self, observed_url, path):
         source = urlsplit(observed_url)
         current = urlsplit(self.page.url)
@@ -9055,6 +9146,10 @@ def inspect_agent_task_result_semantic(
     return _session.inspect_agent_task_result_semantic(
         ci_name, task_id, expected_text, expected_error_code, verify_periodic,
     )
+
+
+def open_agent_tasks_semantic(ci_name: str) -> dict:
+    return _session.open_agent_tasks_semantic(ci_name)
 
 
 def create_managed_agent_task_semantic(

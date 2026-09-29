@@ -257,6 +257,72 @@ assert extract_observations(
 )[0]["type"] == "agent_task_list"
 
 
+route_calls = []
+route_session = object.__new__(BrowserSession)
+route_session._ensure_started = lambda: None
+route_session.inspect_table_row = lambda name, exact=True: (
+    route_calls.append(("inspect", name, exact))
+    or {"row_match_count": 1, "current_url": "https://stand/cmdb"}
+)
+route_session.click_semantic = lambda name, exact=True, role=None, container=None: (
+    route_calls.append(("click", name, exact, role))
+    or {
+        "click_status": "executed", "current_url": "https://stand/cmdb",
+        "screenshot": "/tmp/route.png",
+    }
+)
+route_session._observed_agent_task_context = lambda name: (
+    ci, task_page, "https://stand/api/v1/agents/agent-1/tasks", None,
+)
+route_result = route_session.open_agent_tasks_semantic("test-linux")
+assert route_result["navigation_status"] == "ready", route_result
+assert route_result["agent_id"] == "agent-1"
+assert route_result["mutation_executed"] is False
+assert route_calls == [
+    ("inspect", "test-linux", True),
+    ("click", "test-linux", True, "row"),
+    ("click", "Agent", True, "tab"),
+    ("click", "Tasks", True, "tab"),
+]
+assert not {"interactive_elements", "text_preview", "network_requests"} & set(
+    route_result
+)
+assert uqa.classify_tool_action(
+    "browser_open_agent_tasks_semantic", {"ci_name": "test-linux"},
+) == "interact"
+saved_add_evidence = uqa.add_evidence
+captured_navigation_evidence = {}
+uqa.add_evidence = lambda *args, **kwargs: (
+    captured_navigation_evidence.update(kwargs) or kwargs
+)
+try:
+    uqa.record_tool_evidence(
+        "job-route", "case-route", "browser_open_agent_tasks_semantic",
+        {"ci_name": "test-linux"}, route_result,
+    )
+finally:
+    uqa.add_evidence = saved_add_evidence
+assert captured_navigation_evidence["usable_for_pass"] is False
+assert captured_navigation_evidence["eligibility_reason"] == "navigation_only"
+assert any(
+    item["function"]["name"] == "browser_open_agent_tasks_semantic"
+    for item in TOOLS
+)
+
+blocked_route = object.__new__(BrowserSession)
+blocked_route._ensure_started = lambda: None
+blocked_route.inspect_table_row = lambda name, exact=True: {
+    "error": "table_row_not_found", "row_match_count": 0,
+    "current_url": "https://stand/cmdb", "screenshot": "/tmp/missing.png",
+}
+blocked_route.click_semantic = lambda *args, **kwargs: (_ for _ in ()).throw(
+    AssertionError("navigation must stop after failed exact row inspection")
+)
+blocked_result = blocked_route.open_agent_tasks_semantic("missing")
+assert blocked_result["navigation_status"] == "blocked"
+assert blocked_result["failed_stage"] == "ci_row_inspection"
+
+
 class FakeResponse:
     status = 200
 

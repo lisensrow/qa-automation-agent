@@ -457,6 +457,10 @@ SYSTEM_PROMPT = """
   Если имя повторяется, используй точный task_id из уже наблюдённого списка.
   Если tool вернул task_list_get_not_observed, сначала фактически открой
   Agent → Tasks и повтори чтение. Это не означает, что задач нет.
+- Если точная КЕ видна строкой текущей CMDB-таблицы, используй
+  browser_open_agent_tasks_semantic вместо самостоятельного поиска пути через
+  Administration. Core сам проверит уникальную строку, откроет Agent → Tasks
+  и свяжет наблюдённый список с agent ID этой КЕ. Это только INTERACT.
 - Для точного task_id из списка можно вызвать
   browser_inspect_agent_task_result_semantic: он читает сохранённый GET /full,
   но не показывает текст результата. expected_text/expected_error_code допустимы
@@ -1163,6 +1167,9 @@ def classify_tool_action(
         return "observe"
 
     if name == "browser_check_focus_order_semantic":
+        return "interact"
+
+    if name == "browser_open_agent_tasks_semantic":
         return "interact"
 
     if name == "browser_set_tree_item_expanded":
@@ -4739,6 +4746,10 @@ def record_tool_evidence(
             result
         )
     )
+    if tool_name == "browser_open_agent_tasks_semantic":
+        eligibility["usable_for_pass"] = False
+        eligibility["reason"] = "navigation_only"
+
     if tool_name in {
         "browser_inspect_agent_tasks_semantic",
         "browser_inspect_agent_task_result_semantic",
