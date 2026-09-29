@@ -9577,20 +9577,42 @@ def run_cleanup_resource(
         navigation_calls = []
         navigation_urls = navigation_context.get("urls") or []
 
-        if navigation_urls:
-            navigation_calls.append((
-                "browser_open_page",
-                {"url": navigation_urls[0]},
-            ))
+        exact_agent_task_cleanup = (
+            isinstance(exact_rest_cleanup_target, dict)
+            and exact_rest_cleanup_target.get("tool")
+            == "browser_disable_agent_task_semantic"
+        )
 
-        for step in navigation_context.get(
-            "observed_navigation_before_first_mutation",
-            [],
-        ):
-            navigation_calls.append((
-                step.get("tool"),
-                step.get("arguments") or {},
-            ))
+        if exact_agent_task_cleanup:
+            ci_name = str(
+                exact_rest_cleanup_target.get("arguments", {}).get("ci_name")
+                or ""
+            ).strip()
+            if navigation_urls:
+                navigation_calls.append((
+                    "browser_open_page",
+                    {"url": navigation_urls[0]},
+                ))
+            if ci_name:
+                navigation_calls.append((
+                    "browser_open_agent_tasks_semantic",
+                    {"ci_name": ci_name},
+                ))
+        else:
+            if navigation_urls:
+                navigation_calls.append((
+                    "browser_open_page",
+                    {"url": navigation_urls[0]},
+                ))
+
+            for step in navigation_context.get(
+                "observed_navigation_before_first_mutation",
+                [],
+            ):
+                navigation_calls.append((
+                    step.get("tool"),
+                    step.get("arguments") or {},
+                ))
 
         for name, arguments in navigation_calls:
             action_class = classify_tool_action(name, arguments)

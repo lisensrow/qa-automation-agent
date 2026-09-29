@@ -143,6 +143,8 @@ Managed-проверка выполняет до шести read-only запро
 
 В backend 4.9.0 для `/agents/{agent_id}/tasks` доступны create/read/update, но отдельного delete route нет. Поэтому cleanup adapter сначала повторно проверяет identity задачи, выполняет `PUT {"enabled": 0}`, затем читает ту же задачу через GET. Только `post_disable_verified=true` позволяет Cleanup Manager отметить ресурс `cleaned`; повторный cleanup уже отключённой задачи идемпотентен.
 
+Для cleanup-контракта `agent_task_disable_v1` Cleanup Manager не воспроизводит накопленный generic navigation trace. После сброса browser context он открывает сохранённый стенд, вызывает точный составной маршрут КЕ `Agent → Tasks`, а затем exact disable adapter с task ID из ledger. Для остальных типов ресурсов общий механизм replay остаётся прежним.
+
 Навигационный preflight для generic Add/Create предлагается только при положительном намерении создать объект. Read-only Job, даже с просьбой сохранить evidence, не получает принудительный маршрут через меню создания; если целевая КЕ уже видна, агент может открыть её напрямую.
 
 Классы действий:
@@ -365,8 +367,8 @@ Observations извлекаются из фактических результа
 
 В работе:
 
-- безопасный runtime lifecycle-прогон v078p на Ubuntu agent;
-- расширение allowlist отдельными фиксированными профилями для Windows без предоставления модели произвольного shell;
+- сокращение лишних вызовов модели внутри уже детерминированного managed lifecycle без изменения STEP/AUTO и v069 action-policy;
+- расширение закрытого fixture allowlist отдельными фиксированными профилями только после отдельной проверки каждого профиля;
 
 Текущая история операционной проверки:
 
@@ -384,6 +386,7 @@ Observations извлекаются из фактических результа
 - После исправления тот же Job безопасно восстановлен: оба destructive-клика прошли отдельные v069 confirmations, фактический Archive выполнен, а новый recovery без повторной mutation подтвердил `Unarchive` в context menu той же exact-строки. Итог: Job `passed`, case `passed`, три planned checks `passed`, resource `cleaned`, cleanup `completed`.
 - Runtime smoke v078p на `home-server-UC-ubuntu22` прошёл полный managed lifecycle. `WRITE` через v069 создал только allowlisted `posix_printf_marker_v1` и получил HTTP 201; task UUID автоматически попал в ledger. Фактический backend envelope содержал служебный `result` и полезные `data.stdout/data.stderr/data.errorlevel`, поэтому normalizer расширен без раскрытия stdout. После исправления private marker и stdout совпали по SHA-256, `errorlevel` нормализован в 0, а Core получил `assertion_passed=true`.
 - Cleanup той же задачи прошёл отдельный `DESTRUCTIVE` policy gate: точный PUT вернул 200, повторный GET подтвердил `enabled=0`, resource получил `cleaned`, а Job — `cleanup_status=completed`. API удаления agent task на backend 4.9.0 по-прежнему отсутствует, поэтому отключённая демонстрационная задача остаётся в истории продукта.
+- Контрольный Windows lifecycle на `home-server-UC-windows10` также завершён полностью: Job `20260929-224825-0af1c214` получил `PASS=1`, fixture `windows_cmd_echo_marker_v1` создал allowlisted task, приватная проверка подтвердила marker и `error_code=0`, а verdict-phase не позволила модели вручную вмешаться в cleanup. Cleanup Manager сам восстановил точный маршрут, отключил task `978bfb13-b5fe-4ab2-9f73-2dd32bea8568`, повторным GET подтвердил `enabled=0` и завершил Job с `cleaned=1`, `pending=0`, `failed=0`.
 
 ## Следующий этап frontend-покрытия
 
