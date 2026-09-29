@@ -1396,7 +1396,9 @@ TOOLS = [
                 "элемента интерфейса без клика. Возвращает "
                 "visible/enabled/disabled, metadata и screenshot. "
                 "Используй для проверки наличия и доступности "
-                "кнопок, ссылок и других элементов. При неоднозначности "
+                "кнопок, ссылок, modal/dialog и toast/notification. "
+                "Dialog проверяется через role dialog/alertdialog, а "
+                "уведомление — через alert/status. При неоднозначности "
                 "можно передать фактически наблюдённый role. Если DOM "
                 "не подтвердит role, runtime продолжит строгий поиск по "
                 "имени и явно отметит semantic_role_fallback."
@@ -1420,6 +1422,7 @@ TOOLS = [
                     "role": {
                         "type": "string",
                         "enum": [
+                            "dialog", "alertdialog", "alert", "status",
                             "tab", "button", "link", "menuitem", "option",
                             "checkbox", "radio", "textbox", "searchbox",
                             "combobox"

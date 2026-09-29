@@ -398,7 +398,7 @@ Planner отделяет критерии продукта от служебно
 - Другие типы выбора значений и многошаговые действия внутри complex popovers.
 - Кастомные calendar/time picker overlays поверх native temporal fields.
 - Upload/download с проверкой имени, типа и содержимого файла.
-- Modal/dialog, toast/notification, responsive и accessibility checks.
+- Modal/dialog и toast/notification через фактические accessibility roles `dialog`, `alertdialog`, `alert`, `status`; responsive viewport checks остаются следующим блоком.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа

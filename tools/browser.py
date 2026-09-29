@@ -7916,6 +7916,10 @@ class BrowserSession:
         # be inspected.
         # ----------------------------------------------------
         supported_roles = [
+            "dialog",
+            "alertdialog",
+            "alert",
+            "status",
             "tab",
             "button",
             "link",
