@@ -1349,7 +1349,10 @@ TOOLS = [
                 "ci_name": {"type": "string"},
                 "fixture_id": {
                     "type": "string",
-                    "enum": ["posix_printf_marker_v1"],
+                    "enum": [
+                        "posix_printf_marker_v1",
+                        "windows_cmd_echo_marker_v1",
+                    ],
                 },
             }, "required": ["ci_name", "fixture_id"]}
         }

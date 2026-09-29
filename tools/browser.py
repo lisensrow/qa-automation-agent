@@ -51,6 +51,17 @@ MANAGED_AGENT_TASK_FIXTURES = {
     "posix_printf_marker_v1": {
         "task_name": "executeCommand",
         "program": "/usr/bin/printf",
+        "arguments_before_marker": [],
+        "os_name_tokens": (
+            "linux", "ubuntu", "debian", "centos", "red hat",
+            "fedora", "suse", "unix",
+        ),
+    },
+    "windows_cmd_echo_marker_v1": {
+        "task_name": "executeCommand",
+        "program": r"C:\Windows\System32\cmd.exe",
+        "arguments_before_marker": ["/d", "/s", "/c", "echo"],
+        "os_name_tokens": ("windows",),
     },
 }
 
@@ -2341,6 +2352,20 @@ class BrowserSession:
         ci, _, observed_url, error = self._observed_agent_task_context(ci_name)
         if error:
             return error
+        os_name = str(ci.get("os_name") or "").strip()
+        os_name_normalized = os_name.casefold()
+        if not os_name_normalized or not any(
+            token in os_name_normalized
+            for token in fixture["os_name_tokens"]
+        ):
+            return {
+                "error": "managed_task_fixture_os_mismatch",
+                "executed": False,
+                "mutation_executed": False,
+                "ci_name": ci_name,
+                "fixture_id": fixture_id,
+                "os_name": os_name or None,
+            }
         source = urlsplit(observed_url)
         collection_url = self._same_https_origin_url(
             observed_url, source.path.rstrip("/"),
@@ -2353,7 +2378,10 @@ class BrowserSession:
             "name": fixture["task_name"],
             "additional_params": {
                 "programm": fixture["program"],
-                "arguments": [marker],
+                "arguments": [
+                    *fixture["arguments_before_marker"],
+                    marker,
+                ],
             },
         }
         try:
@@ -2403,6 +2431,8 @@ class BrowserSession:
         self, ci_name: str, task_id: str,
     ):
         """Verify a managed task against its private marker."""
+        from tools.agent_tasks import summarize_agent_task_full
+
         self._ensure_started()
         managed = self._managed_agent_tasks.get(str(task_id or ""))
         if not isinstance(managed, dict) or managed.get("ci_name") != ci_name:
@@ -2410,10 +2440,44 @@ class BrowserSession:
                 "error": "managed_task_private_fixture_unavailable",
                 "executed": False,
             }
-        result = self.inspect_agent_task_result_semantic(
-            ci_name, task_id, expected_text=managed["expected_text"],
-            expected_error_code=0,
+        ci, _, observed_url, context_error = self._observed_agent_task_context(
+            ci_name
         )
+        if context_error:
+            return context_error
+        source = urlsplit(observed_url)
+        full_url = self._same_https_origin_url(
+            observed_url,
+            source.path.rstrip("/") + f"/{task_id}/full",
+        )
+        if full_url is None:
+            return {"error": "task_result_origin_mismatch", "executed": False}
+        try:
+            response = self.context.request.get(full_url, timeout=15000)
+            status = response.status
+            full = response.json() if status == 200 else None
+        except Exception:
+            status, full = None, None
+        managed_page = {
+            "total": 1,
+            "items": [{
+                "id": task_id,
+                "agent_id": managed["agent_id"],
+                "name": "executeCommand",
+            }],
+        }
+        result = summarize_agent_task_full(
+            ci,
+            managed_page,
+            task_id,
+            full,
+            managed["expected_text"],
+            0,
+        )
+        if status != 200:
+            result["inspection_status"] = "blocked"
+            result["reason"] = "task_full_get_unavailable"
+        result["full_http_status"] = status
         if isinstance(result, dict):
             result["managed_fixture_id"] = managed["fixture_id"]
             result["managed_fixture_verified"] = (

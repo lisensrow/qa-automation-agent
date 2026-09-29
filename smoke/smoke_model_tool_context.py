@@ -10,6 +10,52 @@ assert "failed_semantic_inspections = {}" in uqa_source
 assert "last_browser_fingerprint" in uqa_source
 assert "repeated_semantic_inspection_blocked" in uqa_source
 assert "Do not repeat browser_inspect_semantic" in uqa_source
+assert "managed_agent_route_required" in uqa_source
+
+managed_request = (
+    "Create windows_cmd_echo_marker_v1 for exact CI test-windows and verify it"
+)
+assert uqa._managed_agent_ci_name_from_request(managed_request) == "test-windows"
+assert uqa._managed_agent_fixture_from_request(managed_request) == (
+    "windows_cmd_echo_marker_v1"
+)
+assert uqa._managed_agent_workflow_call_allowed(
+    "create", "test-windows", "windows_cmd_echo_marker_v1", None,
+    "browser_probe_capabilities", {},
+)
+assert not uqa._managed_agent_workflow_call_allowed(
+    "create", "test-windows", "windows_cmd_echo_marker_v1", None,
+    "browser_click_semantic", {"name": "Create task"},
+)
+assert uqa._managed_agent_ci_name_from_request(
+    "Создай windows_cmd_echo_marker_v1 для точной КЕ test-windows."
+) == "test-windows"
+route_requirement = uqa._managed_agent_route_requirement(
+    managed_request,
+    "browser_inspect_table_row",
+    {"name": "test-windows", "exact": True},
+    {"row_match_count": 1},
+)
+assert route_requirement == {
+    "tool": "browser_open_agent_tasks_semantic",
+    "arguments": {"ci_name": "test-windows"},
+}
+assert uqa._managed_agent_route_call_matches(
+    route_requirement,
+    "browser_open_agent_tasks_semantic",
+    {"ci_name": "test-windows"},
+)
+assert not uqa._managed_agent_route_call_matches(
+    route_requirement,
+    "browser_click_semantic",
+    {"name": "Administration", "role": "menuitem"},
+)
+assert uqa._managed_agent_route_requirement(
+    managed_request,
+    "browser_inspect_table_row",
+    {"name": "other-ci", "exact": True},
+    {"row_match_count": 1},
+) is None
 
 semantic_turns = iter([
     {

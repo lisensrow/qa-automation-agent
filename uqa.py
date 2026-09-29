@@ -469,6 +469,8 @@ SYSTEM_PROMPT = """
   первый вызов фиксирует baseline, второй должен увидеть новый processed_at.
 - Для безопасной проверки executeCommand используй только
   browser_create_managed_agent_task_semantic с fixture_id из allowlist.
+  Для Windows используй windows_cmd_echo_marker_v1, для Linux/Unix —
+  posix_printf_marker_v1. Runtime сверяет профиль с os_name КЕ до POST.
   Он не принимает программу или аргументы модели и автоматически регистрирует
   созданную задачу в persistent resource ledger. Результат проверяй через
   browser_inspect_managed_agent_task_result_semantic: приватный маркер и сырой
@@ -997,6 +999,102 @@ def _request_explicitly_requires_periodic_verification(text):
         "periodic", "периодическ", "два запуска", "2 запуска",
         "два выполнен", "2 выполнен", "повторн",
     ))
+
+
+def _request_requires_managed_agent_route(text):
+    normalized = str(text or "").casefold()
+    return (
+        "posix_printf_marker_v1" in normalized
+        or "windows_cmd_echo_marker_v1" in normalized
+        or (
+            "managed" in normalized
+            and "executecommand" in normalized
+        )
+    )
+
+
+def _managed_agent_ci_name_from_request(text):
+    if not _request_requires_managed_agent_route(text):
+        return None
+    match = re.search(
+        r"(?iu)(?:точн\w*\s+(?:КЕ|CI)|exact\s+(?:CI|КЕ))"
+        r"\s+[\"'“]?([\w.:-]+)",
+        str(text or ""),
+    )
+    return match.group(1).strip().rstrip(".,;") if match else None
+
+
+def _managed_agent_fixture_from_request(text):
+    value = str(text or "").casefold()
+    for fixture_id in (
+        "windows_cmd_echo_marker_v1",
+        "posix_printf_marker_v1",
+    ):
+        if fixture_id in value:
+            return fixture_id
+    return None
+
+
+def _managed_agent_workflow_call_allowed(
+    phase, ci_name, fixture_id, task_id, tool_name, arguments,
+):
+    if phase == "open_page":
+        return tool_name == "browser_open_page"
+    if phase == "route":
+        return (
+            tool_name == "browser_open_agent_tasks_semantic"
+            and str(arguments.get("ci_name") or "").casefold()
+            == str(ci_name or "").casefold()
+        )
+    if phase == "create":
+        return tool_name == "browser_probe_capabilities" or (
+            tool_name == "browser_create_managed_agent_task_semantic"
+            and str(arguments.get("ci_name") or "").casefold()
+            == str(ci_name or "").casefold()
+            and arguments.get("fixture_id") == fixture_id
+        )
+    if phase == "verify":
+        return (
+            tool_name == "browser_inspect_managed_agent_task_result_semantic"
+            and str(arguments.get("ci_name") or "").casefold()
+            == str(ci_name or "").casefold()
+            and str(arguments.get("task_id") or "") == str(task_id or "")
+        )
+    return True
+
+
+def _managed_agent_route_requirement(
+    request_text, tool_name, arguments, result,
+):
+    if (
+        tool_name != "browser_inspect_table_row"
+        or arguments.get("exact", True) is not True
+        or not isinstance(result, dict)
+        or result.get("error")
+        or result.get("row_match_count") != 1
+        or not _request_requires_managed_agent_route(request_text)
+    ):
+        return None
+
+    ci_name = str(arguments.get("name") or "").strip()
+    if not ci_name or ci_name.casefold() not in str(request_text).casefold():
+        return None
+
+    return {
+        "tool": "browser_open_agent_tasks_semantic",
+        "arguments": {"ci_name": ci_name},
+    }
+
+
+def _managed_agent_route_call_matches(requirement, tool_name, arguments):
+    if not isinstance(requirement, dict):
+        return True
+    required_arguments = requirement.get("arguments") or {}
+    return (
+        tool_name == requirement.get("tool")
+        and str(arguments.get("ci_name") or "").strip().casefold()
+        == str(required_arguments.get("ci_name") or "").strip().casefold()
+    )
 
 
 def _request_has_explicit_mutation_intent(text):
@@ -11292,6 +11390,33 @@ def run_turn(
     failed_semantic_inspections = {}
     last_browser_fingerprint = None
     blocked_mutation_calls = set()
+    managed_agent_route_required = None
+    managed_agent_route_page_ready = False
+    managed_agent_request_text = ""
+    if job_id:
+        try:
+            managed_agent_request_text = str(
+                (get_job(job_id) or {}).get("request") or ""
+            )
+        except Exception:
+            managed_agent_request_text = ""
+    managed_agent_ci_name = _managed_agent_ci_name_from_request(
+        managed_agent_request_text
+    )
+    managed_agent_fixture_id = _managed_agent_fixture_from_request(
+        managed_agent_request_text
+    )
+    managed_agent_workflow_phase = (
+        "open_page"
+        if managed_agent_ci_name and managed_agent_fixture_id
+        else None
+    )
+    managed_agent_task_id = None
+    if managed_agent_ci_name:
+        managed_agent_route_required = {
+            "tool": "browser_open_agent_tasks_semantic",
+            "arguments": {"ci_name": managed_agent_ci_name},
+        }
 
     for _ in range(MAX_TOOL_STEPS):
         try:
@@ -11333,6 +11458,41 @@ def run_turn(
         messages.append(assistant_message)
 
         if not tool_calls:
+            if managed_agent_workflow_phase:
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "[UQA CORE: CONTINUE MANAGED AGENT WORKFLOW]\n"
+                        f"Required phase: {managed_agent_workflow_phase}. "
+                        "Do not return a final answer. Use only the matching "
+                        "managed-agent tool for the exact CI and fixture."
+                    ),
+                })
+                continue
+
+            if managed_agent_route_required:
+                console.print(
+                    "[yellow]UQA Core: the exact managed-agent route is "
+                    "still required; continuing the case.[/yellow]"
+                )
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "[UQA CORE: CONTINUE MANAGED AGENT ROUTE]\n"
+                            "The managed-agent route is not complete. Do not "
+                            "return a final answer and do not navigate through "
+                            "Administration. Open the user-authored stand first "
+                            "if it is not open, then call exactly:\n"
+                            + json.dumps(
+                                managed_agent_route_required,
+                                ensure_ascii=False,
+                            )
+                        ),
+                    }
+                )
+                continue
+
             pending_constrained_action = (
                 _PENDING_CONSTRAINED_ACTIONS.get(
                     (
@@ -11975,6 +12135,63 @@ def run_turn(
                             "searched with all strict fallback strategies."
                         ),
                     }
+                elif managed_agent_workflow_phase and not (
+                    _managed_agent_workflow_call_allowed(
+                        managed_agent_workflow_phase,
+                        managed_agent_ci_name,
+                        managed_agent_fixture_id,
+                        managed_agent_task_id,
+                        name,
+                        arguments,
+                    )
+                ):
+                    result = {
+                        "error": "managed_agent_workflow_step_required",
+                        "status": "blocked_by_policy",
+                        "executed": False,
+                        "action_class": action_class,
+                        "action_policy_status": "blocked_by_managed_workflow",
+                        "required_phase": managed_agent_workflow_phase,
+                        "reason": (
+                            "This managed-agent Job is Core-locked to its next "
+                            "exact lifecycle step; the requested tool was not "
+                            "executed."
+                        ),
+                    }
+                elif managed_agent_route_required and not (
+                    (
+                        not managed_agent_route_page_ready
+                        and name == "browser_open_page"
+                    )
+                    or (
+                        managed_agent_route_page_ready
+                        and _managed_agent_route_call_matches(
+                            managed_agent_route_required,
+                            name,
+                            arguments,
+                        )
+                    )
+                ):
+                    result = {
+                        "error": "managed_agent_route_required",
+                        "status": "blocked_by_policy",
+                        "executed": False,
+                        "action_class": action_class,
+                        "action_policy_status": (
+                            "blocked_by_managed_agent_route"
+                        ),
+                        "required_tool": (
+                            managed_agent_route_required
+                            if managed_agent_route_page_ready
+                            else {"tool": "browser_open_page"}
+                        ),
+                        "reason": (
+                            "Managed-agent navigation is Core-locked. Open the "
+                            "user-authored stand first; after it opens, the next "
+                            "browser action must use the deterministic Agent "
+                            "→ Tasks route for the exact requested CI."
+                        ),
+                    }
                 elif repeated_blocked_mutation:
                     result = {
                         "error": "repeated_blocked_mutation",
@@ -12165,6 +12382,80 @@ def run_turn(
                     ),
                 }
             )
+
+            route_requirement = _managed_agent_route_requirement(
+                managed_agent_request_text,
+                name,
+                arguments,
+                result,
+            )
+            if route_requirement:
+                managed_agent_route_required = route_requirement
+                managed_agent_route_page_ready = True
+            elif (
+                managed_agent_route_required
+                and name == "browser_open_page"
+                and not result.get("error")
+                and result.get("http_status") in {200, 204, 304}
+            ):
+                managed_agent_route_page_ready = True
+            elif (
+                managed_agent_route_required
+                and _managed_agent_route_call_matches(
+                    managed_agent_route_required,
+                    name,
+                    arguments,
+                )
+                and result.get("navigation_status") == "ready"
+            ):
+                managed_agent_route_required = None
+
+            if (
+                managed_agent_workflow_phase == "open_page"
+                and name == "browser_open_page"
+                and not result.get("error")
+                and result.get("http_status") in {200, 204, 304}
+            ):
+                managed_agent_workflow_phase = "route"
+            elif (
+                managed_agent_workflow_phase == "route"
+                and name == "browser_open_agent_tasks_semantic"
+                and result.get("navigation_status") == "ready"
+            ):
+                managed_agent_workflow_phase = "create"
+                _PENDING_NAVIGATION_CANDIDATES.pop(
+                    (str(job_id), str(case_id)), None,
+                )
+            elif (
+                managed_agent_workflow_phase == "create"
+                and name == "browser_create_managed_agent_task_semantic"
+                and result.get("status") == "created"
+                and result.get("task_id")
+            ):
+                managed_agent_task_id = str(result["task_id"])
+                managed_agent_workflow_phase = "verify"
+                _PENDING_NAVIGATION_CANDIDATES.pop(
+                    (str(job_id), str(case_id)), None,
+                )
+            elif (
+                managed_agent_workflow_phase == "create"
+                and name == "browser_create_managed_agent_task_semantic"
+                and result.get("status") == "blocked_by_policy"
+                and result.get("action_policy_status") == "blocked"
+            ):
+                managed_agent_workflow_phase = None
+            elif (
+                managed_agent_workflow_phase == "verify"
+                and name == "browser_inspect_managed_agent_task_result_semantic"
+                and result.get("assertion_passed") in {True, False}
+            ):
+                managed_agent_workflow_phase = None
+                _PENDING_NAVIGATION_CANDIDATES.pop(
+                    (str(job_id), str(case_id)), None,
+                )
+                _PENDING_CONSTRAINED_ACTIONS.pop(
+                    (str(job_id), str(case_id)), None,
+                )
 
             if (
                 str(name or "").startswith("browser_")

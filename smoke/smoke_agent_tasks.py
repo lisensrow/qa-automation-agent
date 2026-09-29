@@ -10,7 +10,10 @@ from observation_extractor import extract_observations
 import uqa
 
 
-ci = {"id": "ci-1", "name": "test-linux", "agent_id": "agent-1"}
+ci = {
+    "id": "ci-1", "name": "test-linux", "agent_id": "agent-1",
+    "os_name": "Ubuntu 22.04 LTS",
+}
 task_page = {"total": 1, "items": [{
     "id": "task-1", "agent_id": "agent-1", "name": "checkAlive",
     "enabled": True, "period": 60, "status": "Success",
@@ -460,30 +463,42 @@ managed_task_id = "11111111-1111-4111-8111-111111111111"
 
 
 class FakeBody:
+    def __init__(self, text="test-linux Agent Tasks"):
+        self.text = text
+
     def inner_text(self):
-        return "test-linux Agent Tasks"
+        return self.text
 
 
 class FakePage:
     url = "https://stand/cmdb/test-linux"
 
+    def __init__(self, text="test-linux Agent Tasks"):
+        self.text = text
+
     def locator(self, selector):
         assert selector == "body"
-        return FakeBody()
+        return FakeBody(self.text)
 
 
 class ManagedRequest:
-    def __init__(self):
+    def __init__(
+        self, program="/usr/bin/printf", arguments_before_marker=None,
+    ):
         self.created_payload = None
         self.enabled = True
         self.marker = None
+        self.program = program
+        self.arguments_before_marker = arguments_before_marker or []
 
     def post(self, url, data, timeout):
         assert url == "https://stand/api/v1/agents/agent-1/tasks"
         assert data["name"] == "executeCommand"
-        assert data["additional_params"]["programm"] == "/usr/bin/printf"
+        assert data["additional_params"]["programm"] == self.program
         self.created_payload = data
-        self.marker = data["additional_params"]["arguments"][0]
+        arguments = data["additional_params"]["arguments"]
+        assert arguments[:-1] == self.arguments_before_marker
+        self.marker = arguments[-1]
         return SimpleNamespace(
             status=201,
             json=lambda: {
@@ -547,12 +562,50 @@ managed_session.network_details["tasks"]["response"] = FakeResponse(
 assert managed_session.create_managed_agent_task_semantic(
     "test-linux", "arbitrary-command",
 )["error"] == "managed_task_fixture_not_allowed"
+assert managed_session.create_managed_agent_task_semantic(
+    "test-linux", "windows_cmd_echo_marker_v1",
+)["error"] == "managed_task_fixture_os_mismatch"
 created = managed_session.create_managed_agent_task_semantic(
     "test-linux", "posix_printf_marker_v1",
 )
 assert created["task_id"] == managed_task_id, created
 assert created["mutation_executed"] is True
 assert "UQA_EXEC_OK_" not in str(created)
+
+windows_ci = {
+    "id": "ci-win", "name": "test-windows", "agent_id": "agent-1",
+    "os_name": "Майкрософт Windows 10 Pro",
+}
+windows_request = ManagedRequest(
+    program=r"C:\Windows\System32\cmd.exe",
+    arguments_before_marker=["/d", "/s", "/c", "echo"],
+)
+windows_session = object.__new__(BrowserSession)
+windows_session._ensure_started = lambda: None
+windows_session.page = FakePage("test-windows Agent Tasks")
+windows_session.context = SimpleNamespace(request=windows_request)
+windows_session.network_details = {
+    "ci": {
+        "request": SimpleNamespace(
+            method="GET", url="https://stand/api/v1/cis/ci-win",
+        ),
+        "response": FakeResponse(windows_ci),
+    },
+    "tasks": {
+        "request": SimpleNamespace(
+            method="GET", url="https://stand/api/v1/agents/agent-1/tasks",
+        ),
+        "response": FakeResponse({"total": 0, "items": []}),
+    },
+}
+windows_session._managed_agent_tasks = {}
+windows_session._agent_task_result_snapshots = {}
+windows_created = windows_session.create_managed_agent_task_semantic(
+    "test-windows", "windows_cmd_echo_marker_v1",
+)
+assert windows_created["task_id"] == managed_task_id, windows_created
+assert windows_created["mutation_executed"] is True
+assert "UQA_EXEC_OK_" not in str(windows_created)
 managed_task = {
     "id": managed_task_id, "agent_id": "agent-1", "name": "executeCommand",
     "enabled": 1, "period": None, "status": "success",
