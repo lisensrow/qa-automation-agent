@@ -529,6 +529,9 @@ SYSTEM_PROMPT = """
 - Для встроенного iframe используй browser_inspect_iframe_semantic только с
   фактически наблюдаемым title/aria-label/name и ожидаемым URL prefix. Наличие
   iframe не доказывает работоспособность интерактивного содержимого внутри.
+- Для VNC/video после iframe inspection используй
+  browser_observe_iframe_surface_change_semantic. Совпадение двух private
+  screenshot hash проверяет только изменение кадра, но не успешное управление.
 - Для кастомного ARIA calendar сначала используй browser_open_calendar_semantic,
   затем browser_inspect_calendar_semantic и передавай в
   browser_select_calendar_option_semantic только точное наблюдаемое имя даты.
@@ -1325,6 +1328,7 @@ def classify_tool_action(
         "browser_probe_capabilities",
         "browser_inspect_accessibility_semantic",
         "browser_inspect_iframe_semantic",
+        "browser_observe_iframe_surface_change_semantic",
         "browser_get_network_detail",
         "browser_inspect_semantic",
         "browser_inspect_table_row",

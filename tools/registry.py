@@ -20,6 +20,7 @@ from tools.browser import (
     inspect_new_tab_semantic,
     navigate_history_semantic,
     inspect_iframe_semantic,
+    observe_iframe_surface_change_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -525,6 +526,25 @@ TOOLS = [
                 "expected_url_prefix": {"type": "string"},
                 "exact": {"type": "boolean"}
             }, "required": ["name", "expected_url_prefix"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_observe_iframe_surface_change_semantic",
+            "description": (
+                "Read-only делает два приватных screenshot точного iframe с "
+                "ограниченной паузой и сравнивает SHA-256, не возвращая pixels. "
+                "Проверяет ожидаемое наличие или отсутствие изменения кадра; "
+                "используй для VNC/video только после iframe inspection."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "name": {"type": "string"},
+                "expected_url_prefix": {"type": "string"},
+                "expect_change": {"type": "boolean"},
+                "wait_ms": {"type": "integer", "minimum": 100, "maximum": 5000},
+                "exact": {"type": "boolean"}
+            }, "required": ["name", "expected_url_prefix", "expect_change"]}
         }
     },
     {
@@ -1853,6 +1873,15 @@ def execute_tool(name: str, arguments: dict):
         return inspect_iframe_semantic(
             arguments["name"],
             arguments["expected_url_prefix"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_observe_iframe_surface_change_semantic":
+        return observe_iframe_surface_change_semantic(
+            arguments["name"],
+            arguments["expected_url_prefix"],
+            arguments["expect_change"],
+            arguments.get("wait_ms", 1000),
             arguments.get("exact", True),
         )
 

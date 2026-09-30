@@ -37,6 +37,7 @@ SMOKES = [
     "smoke_new_tab.py",
     "smoke_history_navigation.py",
     "smoke_iframe_inspection.py",
+    "smoke_iframe_surface_change.py",
     "smoke_calendar_overlay.py",
     "smoke_time_picker_overlay.py",
     "smoke_dialog_wizard.py",

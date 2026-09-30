@@ -9971,6 +9971,95 @@ class BrowserSession:
             result["error"] = "iframe_url_mismatch"
         return result
 
+    def observe_iframe_surface_change_semantic(
+        self, name, expected_url_prefix, expect_change,
+        wait_ms=1000, exact=True,
+    ):
+        """Compare two private iframe screenshots without exposing pixels."""
+        if type(expect_change) is not bool:
+            return {"error": "iframe_expect_change_invalid", "executed": False}
+        if type(wait_ms) is not int or not 100 <= wait_ms <= 5000:
+            return {"error": "iframe_change_wait_invalid", "executed": False}
+        inspected = self.inspect_iframe_semantic(
+            name, expected_url_prefix, exact,
+        )
+        if inspected.get("iframe_status") != "verified":
+            inspected["surface_change_status"] = "not_observed"
+            return inspected
+
+        frames = self.page.locator("iframe")
+        matches = []
+        expected_name = name if exact else name.casefold()
+        for index in range(min(frames.count(), 50)):
+            candidate = frames.nth(index)
+            if not candidate.is_visible():
+                continue
+            candidate_names = [
+                str(candidate.get_attribute(key) or "").strip()
+                for key in ("title", "aria-label", "name")
+            ]
+            matched = (
+                expected_name in candidate_names
+                if exact
+                else any(
+                    expected_name in value.casefold()
+                    for value in candidate_names if value
+                )
+            )
+            if matched:
+                matches.append(candidate)
+        if len(matches) != 1:
+            return {
+                "error": "iframe_not_unique",
+                "matches": len(matches),
+                "executed": False,
+            }
+
+        iframe = matches[0]
+        before_path = self.session_dir / (
+            f"iframe-before-{uuid.uuid4().hex}.png"
+        )
+        after_path = self.session_dir / (
+            f"iframe-after-{uuid.uuid4().hex}.png"
+        )
+        try:
+            iframe.screenshot(path=str(before_path))
+            before_path.chmod(0o600)
+            self.page.wait_for_timeout(wait_ms)
+            iframe.screenshot(path=str(after_path))
+            after_path.chmod(0o600)
+            before_hash = hashlib.sha256(before_path.read_bytes()).hexdigest()
+            after_hash = hashlib.sha256(after_path.read_bytes()).hexdigest()
+        except Exception as exc:
+            return {
+                "error": "iframe_surface_capture_failed",
+                "error_type": type(exc).__name__,
+                "executed": False,
+            }
+
+        changed = before_hash != after_hash
+        matches_expectation = changed is expect_change
+        result = self._capture_state("observe-iframe-surface-change")
+        result.update({
+            "iframe_name": name,
+            "iframe_expected_url_prefix": self._safe_network_url(
+                expected_url_prefix
+            ),
+            "surface_wait_ms": wait_ms,
+            "surface_expected_change": expect_change,
+            "surface_changed": changed,
+            "surface_change_matches": matches_expectation,
+            "surface_before_sha256": before_hash,
+            "surface_after_sha256": after_hash,
+            "surface_change_status": (
+                "verified" if matches_expectation else "mismatch"
+            ),
+            "mutation_executed": False,
+        })
+        if not matches_expectation:
+            result["error"] = "iframe_surface_change_mismatch"
+        return result
+
     def click_semantic(
         self,
         name: str,
@@ -11120,6 +11209,18 @@ def inspect_iframe_semantic(
 ) -> dict:
     return _session.inspect_iframe_semantic(
         name, expected_url_prefix, exact,
+    )
+
+
+def observe_iframe_surface_change_semantic(
+    name: str,
+    expected_url_prefix: str,
+    expect_change: bool,
+    wait_ms: int = 1000,
+    exact: bool = True,
+) -> dict:
+    return _session.observe_iframe_surface_change_semantic(
+        name, expected_url_prefix, expect_change, wait_ms, exact,
     )
 
 
