@@ -532,6 +532,9 @@ SYSTEM_PROMPT = """
 - Для custom time-picker используй browser_open_time_picker_semantic,
   browser_inspect_time_picker_semantic и выбирай только точное наблюдаемое
   время через browser_select_time_picker_option_semantic.
+- Для modal wizard сначала используй browser_inspect_dialog_semantic, затем
+  browser_click_dialog_button_semantic с точными dialog и button. Не нажимай
+  одноимённую кнопку вне подтверждённого dialog scope.
 - Для общего снимка таблицы используй browser_inspect_table_semantic.
 - Для сортировки, выбора строки и пагинации используй специализированные
   browser_sort_table_semantic, browser_set_table_row_selected и
@@ -1329,6 +1332,7 @@ def classify_tool_action(
         "browser_inspect_popover_semantic",
         "browser_inspect_calendar_semantic",
         "browser_inspect_time_picker_semantic",
+        "browser_inspect_dialog_semantic",
         "browser_inspect_file_input_semantic",
         "browser_verify_download_structure_semantic",
         "browser_inspect_agent_telemetry_semantic",
@@ -1375,6 +1379,12 @@ def classify_tool_action(
 
     if name == "browser_select_time_picker_option_semantic":
         return "write"
+
+    if name == "browser_click_dialog_button_semantic":
+        return classify_tool_action(
+            "browser_click_semantic",
+            {"name": arguments.get("button")},
+        )
 
     if name == "browser_select_popover_option_semantic":
         option_action = classify_tool_action(

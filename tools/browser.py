@@ -7461,6 +7461,158 @@ class BrowserSession:
             result["error"] = "time_picker_selection_not_verified"
         return result
 
+    def _visible_dialog(self, name, exact=True):
+        matches = []
+        for role in ("dialog", "alertdialog"):
+            locator = self.page.get_by_role(role, name=name, exact=exact)
+            for index in range(min(locator.count(), 50)):
+                candidate = locator.nth(index)
+                try:
+                    if candidate.is_visible():
+                        matches.append(candidate)
+                except Exception:
+                    continue
+        if len(matches) != 1:
+            return None, {
+                "error": (
+                    "dialog_not_found"
+                    if not matches
+                    else "ambiguous_dialog"
+                ),
+                "dialog": name,
+                "matches": len(matches),
+                "executed": False,
+            }
+        return matches[0], None
+
+    @staticmethod
+    def _dialog_snapshot(dialog):
+        return dialog.evaluate(
+            """
+            root => {
+                const clean = value => String(value || '')
+                    .replace(/\s+/g, ' ').trim();
+                const visible = el => {
+                    const style = getComputedStyle(el);
+                    return !el.hidden && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && el.getClientRects().length > 0;
+                };
+                const activeSteps = Array.from(root.querySelectorAll(
+                    '[aria-current="step"], [data-current="true"], '
+                    + '[data-step].active'
+                )).filter(visible).map(el => clean(
+                    el.getAttribute('aria-label')
+                    || el.getAttribute('data-step')
+                    || el.innerText || el.textContent
+                ).slice(0, 200)).filter(Boolean);
+                const buttons = Array.from(root.querySelectorAll(
+                    'button, [role="button"]'
+                )).filter(visible).slice(0, 100).map(el => ({
+                    name: clean(
+                        el.getAttribute('aria-label')
+                        || el.innerText || el.textContent
+                    ).slice(0, 200),
+                    disabled: el.matches(':disabled')
+                        || el.getAttribute('aria-disabled') === 'true'
+                }));
+                return {
+                    role: root.getAttribute('role') || '',
+                    name: clean(root.getAttribute('aria-label')).slice(0, 200),
+                    text: clean(root.innerText || root.textContent).slice(0, 5000),
+                    active_steps: activeSteps,
+                    buttons,
+                    visible_field_count: Array.from(root.querySelectorAll(
+                        'input:not([type="hidden"]), select, textarea, '
+                        + '[role="textbox"], [role="combobox"]'
+                    )).filter(visible).length
+                };
+            }
+            """
+        )
+
+    def inspect_dialog_semantic(self, dialog, exact=True):
+        self._ensure_started()
+        self._reset_diagnostics()
+        target, error = self._visible_dialog(dialog, exact)
+        if error:
+            return error
+        result = self._capture_state("inspect-dialog-semantic")
+        result.update({
+            "dialog_name": dialog,
+            "dialog_status": "observed",
+            "dialog_snapshot": self._dialog_snapshot(target),
+            "mutation_executed": False,
+        })
+        return result
+
+    def click_dialog_button_semantic(
+        self, dialog, button, exact=True,
+    ):
+        self._ensure_started()
+        self._reset_diagnostics()
+        target, error = self._visible_dialog(dialog, exact)
+        if error:
+            return error
+        controls = target.get_by_role("button", name=button, exact=exact)
+        matches = []
+        for index in range(min(controls.count(), 50)):
+            candidate = controls.nth(index)
+            try:
+                if candidate.is_visible():
+                    matches.append(candidate)
+            except Exception:
+                continue
+        if len(matches) != 1:
+            return {
+                "error": (
+                    "dialog_button_not_found"
+                    if not matches
+                    else "ambiguous_dialog_button"
+                ),
+                "dialog": dialog,
+                "button": button,
+                "matches": len(matches),
+                "executed": False,
+            }
+        control = matches[0]
+        if (
+            not control.is_enabled()
+            or control.get_attribute("aria-disabled") == "true"
+        ):
+            return {
+                "error": "dialog_button_disabled",
+                "dialog": dialog,
+                "button": button,
+                "executed": False,
+            }
+        before = self._dialog_snapshot(target)
+        self._begin_action_execution()
+        control.click()
+        self.page.wait_for_timeout(200)
+        try:
+            dialog_open = target.is_visible()
+        except Exception:
+            dialog_open = False
+        after = self._dialog_snapshot(target) if dialog_open else None
+        step_changed = bool(
+            dialog_open
+            and before.get("active_steps") != after.get("active_steps")
+        )
+        result = self._capture_state("click-dialog-button-semantic")
+        result.update({
+            "dialog_name": dialog,
+            "dialog_button": button,
+            "dialog_button_status": "clicked",
+            "dialog_open_after": dialog_open,
+            "dialog_closed": not dialog_open,
+            "step_changed": step_changed,
+            "dialog_before": before,
+            "dialog_after": after,
+            "interaction_executed": True,
+        })
+        return self._finish_action_execution(result)
+
     def apply_table_filter_popover_semantic(
         self,
         column: str,
@@ -10155,6 +10307,16 @@ def select_time_picker_option_semantic(
     trigger: str, option: str, exact: bool = True,
 ) -> dict:
     return _session.select_time_picker_option_semantic(trigger, option, exact)
+
+
+def inspect_dialog_semantic(dialog: str, exact: bool = True) -> dict:
+    return _session.inspect_dialog_semantic(dialog, exact)
+
+
+def click_dialog_button_semantic(
+    dialog: str, button: str, exact: bool = True,
+) -> dict:
+    return _session.click_dialog_button_semantic(dialog, button, exact)
 
 
 def apply_table_filter_popover_semantic(

@@ -55,6 +55,8 @@ from tools.browser import (
     inspect_time_picker_semantic,
     open_time_picker_semantic,
     select_time_picker_option_semantic,
+    inspect_dialog_semantic,
+    click_dialog_button_semantic,
     inspect_table_pagination_semantic,
     set_table_all_selected,
     inspect_bulk_action_semantic,
@@ -1240,6 +1242,37 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_dialog_semantic",
+            "description": (
+                "Read-only снимок одного точного видимого dialog/alertdialog: "
+                "активный wizard step, scoped buttons и число полей. Не "
+                "смешивает одноимённые controls вне модального окна."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "dialog": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["dialog"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_click_dialog_button_semantic",
+            "description": (
+                "Нажимает одну точную кнопку только внутри одного точного "
+                "видимого dialog/alertdialog и проверяет смену active step "
+                "или закрытие окна. Класс действия определяется именем кнопки."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "dialog": {"type": "string"},
+                "button": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["dialog", "button"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_select_popover_option_semantic",
             "description": (
                 "Выбирает единственную точную role=option с явным aria-selected "
@@ -2040,6 +2073,17 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_select_time_picker_option_semantic":
         return select_time_picker_option_semantic(
             arguments["trigger"], arguments["option"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_dialog_semantic":
+        return inspect_dialog_semantic(
+            arguments["dialog"], arguments.get("exact", True),
+        )
+
+    if name == "browser_click_dialog_button_semantic":
+        return click_dialog_button_semantic(
+            arguments["dialog"], arguments["button"],
             arguments.get("exact", True),
         )
 

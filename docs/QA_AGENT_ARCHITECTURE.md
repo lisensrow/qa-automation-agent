@@ -395,7 +395,7 @@ Planner отделяет критерии продукта от служебно
 
 ## Следующий этап frontend-покрытия
 
-- Другие типы выбора значений и многошаговые действия внутри complex popovers.
+- Scoped modal/wizard workflow: точный `dialog/alertdialog`, read-only snapshot active step/buttons/fields и нажатие exact button только внутри подтверждённого scope. Переход `Next/Back` проверяется по смене active step, закрытие — по исчезновению dialog; `Save/Submit/Delete` сохраняют обычную v069-классификацию.
 - Кастомные ARIA calendar overlays: exact trigger через `aria-controls`, обязательный `role=grid`, read-only snapshot наблюдаемых дат и policy-controlled выбор одной точной date option с post-click verification.
 - Custom time-picker overlays: exact trigger через `aria-controls`, обязательный `role=listbox`, read-only snapshot наблюдаемых значений времени и policy-controlled выбор одной exact time option. Нестандартные date/time widgets без ARIA-контракта блокируются fail-closed.
 - Upload/download с проверкой имени, типа и содержимого файла.
