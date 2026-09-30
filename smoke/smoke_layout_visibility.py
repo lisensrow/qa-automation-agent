@@ -14,6 +14,10 @@ try:
             width: 120px;
             height: 48px;
           }
+          #target:focus {
+            outline: 3px solid rgb(255, 0, 0);
+            background-color: rgb(1, 2, 3);
+          }
           #cover {
             display: none;
             position: absolute;
@@ -36,6 +40,15 @@ try:
     assert clear["layout"]["fully_in_viewport"] is True, clear
     assert clear["layout"]["visible_area_ratio"] == 1, clear
     assert clear["layout"]["touch_target_44px"] is True, clear
+
+    session.page.locator("#target").focus()
+    focused = session.inspect_semantic("Save layout", role="button")
+    assert focused["element"]["visual_state"]["focused"] is True, focused
+    assert focused["element"]["computed_style"]["outline_width"] == "3px", focused
+    assert (
+        focused["element"]["computed_style"]["background_color"]
+        == "rgb(1, 2, 3)"
+    ), focused
 
     session.page.locator("#cover").evaluate("el => el.style.display = 'block'")
     covered = session.inspect_semantic("Save layout", role="button")

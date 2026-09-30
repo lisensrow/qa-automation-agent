@@ -8876,6 +8876,26 @@ class BrowserSession:
                         || ""
                     );
 
+                    const computed = getComputedStyle(el);
+                    const computedStyle = {
+                        display: computed.display,
+                        visibility: computed.visibility,
+                        opacity: computed.opacity,
+                        pointer_events: computed.pointerEvents,
+                        cursor: computed.cursor,
+                        color: computed.color,
+                        background_color: computed.backgroundColor,
+                        border_color: computed.borderColor,
+                        border_style: computed.borderStyle,
+                        border_width: computed.borderWidth,
+                        outline_color: computed.outlineColor,
+                        outline_style: computed.outlineStyle,
+                        outline_width: computed.outlineWidth,
+                        font_size: computed.fontSize,
+                        font_weight: computed.fontWeight,
+                        text_decoration_line: computed.textDecorationLine
+                    };
+
                     let selectedValue = "";
                     let selectedText = "";
                     let selectionState = "unknown";
@@ -9010,6 +9030,14 @@ class BrowserSession:
                             ) || "",
                         aria_valuetext:
                             ariaValueText,
+                        visual_state: {
+                            focused: el.matches(":focus"),
+                            focus_visible: el.matches(":focus-visible"),
+                            hovered: el.matches(":hover"),
+                            checked: el.matches(":checked"),
+                            invalid: el.matches(":invalid")
+                        },
+                        computed_style: computedStyle,
                         selected_value:
                             selectedValue,
                         selected_text:
