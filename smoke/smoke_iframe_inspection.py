@@ -10,7 +10,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         body = (
             b"<html><head><title>Embedded report</title></head>"
-            b"<body>Report ready <button>Refresh</button></body></html>"
+            b"<body>Report ready <button>Refresh</button>"
+            b"<canvas width='640' height='480' style='width:320px;height:240px'></canvas>"
+            b"</body></html>"
         )
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -41,6 +43,12 @@ try:
     assert result["iframe_title"] == "Embedded report", result
     assert "Report ready" in result["iframe_text_preview"], result
     assert result["iframe_interactive_count"] == 1, result
+    assert result["iframe_surface"]["document_ready_state"] == "complete", result
+    assert result["iframe_surface"]["canvas_count"] == 1, result
+    assert result["iframe_surface"]["surface_present"] is True, result
+    assert result["iframe_surface"]["surface_ready"] is True, result
+    assert result["iframe_surface"]["canvases"][0]["width"] == 640, result
+    assert result["iframe_surface"]["canvases"][0]["height"] == 480, result
     assert len(session.context.pages) == 1, result
 
     mismatch = session.inspect_iframe_semantic(

@@ -517,7 +517,8 @@ TOOLS = [
                 "Read-only проверяет один видимый iframe по точному title, "
                 "aria-label или name. Требует ожидаемый HTTP(S) URL prefix, "
                 "сверяет origin и возвращает title/text preview и число "
-                "интерактивных элементов frame, не меняя top-level context."
+                "интерактивных элементов frame, а также canvas/video metrics "
+                "и surface_ready для VNC/preview, не меняя top-level context."
             ),
             "parameters": {"type": "object", "properties": {
                 "name": {"type": "string"},

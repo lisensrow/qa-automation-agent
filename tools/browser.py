@@ -9873,6 +9873,83 @@ class BrowserSession:
             )
         except Exception:
             interactive_count = None
+        try:
+            surface = frame.evaluate(
+                """
+                () => {
+                    const canvases = Array.from(
+                        document.querySelectorAll("canvas")
+                    );
+                    const videos = Array.from(
+                        document.querySelectorAll("video")
+                    );
+                    const canvasMetrics = canvases.slice(0, 20).map(canvas => {
+                        const rect = canvas.getBoundingClientRect();
+                        return {
+                            width: canvas.width,
+                            height: canvas.height,
+                            display_width: Math.round(rect.width * 100) / 100,
+                            display_height: Math.round(rect.height * 100) / 100,
+                            visible: Boolean(
+                                rect.width > 0
+                                && rect.height > 0
+                                && getComputedStyle(canvas).visibility !== "hidden"
+                                && getComputedStyle(canvas).display !== "none"
+                            )
+                        };
+                    });
+                    const videoMetrics = videos.slice(0, 20).map(video => {
+                        const rect = video.getBoundingClientRect();
+                        return {
+                            video_width: video.videoWidth,
+                            video_height: video.videoHeight,
+                            display_width: Math.round(rect.width * 100) / 100,
+                            display_height: Math.round(rect.height * 100) / 100,
+                            ready_state: video.readyState,
+                            paused: video.paused,
+                            visible: Boolean(
+                                rect.width > 0
+                                && rect.height > 0
+                                && getComputedStyle(video).visibility !== "hidden"
+                                && getComputedStyle(video).display !== "none"
+                            )
+                        };
+                    });
+                    const canvasReady = canvasMetrics.some(item => (
+                        item.visible
+                        && item.width > 0
+                        && item.height > 0
+                        && item.display_width > 0
+                        && item.display_height > 0
+                    ));
+                    const videoReady = videoMetrics.some(item => (
+                        item.visible
+                        && item.ready_state >= 2
+                        && item.video_width > 0
+                        && item.video_height > 0
+                    ));
+                    return {
+                        document_ready_state: document.readyState,
+                        canvas_count: canvases.length,
+                        video_count: videos.length,
+                        canvases: canvasMetrics,
+                        videos: videoMetrics,
+                        surface_present: canvases.length + videos.length > 0,
+                        surface_ready: canvasReady || videoReady
+                    };
+                }
+                """
+            )
+        except Exception:
+            surface = {
+                "document_ready_state": None,
+                "canvas_count": None,
+                "video_count": None,
+                "canvases": [],
+                "videos": [],
+                "surface_present": None,
+                "surface_ready": None,
+            }
 
         result = self._capture_state("inspect-iframe-semantic")
         result.update({
@@ -9886,6 +9963,7 @@ class BrowserSession:
             "iframe_title": frame_title,
             "iframe_text_preview": text_preview,
             "iframe_interactive_count": interactive_count,
+            "iframe_surface": surface,
             "iframe_status": "verified" if url_matches else "mismatch",
             "mutation_executed": False,
         })
