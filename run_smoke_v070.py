@@ -33,6 +33,7 @@ SMOKES = [
     "smoke_responsive_viewport.py",
     "smoke_accessibility_audit.py",
     "smoke_calendar_overlay.py",
+    "smoke_time_picker_overlay.py",
     "smoke_aria_multiselect_chips.py",
     "smoke_keyboard_focus.py",
     "smoke_keyboard_chords_clipboard.py",

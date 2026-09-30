@@ -52,6 +52,9 @@ from tools.browser import (
     inspect_calendar_semantic,
     open_calendar_semantic,
     select_calendar_option_semantic,
+    inspect_time_picker_semantic,
+    open_time_picker_semantic,
+    select_time_picker_option_semantic,
     inspect_table_pagination_semantic,
     set_table_all_selected,
     inspect_bulk_action_semantic,
@@ -1192,6 +1195,51 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_time_picker_semantic",
+            "description": (
+                "Read-only снимок уже открытого ARIA time-picker. Требует "
+                "точный trigger с aria-controls и role=listbox; возвращает "
+                "наблюдаемые time options без угадывания формата или локали."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["trigger"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_open_time_picker_semantic",
+            "description": (
+                "Открывает точный time-picker trigger с aria-controls и "
+                "fail-closed проверяет наличие ARIA listbox."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["trigger"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_select_time_picker_option_semantic",
+            "description": (
+                "WRITE: выбирает одну точную, ранее наблюдаемую time option "
+                "и проверяет selected state, изменение trigger либо штатное "
+                "закрытие overlay."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"},
+                "option": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["trigger", "option"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_select_popover_option_semantic",
             "description": (
                 "Выбирает единственную точную role=option с явным aria-selected "
@@ -1975,6 +2023,22 @@ def execute_tool(name: str, arguments: dict):
 
     if name == "browser_select_calendar_option_semantic":
         return select_calendar_option_semantic(
+            arguments["trigger"], arguments["option"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_time_picker_semantic":
+        return inspect_time_picker_semantic(
+            arguments["trigger"], arguments.get("exact", True),
+        )
+
+    if name == "browser_open_time_picker_semantic":
+        return open_time_picker_semantic(
+            arguments["trigger"], arguments.get("exact", True),
+        )
+
+    if name == "browser_select_time_picker_option_semantic":
+        return select_time_picker_option_semantic(
             arguments["trigger"], arguments["option"],
             arguments.get("exact", True),
         )

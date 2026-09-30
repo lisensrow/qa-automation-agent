@@ -529,6 +529,9 @@ SYSTEM_PROMPT = """
 - Для кастомного ARIA calendar сначала используй browser_open_calendar_semantic,
   затем browser_inspect_calendar_semantic и передавай в
   browser_select_calendar_option_semantic только точное наблюдаемое имя даты.
+- Для custom time-picker используй browser_open_time_picker_semantic,
+  browser_inspect_time_picker_semantic и выбирай только точное наблюдаемое
+  время через browser_select_time_picker_option_semantic.
 - Для общего снимка таблицы используй browser_inspect_table_semantic.
 - Для сортировки, выбора строки и пагинации используй специализированные
   browser_sort_table_semantic, browser_set_table_row_selected и
@@ -1325,6 +1328,7 @@ def classify_tool_action(
         "browser_inspect_tree_semantic",
         "browser_inspect_popover_semantic",
         "browser_inspect_calendar_semantic",
+        "browser_inspect_time_picker_semantic",
         "browser_inspect_file_input_semantic",
         "browser_verify_download_structure_semantic",
         "browser_inspect_agent_telemetry_semantic",
@@ -1364,6 +1368,12 @@ def classify_tool_action(
         return "interact"
 
     if name == "browser_select_calendar_option_semantic":
+        return "write"
+
+    if name == "browser_open_time_picker_semantic":
+        return "interact"
+
+    if name == "browser_select_time_picker_option_semantic":
         return "write"
 
     if name == "browser_select_popover_option_semantic":
