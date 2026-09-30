@@ -10060,6 +10060,130 @@ class BrowserSession:
             result["error"] = "iframe_surface_change_mismatch"
         return result
 
+    def click_iframe_surface_semantic(
+        self, name, expected_url_prefix, x_ratio, y_ratio,
+        expect_change, wait_ms=1000, exact=True,
+    ):
+        """Click one normalized point in a verified iframe surface."""
+        if (
+            type(x_ratio) not in {int, float}
+            or type(y_ratio) not in {int, float}
+            or not 0.0 <= float(x_ratio) <= 1.0
+            or not 0.0 <= float(y_ratio) <= 1.0
+        ):
+            return {"error": "iframe_click_ratio_invalid", "executed": False}
+        if type(expect_change) is not bool:
+            return {"error": "iframe_expect_change_invalid", "executed": False}
+        if type(wait_ms) is not int or not 100 <= wait_ms <= 5000:
+            return {"error": "iframe_click_wait_invalid", "executed": False}
+        inspected = self.inspect_iframe_semantic(
+            name, expected_url_prefix, exact,
+        )
+        if inspected.get("iframe_status") != "verified":
+            inspected["iframe_click_status"] = "not_executed"
+            return inspected
+        surface = inspected.get("iframe_surface") or {}
+        if surface.get("surface_ready") is not True:
+            inspected.update({
+                "error": "iframe_surface_not_ready",
+                "iframe_click_status": "not_executed",
+            })
+            return inspected
+
+        frames = self.page.locator("iframe")
+        matches = []
+        expected_name = name if exact else name.casefold()
+        for index in range(min(frames.count(), 50)):
+            candidate = frames.nth(index)
+            if not candidate.is_visible():
+                continue
+            candidate_names = [
+                str(candidate.get_attribute(key) or "").strip()
+                for key in ("title", "aria-label", "name")
+            ]
+            matched = (
+                expected_name in candidate_names
+                if exact
+                else any(
+                    expected_name in value.casefold()
+                    for value in candidate_names if value
+                )
+            )
+            if matched:
+                matches.append(candidate)
+        if len(matches) != 1:
+            return {
+                "error": "iframe_not_unique",
+                "matches": len(matches),
+                "executed": False,
+            }
+
+        iframe = matches[0]
+        box = iframe.bounding_box()
+        if not box or box["width"] <= 0 or box["height"] <= 0:
+            return {"error": "iframe_surface_geometry_invalid", "executed": False}
+        click_x = min(
+            max(box["width"] * float(x_ratio), 1),
+            max(box["width"] - 1, 1),
+        )
+        click_y = min(
+            max(box["height"] * float(y_ratio), 1),
+            max(box["height"] - 1, 1),
+        )
+        before_path = self.session_dir / (
+            f"iframe-click-before-{uuid.uuid4().hex}.png"
+        )
+        after_path = self.session_dir / (
+            f"iframe-click-after-{uuid.uuid4().hex}.png"
+        )
+        self._begin_action_execution()
+        try:
+            iframe.screenshot(path=str(before_path))
+            before_path.chmod(0o600)
+            iframe.click(
+                position={"x": click_x, "y": click_y},
+                timeout=10000,
+            )
+            self.page.wait_for_timeout(wait_ms)
+            iframe.screenshot(path=str(after_path))
+            after_path.chmod(0o600)
+            before_hash = hashlib.sha256(before_path.read_bytes()).hexdigest()
+            after_hash = hashlib.sha256(after_path.read_bytes()).hexdigest()
+        except Exception as exc:
+            result = self._capture_state("click-iframe-surface")
+            result.update({
+                "error": "iframe_surface_click_failed",
+                "error_type": type(exc).__name__,
+                "iframe_click_status": "failed",
+                "mutation_executed": False,
+            })
+            return self._finish_action_execution(result)
+
+        changed = before_hash != after_hash
+        matches_expectation = changed is expect_change
+        result = self._capture_state("click-iframe-surface")
+        result.update({
+            "iframe_name": name,
+            "iframe_expected_url_prefix": self._safe_network_url(
+                expected_url_prefix
+            ),
+            "iframe_click_x_ratio": float(x_ratio),
+            "iframe_click_y_ratio": float(y_ratio),
+            "surface_wait_ms": wait_ms,
+            "surface_expected_change": expect_change,
+            "surface_changed": changed,
+            "surface_change_matches": matches_expectation,
+            "surface_before_sha256": before_hash,
+            "surface_after_sha256": after_hash,
+            "iframe_click_status": (
+                "verified" if matches_expectation else "mismatch"
+            ),
+            "mutation_executed": True,
+        })
+        if not matches_expectation:
+            result["error"] = "iframe_click_result_mismatch"
+        return self._finish_action_execution(result)
+
     def click_semantic(
         self,
         name: str,
@@ -11221,6 +11345,21 @@ def observe_iframe_surface_change_semantic(
 ) -> dict:
     return _session.observe_iframe_surface_change_semantic(
         name, expected_url_prefix, expect_change, wait_ms, exact,
+    )
+
+
+def click_iframe_surface_semantic(
+    name: str,
+    expected_url_prefix: str,
+    x_ratio: float,
+    y_ratio: float,
+    expect_change: bool,
+    wait_ms: int = 1000,
+    exact: bool = True,
+) -> dict:
+    return _session.click_iframe_surface_semantic(
+        name, expected_url_prefix, x_ratio, y_ratio,
+        expect_change, wait_ms, exact,
     )
 
 

@@ -21,6 +21,7 @@ from tools.browser import (
     navigate_history_semantic,
     inspect_iframe_semantic,
     observe_iframe_surface_change_semantic,
+    click_iframe_surface_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -545,6 +546,31 @@ TOOLS = [
                 "wait_ms": {"type": "integer", "minimum": 100, "maximum": 5000},
                 "exact": {"type": "boolean"}
             }, "required": ["name", "expected_url_prefix", "expect_change"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_click_iframe_surface_semantic",
+            "description": (
+                "WRITE: после подтверждённого iframe surface кликает одну "
+                "нормализованную координату внутри frame и сравнивает private "
+                "before/after screenshot hashes. На реальном VNC требует v069 "
+                "confirmation; изменение кадра не доказывает правильность "
+                "бизнес-результата."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "name": {"type": "string"},
+                "expected_url_prefix": {"type": "string"},
+                "x_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+                "y_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+                "expect_change": {"type": "boolean"},
+                "wait_ms": {"type": "integer", "minimum": 100, "maximum": 5000},
+                "exact": {"type": "boolean"}
+            }, "required": [
+                "name", "expected_url_prefix", "x_ratio", "y_ratio",
+                "expect_change"
+            ]}
         }
     },
     {
@@ -1880,6 +1906,17 @@ def execute_tool(name: str, arguments: dict):
         return observe_iframe_surface_change_semantic(
             arguments["name"],
             arguments["expected_url_prefix"],
+            arguments["expect_change"],
+            arguments.get("wait_ms", 1000),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_click_iframe_surface_semantic":
+        return click_iframe_surface_semantic(
+            arguments["name"],
+            arguments["expected_url_prefix"],
+            arguments["x_ratio"],
+            arguments["y_ratio"],
             arguments["expect_change"],
             arguments.get("wait_ms", 1000),
             arguments.get("exact", True),

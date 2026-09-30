@@ -532,6 +532,9 @@ SYSTEM_PROMPT = """
 - Для VNC/video после iframe inspection используй
   browser_observe_iframe_surface_change_semantic. Совпадение двух private
   screenshot hash проверяет только изменение кадра, но не успешное управление.
+- Координатный ввод в VNC выполняй только через browser_click_iframe_surface_semantic
+  после surface_ready. Это всегда WRITE с v069 confirmation; изменение screenshot
+  hash после клика не заменяет проверку ожидаемого результата.
 - Для кастомного ARIA calendar сначала используй browser_open_calendar_semantic,
   затем browser_inspect_calendar_semantic и передавай в
   browser_select_calendar_option_semantic только точное наблюдаемое имя даты.
@@ -1366,6 +1369,9 @@ def classify_tool_action(
 
     if name == "browser_navigate_history_semantic":
         return "interact"
+
+    if name == "browser_click_iframe_surface_semantic":
+        return "write"
 
     if name == "browser_open_agent_tasks_semantic":
         return "interact"
