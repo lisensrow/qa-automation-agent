@@ -1356,6 +1356,9 @@ def classify_tool_action(
     if name == "browser_inspect_new_tab_semantic":
         return "interact"
 
+    if name == "browser_navigate_history_semantic":
+        return "interact"
+
     if name == "browser_open_agent_tasks_semantic":
         return "interact"
 

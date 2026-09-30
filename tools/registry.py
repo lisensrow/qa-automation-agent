@@ -18,6 +18,7 @@ from tools.browser import (
     download_semantic,
     verify_download_structure_semantic,
     inspect_new_tab_semantic,
+    navigate_history_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -488,6 +489,23 @@ TOOLS = [
                 "expected_url_prefix": {"type": "string"},
                 "exact": {"type": "boolean"}
             }, "required": ["name", "expected_url_prefix"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_navigate_history_semantic",
+            "description": (
+                "INTERACT: выполняет ровно один шаг browser Back или Forward "
+                "и проверяет ожидаемый URL. Разрешена только same-origin "
+                "навигация HTTP(S); query/fragment в expected prefix запрещены. "
+                "После шага используй semantic inspectors для проверки "
+                "восстановленного состояния формы или страницы."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "direction": {"type": "string", "enum": ["back", "forward"]},
+                "expected_url_prefix": {"type": "string"}
+            }, "required": ["direction", "expected_url_prefix"]}
         }
     },
     {
@@ -1804,6 +1822,12 @@ def execute_tool(name: str, arguments: dict):
             arguments["name"],
             arguments["expected_url_prefix"],
             arguments.get("exact", True),
+        )
+
+    if name == "browser_navigate_history_semantic":
+        return navigate_history_semantic(
+            arguments["direction"],
+            arguments["expected_url_prefix"],
         )
 
     if name == "browser_inspect_agent_telemetry_semantic":

@@ -9702,6 +9702,85 @@ class BrowserSession:
             result["error"] = "new_tab_verification_failed"
         return self._finish_action_execution(result)
 
+    def navigate_history_semantic(
+        self, direction, expected_url_prefix,
+    ):
+        """Navigate one same-origin history step and verify the destination."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if direction not in {"back", "forward"}:
+            return {"error": "history_direction_invalid", "executed": False}
+        if (
+            not isinstance(expected_url_prefix, str)
+            or not expected_url_prefix.strip()
+            or len(expected_url_prefix) > 2000
+        ):
+            return {"error": "history_expected_url_invalid", "executed": False}
+        expected_url_prefix = expected_url_prefix.strip()
+        expected_parts = urlsplit(expected_url_prefix)
+        current_parts = urlsplit(self.page.url)
+        if (
+            expected_parts.scheme not in {"http", "https"}
+            or not expected_parts.netloc
+            or expected_parts.username is not None
+            or expected_parts.password is not None
+            or expected_parts.query
+            or expected_parts.fragment
+        ):
+            return {"error": "history_expected_url_unsafe", "executed": False}
+        if (
+            expected_parts.scheme.casefold(), expected_parts.netloc.casefold()
+        ) != (
+            current_parts.scheme.casefold(), current_parts.netloc.casefold()
+        ):
+            return {"error": "history_cross_origin_blocked", "executed": False}
+
+        self._begin_action_execution()
+        try:
+            response = (
+                self.page.go_back(wait_until="domcontentloaded", timeout=10000)
+                if direction == "back"
+                else self.page.go_forward(
+                    wait_until="domcontentloaded", timeout=10000,
+                )
+            )
+        except Exception as exc:
+            result = self._capture_state("navigate-history-semantic")
+            result.update({
+                "error": "history_navigation_failed",
+                "error_type": type(exc).__name__,
+                "history_direction": direction,
+                "mutation_executed": False,
+            })
+            return self._finish_action_execution(result)
+        if response is None:
+            result = self._capture_state("navigate-history-semantic")
+            result.update({
+                "error": "history_entry_unavailable",
+                "history_direction": direction,
+                "mutation_executed": False,
+            })
+            return self._finish_action_execution(result)
+
+        self.page.wait_for_timeout(250)
+        actual_url = self.page.url
+        url_matches = actual_url.startswith(expected_url_prefix)
+        result = self._capture_state("navigate-history-semantic")
+        result.update({
+            "history_direction": direction,
+            "history_url": self._safe_network_url(actual_url),
+            "history_expected_url_prefix": self._safe_network_url(
+                expected_url_prefix
+            ),
+            "history_url_matches": url_matches,
+            "history_http_status": response.status,
+            "history_status": "verified" if url_matches else "mismatch",
+            "mutation_executed": False,
+        })
+        if not url_matches:
+            result["error"] = "history_destination_mismatch"
+        return self._finish_action_execution(result)
+
     def click_semantic(
         self,
         name: str,
@@ -10832,6 +10911,15 @@ def inspect_new_tab_semantic(
 ) -> dict:
     return _session.inspect_new_tab_semantic(
         name, expected_url_prefix, exact,
+    )
+
+
+def navigate_history_semantic(
+    direction: str,
+    expected_url_prefix: str,
+) -> dict:
+    return _session.navigate_history_semantic(
+        direction, expected_url_prefix,
     )
 
 
