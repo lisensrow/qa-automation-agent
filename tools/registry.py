@@ -49,6 +49,9 @@ from tools.browser import (
     select_popover_option_semantic,
     click_popover_button_semantic,
     close_popover_semantic,
+    inspect_calendar_semantic,
+    open_calendar_semantic,
+    select_calendar_option_semantic,
     inspect_table_pagination_semantic,
     set_table_all_selected,
     inspect_bulk_action_semantic,
@@ -1144,6 +1147,51 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_inspect_calendar_semantic",
+            "description": (
+                "Read-only снимок уже открытого ARIA calendar overlay. "
+                "Требует точный trigger с aria-controls и фактический role=grid; "
+                "возвращает наблюдаемые date options без угадывания локали."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["trigger"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_open_calendar_semantic",
+            "description": (
+                "Открывает точный calendar trigger с aria-controls и "
+                "fail-closed проверяет наличие ARIA grid и наблюдаемых дат."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["trigger"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_select_calendar_option_semantic",
+            "description": (
+                "WRITE: выбирает только одну точную дату, ранее наблюдаемую "
+                "в открытом ARIA calendar. Проверяет selected state, изменение "
+                "trigger либо штатное закрытие overlay."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"},
+                "option": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["trigger", "option"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_select_popover_option_semantic",
             "description": (
                 "Выбирает единственную точную role=option с явным aria-selected "
@@ -1913,6 +1961,22 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_close_popover_semantic":
         return close_popover_semantic(
             arguments["trigger"], arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_calendar_semantic":
+        return inspect_calendar_semantic(
+            arguments["trigger"], arguments.get("exact", True),
+        )
+
+    if name == "browser_open_calendar_semantic":
+        return open_calendar_semantic(
+            arguments["trigger"], arguments.get("exact", True),
+        )
+
+    if name == "browser_select_calendar_option_semantic":
+        return select_calendar_option_semantic(
+            arguments["trigger"], arguments["option"],
+            arguments.get("exact", True),
         )
 
     if name == "browser_select_popover_option_semantic":

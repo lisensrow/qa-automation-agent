@@ -396,7 +396,7 @@ Planner отделяет критерии продукта от служебно
 ## Следующий этап frontend-покрытия
 
 - Другие типы выбора значений и многошаговые действия внутри complex popovers.
-- Кастомные calendar/time picker overlays поверх native temporal fields.
+- Кастомные ARIA calendar overlays: exact trigger через `aria-controls`, обязательный `role=grid`, read-only snapshot наблюдаемых дат и policy-controlled выбор одной точной date option с post-click verification. Нестандартные календари без ARIA-контракта блокируются fail-closed; custom time-picker остаётся следующим расширением.
 - Upload/download с проверкой имени, типа и содержимого файла.
 - Modal/dialog и toast/notification через фактические accessibility roles `dialog`, `alertdialog`, `alert`, `status`.
 - Responsive-проверки через фиксированные профили `mobile` (390×844), `tablet` (768×1024) и `desktop` (1440×900): Core получает screenshot, точные размеры документа и машинный флаг horizontal overflow без произвольных размеров viewport.

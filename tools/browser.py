@@ -7070,6 +7070,200 @@ class BrowserSession:
             result["error"] = "popover_close_not_observed"
         return result
 
+    @staticmethod
+    def _calendar_snapshot(popup):
+        return popup.evaluate(
+            """
+            root => {
+                const clean = value => String(value || '')
+                    .replace(/\s+/g, ' ').trim();
+                const visible = el => {
+                    const style = getComputedStyle(el);
+                    return !el.hidden && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && el.getClientRects().length > 0;
+                };
+                const options = Array.from(root.querySelectorAll(
+                    '[role="gridcell"], [data-date], time[datetime]'
+                )).filter(visible).slice(0, 100).map(el => ({
+                    name: clean(
+                        el.getAttribute('aria-label')
+                        || el.getAttribute('data-date')
+                        || el.getAttribute('datetime')
+                        || el.innerText || el.textContent
+                    ).slice(0, 200),
+                    date: clean(
+                        el.getAttribute('data-date')
+                        || el.getAttribute('datetime')
+                    ).slice(0, 100),
+                    selected: el.getAttribute('aria-selected') === 'true'
+                        || el.getAttribute('data-selected') === 'true',
+                    disabled: el.matches(':disabled')
+                        || el.getAttribute('aria-disabled') === 'true'
+                }));
+                return {
+                    role: root.getAttribute('role') || '',
+                    name: clean(root.getAttribute('aria-label')).slice(0, 200),
+                    grid_count: root.querySelectorAll('[role="grid"]').length,
+                    options
+                };
+            }
+            """
+        )
+
+    def inspect_calendar_semantic(self, trigger, exact=True):
+        self._ensure_started()
+        self._reset_diagnostics()
+        _, popup, error = self._controlled_popover(trigger, exact)
+        if error:
+            return error
+        if not popup.is_visible():
+            return {"error": "calendar_not_open", "executed": False}
+        snapshot = self._calendar_snapshot(popup)
+        if snapshot.get("grid_count", 0) < 1:
+            return {
+                "error": "calendar_grid_not_found",
+                "executed": False,
+                "calendar_snapshot": snapshot,
+            }
+        result = self._capture_state("inspect-calendar-semantic")
+        result.update({
+            "calendar_trigger": trigger,
+            "calendar_status": "observed",
+            "calendar_snapshot": snapshot,
+            "mutation_executed": False,
+        })
+        return result
+
+    def open_calendar_semantic(self, trigger, exact=True):
+        result = self.open_popover_semantic(trigger, exact)
+        if result.get("error"):
+            return result
+        _, popup, error = self._controlled_popover(trigger, exact)
+        if error:
+            return error
+        snapshot = self._calendar_snapshot(popup)
+        if snapshot.get("grid_count", 0) < 1:
+            result.update({
+                "error": "calendar_grid_not_found",
+                "calendar_status": "contract_not_observed",
+                "calendar_snapshot": snapshot,
+            })
+            return result
+        result.update({
+            "calendar_trigger": trigger,
+            "calendar_status": (
+                "already_open"
+                if result.get("popover_status") == "already_open"
+                else "opened"
+            ),
+            "calendar_snapshot": snapshot,
+        })
+        return result
+
+    def select_calendar_option_semantic(
+        self, trigger, option, exact=True,
+    ):
+        self._ensure_started()
+        self._reset_diagnostics()
+        button, popup, error = self._controlled_popover(trigger, exact)
+        if error:
+            return error
+        if not popup.is_visible():
+            return {"error": "calendar_not_open", "executed": False}
+        snapshot = self._calendar_snapshot(popup)
+        if snapshot.get("grid_count", 0) < 1:
+            return {"error": "calendar_grid_not_found", "executed": False}
+
+        wanted = str(option or "").strip()
+        candidates = popup.locator(
+            '[role="gridcell"], [data-date], time[datetime]'
+        )
+        matches = []
+        for index in range(min(candidates.count(), 100)):
+            candidate = candidates.nth(index)
+            try:
+                if not candidate.is_visible():
+                    continue
+                names = candidate.evaluate(
+                    """
+                    el => [
+                        el.getAttribute('aria-label') || '',
+                        el.getAttribute('data-date') || '',
+                        el.getAttribute('datetime') || '',
+                        el.innerText || el.textContent || ''
+                    ].map(value => String(value).replace(/\s+/g, ' ').trim())
+                     .filter(Boolean)
+                    """
+                )
+                matched = (
+                    any(name == wanted for name in names)
+                    if exact
+                    else any(wanted.casefold() in name.casefold() for name in names)
+                )
+                if matched:
+                    matches.append(candidate)
+            except Exception:
+                continue
+        if len(matches) != 1:
+            return {
+                "error": (
+                    "calendar_option_not_found"
+                    if not matches
+                    else "ambiguous_calendar_option"
+                ),
+                "option": wanted,
+                "matches": len(matches),
+                "executed": False,
+            }
+        target = matches[0]
+        if (
+            not target.is_enabled()
+            or target.get_attribute("aria-disabled") == "true"
+        ):
+            return {
+                "error": "calendar_option_disabled",
+                "option": wanted,
+                "executed": False,
+            }
+        before = button.evaluate(
+            "el => ({text: (el.innerText || '').trim(), value: el.value || ''})"
+        )
+        self._begin_action_execution()
+        target.click()
+        self.page.wait_for_timeout(200)
+        after = button.evaluate(
+            "el => ({text: (el.innerText || '').trim(), value: el.value || ''})"
+        )
+        popup_open = popup.is_visible()
+        selected = False
+        try:
+            selected = target.evaluate(
+                """
+                el => el.getAttribute('aria-selected') === 'true'
+                    || el.getAttribute('data-selected') === 'true'
+                """
+            )
+        except Exception:
+            selected = False
+        trigger_changed = before != after
+        verified = bool(selected or trigger_changed or not popup_open)
+        result = self._capture_state("select-calendar-option-semantic")
+        result.update({
+            "calendar_trigger": trigger,
+            "calendar_option": wanted,
+            "calendar_status": "selected" if verified else "not_verified",
+            "selection_verified": verified,
+            "selected_state_observed": selected,
+            "trigger_changed": trigger_changed,
+            "calendar_open_after": popup_open,
+            "mutation_executed": True,
+        })
+        result = self._finish_action_execution(result)
+        if not verified:
+            result["error"] = "calendar_selection_not_verified"
+        return result
+
     def apply_table_filter_popover_semantic(
         self,
         column: str,
@@ -9736,6 +9930,20 @@ def click_popover_button_semantic(
 
 def close_popover_semantic(trigger: str, exact: bool = True) -> dict:
     return _session.close_popover_semantic(trigger, exact)
+
+
+def inspect_calendar_semantic(trigger: str, exact: bool = True) -> dict:
+    return _session.inspect_calendar_semantic(trigger, exact)
+
+
+def open_calendar_semantic(trigger: str, exact: bool = True) -> dict:
+    return _session.open_calendar_semantic(trigger, exact)
+
+
+def select_calendar_option_semantic(
+    trigger: str, option: str, exact: bool = True,
+) -> dict:
+    return _session.select_calendar_option_semantic(trigger, option, exact)
 
 
 def apply_table_filter_popover_semantic(
