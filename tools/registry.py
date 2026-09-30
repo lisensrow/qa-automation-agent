@@ -17,6 +17,7 @@ from tools.browser import (
     click_semantic,
     download_semantic,
     verify_download_structure_semantic,
+    inspect_new_tab_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -468,6 +469,25 @@ TOOLS = [
                 "expected_width": {"type": "integer"},
                 "expected_height": {"type": "integer"}
             }, "required": ["download_id", "format"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_new_tab_semantic",
+            "description": (
+                "INTERACT: открывает одну точную видимую HTTP(S)-ссылку с "
+                "target=_blank, проверяет ожидаемый URL/title/text preview, "
+                "закрывает дочернюю вкладку и подтверждает возврат в исходный "
+                "browser context. Origin ссылки обязан совпадать с явно "
+                "переданным expected_url_prefix; query/fragment в ожидании "
+                "запрещены."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "name": {"type": "string"},
+                "expected_url_prefix": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["name", "expected_url_prefix"]}
         }
     },
     {
@@ -1777,6 +1797,13 @@ def execute_tool(name: str, arguments: dict):
             arguments["name"],
             arguments.get("exact", True),
             arguments.get("role"),
+        )
+
+    if name == "browser_inspect_new_tab_semantic":
+        return inspect_new_tab_semantic(
+            arguments["name"],
+            arguments["expected_url_prefix"],
+            arguments.get("exact", True),
         )
 
     if name == "browser_inspect_agent_telemetry_semantic":

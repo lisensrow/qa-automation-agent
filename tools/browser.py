@@ -9596,6 +9596,112 @@ class BrowserSession:
             }
         return {"error": "download_verification_format_unsupported", "executed": False}
 
+    def inspect_new_tab_semantic(
+        self, name, expected_url_prefix, exact=True,
+    ):
+        """Open one exact target=_blank link, inspect it, and restore parent."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if not isinstance(name, str) or not name.strip() or len(name) > 300:
+            return {"error": "new_tab_link_name_invalid", "executed": False}
+        if (
+            not isinstance(expected_url_prefix, str)
+            or not expected_url_prefix.strip()
+            or len(expected_url_prefix) > 2000
+        ):
+            return {"error": "new_tab_expected_url_invalid", "executed": False}
+        expected_url_prefix = expected_url_prefix.strip()
+        expected_parts = urlsplit(expected_url_prefix)
+        if (
+            expected_parts.scheme not in {"http", "https"}
+            or not expected_parts.netloc
+            or expected_parts.username is not None
+            or expected_parts.password is not None
+            or expected_parts.query
+            or expected_parts.fragment
+        ):
+            return {"error": "new_tab_expected_url_unsafe", "executed": False}
+
+        locator = self.page.get_by_role("link", name=name, exact=exact)
+        matches = []
+        for index in range(min(locator.count(), 50)):
+            candidate = locator.nth(index)
+            if candidate.is_visible():
+                matches.append(candidate)
+        if len(matches) != 1:
+            return {
+                "error": "new_tab_link_not_unique",
+                "matches": len(matches),
+                "executed": False,
+            }
+        target = matches[0]
+        if str(target.get_attribute("target") or "").casefold() != "_blank":
+            return {"error": "new_tab_target_blank_required", "executed": False}
+        href = target.evaluate("el => el.href")
+        href_parts = urlsplit(str(href or ""))
+        if href_parts.scheme not in {"http", "https"} or not href_parts.netloc:
+            return {"error": "new_tab_href_unsafe", "executed": False}
+        expected_origin = (
+            expected_parts.scheme.casefold(), expected_parts.netloc.casefold()
+        )
+        href_origin = (href_parts.scheme.casefold(), href_parts.netloc.casefold())
+        if href_origin != expected_origin:
+            return {"error": "new_tab_href_origin_mismatch", "executed": False}
+
+        parent = self.page
+        parent_url = parent.url
+        self._begin_action_execution()
+        popup = None
+        try:
+            with parent.expect_popup(timeout=10000) as popup_info:
+                target.click(timeout=10000)
+            popup = popup_info.value
+            popup.wait_for_load_state("domcontentloaded", timeout=10000)
+            final_url = popup.url
+            title = popup.title()[:300]
+            try:
+                text_preview = popup.locator("body").inner_text(timeout=3000)[:2000]
+            except Exception:
+                text_preview = ""
+            url_matches = final_url.startswith(expected_url_prefix)
+        except Exception as exc:
+            result = self._capture_state("inspect-new-tab-semantic")
+            result.update({
+                "error": "new_tab_open_failed",
+                "error_type": type(exc).__name__,
+                "new_tab_link": name,
+                "mutation_executed": False,
+            })
+            return self._finish_action_execution(result)
+        finally:
+            if popup is not None and not popup.is_closed():
+                popup.close()
+
+        parent_restored = (
+            self.page is parent
+            and not parent.is_closed()
+            and parent.url == parent_url
+            and len(self.context.pages) == 1
+        )
+        verified = bool(url_matches and parent_restored)
+        result = self._capture_state("inspect-new-tab-semantic")
+        result.update({
+            "new_tab_link": name,
+            "new_tab_url": self._safe_network_url(final_url),
+            "new_tab_expected_url_prefix": self._safe_network_url(
+                expected_url_prefix
+            ),
+            "new_tab_url_matches": url_matches,
+            "new_tab_title": title,
+            "new_tab_text_preview": text_preview,
+            "parent_context_restored": parent_restored,
+            "new_tab_status": "verified" if verified else "mismatch",
+            "mutation_executed": False,
+        })
+        if not verified:
+            result["error"] = "new_tab_verification_failed"
+        return self._finish_action_execution(result)
+
     def click_semantic(
         self,
         name: str,
@@ -10716,6 +10822,16 @@ def verify_download_structure_semantic(
         download_id, format, expected_headers, min_rows, max_rows,
         expected_pages, expected_json_type, required_keys, min_items, max_items,
         expected_width, expected_height,
+    )
+
+
+def inspect_new_tab_semantic(
+    name: str,
+    expected_url_prefix: str,
+    exact: bool = True,
+) -> dict:
+    return _session.inspect_new_tab_semantic(
+        name, expected_url_prefix, exact,
     )
 
 

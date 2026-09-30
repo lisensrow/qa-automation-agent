@@ -405,6 +405,7 @@ Planner отделяет критерии продукта от служебно
 - Semantic inspector дополнительно измеряет фактическую геометрию элемента: координаты и размер, пересечение с viewport, долю видимой после clipping области, минимальный touch target и перекрытие центра другим элементом. Это отличает присутствующий в DOM элемент от реально доступного пользователю без выполнения клика.
 - Для проверки визуальных состояний тот же inspector возвращает машинные флаги `focus/focus-visible/hover/checked/invalid` и ограниченный безопасный набор computed CSS: display/visibility/opacity, pointer-events/cursor, цвета, border/outline, шрифт и text decoration. Произвольное чтение CSS или выполнение JavaScript модели не разрешено.
 - Каждое browser evidence содержит frontend health: console errors, необработанные JavaScript exceptions, HTTP errors и failed requests, а также общий `frontend_health_passed`. URL сетевых сбоев проходит ту же очистку query-параметров с секретами; stack trace и response body автоматически не раскрываются.
+- Для ссылок, штатно открывающих новую вкладку, отдельный semantic workflow требует единственную точную видимую ссылку с `target=_blank`, HTTP(S) и заранее заданный URL prefix того же origin. Core проверяет URL/title/text preview, закрывает только дочернюю вкладку и доказывает восстановление исходного browser context; небезопасные схемы и неожиданный origin блокируются до клика.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа
