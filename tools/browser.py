@@ -118,6 +118,7 @@ class BrowserSession:
         self.element_counter = 0
 
         self.console_errors = []
+        self.page_errors = []
         self.failed_requests = []
         self.http_errors = []
 
@@ -196,6 +197,11 @@ class BrowserSession:
         self.page.on(
             "console",
             self._on_console,
+        )
+
+        self.page.on(
+            "pageerror",
+            self._on_page_error,
         )
 
         self.page.on(
@@ -635,6 +641,14 @@ class BrowserSession:
 
         self.console_errors.append(msg.text)
 
+    def _on_page_error(self, error):
+        self.page_errors.append(
+            {
+                "error_type": type(error).__name__,
+                "message": str(error)[:500],
+            }
+        )
+
     def _safe_network_url(self, url: str):
         try:
             parts = urlsplit(url)
@@ -809,6 +823,7 @@ class BrowserSession:
 
     def _reset_diagnostics(self):
         self.console_errors.clear()
+        self.page_errors.clear()
         self.failed_requests.clear()
         self.http_errors.clear()
         self.network_events.clear()
@@ -817,7 +832,7 @@ class BrowserSession:
     def _on_request_failed(self, request):
         self.failed_requests.append(
             {
-                "url": request.url,
+                "url": self._safe_network_url(request.url),
                 "error": request.failure,
             }
         )
@@ -1609,6 +1624,13 @@ class BrowserSession:
             full_page=True,
         )
 
+        frontend_health_passed = not (
+            self.console_errors
+            or self.page_errors
+            or self.failed_requests
+            or self._filtered_http_errors(action)
+        )
+
         return {
             "session_id": self.session_id,
             "action": action,
@@ -1620,8 +1642,10 @@ class BrowserSession:
             "interactive_elements": interactive_elements,
             "screenshot": str(screenshot_path),
             "console_errors": self.console_errors[-20:],
+            "page_errors": self.page_errors[-20:],
             "http_errors": self._filtered_http_errors(action),
             "failed_requests": self.failed_requests[-20:],
+            "frontend_health_passed": frontend_health_passed,
             "network_request_count": len(network_requests),
             "network_requests": network_requests,
         }
