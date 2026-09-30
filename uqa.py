@@ -520,6 +520,9 @@ SYSTEM_PROMPT = """
   доказывает сохранение порядка, а immediate match — лишь изменение текущего UI.
 - Для изменения ширины/высоты панели или колонки используй browser_resize_semantic
   с точным target, edge и ограниченным delta.
+- Для responsive-проверки всей страницы используй browser_set_viewport_semantic
+  только с фиксированным profile mobile/tablet/desktop и проверяй
+  responsive_metrics.horizontal_overflow плюс фактическую видимость элементов.
 - Для общего снимка таблицы используй browser_inspect_table_semantic.
 - Для сортировки, выбора строки и пагинации используй специализированные
   browser_sort_table_semantic, browser_set_table_row_selected и
@@ -1329,6 +1332,9 @@ def classify_tool_action(
         return "observe"
 
     if name == "browser_check_focus_order_semantic":
+        return "interact"
+
+    if name == "browser_set_viewport_semantic":
         return "interact"
 
     if name == "browser_open_agent_tasks_semantic":

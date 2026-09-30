@@ -2577,6 +2577,63 @@ class BrowserSession:
         self._reset_diagnostics()
         return self._capture_state("state")
 
+    def set_viewport_semantic(self, profile):
+        """Apply a fixed responsive viewport and report overflow metrics."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        profiles = {
+            "mobile": {"width": 390, "height": 844},
+            "tablet": {"width": 768, "height": 1024},
+            "desktop": {"width": 1440, "height": 900},
+        }
+        normalized = str(profile or "").strip().casefold()
+        viewport = profiles.get(normalized)
+        if viewport is None:
+            return {
+                "error": "unsupported_viewport_profile",
+                "requested_profile": normalized,
+                "supported_profiles": list(profiles),
+            }
+
+        self.page.set_viewport_size(viewport)
+        self.page.wait_for_timeout(50)
+        metrics = self.page.evaluate(
+            """
+            () => {
+                const root = document.documentElement;
+                const body = document.body;
+                const values = [
+                    root ? root.scrollWidth : 0,
+                    root ? root.offsetWidth : 0,
+                    root ? root.clientWidth : 0,
+                    body ? body.scrollWidth : 0,
+                    body ? body.offsetWidth : 0,
+                    body ? body.clientWidth : 0,
+                ];
+                const documentWidth = Math.max(...values);
+                const viewportWidth = window.innerWidth;
+                return {
+                    viewport_width: viewportWidth,
+                    viewport_height: window.innerHeight,
+                    document_width: documentWidth,
+                    document_height: Math.max(
+                        root ? root.scrollHeight : 0,
+                        body ? body.scrollHeight : 0
+                    ),
+                    horizontal_overflow: documentWidth > viewportWidth + 1,
+                };
+            }
+            """
+        )
+        result = self._capture_state("set-viewport")
+        result.update({
+            "viewport_status": "applied",
+            "viewport_profile": normalized,
+            "viewport": dict(viewport),
+            "responsive_metrics": metrics,
+        })
+        return result
+
     def probe_capabilities(self):
         """Inspect generic UI contracts without interacting with the page."""
         self._ensure_started()
@@ -9187,6 +9244,10 @@ def open_page(url: str) -> dict:
 
 def get_state() -> dict:
     return _session.get_state()
+
+
+def set_viewport_semantic(profile: str) -> dict:
+    return _session.set_viewport_semantic(profile)
 
 
 def probe_capabilities() -> dict:

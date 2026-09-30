@@ -1,6 +1,7 @@
 from tools.browser import (
     open_page,
     get_state,
+    set_viewport_semantic,
     probe_capabilities,
     inspect_semantic,
     inspect_agent_telemetry_semantic,
@@ -284,6 +285,28 @@ TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {}
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_set_viewport_semantic",
+            "description": (
+                "Переключает только размер тестового браузера на фиксированный "
+                "responsive-профиль и возвращает screenshot, точные размеры "
+                "viewport/document и horizontal_overflow. Не изменяет данные "
+                "продукта и не принимает произвольные размеры."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "profile": {
+                        "type": "string",
+                        "enum": ["mobile", "tablet", "desktop"],
+                    }
+                },
+                "required": ["profile"]
             }
         }
     },
@@ -1553,6 +1576,9 @@ def execute_tool(name: str, arguments: dict):
 
     if name == "browser_get_state":
         return get_state()
+
+    if name == "browser_set_viewport_semantic":
+        return set_viewport_semantic(arguments["profile"])
 
     if name == "browser_probe_capabilities":
         return probe_capabilities()

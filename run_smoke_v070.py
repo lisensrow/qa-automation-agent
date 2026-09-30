@@ -30,6 +30,7 @@ SMOKES = [
     "smoke_tree_controls.py",
     "smoke_popover_lifecycle.py",
     "smoke_dialog_notifications.py",
+    "smoke_responsive_viewport.py",
     "smoke_aria_multiselect_chips.py",
     "smoke_keyboard_focus.py",
     "smoke_keyboard_chords_clipboard.py",

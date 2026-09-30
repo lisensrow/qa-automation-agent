@@ -398,7 +398,8 @@ Planner отделяет критерии продукта от служебно
 - Другие типы выбора значений и многошаговые действия внутри complex popovers.
 - Кастомные calendar/time picker overlays поверх native temporal fields.
 - Upload/download с проверкой имени, типа и содержимого файла.
-- Modal/dialog и toast/notification через фактические accessibility roles `dialog`, `alertdialog`, `alert`, `status`; responsive viewport checks остаются следующим блоком.
+- Modal/dialog и toast/notification через фактические accessibility roles `dialog`, `alertdialog`, `alert`, `status`.
+- Responsive-проверки через фиксированные профили `mobile` (390×844), `tablet` (768×1024) и `desktop` (1440×900): Core получает screenshot, точные размеры документа и машинный флаг horizontal overflow без произвольных размеров viewport.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа
