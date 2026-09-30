@@ -2634,6 +2634,131 @@ class BrowserSession:
         })
         return result
 
+    def inspect_accessibility_semantic(self):
+        """Run a compact generic DOM accessibility audit."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        audit = self.page.evaluate(
+            """
+            () => {
+                const visible = el => {
+                    const style = getComputedStyle(el);
+                    const box = el.getBoundingClientRect();
+                    return !el.hidden
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && box.width > 0
+                        && box.height > 0;
+                };
+                const text = value => String(value || '')
+                    .replace(/\s+/g, ' ').trim();
+                const ariaRefText = (el, attribute) => text(
+                    (el.getAttribute(attribute) || '')
+                        .split(/\s+/).filter(Boolean)
+                        .map(id => document.getElementById(id))
+                        .filter(Boolean)
+                        .map(node => node.innerText || node.textContent || '')
+                        .join(' ')
+                );
+                const accessibleName = el => {
+                    const labels = el.labels
+                        ? Array.from(el.labels)
+                            .map(label => label.innerText || label.textContent || '')
+                        : [];
+                    return text(
+                        el.getAttribute('aria-label')
+                        || ariaRefText(el, 'aria-labelledby')
+                        || labels.join(' ')
+                        || el.getAttribute('alt')
+                        || el.getAttribute('title')
+                        || el.innerText
+                        || el.textContent
+                        || el.value
+                    );
+                };
+                const descriptor = el => ({
+                    tag: el.tagName.toLowerCase(),
+                    role: el.getAttribute('role') || '',
+                    id: el.id || '',
+                    type: el.getAttribute('type') || '',
+                });
+
+                const interactive = Array.from(document.querySelectorAll(
+                    'button, a[href], input:not([type="hidden"]), select, '
+                    + 'textarea, [role="button"], [role="link"], '
+                    + '[role="checkbox"], [role="radio"], [role="tab"], '
+                    + '[role="menuitem"], [role="option"], [role="treeitem"]'
+                )).filter(visible);
+                const unnamedInteractiveAll = interactive
+                    .filter(el => !accessibleName(el));
+                const unnamedInteractive = unnamedInteractiveAll
+                    .slice(0, 50).map(descriptor);
+
+                const images = Array.from(document.querySelectorAll('img'))
+                    .filter(visible);
+                const imagesMissingAltAll = images
+                    .filter(el => !el.hasAttribute('alt'));
+                const imagesMissingAlt = imagesMissingAltAll
+                    .slice(0, 50).map(descriptor);
+
+                const idCounts = new Map();
+                for (const el of document.querySelectorAll('[id]')) {
+                    idCounts.set(el.id, (idCounts.get(el.id) || 0) + 1);
+                }
+                const duplicateIdsAll = Array.from(idCounts.entries())
+                    .filter(([, count]) => count > 1);
+                const duplicateIds = duplicateIdsAll
+                    .slice(0, 50).map(([id, count]) => ({id, count}));
+
+                const brokenAriaReferences = [];
+                const referenceAttributes = [
+                    'aria-labelledby', 'aria-describedby', 'aria-controls'
+                ];
+                for (const el of document.querySelectorAll(
+                    '[aria-labelledby], [aria-describedby], [aria-controls]'
+                )) {
+                    for (const attribute of referenceAttributes) {
+                        const ids = (el.getAttribute(attribute) || '')
+                            .split(/\s+/).filter(Boolean);
+                        const missing = ids.filter(
+                            id => !document.getElementById(id)
+                        );
+                        if (missing.length) {
+                            brokenAriaReferences.push({
+                                ...descriptor(el), attribute, missing
+                            });
+                        }
+                    }
+                }
+
+                const issueCount = unnamedInteractiveAll.length
+                    + imagesMissingAltAll.length
+                    + duplicateIdsAll.length
+                    + brokenAriaReferences.length;
+                return {
+                    accessibility_passed: issueCount === 0,
+                    issue_count: issueCount,
+                    visible_interactive_count: interactive.length,
+                    unnamed_interactive_count: unnamedInteractiveAll.length,
+                    unnamed_interactive: unnamedInteractive,
+                    visible_image_count: images.length,
+                    images_missing_alt_count: imagesMissingAltAll.length,
+                    images_missing_alt: imagesMissingAlt,
+                    duplicate_id_count: duplicateIdsAll.length,
+                    duplicate_ids: duplicateIds,
+                    broken_aria_reference_count: brokenAriaReferences.length,
+                    broken_aria_references: brokenAriaReferences.slice(0, 50),
+                };
+            }
+            """
+        )
+        result = self._capture_state("inspect-accessibility")
+        result.update({
+            "inspection_status": "observed",
+            "accessibility_audit": audit,
+        })
+        return result
+
     def probe_capabilities(self):
         """Inspect generic UI contracts without interacting with the page."""
         self._ensure_started()
@@ -9248,6 +9373,10 @@ def get_state() -> dict:
 
 def set_viewport_semantic(profile: str) -> dict:
     return _session.set_viewport_semantic(profile)
+
+
+def inspect_accessibility_semantic() -> dict:
+    return _session.inspect_accessibility_semantic()
 
 
 def probe_capabilities() -> dict:

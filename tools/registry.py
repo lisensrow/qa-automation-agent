@@ -2,6 +2,7 @@ from tools.browser import (
     open_page,
     get_state,
     set_viewport_semantic,
+    inspect_accessibility_semantic,
     probe_capabilities,
     inspect_semantic,
     inspect_agent_telemetry_semantic,
@@ -307,6 +308,22 @@ TOOLS = [
                     }
                 },
                 "required": ["profile"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_accessibility_semantic",
+            "description": (
+                "Read-only DOM accessibility audit текущей страницы: "
+                "безымянные видимые controls, изображения без alt, duplicate "
+                "id и broken aria-labelledby/aria-describedby/aria-controls. "
+                "Возвращает машинный accessibility_passed и screenshot."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {}
             }
         }
     },
@@ -1579,6 +1596,9 @@ def execute_tool(name: str, arguments: dict):
 
     if name == "browser_set_viewport_semantic":
         return set_viewport_semantic(arguments["profile"])
+
+    if name == "browser_inspect_accessibility_semantic":
+        return inspect_accessibility_semantic()
 
     if name == "browser_probe_capabilities":
         return probe_capabilities()

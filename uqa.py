@@ -523,6 +523,9 @@ SYSTEM_PROMPT = """
 - Для responsive-проверки всей страницы используй browser_set_viewport_semantic
   только с фиксированным profile mobile/tablet/desktop и проверяй
   responsive_metrics.horizontal_overflow плюс фактическую видимость элементов.
+- Для базовой accessibility-проверки страницы используй
+  browser_inspect_accessibility_semantic и опирайся на машинный
+  accessibility_audit.accessibility_passed и конкретные категории issues.
 - Для общего снимка таблицы используй browser_inspect_table_semantic.
 - Для сортировки, выбора строки и пагинации используй специализированные
   browser_sort_table_semantic, browser_set_table_row_selected и
@@ -1308,6 +1311,7 @@ def classify_tool_action(
         "browser_open_page",
         "browser_get_state",
         "browser_probe_capabilities",
+        "browser_inspect_accessibility_semantic",
         "browser_get_network_detail",
         "browser_inspect_semantic",
         "browser_inspect_table_row",
