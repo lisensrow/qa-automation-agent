@@ -19,6 +19,7 @@ from tools.browser import (
     verify_download_structure_semantic,
     inspect_new_tab_semantic,
     navigate_history_semantic,
+    inspect_iframe_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -506,6 +507,23 @@ TOOLS = [
                 "direction": {"type": "string", "enum": ["back", "forward"]},
                 "expected_url_prefix": {"type": "string"}
             }, "required": ["direction", "expected_url_prefix"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_iframe_semantic",
+            "description": (
+                "Read-only проверяет один видимый iframe по точному title, "
+                "aria-label или name. Требует ожидаемый HTTP(S) URL prefix, "
+                "сверяет origin и возвращает title/text preview и число "
+                "интерактивных элементов frame, не меняя top-level context."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "name": {"type": "string"},
+                "expected_url_prefix": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["name", "expected_url_prefix"]}
         }
     },
     {
@@ -1828,6 +1846,13 @@ def execute_tool(name: str, arguments: dict):
         return navigate_history_semantic(
             arguments["direction"],
             arguments["expected_url_prefix"],
+        )
+
+    if name == "browser_inspect_iframe_semantic":
+        return inspect_iframe_semantic(
+            arguments["name"],
+            arguments["expected_url_prefix"],
+            arguments.get("exact", True),
         )
 
     if name == "browser_inspect_agent_telemetry_semantic":

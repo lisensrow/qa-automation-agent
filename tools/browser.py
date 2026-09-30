@@ -9781,6 +9781,118 @@ class BrowserSession:
             result["error"] = "history_destination_mismatch"
         return self._finish_action_execution(result)
 
+    def inspect_iframe_semantic(
+        self, name, expected_url_prefix, exact=True,
+    ):
+        """Inspect one named iframe without changing the top-level page."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if not isinstance(name, str) or not name.strip() or len(name) > 300:
+            return {"error": "iframe_name_invalid", "executed": False}
+        if (
+            not isinstance(expected_url_prefix, str)
+            or not expected_url_prefix.strip()
+            or len(expected_url_prefix) > 2000
+        ):
+            return {"error": "iframe_expected_url_invalid", "executed": False}
+        expected_url_prefix = expected_url_prefix.strip()
+        expected_parts = urlsplit(expected_url_prefix)
+        if (
+            expected_parts.scheme not in {"http", "https"}
+            or not expected_parts.netloc
+            or expected_parts.username is not None
+            or expected_parts.password is not None
+            or expected_parts.query
+            or expected_parts.fragment
+        ):
+            return {"error": "iframe_expected_url_unsafe", "executed": False}
+
+        frames = self.page.locator("iframe")
+        matches = []
+        expected_name = name if exact else name.casefold()
+        for index in range(min(frames.count(), 50)):
+            candidate = frames.nth(index)
+            if not candidate.is_visible():
+                continue
+            candidate_names = [
+                str(candidate.get_attribute(key) or "").strip()
+                for key in ("title", "aria-label", "name")
+            ]
+            matched = (
+                expected_name in candidate_names
+                if exact
+                else any(
+                    expected_name in value.casefold()
+                    for value in candidate_names if value
+                )
+            )
+            if matched:
+                matches.append(candidate)
+        if len(matches) != 1:
+            return {
+                "error": "iframe_not_unique",
+                "matches": len(matches),
+                "executed": False,
+            }
+
+        iframe = matches[0]
+        iframe_handle = iframe.element_handle()
+        frame = iframe_handle.content_frame() if iframe_handle is not None else None
+        if frame is None:
+            return {"error": "iframe_content_unavailable", "executed": False}
+        try:
+            frame.wait_for_load_state("domcontentloaded", timeout=10000)
+        except Exception:
+            pass
+        frame_url = frame.url
+        frame_parts = urlsplit(frame_url)
+        expected_origin = (
+            expected_parts.scheme.casefold(), expected_parts.netloc.casefold()
+        )
+        frame_origin = (
+            frame_parts.scheme.casefold(), frame_parts.netloc.casefold()
+        )
+        origin_matches = frame_origin == expected_origin
+        url_matches = origin_matches and frame_url.startswith(expected_url_prefix)
+        try:
+            frame_title = frame.title()[:300]
+        except Exception:
+            frame_title = ""
+        try:
+            text_preview = frame.locator("body").inner_text(timeout=3000)[:2000]
+        except Exception:
+            text_preview = ""
+        try:
+            interactive_count = min(
+                frame.locator(
+                    "a, button, input, select, textarea, "
+                    "[role='button'], [role='link'], [role='textbox'], "
+                    "[role='combobox']"
+                ).count(),
+                1000,
+            )
+        except Exception:
+            interactive_count = None
+
+        result = self._capture_state("inspect-iframe-semantic")
+        result.update({
+            "iframe_name": name,
+            "iframe_url": self._safe_network_url(frame_url),
+            "iframe_expected_url_prefix": self._safe_network_url(
+                expected_url_prefix
+            ),
+            "iframe_origin_matches": origin_matches,
+            "iframe_url_matches": url_matches,
+            "iframe_title": frame_title,
+            "iframe_text_preview": text_preview,
+            "iframe_interactive_count": interactive_count,
+            "iframe_status": "verified" if url_matches else "mismatch",
+            "mutation_executed": False,
+        })
+        if not url_matches:
+            result["error"] = "iframe_url_mismatch"
+        return result
+
     def click_semantic(
         self,
         name: str,
@@ -10920,6 +11032,16 @@ def navigate_history_semantic(
 ) -> dict:
     return _session.navigate_history_semantic(
         direction, expected_url_prefix,
+    )
+
+
+def inspect_iframe_semantic(
+    name: str,
+    expected_url_prefix: str,
+    exact: bool = True,
+) -> dict:
+    return _session.inspect_iframe_semantic(
+        name, expected_url_prefix, exact,
     )
 
 

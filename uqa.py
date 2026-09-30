@@ -526,6 +526,9 @@ SYSTEM_PROMPT = """
 - Для базовой accessibility-проверки страницы используй
   browser_inspect_accessibility_semantic и опирайся на машинный
   accessibility_audit.accessibility_passed и конкретные категории issues.
+- Для встроенного iframe используй browser_inspect_iframe_semantic только с
+  фактически наблюдаемым title/aria-label/name и ожидаемым URL prefix. Наличие
+  iframe не доказывает работоспособность интерактивного содержимого внутри.
 - Для кастомного ARIA calendar сначала используй browser_open_calendar_semantic,
   затем browser_inspect_calendar_semantic и передавай в
   browser_select_calendar_option_semantic только точное наблюдаемое имя даты.
@@ -1321,6 +1324,7 @@ def classify_tool_action(
         "browser_get_state",
         "browser_probe_capabilities",
         "browser_inspect_accessibility_semantic",
+        "browser_inspect_iframe_semantic",
         "browser_get_network_detail",
         "browser_inspect_semantic",
         "browser_inspect_table_row",
