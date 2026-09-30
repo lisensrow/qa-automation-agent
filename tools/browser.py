@@ -9205,6 +9205,7 @@ class BrowserSession:
         min_rows=None, max_rows=None, expected_pages=None,
         expected_json_type=None, required_keys=None,
         min_items=None, max_items=None,
+        expected_width=None, expected_height=None,
     ):
         """Inspect only a download captured in this browser case."""
         record = self.download_artifacts.get(str(download_id or ""))
@@ -9373,6 +9374,87 @@ class BrowserSession:
                 "item_count_matches": item_count_matches,
                 "verification_status": (
                     "verified" if verified else "mismatch"
+                ),
+                "mutation_executed": False,
+            }
+        if format in {"png", "jpeg"}:
+            if record["format"] != format:
+                return {
+                    "error": "download_not_expected_image_format",
+                    "executed": False,
+                }
+            if (
+                type(expected_width) is not int
+                or not 1 <= expected_width <= 32768
+                or type(expected_height) is not int
+                or not 1 <= expected_height <= 32768
+            ):
+                return {
+                    "error": "image_expected_dimensions_invalid",
+                    "executed": False,
+                }
+            try:
+                data = path.read_bytes()
+            except OSError:
+                return {"error": "image_read_failed", "executed": False}
+            width = height = None
+            if format == "png":
+                if (
+                    len(data) < 24
+                    or data[:8] != b"\x89PNG\r\n\x1a\n"
+                    or data[12:16] != b"IHDR"
+                ):
+                    return {"error": "png_parse_failed", "executed": False}
+                width = int.from_bytes(data[16:20], "big")
+                height = int.from_bytes(data[20:24], "big")
+            else:
+                if len(data) < 4 or data[:2] != b"\xff\xd8":
+                    return {"error": "jpeg_parse_failed", "executed": False}
+                offset = 2
+                sof_markers = {
+                    0xC0, 0xC1, 0xC2, 0xC3,
+                    0xC5, 0xC6, 0xC7,
+                    0xC9, 0xCA, 0xCB,
+                    0xCD, 0xCE, 0xCF,
+                }
+                while offset < len(data):
+                    while offset < len(data) and data[offset] != 0xFF:
+                        offset += 1
+                    while offset < len(data) and data[offset] == 0xFF:
+                        offset += 1
+                    if offset >= len(data):
+                        break
+                    marker = data[offset]
+                    offset += 1
+                    if marker == 0xD9:
+                        break
+                    if marker == 0x01 or 0xD0 <= marker <= 0xD8:
+                        continue
+                    if offset + 2 > len(data):
+                        break
+                    segment_length = int.from_bytes(data[offset:offset + 2], "big")
+                    if segment_length < 2 or offset + segment_length > len(data):
+                        break
+                    if marker in sof_markers:
+                        if segment_length < 7:
+                            break
+                        height = int.from_bytes(data[offset + 3:offset + 5], "big")
+                        width = int.from_bytes(data[offset + 5:offset + 7], "big")
+                        break
+                    offset += segment_length
+                if width is None or height is None:
+                    return {"error": "jpeg_parse_failed", "executed": False}
+            dimensions_match = (
+                width == expected_width and height == expected_height
+            )
+            return {
+                "download_id": download_id,
+                "format": format,
+                "width": width,
+                "height": height,
+                "dimensions_match": dimensions_match,
+                "verification_status": (
+                    "verified" if dimensions_match else "mismatch"
                 ),
                 "mutation_executed": False,
             }
@@ -10491,10 +10573,13 @@ def verify_download_structure_semantic(
     required_keys=None,
     min_items=None,
     max_items=None,
+    expected_width=None,
+    expected_height=None,
 ) -> dict:
     return _session.verify_download_structure_semantic(
         download_id, format, expected_headers, min_rows, max_rows,
         expected_pages, expected_json_type, required_keys, min_items, max_items,
+        expected_width, expected_height,
     )
 
 

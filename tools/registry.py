@@ -442,11 +442,15 @@ TOOLS = [
                 "Read-only проверяет только download_id, выданный этой браузерной "
                 "сессией: CSV — точные заголовки и диапазон строк, PDF — число "
                 "страниц, JSON — top-level type, обязательные ключи и диапазон "
-                "числа элементов. Содержимое файла не возвращается."
+                "числа элементов, PNG/JPEG — точные размеры изображения. "
+                "Содержимое файла не возвращается."
             ),
             "parameters": {"type": "object", "properties": {
                 "download_id": {"type": "string"},
-                "format": {"type": "string", "enum": ["csv", "pdf", "json"]},
+                "format": {
+                    "type": "string",
+                    "enum": ["csv", "pdf", "json", "png", "jpeg"]
+                },
                 "expected_headers": {
                     "type": "array", "items": {"type": "string"}
                 },
@@ -460,7 +464,9 @@ TOOLS = [
                     "type": "array", "items": {"type": "string"}
                 },
                 "min_items": {"type": "integer"},
-                "max_items": {"type": "integer"}
+                "max_items": {"type": "integer"},
+                "expected_width": {"type": "integer"},
+                "expected_height": {"type": "integer"}
             }, "required": ["download_id", "format"]}
         }
     },
@@ -1849,6 +1855,8 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("required_keys"),
             arguments.get("min_items"),
             arguments.get("max_items"),
+            arguments.get("expected_width"),
+            arguments.get("expected_height"),
         )
 
     if name == "browser_context_menu_semantic":

@@ -11,6 +11,14 @@ from uqa import classify_tool_action
 
 CSV_BYTES = b"name,value\nalpha,1\nbeta,2\n"
 JSON_BYTES = b'{"items":[1,2],"status":"ok"}'
+PNG_BYTES = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
+JPEG_BYTES = (
+    b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+    b"\xff\xc0\x00\x11\x08\x00\x01\x00\x01\x03"
+    b"\x01\x11\x00\x02\x11\x00\x03\x11\x00\xff\xd9"
+)
 pdf_writer = PdfWriter()
 pdf_writer.add_blank_page(width=72, height=72)
 pdf_stream = BytesIO()
@@ -30,6 +38,12 @@ try:
         <button onclick="download('report.json', 'application/json', '__JSON_B64__')">
           Download JSON
         </button>
+        <button onclick="download('pixel.png', 'image/png', '__PNG_B64__')">
+          Download PNG
+        </button>
+        <button onclick="download('pixel.jpg', 'image/jpeg', '__JPEG_B64__')">
+          Download JPEG
+        </button>
         <script>
           function download(name, type, b64) {
             const bytes = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
@@ -48,6 +62,10 @@ try:
         "__PDF_B64__", base64.b64encode(PDF_BYTES).decode("ascii")
     ).replace(
         "__JSON_B64__", base64.b64encode(JSON_BYTES).decode("ascii")
+    ).replace(
+        "__PNG_B64__", base64.b64encode(PNG_BYTES).decode("ascii")
+    ).replace(
+        "__JPEG_B64__", base64.b64encode(JPEG_BYTES).decode("ascii")
     )
     session.page.set_content(html)
     csv_download = session.download_semantic(
@@ -102,6 +120,33 @@ try:
     )
     assert json_mismatch["verification_status"] == "mismatch", json_mismatch
     assert json_mismatch["missing_required_keys"] == ["missing"], json_mismatch
+
+    png_download = session.download_semantic(
+        "Download PNG", "pixel.png", "png",
+        hashlib.sha256(PNG_BYTES).hexdigest(),
+    )
+    assert png_download["download_status"] == "verified", png_download
+    png_id = png_download["download_id"]
+    png_result = session.verify_download_structure_semantic(
+        png_id, "png", expected_width=1, expected_height=1,
+    )
+    assert png_result["verification_status"] == "verified", png_result
+    assert png_result["width"] == 1 and png_result["height"] == 1, png_result
+    assert session.verify_download_structure_semantic(
+        png_id, "png", expected_width=2, expected_height=1,
+    )["verification_status"] == "mismatch"
+
+    jpeg_download = session.download_semantic(
+        "Download JPEG", "pixel.jpg", "jpeg",
+        hashlib.sha256(JPEG_BYTES).hexdigest(),
+    )
+    assert jpeg_download["download_status"] == "verified", jpeg_download
+    jpeg_result = session.verify_download_structure_semantic(
+        jpeg_download["download_id"], "jpeg",
+        expected_width=1, expected_height=1,
+    )
+    assert jpeg_result["verification_status"] == "verified", jpeg_result
+    assert jpeg_result["width"] == 1 and jpeg_result["height"] == 1, jpeg_result
     assert classify_tool_action(
         "browser_verify_download_structure_semantic", {}
     ) == "observe"
