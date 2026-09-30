@@ -441,17 +441,26 @@ TOOLS = [
             "description": (
                 "Read-only проверяет только download_id, выданный этой браузерной "
                 "сессией: CSV — точные заголовки и диапазон строк, PDF — число "
-                "страниц. Строки CSV и содержимое PDF не возвращаются."
+                "страниц, JSON — top-level type, обязательные ключи и диапазон "
+                "числа элементов. Содержимое файла не возвращается."
             ),
             "parameters": {"type": "object", "properties": {
                 "download_id": {"type": "string"},
-                "format": {"type": "string", "enum": ["csv", "pdf"]},
+                "format": {"type": "string", "enum": ["csv", "pdf", "json"]},
                 "expected_headers": {
                     "type": "array", "items": {"type": "string"}
                 },
                 "min_rows": {"type": "integer"},
                 "max_rows": {"type": "integer"},
-                "expected_pages": {"type": "integer"}
+                "expected_pages": {"type": "integer"},
+                "expected_json_type": {
+                    "type": "string", "enum": ["object", "array"]
+                },
+                "required_keys": {
+                    "type": "array", "items": {"type": "string"}
+                },
+                "min_items": {"type": "integer"},
+                "max_items": {"type": "integer"}
             }, "required": ["download_id", "format"]}
         }
     },
@@ -1836,6 +1845,10 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("min_rows"),
             arguments.get("max_rows"),
             arguments.get("expected_pages"),
+            arguments.get("expected_json_type"),
+            arguments.get("required_keys"),
+            arguments.get("min_items"),
+            arguments.get("max_items"),
         )
 
     if name == "browser_context_menu_semantic":

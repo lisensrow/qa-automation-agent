@@ -10,6 +10,7 @@ from uqa import classify_tool_action
 
 
 CSV_BYTES = b"name,value\nalpha,1\nbeta,2\n"
+JSON_BYTES = b'{"items":[1,2],"status":"ok"}'
 pdf_writer = PdfWriter()
 pdf_writer.add_blank_page(width=72, height=72)
 pdf_stream = BytesIO()
@@ -25,6 +26,9 @@ try:
         </button>
         <button onclick="download('report.pdf', 'application/pdf', '__PDF_B64__')">
           Download PDF
+        </button>
+        <button onclick="download('report.json', 'application/json', '__JSON_B64__')">
+          Download JSON
         </button>
         <script>
           function download(name, type, b64) {
@@ -42,6 +46,8 @@ try:
         "__CSV_B64__", base64.b64encode(CSV_BYTES).decode("ascii")
     ).replace(
         "__PDF_B64__", base64.b64encode(PDF_BYTES).decode("ascii")
+    ).replace(
+        "__JSON_B64__", base64.b64encode(JSON_BYTES).decode("ascii")
     )
     session.page.set_content(html)
     csv_download = session.download_semantic(
@@ -75,6 +81,27 @@ try:
     assert session.verify_download_structure_semantic(
         pdf_id, "pdf", expected_pages=2
     )["verification_status"] == "mismatch"
+
+    json_download = session.download_semantic(
+        "Download JSON", "report.json", "text",
+        hashlib.sha256(JSON_BYTES).hexdigest(),
+    )
+    assert json_download["download_status"] == "verified", json_download
+    json_id = json_download["download_id"]
+    json_result = session.verify_download_structure_semantic(
+        json_id, "json", expected_json_type="object",
+        required_keys=["items", "status"], min_items=2, max_items=2,
+    )
+    assert json_result["verification_status"] == "verified", json_result
+    assert json_result["json_type"] == "object", json_result
+    assert json_result["item_count"] == 2, json_result
+    assert "payload" not in json_result
+    json_mismatch = session.verify_download_structure_semantic(
+        json_id, "json", expected_json_type="object",
+        required_keys=["items", "missing"], min_items=2,
+    )
+    assert json_mismatch["verification_status"] == "mismatch", json_mismatch
+    assert json_mismatch["missing_required_keys"] == ["missing"], json_mismatch
     assert classify_tool_action(
         "browser_verify_download_structure_semantic", {}
     ) == "observe"

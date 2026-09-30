@@ -9203,6 +9203,8 @@ class BrowserSession:
     def verify_download_structure_semantic(
         self, download_id, format, expected_headers=None,
         min_rows=None, max_rows=None, expected_pages=None,
+        expected_json_type=None, required_keys=None,
+        min_items=None, max_items=None,
     ):
         """Inspect only a download captured in this browser case."""
         record = self.download_artifacts.get(str(download_id or ""))
@@ -9282,6 +9284,96 @@ class BrowserSession:
                 "page_count": page_count,
                 "page_count_matches": verified,
                 "verification_status": "verified" if verified else "mismatch",
+                "mutation_executed": False,
+            }
+        if format == "json":
+            if record["format"] != "text":
+                return {"error": "download_not_text", "executed": False}
+            if expected_json_type not in {"object", "array"}:
+                return {
+                    "error": "json_expected_type_invalid",
+                    "executed": False,
+                }
+            if required_keys is None:
+                required_keys = []
+            if (
+                not isinstance(required_keys, list)
+                or len(required_keys) > 100
+                or any(
+                    not isinstance(key, str)
+                    or not key
+                    or len(key) > 200
+                    for key in required_keys
+                )
+            ):
+                return {
+                    "error": "json_required_keys_invalid",
+                    "executed": False,
+                }
+            if required_keys and expected_json_type != "object":
+                return {
+                    "error": "json_required_keys_need_object",
+                    "executed": False,
+                }
+            if (
+                min_items is not None
+                and (type(min_items) is not int or min_items < 0)
+            ) or (
+                max_items is not None
+                and (type(max_items) is not int or max_items < 0)
+            ) or (
+                min_items is not None
+                and max_items is not None
+                and min_items > max_items
+            ):
+                return {
+                    "error": "json_item_bounds_invalid",
+                    "executed": False,
+                }
+            try:
+                with path.open("r", encoding="utf-8-sig") as source:
+                    payload = json.load(source)
+            except (UnicodeDecodeError, json.JSONDecodeError, OSError):
+                return {"error": "json_parse_failed", "executed": False}
+            actual_type = (
+                "object" if isinstance(payload, dict)
+                else "array" if isinstance(payload, list)
+                else "other"
+            )
+            type_matches = actual_type == expected_json_type
+            missing_required_keys = (
+                [key for key in required_keys if key not in payload]
+                if isinstance(payload, dict)
+                else list(required_keys)
+            )
+            required_keys_match = not missing_required_keys
+            item_count = (
+                len(payload)
+                if isinstance(payload, (dict, list))
+                else None
+            )
+            item_count_matches = bool(
+                item_count is not None
+                and (min_items is None or item_count >= min_items)
+                and (max_items is None or item_count <= max_items)
+            )
+            verified = bool(
+                type_matches
+                and required_keys_match
+                and item_count_matches
+            )
+            return {
+                "download_id": download_id,
+                "format": "json",
+                "json_type": actual_type,
+                "json_type_matches": type_matches,
+                "required_keys_match": required_keys_match,
+                "missing_required_keys": missing_required_keys,
+                "item_count": item_count,
+                "item_count_matches": item_count_matches,
+                "verification_status": (
+                    "verified" if verified else "mismatch"
+                ),
                 "mutation_executed": False,
             }
         return {"error": "download_verification_format_unsupported", "executed": False}
@@ -10395,9 +10487,14 @@ def verify_download_structure_semantic(
     min_rows=None,
     max_rows=None,
     expected_pages=None,
+    expected_json_type=None,
+    required_keys=None,
+    min_items=None,
+    max_items=None,
 ) -> dict:
     return _session.verify_download_structure_semantic(
-        download_id, format, expected_headers, min_rows, max_rows, expected_pages,
+        download_id, format, expected_headers, min_rows, max_rows,
+        expected_pages, expected_json_type, required_keys, min_items, max_items,
     )
 
 

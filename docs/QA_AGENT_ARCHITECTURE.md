@@ -398,7 +398,7 @@ Planner отделяет критерии продукта от служебно
 - Scoped modal/wizard workflow: точный `dialog/alertdialog`, read-only snapshot active step/buttons/fields и нажатие exact button только внутри подтверждённого scope. Переход `Next/Back` проверяется по смене active step, закрытие — по исчезновению dialog; `Save/Submit/Delete` сохраняют обычную v069-классификацию.
 - Кастомные ARIA calendar overlays: exact trigger через `aria-controls`, обязательный `role=grid`, read-only snapshot наблюдаемых дат и policy-controlled выбор одной точной date option с post-click verification.
 - Custom time-picker overlays: exact trigger через `aria-controls`, обязательный `role=listbox`, read-only snapshot наблюдаемых значений времени и policy-controlled выбор одной exact time option. Нестандартные date/time widgets без ARIA-контракта блокируются fail-closed.
-- Upload/download с проверкой имени, типа и содержимого файла.
+- Upload/download: безопасный fixture upload; download проверяет имя, сигнатуру и hash, а структурный inspector — CSV headers/row bounds, PDF page count и JSON top-level type/required keys/item bounds. Содержимое файлов не возвращается модели.
 - Modal/dialog и toast/notification через фактические accessibility roles `dialog`, `alertdialog`, `alert`, `status`.
 - Responsive-проверки через фиксированные профили `mobile` (390×844), `tablet` (768×1024) и `desktop` (1440×900): Core получает screenshot, точные размеры документа и машинный флаг horizontal overflow без произвольных размеров viewport.
 - Базовый accessibility audit страницы: машинно выявляет видимые интерактивные элементы без accessible name, изображения без `alt`, duplicate `id` и broken ARIA references; результат содержит общий `accessibility_passed` и конкретные категории нарушений.
