@@ -1578,7 +1578,9 @@ TOOLS = [
             "description": (
                 "Read-only проверка фактического состояния "
                 "элемента интерфейса без клика. Возвращает "
-                "visible/enabled/disabled, metadata и screenshot. "
+                "visible/enabled/disabled, metadata, screenshot и layout: "
+                "координаты, попадание во viewport, долю видимой области и "
+                "перекрытие центра другим элементом. "
                 "Используй для проверки наличия и доступности "
                 "кнопок, ссылок, modal/dialog и toast/notification. "
                 "Dialog проверяется через role dialog/alertdialog, а "

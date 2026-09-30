@@ -9033,6 +9033,88 @@ class BrowserSession:
         except Exception:
             metadata = {}
 
+        try:
+            layout = target.evaluate(
+                """
+                el => {
+                    const rect = el.getBoundingClientRect();
+                    const viewportWidth = document.documentElement.clientWidth;
+                    const viewportHeight = document.documentElement.clientHeight;
+                    let left = Math.max(0, rect.left);
+                    let top = Math.max(0, rect.top);
+                    let right = Math.min(viewportWidth, rect.right);
+                    let bottom = Math.min(viewportHeight, rect.bottom);
+
+                    for (
+                        let parent = el.parentElement;
+                        parent;
+                        parent = parent.parentElement
+                    ) {
+                        const style = getComputedStyle(parent);
+                        const parentRect = parent.getBoundingClientRect();
+                        const clipsX = ["auto", "hidden", "clip", "scroll"]
+                            .includes(style.overflowX);
+                        const clipsY = ["auto", "hidden", "clip", "scroll"]
+                            .includes(style.overflowY);
+                        if (clipsX) {
+                            left = Math.max(left, parentRect.left);
+                            right = Math.min(right, parentRect.right);
+                        }
+                        if (clipsY) {
+                            top = Math.max(top, parentRect.top);
+                            bottom = Math.min(bottom, parentRect.bottom);
+                        }
+                    }
+
+                    const visibleWidth = Math.max(0, right - left);
+                    const visibleHeight = Math.max(0, bottom - top);
+                    const area = Math.max(0, rect.width * rect.height);
+                    const visibleArea = visibleWidth * visibleHeight;
+                    const centerX = left + visibleWidth / 2;
+                    const centerY = top + visibleHeight / 2;
+                    const hit = (
+                        visibleArea > 0
+                        ? document.elementFromPoint(centerX, centerY)
+                        : null
+                    );
+                    const centerUnobscured = Boolean(
+                        hit && (hit === el || el.contains(hit))
+                    );
+                    const round = value => Math.round(value * 100) / 100;
+                    const style = getComputedStyle(el);
+
+                    return {
+                        x: round(rect.x),
+                        y: round(rect.y),
+                        width: round(rect.width),
+                        height: round(rect.height),
+                        viewport_width: viewportWidth,
+                        viewport_height: viewportHeight,
+                        intersects_viewport: visibleArea > 0,
+                        fully_in_viewport: (
+                            rect.left >= 0
+                            && rect.top >= 0
+                            && rect.right <= viewportWidth
+                            && rect.bottom <= viewportHeight
+                        ),
+                        visible_area_ratio: (
+                            area > 0 ? round(visibleArea / area) : 0
+                        ),
+                        center_unobscured: centerUnobscured,
+                        geometry_actionable: Boolean(
+                            visibleArea > 0 && centerUnobscured
+                        ),
+                        touch_target_44px: (
+                            rect.width >= 44 && rect.height >= 44
+                        ),
+                        position: style.position
+                    };
+                }
+                """
+            )
+        except Exception:
+            layout = {}
+
         result = self._capture_state(
             "inspect-semantic"
         )
@@ -9050,6 +9132,8 @@ class BrowserSession:
                     else None
                 ),
                 "element": metadata,
+                "layout": layout,
+                "geometry_actionable": layout.get("geometry_actionable"),
                 "inspection_status": "observed",
                 "requested_role": requested_role or None,
                 "role_constraint_matched": role_constraint_matched,
