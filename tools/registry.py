@@ -49,6 +49,9 @@ from tools.browser import (
     inspect_live_region_contract_semantic,
     inspect_dialog_contract_semantic,
     inspect_field_label_contract_semantic,
+    inspect_document_metadata_semantic,
+    inspect_keyboard_shortcuts_semantic,
+    inspect_autofill_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -721,6 +724,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_live_region_contract_semantic","description":"Read-only audit aria-live и implicit live roles alert/status/log.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_dialog_contract_semantic","description":"Read-only audit dialog/alertdialog names, aria-labelledby references и modal metadata.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_field_label_contract_semantic","description":"Read-only audit labels и aria-describedby references полей без возврата values.","parameters":{"type":"object","properties":{"form":{"type":"string"},"exact":{"type":"boolean"}}}}},
+    {"type":"function","function":{"name":"browser_inspect_document_metadata_semantic","description":"Read-only audit page title, html lang и responsive viewport metadata.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_keyboard_shortcuts_semantic","description":"Read-only audit accesskey/aria-keyshortcuts: names, syntax и duplicate declarations.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_autofill_contract_semantic","description":"Read-only audit autocomplete contracts без возврата field values; password purpose обязателен.","parameters":{"type":"object","properties":{"form":{"type":"string"},"exact":{"type":"boolean"}}}}},
     {
         "type": "function",
         "function": {
@@ -2156,6 +2162,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_dialog_contract_semantic()
     if name == "browser_inspect_field_label_contract_semantic":
         return inspect_field_label_contract_semantic(arguments.get("form"), arguments.get("exact", True))
+    if name == "browser_inspect_document_metadata_semantic":
+        return inspect_document_metadata_semantic()
+    if name == "browser_inspect_keyboard_shortcuts_semantic":
+        return inspect_keyboard_shortcuts_semantic()
+    if name == "browser_inspect_autofill_contract_semantic":
+        return inspect_autofill_contract_semantic(arguments.get("form"), arguments.get("exact", True))
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

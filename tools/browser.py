@@ -10984,6 +10984,31 @@ class BrowserSession:
             root=m[0]
         audit=root.evaluate("""root=>{const all=Array.from(root.querySelectorAll('input:not([type="hidden"]),select,textarea'));const rows=all.slice(0,200).map(e=>{const label=String((e.labels&&e.labels[0]&&e.labels[0].innerText)||e.getAttribute('aria-label')||'').trim().slice(0,160);const ids=(e.getAttribute('aria-describedby')||'').split(/\s+/).filter(Boolean);return {label,has_label:Boolean(label),description_ids:ids.slice(0,20),broken_description_count:ids.filter(id=>!document.getElementById(id)).length};});return {field_count:rows.length,unlabeled_count:rows.filter(x=>!x.has_label).length,broken_description_count:rows.reduce((n,x)=>n+x.broken_description_count,0),fields:rows,field_label_contract_passed:rows.every(x=>x.has_label&&x.broken_description_count===0),truncated:all.length>200};}""");r=self._capture_state("inspect-field-label-contract");r.update({"field_label_form":form,"field_label_audit":audit,"mutation_executed":False});return r
 
+    def inspect_document_metadata_semantic(self):
+        """Audit title, document language and responsive viewport metadata."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const title=String(document.title||'').trim();const lang=String(document.documentElement.lang||'').trim();const viewports=Array.from(document.querySelectorAll('meta[name="viewport" i]')).map(x=>x.content||'');const langValid=/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(lang);const viewport=viewports[0]||'';const normalized=viewport.toLocaleLowerCase().replaceAll(' ','');const responsive=normalized.split(',').includes('width=device-width')||normalized.startsWith('width=device-width,');return {title,title_present:Boolean(title),language:lang,language_valid:langValid,viewport_count:viewports.length,viewport,viewport_has_width_device:responsive,document_metadata_passed:Boolean(title)&&langValid&&viewports.length===1&&responsive};}""")
+        result=self._capture_state("inspect-document-metadata");result.update({"document_metadata_audit":audit,"mutation_executed":False});return result
+
+    def inspect_keyboard_shortcuts_semantic(self):
+        """Audit named accesskey/aria-keyshortcuts declarations and duplicates."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[accesskey],[aria-keyshortcuts]'));const rows=all.slice(0,200).map(e=>{const name=String(e.getAttribute('aria-label')||e.innerText||e.getAttribute('title')||'').trim().replace(/\s+/g,' ').slice(0,160);const accesskey=String(e.getAttribute('accesskey')||'').trim().toLocaleLowerCase();const aria=String(e.getAttribute('aria-keyshortcuts')||'').trim().replace(/\s+/g,' ');return {name,accesskey,aria_keyshortcuts:aria,has_name:Boolean(name),valid_accesskey:!accesskey||Array.from(accesskey).length===1};});const keys=[];rows.forEach(x=>{if(x.accesskey)keys.push(`access:${x.accesskey}`);if(x.aria_keyshortcuts)x.aria_keyshortcuts.toLocaleLowerCase().split(' ').forEach(k=>keys.push(`aria:${k}`));});const duplicateKeys=[...new Set(keys.filter((x,i)=>keys.indexOf(x)!==i))];const invalid=rows.filter(x=>!x.has_name||!x.valid_accesskey).length;return {shortcut_count:rows.length,shortcuts:rows,duplicate_shortcuts:duplicateKeys,duplicate_count:duplicateKeys.length,invalid_count:invalid,keyboard_shortcuts_passed:duplicateKeys.length===0&&invalid===0,truncated:all.length>200};}""")
+        result=self._capture_state("inspect-keyboard-shortcuts");result.update({"keyboard_shortcut_audit":audit,"mutation_executed":False});return result
+
+    def inspect_autofill_contract_semantic(self, form=None, exact=True):
+        """Audit autocomplete declarations without returning field values."""
+        self._ensure_started(); self._reset_diagnostics(); root=self.page.locator("body")
+        if form:
+            forms=self.page.locator("form"); expected=form if exact else str(form).casefold(); matches=[]
+            for i in range(min(forms.count(),50)):
+                item=forms.nth(i); names=[str(item.get_attribute(a) or "").strip() for a in ("aria-label","name","id")]; matched=expected in names if exact else any(expected in x.casefold() for x in names if x)
+                if matched and item.is_visible(): matches.append(item)
+            if len(matches)!=1:return {"error":"autofill_form_not_unique","matches":len(matches),"executed":False}
+            root=matches[0]
+        audit=root.evaluate("""root=>{const known=new Set(['on','off','name','honorific-prefix','given-name','additional-name','family-name','honorific-suffix','nickname','username','new-password','current-password','one-time-code','organization-title','organization','street-address','address-line1','address-line2','address-line3','address-level4','address-level3','address-level2','address-level1','country','country-name','postal-code','cc-name','cc-given-name','cc-additional-name','cc-family-name','cc-number','cc-exp','cc-exp-month','cc-exp-year','cc-csc','cc-type','transaction-currency','transaction-amount','language','bday','bday-day','bday-month','bday-year','sex','url','photo','tel','tel-country-code','tel-national','tel-area-code','tel-local','tel-local-prefix','tel-local-suffix','tel-extension','email','impp']);const all=Array.from(root.querySelectorAll('input:not([type="hidden"]),textarea,select'));const rows=all.slice(0,200).map(e=>{const raw=String(e.getAttribute('autocomplete')||'').trim().toLocaleLowerCase();const tokens=raw.split(/\s+/).filter(Boolean);const purpose=tokens[tokens.length-1]||'';const type=String(e.getAttribute('type')||e.tagName).toLocaleLowerCase();const label=String((e.labels&&e.labels[0]&&e.labels[0].innerText)||e.getAttribute('aria-label')||e.name||e.id||'').trim().slice(0,160);return {label,type,autocomplete:raw,autocomplete_valid:!raw||known.has(purpose),password_purpose_present:type!=='password'||['current-password','new-password'].includes(purpose)};});return {field_count:rows.length,invalid_autocomplete_count:rows.filter(x=>!x.autocomplete_valid).length,password_missing_purpose_count:rows.filter(x=>!x.password_purpose_present).length,fields:rows,autofill_contract_passed:rows.every(x=>x.autocomplete_valid&&x.password_purpose_present),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-autofill-contract");result.update({"autofill_form":form,"autofill_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12286,6 +12311,15 @@ def inspect_dialog_contract_semantic() -> dict:
 
 def inspect_field_label_contract_semantic(form: str = None, exact: bool = True) -> dict:
     return _session.inspect_field_label_contract_semantic(form, exact)
+
+def inspect_document_metadata_semantic() -> dict:
+    return _session.inspect_document_metadata_semantic()
+
+def inspect_keyboard_shortcuts_semantic() -> dict:
+    return _session.inspect_keyboard_shortcuts_semantic()
+
+def inspect_autofill_contract_semantic(form: str = None, exact: bool = True) -> dict:
+    return _session.inspect_autofill_contract_semantic(form, exact)
 
 
 def click_semantic(
