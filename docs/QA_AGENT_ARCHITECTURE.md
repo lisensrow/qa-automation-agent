@@ -398,6 +398,7 @@ Planner отделяет критерии продукта от служебно
 - v100a–v100c добавили audits ARIA tabs, disclosure/accordion и modal focus trap. Изолированные fixtures прошли, основной runner — `59/59`, дополнительные — `11/11`; суммарно `70/70`, без реальных действий на U-Connect.
 - v101a–v101c добавили read-only audits heading hierarchy, document landmarks и link contracts с очисткой секретных query-параметров. Основной runner — `62/62`, дополнительные — `11/11`; суммарно `73/73`, без реальных действий на U-Connect.
 - v102a–v102c добавили read-only contracts для ARIA combobox, listbox/options и menu/menuitems. Основной runner — `65/65`, дополнительные — `11/11`; суммарно `76/76`, без реальных действий на U-Connect.
+- v103a–v103c добавили read-only numeric contracts для `progressbar`, `meter` и `spinbutton`. Основной runner — `68/68`, дополнительные — `11/11`; суммарно `79/79`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 
@@ -435,6 +436,7 @@ Planner отделяет критерии продукта от служебно
 - ARIA combobox проверяется как связанный контракт `expanded → controls → popup role/visibility → active descendant`.
 - Listbox audit проверяет именованные options, selected count и допустимость множественного выбора.
 - Menu audit проверяет роли и accessible names menuitems, disabled-state и наличие popup metadata без выполнения пунктов меню.
+- Numeric ARIA widgets `progressbar`, `meter` и `spinbutton` проверяются read-only: accessible name, конечные min/max/now, порядок диапазона, попадание значения в границы и допустимый indeterminate progressbar.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа

@@ -40,6 +40,9 @@ from tools.browser import (
     inspect_combobox_contract_semantic,
     inspect_listbox_contract_semantic,
     inspect_menu_contract_semantic,
+    inspect_progressbar_contract_semantic,
+    inspect_meter_contract_semantic,
+    inspect_spinbutton_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -703,6 +706,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_combobox_contract_semantic","description":"Read-only audit exact combobox: expanded, controls, popup role/visibility и active descendant.","parameters":{"type":"object","properties":{"target":{"type":"string"},"exact":{"type":"boolean"}},"required":["target"]}}},
     {"type":"function","function":{"name":"browser_inspect_listbox_contract_semantic","description":"Read-only audit exact listbox: options, names, selected count и multiselect contract.","parameters":{"type":"object","properties":{"target":{"type":"string"},"exact":{"type":"boolean"}},"required":["target"]}}},
     {"type":"function","function":{"name":"browser_inspect_menu_contract_semantic","description":"Read-only audit exact menu: menuitems, accessible names, disabled и popup metadata.","parameters":{"type":"object","properties":{"target":{"type":"string"},"exact":{"type":"boolean"}},"required":["target"]}}},
+    {"type":"function","function":{"name":"browser_inspect_progressbar_contract_semantic","description":"Read-only audit exact progressbar: accessible name, min/max/now, диапазон и indeterminate state.","parameters":{"type":"object","properties":{"target":{"type":"string"},"exact":{"type":"boolean"}},"required":["target"]}}},
+    {"type":"function","function":{"name":"browser_inspect_meter_contract_semantic","description":"Read-only audit exact meter: accessible name и корректный bounded numeric range.","parameters":{"type":"object","properties":{"target":{"type":"string"},"exact":{"type":"boolean"}},"required":["target"]}}},
+    {"type":"function","function":{"name":"browser_inspect_spinbutton_contract_semantic","description":"Read-only audit exact spinbutton: accessible name, min/max/now и значение внутри диапазона.","parameters":{"type":"object","properties":{"target":{"type":"string"},"exact":{"type":"boolean"}},"required":["target"]}}},
     {
         "type": "function",
         "function": {
@@ -2120,6 +2126,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_listbox_contract_semantic(arguments["target"], arguments.get("exact", True))
     if name == "browser_inspect_menu_contract_semantic":
         return inspect_menu_contract_semantic(arguments["target"], arguments.get("exact", True))
+    if name == "browser_inspect_progressbar_contract_semantic":
+        return inspect_progressbar_contract_semantic(arguments["target"], arguments.get("exact", True))
+    if name == "browser_inspect_meter_contract_semantic":
+        return inspect_meter_contract_semantic(arguments["target"], arguments.get("exact", True))
+    if name == "browser_inspect_spinbutton_contract_semantic":
+        return inspect_spinbutton_contract_semantic(arguments["target"], arguments.get("exact", True))
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

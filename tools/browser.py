@@ -10935,6 +10935,22 @@ class BrowserSession:
         audit=visible[0].evaluate("""root=>{const all=Array.from(root.querySelectorAll('[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]'));const items=all.slice(0,200).map(e=>({role:e.getAttribute('role')||'',name:String(e.getAttribute('aria-label')||e.innerText||'').trim().replace(/\s+/g,' ').slice(0,160),disabled:e.getAttribute('aria-disabled')==='true',has_popup:e.getAttribute('aria-haspopup')||''}));const empty=items.filter(x=>!x.name).length;return {item_count:items.length,empty_name_count:empty,disabled_count:items.filter(x=>x.disabled).length,items,menu_contract_passed:items.length>0&&empty===0,truncated:all.length>200};}""")
         result=self._capture_state("inspect-menu-contract");result.update({"menu_target":target,"menu_audit":audit,"mutation_executed":False});return result
 
+    def _inspect_numeric_role_contract(self, role, target, exact=True):
+        self._ensure_started(); self._reset_diagnostics()
+        loc=self.page.get_by_role(role,name=target,exact=exact); visible=[loc.nth(i) for i in range(min(loc.count(),50)) if loc.nth(i).is_visible()]
+        if len(visible)!=1:return {"error":f"{role}_not_unique","matches":len(visible),"executed":False}
+        audit=visible[0].evaluate("""(el,role)=>{const number=a=>{const raw=el.getAttribute(a);return raw===null?null:Number(raw);};const min=number('aria-valuemin'),max=number('aria-valuemax'),now=number('aria-valuenow');const name=String(el.getAttribute('aria-label')||el.getAttribute('title')||'').trim().slice(0,160);const finite=x=>x===null||Number.isFinite(x);const ordered=min===null||max===null||min<=max;const bounded=now===null||((min===null||now>=min)&&(max===null||now<=max));const nowRequired=role==='meter'||role==='spinbutton';return {name,value_min:min,value_max:max,value_now:now,value_text:String(el.getAttribute('aria-valuetext')||'').trim().slice(0,160),numeric_values_valid:finite(min)&&finite(max)&&finite(now),range_ordered:ordered,value_in_range:bounded,indeterminate:now===null,numeric_contract_passed:Boolean(name)&&finite(min)&&finite(max)&&finite(now)&&ordered&&bounded&&(!nowRequired||now!==null)};}""",role)
+        result=self._capture_state(f"inspect-{role}-contract");result.update({f"{role}_target":target,f"{role}_audit":audit,"mutation_executed":False});return result
+
+    def inspect_progressbar_contract_semantic(self, target, exact=True):
+        return self._inspect_numeric_role_contract("progressbar",target,exact)
+
+    def inspect_meter_contract_semantic(self, target, exact=True):
+        return self._inspect_numeric_role_contract("meter",target,exact)
+
+    def inspect_spinbutton_contract_semantic(self, target, exact=True):
+        return self._inspect_numeric_role_contract("spinbutton",target,exact)
+
     def click_semantic(
         self,
         name: str,
@@ -12210,6 +12226,15 @@ def inspect_listbox_contract_semantic(target: str, exact: bool = True) -> dict:
 
 def inspect_menu_contract_semantic(target: str, exact: bool = True) -> dict:
     return _session.inspect_menu_contract_semantic(target, exact)
+
+def inspect_progressbar_contract_semantic(target: str, exact: bool = True) -> dict:
+    return _session.inspect_progressbar_contract_semantic(target, exact)
+
+def inspect_meter_contract_semantic(target: str, exact: bool = True) -> dict:
+    return _session.inspect_meter_contract_semantic(target, exact)
+
+def inspect_spinbutton_contract_semantic(target: str, exact: bool = True) -> dict:
+    return _session.inspect_spinbutton_contract_semantic(target, exact)
 
 
 def click_semantic(
