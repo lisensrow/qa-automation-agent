@@ -25,6 +25,7 @@ from tools.browser import (
     press_iframe_surface_key_semantic,
     inspect_hover_tooltip_semantic,
     handle_native_dialog_semantic,
+    inspect_form_validation_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -635,6 +636,16 @@ TOOLS = [
                 "prompt_text": {"type": "string"},
                 "exact": {"type": "boolean"}
             }, "required": ["target", "expected_type", "expected_message", "decision"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_form_validation_semantic",
+            "description": "Read-only audit native form validation без Submit и без возврата values: invalid controls и причины required/type/pattern/range/custom validity.",
+            "parameters": {"type": "object", "properties": {
+                "form": {"type": "string"}, "exact": {"type": "boolean"}
+            }}
         }
     },
     {
@@ -2006,6 +2017,11 @@ def execute_tool(name: str, arguments: dict):
             arguments["target"], arguments["expected_type"],
             arguments["expected_message"], arguments.get("decision", "dismiss"),
             arguments.get("prompt_text"), arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_form_validation_semantic":
+        return inspect_form_validation_semantic(
+            arguments.get("form"), arguments.get("exact", True),
         )
 
     if name == "browser_inspect_agent_telemetry_semantic":

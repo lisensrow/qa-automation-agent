@@ -10448,6 +10448,87 @@ class BrowserSession:
             result["error"] = "native_dialog_verification_failed"
         return self._finish_action_execution(result)
 
+    def inspect_form_validation_semantic(self, form=None, exact=True):
+        """Read native constraint-validation state without submitting."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        scope = self.page.locator("body")
+        form_identity = None
+        if form:
+            forms = self.page.locator("form")
+            matches = []
+            expected = form if exact else str(form).casefold()
+            for index in range(min(forms.count(), 50)):
+                candidate = forms.nth(index)
+                names = [
+                    str(candidate.get_attribute(attr) or "").strip()
+                    for attr in ("aria-label", "name", "id")
+                ]
+                matched = expected in names if exact else any(
+                    expected in value.casefold() for value in names if value
+                )
+                if matched and candidate.is_visible():
+                    matches.append(candidate)
+            if len(matches) != 1:
+                return {"error": "validation_form_not_unique", "matches": len(matches), "executed": False}
+            scope = matches[0]
+            form_identity = form
+        audit = scope.evaluate(
+            """
+            root => {
+              const controls = Array.from(root.querySelectorAll('input, select, textarea'));
+              const visible = controls.filter(el => {
+                const rect = el.getBoundingClientRect();
+                const style = getComputedStyle(el);
+                return rect.width > 0 && rect.height > 0
+                  && style.display !== 'none' && style.visibility !== 'hidden';
+              }).slice(0, 200);
+              const invalid = visible.filter(el => el.willValidate && !el.validity.valid)
+                .slice(0, 50).map(el => {
+                  const label = (
+                    (el.labels && el.labels[0] && el.labels[0].innerText)
+                    || el.getAttribute('aria-label')
+                    || el.getAttribute('placeholder')
+                    || el.getAttribute('name')
+                    || el.id || ''
+                  ).trim().slice(0, 200);
+                  const v = el.validity;
+                  return {
+                    label,
+                    tag: el.tagName.toLowerCase(),
+                    type: el.getAttribute('type') || '',
+                    required: el.required,
+                    value_missing: v.valueMissing,
+                    type_mismatch: v.typeMismatch,
+                    pattern_mismatch: v.patternMismatch,
+                    range_underflow: v.rangeUnderflow,
+                    range_overflow: v.rangeOverflow,
+                    step_mismatch: v.stepMismatch,
+                    too_short: v.tooShort,
+                    too_long: v.tooLong,
+                    bad_input: v.badInput,
+                    custom_error: v.customError,
+                    validation_message: String(el.validationMessage || '').slice(0, 300)
+                  };
+                });
+              return {
+                visible_control_count: visible.length,
+                invalid_control_count: invalid.length,
+                invalid_controls: invalid,
+                validation_passed: invalid.length === 0,
+                truncated: controls.length > 200 || invalid.length > 50
+              };
+            }
+            """
+        )
+        result = self._capture_state("inspect-form-validation")
+        result.update({
+            "validation_form": form_identity,
+            "validation_audit": audit,
+            "mutation_executed": False,
+        })
+        return result
+
     def click_semantic(
         self,
         name: str,
@@ -11658,6 +11739,10 @@ def handle_native_dialog_semantic(
     return _session.handle_native_dialog_semantic(
         target, expected_type, expected_message, decision, prompt_text, exact,
     )
+
+
+def inspect_form_validation_semantic(form: str = None, exact: bool = True) -> dict:
+    return _session.inspect_form_validation_semantic(form, exact)
 
 
 def click_semantic(

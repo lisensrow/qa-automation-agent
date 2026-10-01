@@ -1337,6 +1337,7 @@ def classify_tool_action(
         "browser_probe_capabilities",
         "browser_inspect_accessibility_semantic",
         "browser_inspect_iframe_semantic",
+        "browser_inspect_form_validation_semantic",
         "browser_observe_iframe_surface_change_semantic",
         "browser_get_network_detail",
         "browser_inspect_semantic",

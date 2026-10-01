@@ -414,6 +414,7 @@ Planner отделяет критерии продукта от служебно
 - Клавиатурный ввод в VNC ограничен служебными клавишами (`Tab`, `Enter`, `Escape`, arrows, navigation и несколько безопасных chord) без произвольного текста. Инструмент сначала фокусирует точку surface, отдельно учитывает ожидаемое изменение от focus click, затем проверяет реакцию на key по private hashes; всё действие классифицируется как `WRITE`.
 - Hover-only подсказки проверяются через единственный точный semantic target и конкретный `role=tooltip`: Core требует, чтобы tooltip отсутствовал до наведения, появился с ожидаемым accessible name/text и исчез после ухода курсора. Простое изменение CSS `:hover` без наблюдаемого tooltip не считается PASS.
 - Native browser dialogs (`alert/confirm/prompt/beforeunload`) обрабатываются одноразовым handler с точным ожидаемым type/message. Любое несовпадение fail-closed вызывает `dismiss`; `accept` классифицируется как `WRITE`, а destructive trigger сохраняет `DESTRUCTIVE`. Prompt text в evidence не возвращается.
+- Native constraint validation формы проверяется без Submit: Core возвращает только идентичность invalid control и причины `required/type/pattern/range/step/length/bad input/custom validity`, не раскрывая введённые values. Audit может быть ограничен точной формой по `aria-label/name/id`.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа
