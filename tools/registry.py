@@ -43,6 +43,9 @@ from tools.browser import (
     inspect_progressbar_contract_semantic,
     inspect_meter_contract_semantic,
     inspect_spinbutton_contract_semantic,
+    inspect_text_contrast_semantic,
+    inspect_text_clipping_semantic,
+    inspect_target_size_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -709,6 +712,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_progressbar_contract_semantic","description":"Read-only audit exact progressbar: accessible name, min/max/now, диапазон и indeterminate state.","parameters":{"type":"object","properties":{"target":{"type":"string"},"exact":{"type":"boolean"}},"required":["target"]}}},
     {"type":"function","function":{"name":"browser_inspect_meter_contract_semantic","description":"Read-only audit exact meter: accessible name и корректный bounded numeric range.","parameters":{"type":"object","properties":{"target":{"type":"string"},"exact":{"type":"boolean"}},"required":["target"]}}},
     {"type":"function","function":{"name":"browser_inspect_spinbutton_contract_semantic","description":"Read-only audit exact spinbutton: accessible name, min/max/now и значение внутри диапазона.","parameters":{"type":"object","properties":{"target":{"type":"string"},"exact":{"type":"boolean"}},"required":["target"]}}},
+    {"type":"function","function":{"name":"browser_inspect_text_contrast_semantic","description":"Read-only WCAG contrast audit видимого прямого текста на solid backgrounds.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_text_clipping_semantic","description":"Read-only обнаруживает фактически обрезанный видимый текст по client/scroll geometry и overflow.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_target_size_semantic","description":"Read-only audit размеров видимых interactive controls по порогу 16–44 px (по умолчанию 24).","parameters":{"type":"object","properties":{"minimum_px":{"type":"integer","minimum":16,"maximum":44}}}}},
     {
         "type": "function",
         "function": {
@@ -2132,6 +2138,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_meter_contract_semantic(arguments["target"], arguments.get("exact", True))
     if name == "browser_inspect_spinbutton_contract_semantic":
         return inspect_spinbutton_contract_semantic(arguments["target"], arguments.get("exact", True))
+    if name == "browser_inspect_text_contrast_semantic":
+        return inspect_text_contrast_semantic()
+    if name == "browser_inspect_text_clipping_semantic":
+        return inspect_text_clipping_semantic()
+    if name == "browser_inspect_target_size_semantic":
+        return inspect_target_size_semantic(arguments.get("minimum_px", 24))
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

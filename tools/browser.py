@@ -10951,6 +10951,25 @@ class BrowserSession:
     def inspect_spinbutton_contract_semantic(self, target, exact=True):
         return self._inspect_numeric_role_contract("spinbutton",target,exact)
 
+    def inspect_text_contrast_semantic(self):
+        """Audit WCAG contrast for visible direct text on solid backgrounds."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const rgb=v=>{const m=String(v).match(/rgba?\((\d+)[, ]+(\d+)[, ]+(\d+)(?:[, /]+([\d.]+))?\)/);return m?[+m[1],+m[2],+m[3],m[4]===undefined?1:+m[4]]:null;};const lum=c=>{const f=x=>{x/=255;return x<=.04045?x/12.92:Math.pow((x+.055)/1.055,2.4);};return .2126*f(c[0])+.7152*f(c[1])+.0722*f(c[2]);};const shown=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'&&+s.opacity>0;};const nodes=Array.from(document.querySelectorAll('body *')).filter(e=>shown(e)&&Array.from(e.childNodes).some(n=>n.nodeType===3&&n.textContent.trim()));const rows=[];let unsupported=0;for(const e of nodes.slice(0,400)){const s=getComputedStyle(e),fg=rgb(s.color);let p=e,bg=null;while(p&&!bg){const ps=getComputedStyle(p);if(ps.backgroundImage!=='none'){unsupported++;break;}const c=rgb(ps.backgroundColor);if(c&&c[3]>0)bg=c;p=p.parentElement;}if(!fg||!bg||fg[3]<1)continue;const ratio=(Math.max(lum(fg),lum(bg))+.05)/(Math.min(lum(fg),lum(bg))+.05);const size=parseFloat(s.fontSize)||0,weight=parseInt(s.fontWeight)||400,large=size>=24||(size>=18.66&&weight>=700),threshold=large?3:4.5;rows.push({text:String(e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,120),ratio:Math.round(ratio*100)/100,threshold,passed:ratio>=threshold});}const failed=rows.filter(x=>!x.passed);return {checked_count:rows.length,failure_count:failed.length,unsupported_background_count:unsupported,failures:failed.slice(0,100),contrast_passed:failed.length===0,truncated:nodes.length>400||failed.length>100};}""")
+        result=self._capture_state("inspect-text-contrast");result.update({"text_contrast_audit":audit,"mutation_executed":False});return result
+
+    def inspect_text_clipping_semantic(self):
+        """Find visible direct text clipped by overflow constraints."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const shown=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const all=Array.from(document.querySelectorAll('body *')).filter(e=>shown(e)&&Array.from(e.childNodes).some(n=>n.nodeType===3&&n.textContent.trim()));const clipped=[];for(const e of all.slice(0,500)){const s=getComputedStyle(e);const x=(e.scrollWidth>e.clientWidth+1)&&['hidden','clip'].includes(s.overflowX);const y=(e.scrollHeight>e.clientHeight+1)&&['hidden','clip'].includes(s.overflowY);if(x||y)clipped.push({text:String(e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,120),horizontal:x,vertical:y,client_width:e.clientWidth,scroll_width:e.scrollWidth,client_height:e.clientHeight,scroll_height:e.scrollHeight});}return {checked_count:Math.min(all.length,500),clipped_count:clipped.length,clipped:clipped.slice(0,100),text_clipping_passed:clipped.length===0,truncated:all.length>500||clipped.length>100};}""")
+        result=self._capture_state("inspect-text-clipping");result.update({"text_clipping_audit":audit,"mutation_executed":False});return result
+
+    def inspect_target_size_semantic(self, minimum_px=24):
+        """Audit visible non-inline interactive targets against a minimum size."""
+        self._ensure_started(); self._reset_diagnostics()
+        if not isinstance(minimum_px,int) or isinstance(minimum_px,bool) or not 16<=minimum_px<=44:return {"error":"target_size_minimum_invalid","executed":False}
+        audit=self.page.evaluate("""minimum=>{const shown=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const selector='button,input:not([type="hidden"]),select,textarea,[role="button"],[role="checkbox"],[role="radio"],[role="switch"],[role="tab"],[role="menuitem"]';const all=Array.from(document.querySelectorAll(selector)).filter(shown);const rows=all.slice(0,300).map(e=>{const r=e.getBoundingClientRect();const name=String(e.getAttribute('aria-label')||e.innerText||e.getAttribute('name')||e.id||'').trim().replace(/\s+/g,' ').slice(0,120);return {name,role:e.getAttribute('role')||e.tagName.toLowerCase(),width:Math.round(r.width*10)/10,height:Math.round(r.height*10)/10,too_small:r.width<minimum||r.height<minimum};});const failed=rows.filter(x=>x.too_small);return {minimum_px:minimum,checked_count:rows.length,too_small_count:failed.length,too_small:failed.slice(0,100),target_size_passed:failed.length===0,truncated:all.length>300||failed.length>100};}""",minimum_px)
+        result=self._capture_state("inspect-target-size");result.update({"target_size_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12235,6 +12254,15 @@ def inspect_meter_contract_semantic(target: str, exact: bool = True) -> dict:
 
 def inspect_spinbutton_contract_semantic(target: str, exact: bool = True) -> dict:
     return _session.inspect_spinbutton_contract_semantic(target, exact)
+
+def inspect_text_contrast_semantic() -> dict:
+    return _session.inspect_text_contrast_semantic()
+
+def inspect_text_clipping_semantic() -> dict:
+    return _session.inspect_text_clipping_semantic()
+
+def inspect_target_size_semantic(minimum_px: int = 24) -> dict:
+    return _session.inspect_target_size_semantic(minimum_px)
 
 
 def click_semantic(
