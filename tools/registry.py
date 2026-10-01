@@ -26,6 +26,7 @@ from tools.browser import (
     inspect_hover_tooltip_semantic,
     handle_native_dialog_semantic,
     inspect_form_validation_semantic,
+    inspect_loading_state_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -645,6 +646,20 @@ TOOLS = [
             "description": "Read-only audit native form validation без Submit и без возврата values: invalid controls и причины required/type/pattern/range/custom validity.",
             "parameters": {"type": "object", "properties": {
                 "form": {"type": "string"}, "exact": {"type": "boolean"}
+            }}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_loading_state_semantic",
+            "description": "Read-only проверяет ARIA loading lifecycle в точном scope: aria-busy/role=progressbar, ожидание busy или ready и опционально доказанный переход busy→ready.",
+            "parameters": {"type": "object", "properties": {
+                "scope": {"type": "string"},
+                "expected_state": {"type": "string", "enum": ["busy", "ready"]},
+                "wait_ms": {"type": "integer", "minimum": 0, "maximum": 10000},
+                "require_transition": {"type": "boolean"},
+                "exact": {"type": "boolean"}
             }}
         }
     },
@@ -2022,6 +2037,14 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_inspect_form_validation_semantic":
         return inspect_form_validation_semantic(
             arguments.get("form"), arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_loading_state_semantic":
+        return inspect_loading_state_semantic(
+            arguments.get("scope"), arguments.get("expected_state", "ready"),
+            arguments.get("wait_ms", 2000),
+            arguments.get("require_transition", False),
+            arguments.get("exact", True),
         )
 
     if name == "browser_inspect_agent_telemetry_semantic":

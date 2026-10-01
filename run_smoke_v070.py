@@ -43,6 +43,7 @@ SMOKES = [
     "smoke_hover_tooltip.py",
     "smoke_native_dialog.py",
     "smoke_form_validation.py",
+    "smoke_loading_state.py",
     "smoke_calendar_overlay.py",
     "smoke_time_picker_overlay.py",
     "smoke_dialog_wizard.py",

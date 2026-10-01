@@ -10529,6 +10529,123 @@ class BrowserSession:
         })
         return result
 
+    def inspect_loading_state_semantic(
+        self,
+        scope=None,
+        expected_state="ready",
+        wait_ms=2000,
+        require_transition=False,
+        exact=True,
+    ):
+        """Observe an ARIA loading lifecycle without changing page state."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if expected_state not in {"busy", "ready"}:
+            return {"error": "loading_expected_state_invalid", "executed": False}
+        if not isinstance(wait_ms, int) or isinstance(wait_ms, bool) or not 0 <= wait_ms <= 10000:
+            return {"error": "loading_wait_ms_invalid", "executed": False}
+
+        root = self.page.locator("body")
+        scope_identity = None
+        if scope:
+            candidates = self.page.locator("[aria-label], [name], [id]")
+            matches = []
+            expected = scope if exact else str(scope).casefold()
+            for index in range(min(candidates.count(), 500)):
+                candidate = candidates.nth(index)
+                names = [
+                    str(candidate.get_attribute(attr) or "").strip()
+                    for attr in ("aria-label", "name", "id")
+                ]
+                matched = expected in names if exact else any(
+                    expected in value.casefold() for value in names if value
+                )
+                if matched and candidate.is_visible():
+                    matches.append(candidate)
+            if len(matches) != 1:
+                return {"error": "loading_scope_not_unique", "matches": len(matches), "executed": False}
+            root = matches[0]
+            scope_identity = scope
+
+        def sample():
+            return root.evaluate(
+                """
+                root => {
+                  const visible = el => {
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0 && rect.height > 0
+                      && style.display !== 'none' && style.visibility !== 'hidden'
+                      && Number(style.opacity || 1) > 0;
+                  };
+                  const all = [root, ...root.querySelectorAll('[aria-busy="true"], [role="progressbar"]')];
+                  const unique = [...new Set(all)].filter(el =>
+                    visible(el) && (
+                      el.getAttribute('aria-busy') === 'true'
+                      || el.getAttribute('role') === 'progressbar'
+                    )
+                  );
+                  const busyContainers = unique.filter(el => el.getAttribute('aria-busy') === 'true');
+                  const progressbars = unique.filter(el => el.getAttribute('role') === 'progressbar');
+                  const describe = el => ({
+                    role: el.getAttribute('role') || '',
+                    label: String(
+                      el.getAttribute('aria-label') || el.getAttribute('title') || ''
+                    ).trim().slice(0, 160)
+                  });
+                  return {
+                    busy: busyContainers.length > 0 || progressbars.length > 0,
+                    aria_busy_count: busyContainers.length,
+                    progressbar_count: progressbars.length,
+                    indicators: unique.slice(0, 20).map(describe),
+                    truncated: unique.length > 20
+                  };
+                }
+                """
+            )
+
+        first = sample()
+        current = first
+        observed_busy = bool(first["busy"])
+        observed_ready = not observed_busy
+        sample_count = 1
+        remaining = wait_ms
+        while remaining > 0:
+            verified = (
+                current["busy"] if expected_state == "busy"
+                else (not current["busy"] and (not require_transition or observed_busy))
+            )
+            if verified:
+                break
+            delay = min(100, remaining)
+            self.page.wait_for_timeout(delay)
+            remaining -= delay
+            current = sample()
+            sample_count += 1
+            observed_busy = observed_busy or bool(current["busy"])
+            observed_ready = observed_ready or not bool(current["busy"])
+
+        verified = (
+            current["busy"] if expected_state == "busy"
+            else (not current["busy"] and (not require_transition or observed_busy))
+        )
+        result = self._capture_state("inspect-loading-state")
+        result.update({
+            "loading_scope": scope_identity,
+            "loading_expected_state": expected_state,
+            "loading_require_transition": bool(require_transition),
+            "loading_initial": first,
+            "loading_final": current,
+            "loading_observed_busy": observed_busy,
+            "loading_observed_ready": observed_ready,
+            "loading_sample_count": sample_count,
+            "loading_status": "verified" if verified else "mismatch",
+            "mutation_executed": False,
+        })
+        if not verified:
+            result["error"] = "loading_state_verification_failed"
+        return result
+
     def click_semantic(
         self,
         name: str,
@@ -11743,6 +11860,18 @@ def handle_native_dialog_semantic(
 
 def inspect_form_validation_semantic(form: str = None, exact: bool = True) -> dict:
     return _session.inspect_form_validation_semantic(form, exact)
+
+
+def inspect_loading_state_semantic(
+    scope: str = None,
+    expected_state: str = "ready",
+    wait_ms: int = 2000,
+    require_transition: bool = False,
+    exact: bool = True,
+) -> dict:
+    return _session.inspect_loading_state_semantic(
+        scope, expected_state, wait_ms, require_transition, exact,
+    )
 
 
 def click_semantic(
