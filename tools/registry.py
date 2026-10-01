@@ -23,6 +23,7 @@ from tools.browser import (
     observe_iframe_surface_change_semantic,
     click_iframe_surface_semantic,
     press_iframe_surface_key_semantic,
+    inspect_hover_tooltip_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -598,6 +599,26 @@ TOOLS = [
                 "name", "expected_url_prefix", "key", "x_ratio", "y_ratio",
                 "expect_change"
             ]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_hover_tooltip_semantic",
+            "description": (
+                "INTERACT: наводит курсор на один точный semantic element, "
+                "проверяет появление одного конкретного role=tooltip, фиксирует "
+                "его текст и доказывает исчезновение после ухода курсора."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "target": {"type": "string"},
+                "target_role": {"type": "string", "enum": [
+                    "button", "link", "img", "checkbox", "radio",
+                    "textbox", "combobox", "tab", "menuitem"
+                ]},
+                "expected_tooltip": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["target", "target_role", "expected_tooltip"]}
         }
     },
     {
@@ -1956,6 +1977,12 @@ def execute_tool(name: str, arguments: dict):
             arguments["expect_change"],
             arguments.get("focus_expect_change", False),
             arguments.get("wait_ms", 500), arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_hover_tooltip_semantic":
+        return inspect_hover_tooltip_semantic(
+            arguments["target"], arguments["target_role"],
+            arguments["expected_tooltip"], arguments.get("exact", True),
         )
 
     if name == "browser_inspect_agent_telemetry_semantic":

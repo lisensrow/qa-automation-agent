@@ -538,6 +538,9 @@ SYSTEM_PROMPT = """
 - Для служебной клавиши внутри VNC используй browser_press_iframe_surface_key_semantic.
   Произвольный текст запрещён; focus click и key остаются WRITE, а изменение кадра
   после клавиши не доказывает правильность результата.
+- Для hover-only подсказки используй browser_inspect_hover_tooltip_semantic с
+  точным target role и ожидаемым tooltip text. Наведение без появления и
+  последующего исчезновения role=tooltip не считается PASS.
 - Для кастомного ARIA calendar сначала используй browser_open_calendar_semantic,
   затем browser_inspect_calendar_semantic и передавай в
   browser_select_calendar_option_semantic только точное наблюдаемое имя даты.
@@ -1371,6 +1374,9 @@ def classify_tool_action(
         return "interact"
 
     if name == "browser_navigate_history_semantic":
+        return "interact"
+
+    if name == "browser_inspect_hover_tooltip_semantic":
         return "interact"
 
     if name == "browser_click_iframe_surface_semantic":

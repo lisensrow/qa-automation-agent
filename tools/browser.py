@@ -10279,6 +10279,102 @@ class BrowserSession:
             result["error"] = "iframe_key_result_mismatch"
         return self._finish_action_execution(result)
 
+    def inspect_hover_tooltip_semantic(
+        self, target, target_role, expected_tooltip, exact=True,
+    ):
+        """Hover one exact semantic target and verify one ARIA tooltip."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        allowed_roles = {
+            "button", "link", "img", "checkbox", "radio",
+            "textbox", "combobox", "tab", "menuitem",
+        }
+        target_role = str(target_role or "").strip().casefold()
+        if target_role not in allowed_roles:
+            return {
+                "error": "hover_target_role_invalid",
+                "supported_roles": sorted(allowed_roles),
+                "executed": False,
+            }
+        if (
+            not isinstance(expected_tooltip, str)
+            or not expected_tooltip.strip()
+            or len(expected_tooltip) > 500
+        ):
+            return {"error": "expected_tooltip_invalid", "executed": False}
+        candidates = self.page.get_by_role(
+            target_role, name=target, exact=exact,
+        )
+        visible_targets = []
+        for index in range(min(candidates.count(), 50)):
+            candidate = candidates.nth(index)
+            if candidate.is_visible():
+                visible_targets.append(candidate)
+        if len(visible_targets) != 1:
+            return {
+                "error": "hover_target_not_unique",
+                "matches": len(visible_targets),
+                "executed": False,
+            }
+        tooltip_locator = self.page.get_by_role(
+            "tooltip", name=expected_tooltip, exact=exact,
+        )
+        if any(
+            tooltip_locator.nth(index).is_visible()
+            for index in range(min(tooltip_locator.count(), 50))
+        ):
+            return {"error": "tooltip_already_visible", "executed": False}
+
+        self._begin_action_execution()
+        visible_tooltips = []
+        try:
+            visible_targets[0].hover(timeout=10000)
+            self.page.wait_for_timeout(350)
+            for index in range(min(tooltip_locator.count(), 50)):
+                candidate = tooltip_locator.nth(index)
+                if candidate.is_visible():
+                    visible_tooltips.append(candidate)
+        except Exception as exc:
+            result = self._capture_state("inspect-hover-tooltip")
+            result.update({
+                "error": "hover_tooltip_failed",
+                "error_type": type(exc).__name__,
+                "tooltip_status": "failed",
+                "mutation_executed": False,
+            })
+            return self._finish_action_execution(result)
+
+        opened = len(visible_tooltips) == 1
+        tooltip_text = (
+            visible_tooltips[0].inner_text()[:500] if opened else ""
+        )
+        result = self._capture_state("inspect-hover-tooltip")
+        viewport = self.page.viewport_size or {"width": 1920, "height": 1080}
+        self.page.mouse.move(
+            max(viewport["width"] - 1, 0),
+            max(viewport["height"] - 1, 0),
+        )
+        self.page.wait_for_timeout(150)
+        closed_after = not any(
+            tooltip_locator.nth(index).is_visible()
+            for index in range(min(tooltip_locator.count(), 50))
+        )
+        verified = opened and closed_after
+        result.update({
+            "hover_target": target,
+            "hover_target_role": target_role,
+            "expected_tooltip": expected_tooltip,
+            "tooltip_match_count": len(visible_tooltips),
+            "tooltip_text": tooltip_text,
+            "tooltip_opened": opened,
+            "tooltip_closed_after_hover": closed_after,
+            "tooltip_status": "verified" if verified else "mismatch",
+            "mutation_executed": False,
+        })
+        if not verified:
+            result["error"] = "hover_tooltip_verification_failed"
+        return self._finish_action_execution(result)
+
     def click_semantic(
         self,
         name: str,
@@ -11467,6 +11563,17 @@ def press_iframe_surface_key_semantic(
     return _session.press_iframe_surface_key_semantic(
         name, expected_url_prefix, key, x_ratio, y_ratio,
         expect_change, focus_expect_change, wait_ms, exact,
+    )
+
+
+def inspect_hover_tooltip_semantic(
+    target: str,
+    target_role: str,
+    expected_tooltip: str,
+    exact: bool = True,
+) -> dict:
+    return _session.inspect_hover_tooltip_semantic(
+        target, target_role, expected_tooltip, exact,
     )
 
 
