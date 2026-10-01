@@ -24,6 +24,7 @@ from tools.browser import (
     click_iframe_surface_semantic,
     press_iframe_surface_key_semantic,
     inspect_hover_tooltip_semantic,
+    handle_native_dialog_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -619,6 +620,21 @@ TOOLS = [
                 "expected_tooltip": {"type": "string"},
                 "exact": {"type": "boolean"}
             }, "required": ["target", "target_role", "expected_tooltip"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_handle_native_dialog_semantic",
+            "description": "Обрабатывает один ожидаемый native alert/confirm/prompt. Несовпавший type/message всегда dismiss. Accept проходит v069 policy как WRITE/DESTRUCTIVE; prompt text не возвращается.",
+            "parameters": {"type": "object", "properties": {
+                "target": {"type": "string"},
+                "expected_type": {"type": "string", "enum": ["alert", "confirm", "prompt", "beforeunload"]},
+                "expected_message": {"type": "string"},
+                "decision": {"type": "string", "enum": ["accept", "dismiss"]},
+                "prompt_text": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["target", "expected_type", "expected_message", "decision"]}
         }
     },
     {
@@ -1983,6 +1999,13 @@ def execute_tool(name: str, arguments: dict):
         return inspect_hover_tooltip_semantic(
             arguments["target"], arguments["target_role"],
             arguments["expected_tooltip"], arguments.get("exact", True),
+        )
+
+    if name == "browser_handle_native_dialog_semantic":
+        return handle_native_dialog_semantic(
+            arguments["target"], arguments["expected_type"],
+            arguments["expected_message"], arguments.get("decision", "dismiss"),
+            arguments.get("prompt_text"), arguments.get("exact", True),
         )
 
     if name == "browser_inspect_agent_telemetry_semantic":

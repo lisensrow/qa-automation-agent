@@ -1379,6 +1379,14 @@ def classify_tool_action(
     if name == "browser_inspect_hover_tooltip_semantic":
         return "interact"
 
+    if name == "browser_handle_native_dialog_semantic":
+        trigger_action = classify_tool_action(
+            "browser_click_semantic", {"name": arguments.get("target")},
+        )
+        if trigger_action == "destructive":
+            return "destructive"
+        return "write" if arguments.get("decision") == "accept" else "interact"
+
     if name == "browser_click_iframe_surface_semantic":
         return "write"
 

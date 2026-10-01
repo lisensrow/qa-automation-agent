@@ -413,6 +413,7 @@ Planner отделяет критерии продукта от служебно
 - Координатный клик по VNC/canvas разрешён только внутри заранее подтверждённого exact iframe с `surface_ready=true`, задаётся нормализованными координатами и всегда классифицируется как `WRITE`. До клика действует v069 confirmation, после — private before/after screenshot hashes; изменение кадра подтверждает реакцию поверхности, но бизнес-результат проверяется отдельным evidence.
 - Клавиатурный ввод в VNC ограничен служебными клавишами (`Tab`, `Enter`, `Escape`, arrows, navigation и несколько безопасных chord) без произвольного текста. Инструмент сначала фокусирует точку surface, отдельно учитывает ожидаемое изменение от focus click, затем проверяет реакцию на key по private hashes; всё действие классифицируется как `WRITE`.
 - Hover-only подсказки проверяются через единственный точный semantic target и конкретный `role=tooltip`: Core требует, чтобы tooltip отсутствовал до наведения, появился с ожидаемым accessible name/text и исчез после ухода курсора. Простое изменение CSS `:hover` без наблюдаемого tooltip не считается PASS.
+- Native browser dialogs (`alert/confirm/prompt/beforeunload`) обрабатываются одноразовым handler с точным ожидаемым type/message. Любое несовпадение fail-closed вызывает `dismiss`; `accept` классифицируется как `WRITE`, а destructive trigger сохраняет `DESTRUCTIVE`. Prompt text в evidence не возвращается.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа

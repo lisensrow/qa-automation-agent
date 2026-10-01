@@ -41,6 +41,7 @@ SMOKES = [
     "smoke_iframe_surface_click.py",
     "smoke_iframe_surface_key.py",
     "smoke_hover_tooltip.py",
+    "smoke_native_dialog.py",
     "smoke_calendar_overlay.py",
     "smoke_time_picker_overlay.py",
     "smoke_dialog_wizard.py",

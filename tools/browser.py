@@ -10375,6 +10375,79 @@ class BrowserSession:
             result["error"] = "hover_tooltip_verification_failed"
         return self._finish_action_execution(result)
 
+    def handle_native_dialog_semantic(
+        self, target, expected_type, expected_message,
+        decision="dismiss", prompt_text=None, exact=True,
+    ):
+        """Trigger and safely handle one expected native browser dialog."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if expected_type not in {"alert", "confirm", "prompt", "beforeunload"}:
+            return {"error": "native_dialog_type_invalid", "executed": False}
+        if decision not in {"accept", "dismiss"}:
+            return {"error": "native_dialog_decision_invalid", "executed": False}
+        if not isinstance(expected_message, str) or len(expected_message) > 1000:
+            return {"error": "native_dialog_message_invalid", "executed": False}
+        if prompt_text is not None and (
+            expected_type != "prompt"
+            or not isinstance(prompt_text, str)
+            or len(prompt_text) > 500
+        ):
+            return {"error": "native_dialog_prompt_invalid", "executed": False}
+        candidates = self.page.get_by_role("button", name=target, exact=exact)
+        visible = [
+            candidates.nth(i) for i in range(min(candidates.count(), 50))
+            if candidates.nth(i).is_visible()
+        ]
+        if len(visible) != 1:
+            return {"error": "native_dialog_target_not_unique", "matches": len(visible), "executed": False}
+
+        observed = []
+        def handle(dialog):
+            type_matches = dialog.type == expected_type
+            message_matches = dialog.message == expected_message
+            safe_match = type_matches and message_matches
+            applied = "dismiss"
+            if safe_match and decision == "accept":
+                dialog.accept(prompt_text or "")
+                applied = "accept"
+            else:
+                dialog.dismiss()
+            observed.append({
+                "type": dialog.type,
+                "message": dialog.message[:1000],
+                "default_value_present": bool(dialog.default_value),
+                "type_matches": type_matches,
+                "message_matches": message_matches,
+                "decision_applied": applied,
+                "fail_closed": not safe_match,
+            })
+
+        self.page.once("dialog", handle)
+        self._begin_action_execution()
+        try:
+            visible[0].click(timeout=10000)
+            self.page.wait_for_timeout(300)
+        except Exception as exc:
+            result = self._capture_state("handle-native-dialog")
+            result.update({"error": "native_dialog_trigger_failed", "error_type": type(exc).__name__, "mutation_executed": False})
+            return self._finish_action_execution(result)
+        verified = len(observed) == 1 and observed[0]["type_matches"] and observed[0]["message_matches"] and observed[0]["decision_applied"] == decision
+        result = self._capture_state("handle-native-dialog")
+        result.update({
+            "native_dialog_target": target,
+            "native_dialog_expected_type": expected_type,
+            "native_dialog_expected_message": expected_message,
+            "native_dialog_expected_decision": decision,
+            "native_dialog_observed": observed,
+            "native_dialog_status": "verified" if verified else "mismatch",
+            "prompt_text_supplied": prompt_text is not None,
+            "mutation_executed": bool(verified and decision == "accept"),
+        })
+        if not verified:
+            result["error"] = "native_dialog_verification_failed"
+        return self._finish_action_execution(result)
+
     def click_semantic(
         self,
         name: str,
@@ -11574,6 +11647,16 @@ def inspect_hover_tooltip_semantic(
 ) -> dict:
     return _session.inspect_hover_tooltip_semantic(
         target, target_role, expected_tooltip, exact,
+    )
+
+
+def handle_native_dialog_semantic(
+    target: str, expected_type: str, expected_message: str,
+    decision: str = "dismiss", prompt_text: str = None,
+    exact: bool = True,
+) -> dict:
+    return _session.handle_native_dialog_semantic(
+        target, expected_type, expected_message, decision, prompt_text, exact,
     )
 
 
