@@ -10890,6 +10890,27 @@ class BrowserSession:
             samples.append(state); escaped=escaped or not state["inside"]
         result=self._capture_state("inspect-dialog-focus-trap"); result.update({"dialog_name":dialog,"focusable_count":len(usable),"focus_samples":samples[:30],"focus_escaped":escaped,"focus_trap_passed":not escaped,"interaction_executed":True}); return self._finish_action_execution(result)
 
+    def inspect_heading_structure_semantic(self):
+        """Audit the visible heading outline without changing the page."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const shown=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const all=Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6,[role="heading"]')).filter(shown);const headings=all.slice(0,200).map(e=>({level:e.matches('h1,h2,h3,h4,h5,h6')?Number(e.tagName[1]):Number(e.getAttribute('aria-level')||0),name:String(e.getAttribute('aria-label')||e.innerText||'').trim().replace(/\s+/g,' ').slice(0,200)}));const skips=[];for(let i=1;i<headings.length;i++){if(headings[i].level>headings[i-1].level+1)skips.push({from:headings[i-1].level,to:headings[i].level,index:i});}const empty=headings.filter(x=>!x.name||x.level<1||x.level>6).length;const h1=headings.filter(x=>x.level===1).length;return {heading_count:headings.length,h1_count:h1,empty_or_invalid_count:empty,skipped_level_count:skips.length,skipped_levels:skips.slice(0,30),headings,heading_structure_passed:empty===0&&skips.length===0&&h1<=1,truncated:all.length>200};}""")
+        result=self._capture_state("inspect-heading-structure");result.update({"heading_audit":audit,"mutation_executed":False});return result
+
+    def inspect_landmark_structure_semantic(self):
+        """Audit visible document landmarks and repeated-label contracts."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const shown=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const role=e=>e.getAttribute('role')||({MAIN:'main',NAV:'navigation',HEADER:'banner',FOOTER:'contentinfo',ASIDE:'complementary'}[e.tagName]||'');const all=Array.from(document.querySelectorAll('main,nav,header,footer,aside,[role="main"],[role="navigation"],[role="banner"],[role="contentinfo"],[role="complementary"],[role="region"]')).filter(shown);const items=all.slice(0,100).map(e=>({role:role(e),label:String(e.getAttribute('aria-label')||'').trim().slice(0,160)}));const counts={};items.forEach(x=>counts[x.role]=(counts[x.role]||0)+1);const unlabeledRepeated=items.filter(x=>(counts[x.role]||0)>1&&!x.label).length;const keys=items.filter(x=>x.label).map(x=>`${x.role}|${x.label.toLocaleLowerCase()}`);const duplicateLabels=keys.length-new Set(keys).size;const singletonOverflow=['main','banner','contentinfo'].reduce((n,r)=>n+Math.max(0,(counts[r]||0)-1),0);return {landmark_count:items.length,landmarks:items,role_counts:counts,unlabeled_repeated_count:unlabeledRepeated,duplicate_label_count:duplicateLabels,singleton_overflow_count:singletonOverflow,landmark_structure_passed:(counts.main||0)===1&&unlabeledRepeated===0&&duplicateLabels===0&&singletonOverflow===0,truncated:all.length>100};}""")
+        result=self._capture_state("inspect-landmark-structure");result.update({"landmark_audit":audit,"mutation_executed":False});return result
+
+    def inspect_link_contracts_semantic(self):
+        """Audit visible links, names, schemes and new-tab rel protection."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const shown=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const all=Array.from(document.querySelectorAll('a[href],[role="link"]')).filter(shown);return all.slice(0,200).map(e=>{const href=e.href||e.getAttribute('href')||'';const name=String(e.getAttribute('aria-label')||e.innerText||e.getAttribute('title')||'').trim().replace(/\s+/g,' ').slice(0,160);const target=e.getAttribute('target')||'';const rel=(e.getAttribute('rel')||'').toLowerCase().split(/\s+/).filter(Boolean);let scheme='';try{scheme=new URL(href,document.baseURI).protocol.replace(':','');}catch(_){scheme='invalid';}return {name,href,target,scheme,missing_name:!name,unsafe_scheme:!['http','https','mailto','tel'].includes(scheme),new_tab_unprotected:target==='_blank'&&!rel.includes('noopener')&&!rel.includes('noreferrer')};});}""")
+        for item in audit:
+            item["href"] = self._safe_network_url(item.get("href", ""))
+        failures=sum(1 for x in audit if x["missing_name"] or x["unsafe_scheme"] or x["new_tab_unprotected"])
+        result=self._capture_state("inspect-link-contracts");result.update({"link_audit":{"link_count":len(audit),"links":audit,"failure_count":failures,"link_contracts_passed":failures==0,"truncated":len(audit)>=200},"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12147,6 +12168,15 @@ def inspect_disclosure_contract_semantic(target: str, exact: bool = True) -> dic
 
 def inspect_dialog_focus_trap_semantic(dialog: str, cycles: int = 1, exact: bool = True) -> dict:
     return _session.inspect_dialog_focus_trap_semantic(dialog, cycles, exact)
+
+def inspect_heading_structure_semantic() -> dict:
+    return _session.inspect_heading_structure_semantic()
+
+def inspect_landmark_structure_semantic() -> dict:
+    return _session.inspect_landmark_structure_semantic()
+
+def inspect_link_contracts_semantic() -> dict:
+    return _session.inspect_link_contracts_semantic()
 
 
 def click_semantic(

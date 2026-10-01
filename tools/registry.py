@@ -34,6 +34,9 @@ from tools.browser import (
     inspect_tabs_contract_semantic,
     inspect_disclosure_contract_semantic,
     inspect_dialog_focus_trap_semantic,
+    inspect_heading_structure_semantic,
+    inspect_landmark_structure_semantic,
+    inspect_link_contracts_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -691,6 +694,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_tabs_contract_semantic","description":"Read-only audit одного ARIA tablist: ровно один selected tab, aria-controls и видимая связанная panel.","parameters":{"type":"object","properties":{"tablist":{"type":"string"},"exact":{"type":"boolean"}}}}},
     {"type":"function","function":{"name":"browser_inspect_disclosure_contract_semantic","description":"Read-only проверяет согласованность aria-expanded, aria-controls и видимости controlled panel.","parameters":{"type":"object","properties":{"target":{"type":"string"},"exact":{"type":"boolean"}},"required":["target"]}}},
     {"type":"function","function":{"name":"browser_inspect_dialog_focus_trap_semantic","description":"Проверяет Tab focus trap внутри exact dialog; меняет только фокус, не данные продукта.","parameters":{"type":"object","properties":{"dialog":{"type":"string"},"cycles":{"type":"integer","minimum":1,"maximum":5},"exact":{"type":"boolean"}},"required":["dialog"]}}},
+    {"type":"function","function":{"name":"browser_inspect_heading_structure_semantic","description":"Read-only audit видимой heading hierarchy: уровни, пустые имена, пропуски уровней и число h1.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_landmark_structure_semantic","description":"Read-only audit main/navigation/banner/contentinfo/complementary/region и уникальности labels.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_link_contracts_semantic","description":"Read-only audit видимых links: accessible name, безопасная URL scheme и rel для target=_blank; URL очищаются от секретов.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2096,6 +2102,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_disclosure_contract_semantic(arguments["target"], arguments.get("exact", True))
     if name == "browser_inspect_dialog_focus_trap_semantic":
         return inspect_dialog_focus_trap_semantic(arguments["dialog"], arguments.get("cycles", 1), arguments.get("exact", True))
+    if name == "browser_inspect_heading_structure_semantic":
+        return inspect_heading_structure_semantic()
+    if name == "browser_inspect_landmark_structure_semantic":
+        return inspect_landmark_structure_semantic()
+    if name == "browser_inspect_link_contracts_semantic":
+        return inspect_link_contracts_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(
