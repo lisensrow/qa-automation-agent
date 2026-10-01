@@ -397,6 +397,7 @@ Planner отделяет критерии продукта от служебно
 - v099a–v099c закрыли три frontend-сценария: ARIA field errors, lifecycle состояния semantic controls и приватный dirty-state формы. Все три fixture smoke прошли, основной runner — `56/56`, дополнительные — `11/11`; суммарно `67/67`, без реальных действий на U-Connect.
 - v100a–v100c добавили audits ARIA tabs, disclosure/accordion и modal focus trap. Изолированные fixtures прошли, основной runner — `59/59`, дополнительные — `11/11`; суммарно `70/70`, без реальных действий на U-Connect.
 - v101a–v101c добавили read-only audits heading hierarchy, document landmarks и link contracts с очисткой секретных query-параметров. Основной runner — `62/62`, дополнительные — `11/11`; суммарно `73/73`, без реальных действий на U-Connect.
+- v102a–v102c добавили read-only contracts для ARIA combobox, listbox/options и menu/menuitems. Основной runner — `65/65`, дополнительные — `11/11`; суммарно `76/76`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 
@@ -431,6 +432,9 @@ Planner отделяет критерии продукта от служебно
 - Видимая heading hierarchy проверяется по native `h1–h6` и `role=heading`: уровни, пустые имена, пропуски уровней и число `h1`.
 - Структура landmarks проверяется для `main/navigation/banner/contentinfo/complementary/region`: один main, singleton landmarks и уникальные labels повторяющихся областей.
 - Ссылки проверяются read-only на accessible name, допустимую URL scheme и защитный `rel` при `target=_blank`; query-параметры с секретами очищаются до evidence.
+- ARIA combobox проверяется как связанный контракт `expanded → controls → popup role/visibility → active descendant`.
+- Listbox audit проверяет именованные options, selected count и допустимость множественного выбора.
+- Menu audit проверяет роли и accessible names menuitems, disabled-state и наличие popup metadata без выполнения пунктов меню.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа

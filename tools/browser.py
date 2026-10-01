@@ -10911,6 +10911,30 @@ class BrowserSession:
         failures=sum(1 for x in audit if x["missing_name"] or x["unsafe_scheme"] or x["new_tab_unprotected"])
         result=self._capture_state("inspect-link-contracts");result.update({"link_audit":{"link_count":len(audit),"links":audit,"failure_count":failures,"link_contracts_passed":failures==0,"truncated":len(audit)>=200},"mutation_executed":False});return result
 
+    def inspect_combobox_contract_semantic(self, target, exact=True):
+        """Audit one ARIA combobox and its controlled popup."""
+        self._ensure_started(); self._reset_diagnostics()
+        loc=self.page.get_by_role("combobox",name=target,exact=exact); visible=[loc.nth(i) for i in range(min(loc.count(),50)) if loc.nth(i).is_visible()]
+        if len(visible)!=1:return {"error":"combobox_not_unique","matches":len(visible),"executed":False}
+        audit=visible[0].evaluate("""el=>{const shown=x=>{if(!x)return false;const r=x.getBoundingClientRect(),s=getComputedStyle(x);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const expanded=el.getAttribute('aria-expanded');const id=el.getAttribute('aria-controls')||'';const popup=id?document.getElementById(id):null;const activeId=el.getAttribute('aria-activedescendant')||'';const active=activeId?document.getElementById(activeId):null;const popupRole=popup&&popup.getAttribute('role')||'';return {expanded,controls:id,autocomplete:el.getAttribute('aria-autocomplete')||'',popup_exists:Boolean(popup),popup_role:popupRole,popup_visible:shown(popup),active_descendant:activeId,active_descendant_exists:Boolean(active),combobox_contract_passed:(expanded==='true'||expanded==='false')&&Boolean(id)&&Boolean(popup)&&['listbox','grid','tree','dialog'].includes(popupRole)&&((expanded==='true')===shown(popup))&&(!activeId||Boolean(active))};}""")
+        result=self._capture_state("inspect-combobox-contract");result.update({"combobox_target":target,"combobox_audit":audit,"mutation_executed":False});return result
+
+    def inspect_listbox_contract_semantic(self, target, exact=True):
+        """Audit one visible ARIA listbox and option selection rules."""
+        self._ensure_started(); self._reset_diagnostics()
+        loc=self.page.get_by_role("listbox",name=target,exact=exact); visible=[loc.nth(i) for i in range(min(loc.count(),50)) if loc.nth(i).is_visible()]
+        if len(visible)!=1:return {"error":"listbox_not_unique","matches":len(visible),"executed":False}
+        audit=visible[0].evaluate("""root=>{const all=Array.from(root.querySelectorAll('[role="option"],option'));const options=all.slice(0,200).map(e=>({name:String(e.getAttribute('aria-label')||e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160),selected:e.getAttribute('aria-selected')==='true'||e.selected===true,disabled:e.getAttribute('aria-disabled')==='true'||e.disabled===true}));const multi=root.getAttribute('aria-multiselectable')==='true'||root.multiple===true;const selected=options.filter(x=>x.selected).length;const empty=options.filter(x=>!x.name).length;return {option_count:options.length,selected_count:selected,disabled_count:options.filter(x=>x.disabled).length,multiselectable:multi,empty_name_count:empty,options,listbox_contract_passed:options.length>0&&empty===0&&(multi||selected<=1),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-listbox-contract");result.update({"listbox_target":target,"listbox_audit":audit,"mutation_executed":False});return result
+
+    def inspect_menu_contract_semantic(self, target, exact=True):
+        """Audit one visible ARIA menu and named menuitems."""
+        self._ensure_started(); self._reset_diagnostics()
+        loc=self.page.get_by_role("menu",name=target,exact=exact); visible=[loc.nth(i) for i in range(min(loc.count(),50)) if loc.nth(i).is_visible()]
+        if len(visible)!=1:return {"error":"menu_not_unique","matches":len(visible),"executed":False}
+        audit=visible[0].evaluate("""root=>{const all=Array.from(root.querySelectorAll('[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]'));const items=all.slice(0,200).map(e=>({role:e.getAttribute('role')||'',name:String(e.getAttribute('aria-label')||e.innerText||'').trim().replace(/\s+/g,' ').slice(0,160),disabled:e.getAttribute('aria-disabled')==='true',has_popup:e.getAttribute('aria-haspopup')||''}));const empty=items.filter(x=>!x.name).length;return {item_count:items.length,empty_name_count:empty,disabled_count:items.filter(x=>x.disabled).length,items,menu_contract_passed:items.length>0&&empty===0,truncated:all.length>200};}""")
+        result=self._capture_state("inspect-menu-contract");result.update({"menu_target":target,"menu_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12177,6 +12201,15 @@ def inspect_landmark_structure_semantic() -> dict:
 
 def inspect_link_contracts_semantic() -> dict:
     return _session.inspect_link_contracts_semantic()
+
+def inspect_combobox_contract_semantic(target: str, exact: bool = True) -> dict:
+    return _session.inspect_combobox_contract_semantic(target, exact)
+
+def inspect_listbox_contract_semantic(target: str, exact: bool = True) -> dict:
+    return _session.inspect_listbox_contract_semantic(target, exact)
+
+def inspect_menu_contract_semantic(target: str, exact: bool = True) -> dict:
+    return _session.inspect_menu_contract_semantic(target, exact)
 
 
 def click_semantic(
