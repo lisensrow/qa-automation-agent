@@ -52,6 +52,9 @@ from tools.browser import (
     inspect_document_metadata_semantic,
     inspect_keyboard_shortcuts_semantic,
     inspect_autofill_contract_semantic,
+    inspect_form_submission_contract_semantic,
+    inspect_script_security_semantic,
+    inspect_media_resource_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -727,6 +730,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_document_metadata_semantic","description":"Read-only audit page title, html lang и responsive viewport metadata.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_keyboard_shortcuts_semantic","description":"Read-only audit accesskey/aria-keyshortcuts: names, syntax и duplicate declarations.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_autofill_contract_semantic","description":"Read-only audit autocomplete contracts без возврата field values; password purpose обязателен.","parameters":{"type":"object","properties":{"form":{"type":"string"},"exact":{"type":"boolean"}}}}},
+    {"type":"function","function":{"name":"browser_inspect_form_submission_contract_semantic","description":"Read-only audit form method/action; блокирует mixed content и password через GET, values не читает.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_script_security_semantic","description":"Read-only audit scripts: mixed content и integrity для cross-origin sources; URL очищаются.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_media_resource_semantic","description":"Read-only audit img/video/audio: broken images, mixed content и unmuted autoplay; содержимое не скачивает.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2168,6 +2174,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_keyboard_shortcuts_semantic()
     if name == "browser_inspect_autofill_contract_semantic":
         return inspect_autofill_contract_semantic(arguments.get("form"), arguments.get("exact", True))
+    if name == "browser_inspect_form_submission_contract_semantic":
+        return inspect_form_submission_contract_semantic()
+    if name == "browser_inspect_script_security_semantic":
+        return inspect_script_security_semantic()
+    if name == "browser_inspect_media_resource_semantic":
+        return inspect_media_resource_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

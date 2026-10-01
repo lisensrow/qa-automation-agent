@@ -402,6 +402,7 @@ Planner отделяет критерии продукта от служебно
 - v104a–v104c добавили read-only visual audits: WCAG text contrast, фактическое text clipping и размеры interactive targets. Основной runner — `71/71`, дополнительные — `11/11`; суммарно `82/82`, без реальных действий на U-Connect.
 - v105a–v105c добавили read-only contracts live regions, dialogs и form field labels/descriptions. Основной runner — `74/74`, дополнительные — `11/11`; суммарно `85/85`, без реальных действий на U-Connect.
 - v106a–v106c добавили read-only audits document metadata, keyboard shortcuts и autofill contracts. Основной runner — `77/77`, дополнительные — `11/11`; суммарно `88/88`, без реальных действий на U-Connect.
+- v107a–v107c добавили read-only frontend security audits form submission, external scripts и media resources. Основной runner — `80/80`, дополнительные — `11/11`; суммарно `91/91`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 
@@ -443,6 +444,7 @@ Planner отделяет критерии продукта от служебно
 - Визуальный read-only audit проверяет WCAG contrast видимого текста на solid backgrounds, фактическое clipping по scroll/client geometry и минимальный размер интерактивных controls. Неподдерживаемые gradient/image backgrounds учитываются отдельно, а не получают ложный PASS.
 - Live regions проверяются по допустимым `aria-live` и implicit live roles; dialogs — по accessible name и целостности `aria-labelledby`; form fields — по label и `aria-describedby` без чтения values.
 - Document metadata audit проверяет непустой title, валидный `html lang` и единственный responsive viewport. Keyboard shortcut audit обнаруживает безымянные/дублирующиеся `accesskey` и `aria-keyshortcuts`. Autofill audit проверяет autocomplete purpose, особенно `current-password/new-password`, не раскрывая values.
+- Frontend security audits read-only проверяют form action/method без values, mixed-content и integrity внешних scripts, а также broken/mixed/autoplay media resources. Все URL проходят очистку секретных query-параметров.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа

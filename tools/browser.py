@@ -11009,6 +11009,32 @@ class BrowserSession:
         audit=root.evaluate("""root=>{const known=new Set(['on','off','name','honorific-prefix','given-name','additional-name','family-name','honorific-suffix','nickname','username','new-password','current-password','one-time-code','organization-title','organization','street-address','address-line1','address-line2','address-line3','address-level4','address-level3','address-level2','address-level1','country','country-name','postal-code','cc-name','cc-given-name','cc-additional-name','cc-family-name','cc-number','cc-exp','cc-exp-month','cc-exp-year','cc-csc','cc-type','transaction-currency','transaction-amount','language','bday','bday-day','bday-month','bday-year','sex','url','photo','tel','tel-country-code','tel-national','tel-area-code','tel-local','tel-local-prefix','tel-local-suffix','tel-extension','email','impp']);const all=Array.from(root.querySelectorAll('input:not([type="hidden"]),textarea,select'));const rows=all.slice(0,200).map(e=>{const raw=String(e.getAttribute('autocomplete')||'').trim().toLocaleLowerCase();const tokens=raw.split(/\s+/).filter(Boolean);const purpose=tokens[tokens.length-1]||'';const type=String(e.getAttribute('type')||e.tagName).toLocaleLowerCase();const label=String((e.labels&&e.labels[0]&&e.labels[0].innerText)||e.getAttribute('aria-label')||e.name||e.id||'').trim().slice(0,160);return {label,type,autocomplete:raw,autocomplete_valid:!raw||known.has(purpose),password_purpose_present:type!=='password'||['current-password','new-password'].includes(purpose)};});return {field_count:rows.length,invalid_autocomplete_count:rows.filter(x=>!x.autocomplete_valid).length,password_missing_purpose_count:rows.filter(x=>!x.password_purpose_present).length,fields:rows,autofill_contract_passed:rows.every(x=>x.autocomplete_valid&&x.password_purpose_present),truncated:all.length>200};}""")
         result=self._capture_state("inspect-autofill-contract");result.update({"autofill_form":form,"autofill_audit":audit,"mutation_executed":False});return result
 
+    def inspect_form_submission_contract_semantic(self):
+        """Audit form destinations and methods without reading values."""
+        self._ensure_started(); self._reset_diagnostics()
+        rows=self.page.evaluate("""()=>Array.from(document.forms).slice(0,100).map(f=>{const action=f.action||document.URL;const method=String(f.method||'get').toLowerCase();const password=Boolean(f.querySelector('input[type="password"]'));let protocol='';try{protocol=new URL(action,document.baseURI).protocol.replace(':','');}catch(_){protocol='invalid';}const base=new URL(document.baseURI);const resolved=new URL(action,document.baseURI);return {name:String(f.getAttribute('aria-label')||f.name||f.id||'').trim().slice(0,160),action:resolved.href,method,password_present:password,target:f.target||'',protocol,mixed_content:base.protocol==='https:'&&resolved.protocol==='http:',password_uses_get:password&&method==='get'};})""")
+        for item in rows:item["action"]=self._safe_network_url(item["action"])
+        failures=sum(1 for x in rows if x["protocol"] not in {"http","https"} or x["mixed_content"] or x["password_uses_get"])
+        result=self._capture_state("inspect-form-submission-contract");result.update({"form_submission_audit":{"form_count":len(rows),"forms":rows,"failure_count":failures,"form_submission_contract_passed":failures==0,"truncated":len(rows)>=100},"mutation_executed":False});return result
+
+    def inspect_script_security_semantic(self):
+        """Audit external scripts for mixed content and cross-origin integrity."""
+        self._ensure_started(); self._reset_diagnostics()
+        rows=self.page.evaluate("""()=>{const base=new URL(document.baseURI);return Array.from(document.scripts).slice(0,200).map(s=>{if(!s.src)return {external:false,type:s.type||'',async:s.async,defer:s.defer};const u=new URL(s.src,document.baseURI);const cross=u.origin!==base.origin;return {external:true,src:u.href,type:s.type||'',async:s.async,defer:s.defer,cross_origin:cross,mixed_content:base.protocol==='https:'&&u.protocol==='http:',integrity_present:Boolean(s.integrity),crossorigin:s.crossOrigin||'',cross_origin_without_integrity:cross&&!s.integrity};});}""")
+        for item in rows:
+            if item.get("src"):item["src"]=self._safe_network_url(item["src"])
+        failures=sum(1 for x in rows if x.get("mixed_content") or x.get("cross_origin_without_integrity"))
+        result=self._capture_state("inspect-script-security");result.update({"script_security_audit":{"script_count":len(rows),"external_count":sum(1 for x in rows if x["external"]),"scripts":rows,"failure_count":failures,"script_security_passed":failures==0,"truncated":len(rows)>=200},"mutation_executed":False});return result
+
+    def inspect_media_resource_semantic(self):
+        """Audit visible image/media sources without downloading content."""
+        self._ensure_started(); self._reset_diagnostics()
+        rows=self.page.evaluate("""()=>{const base=new URL(document.baseURI);const all=Array.from(document.querySelectorAll('img,video,audio')).slice(0,200);return all.map(e=>{const raw=e.currentSrc||e.src||'';let u=null;try{u=new URL(raw,document.baseURI);}catch(_){}const tag=e.tagName.toLowerCase();return {tag,source:u?u.href:'',mixed_content:Boolean(u&&base.protocol==='https:'&&u.protocol==='http:'),image_broken:tag==='img'&&e.complete&&e.naturalWidth===0,autoplay_unmuted:(tag==='video'||tag==='audio')&&e.autoplay&&!e.muted,has_controls:(tag==='video'||tag==='audio')?e.controls:null};});}""")
+        for item in rows:
+            if item.get("source"):item["source"]=self._safe_network_url(item["source"])
+        failures=sum(1 for x in rows if x["mixed_content"] or x["image_broken"] or x["autoplay_unmuted"])
+        result=self._capture_state("inspect-media-resource");result.update({"media_resource_audit":{"resource_count":len(rows),"resources":rows,"failure_count":failures,"media_resource_passed":failures==0,"truncated":len(rows)>=200},"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12320,6 +12346,15 @@ def inspect_keyboard_shortcuts_semantic() -> dict:
 
 def inspect_autofill_contract_semantic(form: str = None, exact: bool = True) -> dict:
     return _session.inspect_autofill_contract_semantic(form, exact)
+
+def inspect_form_submission_contract_semantic() -> dict:
+    return _session.inspect_form_submission_contract_semantic()
+
+def inspect_script_security_semantic() -> dict:
+    return _session.inspect_script_security_semantic()
+
+def inspect_media_resource_semantic() -> dict:
+    return _session.inspect_media_resource_semantic()
 
 
 def click_semantic(
