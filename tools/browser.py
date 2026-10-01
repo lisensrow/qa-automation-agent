@@ -10646,6 +10646,108 @@ class BrowserSession:
             result["error"] = "loading_state_verification_failed"
         return result
 
+    def inspect_notification_lifecycle_semantic(
+        self,
+        expected_text,
+        role="alert",
+        expected_state="visible",
+        wait_ms=2000,
+        require_seen=False,
+        exact=True,
+    ):
+        """Observe one transient ARIA alert/status without interacting."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if role not in {"alert", "status"}:
+            return {"error": "notification_role_invalid", "executed": False}
+        if expected_state not in {"visible", "dismissed"}:
+            return {"error": "notification_expected_state_invalid", "executed": False}
+        if (
+            not isinstance(expected_text, str)
+            or not expected_text.strip()
+            or len(expected_text) > 500
+        ):
+            return {"error": "notification_text_invalid", "executed": False}
+        if not isinstance(wait_ms, int) or isinstance(wait_ms, bool) or not 0 <= wait_ms <= 10000:
+            return {"error": "notification_wait_ms_invalid", "executed": False}
+
+        def sample():
+            return self.page.evaluate(
+                """
+                ({role, expectedText, exact}) => {
+                  const visible = el => {
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0 && rect.height > 0
+                      && style.display !== 'none' && style.visibility !== 'hidden'
+                      && Number(style.opacity || 1) > 0;
+                  };
+                  const normalize = value => String(value || '').trim().replace(/\\s+/g, ' ');
+                  const wanted = exact ? expectedText : expectedText.toLocaleLowerCase();
+                  const matches = Array.from(document.querySelectorAll(`[role="${role}"]`))
+                    .filter(visible)
+                    .filter(el => {
+                      const label = normalize(el.getAttribute('aria-label') || el.innerText);
+                      return exact ? label === wanted : label.toLocaleLowerCase().includes(wanted);
+                    });
+                  return {
+                    match_count: matches.length,
+                    visible: matches.length === 1,
+                    ambiguous: matches.length > 1
+                  };
+                }
+                """,
+                {"role": role, "expectedText": expected_text.strip(), "exact": bool(exact)},
+            )
+
+        first = sample()
+        current = first
+        observed_visible = bool(first["visible"])
+        sample_count = 1
+        remaining = wait_ms
+        while remaining > 0 and not current["ambiguous"]:
+            verified = (
+                current["visible"] if expected_state == "visible"
+                else (
+                    current["match_count"] == 0
+                    and (not require_seen or observed_visible)
+                )
+            )
+            if verified:
+                break
+            delay = min(100, remaining)
+            self.page.wait_for_timeout(delay)
+            remaining -= delay
+            current = sample()
+            sample_count += 1
+            observed_visible = observed_visible or bool(current["visible"])
+
+        verified = (
+            current["visible"] if expected_state == "visible"
+            else (
+                current["match_count"] == 0
+                and (not require_seen or observed_visible)
+            )
+        )
+        result = self._capture_state("inspect-notification-lifecycle")
+        result.update({
+            "notification_role": role,
+            "notification_expected_text": expected_text.strip(),
+            "notification_expected_state": expected_state,
+            "notification_require_seen": bool(require_seen),
+            "notification_initial": first,
+            "notification_final": current,
+            "notification_observed_visible": observed_visible,
+            "notification_sample_count": sample_count,
+            "notification_status": "verified" if verified else "mismatch",
+            "mutation_executed": False,
+        })
+        if current["ambiguous"]:
+            result["error"] = "notification_not_unique"
+        elif not verified:
+            result["error"] = "notification_lifecycle_verification_failed"
+        return result
+
     def click_semantic(
         self,
         name: str,
@@ -11871,6 +11973,19 @@ def inspect_loading_state_semantic(
 ) -> dict:
     return _session.inspect_loading_state_semantic(
         scope, expected_state, wait_ms, require_transition, exact,
+    )
+
+
+def inspect_notification_lifecycle_semantic(
+    expected_text: str,
+    role: str = "alert",
+    expected_state: str = "visible",
+    wait_ms: int = 2000,
+    require_seen: bool = False,
+    exact: bool = True,
+) -> dict:
+    return _session.inspect_notification_lifecycle_semantic(
+        expected_text, role, expected_state, wait_ms, require_seen, exact,
     )
 
 

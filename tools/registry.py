@@ -27,6 +27,7 @@ from tools.browser import (
     handle_native_dialog_semantic,
     inspect_form_validation_semantic,
     inspect_loading_state_semantic,
+    inspect_notification_lifecycle_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -661,6 +662,21 @@ TOOLS = [
                 "require_transition": {"type": "boolean"},
                 "exact": {"type": "boolean"}
             }}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_notification_lifecycle_semantic",
+            "description": "Read-only ожидает одно точное ARIA-уведомление role=alert/status или доказывает его появление и последующее исчезновение за ограниченное время.",
+            "parameters": {"type": "object", "properties": {
+                "expected_text": {"type": "string"},
+                "role": {"type": "string", "enum": ["alert", "status"]},
+                "expected_state": {"type": "string", "enum": ["visible", "dismissed"]},
+                "wait_ms": {"type": "integer", "minimum": 0, "maximum": 10000},
+                "require_seen": {"type": "boolean"},
+                "exact": {"type": "boolean"}
+            }, "required": ["expected_text"]}
         }
     },
     {
@@ -2044,6 +2060,15 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("scope"), arguments.get("expected_state", "ready"),
             arguments.get("wait_ms", 2000),
             arguments.get("require_transition", False),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_inspect_notification_lifecycle_semantic":
+        return inspect_notification_lifecycle_semantic(
+            arguments["expected_text"], arguments.get("role", "alert"),
+            arguments.get("expected_state", "visible"),
+            arguments.get("wait_ms", 2000),
+            arguments.get("require_seen", False),
             arguments.get("exact", True),
         )
 

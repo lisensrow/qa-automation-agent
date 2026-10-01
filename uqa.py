@@ -1339,6 +1339,7 @@ def classify_tool_action(
         "browser_inspect_iframe_semantic",
         "browser_inspect_form_validation_semantic",
         "browser_inspect_loading_state_semantic",
+        "browser_inspect_notification_lifecycle_semantic",
         "browser_observe_iframe_surface_change_semantic",
         "browser_get_network_detail",
         "browser_inspect_semantic",
