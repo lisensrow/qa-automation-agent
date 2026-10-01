@@ -400,6 +400,7 @@ Planner отделяет критерии продукта от служебно
 - v102a–v102c добавили read-only contracts для ARIA combobox, listbox/options и menu/menuitems. Основной runner — `65/65`, дополнительные — `11/11`; суммарно `76/76`, без реальных действий на U-Connect.
 - v103a–v103c добавили read-only numeric contracts для `progressbar`, `meter` и `spinbutton`. Основной runner — `68/68`, дополнительные — `11/11`; суммарно `79/79`, без реальных действий на U-Connect.
 - v104a–v104c добавили read-only visual audits: WCAG text contrast, фактическое text clipping и размеры interactive targets. Основной runner — `71/71`, дополнительные — `11/11`; суммарно `82/82`, без реальных действий на U-Connect.
+- v105a–v105c добавили read-only contracts live regions, dialogs и form field labels/descriptions. Основной runner — `74/74`, дополнительные — `11/11`; суммарно `85/85`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 
@@ -439,6 +440,7 @@ Planner отделяет критерии продукта от служебно
 - Menu audit проверяет роли и accessible names menuitems, disabled-state и наличие popup metadata без выполнения пунктов меню.
 - Numeric ARIA widgets `progressbar`, `meter` и `spinbutton` проверяются read-only: accessible name, конечные min/max/now, порядок диапазона, попадание значения в границы и допустимый indeterminate progressbar.
 - Визуальный read-only audit проверяет WCAG contrast видимого текста на solid backgrounds, фактическое clipping по scroll/client geometry и минимальный размер интерактивных controls. Неподдерживаемые gradient/image backgrounds учитываются отдельно, а не получают ложный PASS.
+- Live regions проверяются по допустимым `aria-live` и implicit live roles; dialogs — по accessible name и целостности `aria-labelledby`; form fields — по label и `aria-describedby` без чтения values.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа

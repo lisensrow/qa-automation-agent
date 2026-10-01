@@ -46,6 +46,9 @@ from tools.browser import (
     inspect_text_contrast_semantic,
     inspect_text_clipping_semantic,
     inspect_target_size_semantic,
+    inspect_live_region_contract_semantic,
+    inspect_dialog_contract_semantic,
+    inspect_field_label_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -715,6 +718,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_text_contrast_semantic","description":"Read-only WCAG contrast audit видимого прямого текста на solid backgrounds.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_text_clipping_semantic","description":"Read-only обнаруживает фактически обрезанный видимый текст по client/scroll geometry и overflow.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_target_size_semantic","description":"Read-only audit размеров видимых interactive controls по порогу 16–44 px (по умолчанию 24).","parameters":{"type":"object","properties":{"minimum_px":{"type":"integer","minimum":16,"maximum":44}}}}},
+    {"type":"function","function":{"name":"browser_inspect_live_region_contract_semantic","description":"Read-only audit aria-live и implicit live roles alert/status/log.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_dialog_contract_semantic","description":"Read-only audit dialog/alertdialog names, aria-labelledby references и modal metadata.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_field_label_contract_semantic","description":"Read-only audit labels и aria-describedby references полей без возврата values.","parameters":{"type":"object","properties":{"form":{"type":"string"},"exact":{"type":"boolean"}}}}},
     {
         "type": "function",
         "function": {
@@ -2144,6 +2150,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_text_clipping_semantic()
     if name == "browser_inspect_target_size_semantic":
         return inspect_target_size_semantic(arguments.get("minimum_px", 24))
+    if name == "browser_inspect_live_region_contract_semantic":
+        return inspect_live_region_contract_semantic()
+    if name == "browser_inspect_dialog_contract_semantic":
+        return inspect_dialog_contract_semantic()
+    if name == "browser_inspect_field_label_contract_semantic":
+        return inspect_field_label_contract_semantic(arguments.get("form"), arguments.get("exact", True))
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

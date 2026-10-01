@@ -10970,6 +10970,20 @@ class BrowserSession:
         audit=self.page.evaluate("""minimum=>{const shown=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const selector='button,input:not([type="hidden"]),select,textarea,[role="button"],[role="checkbox"],[role="radio"],[role="switch"],[role="tab"],[role="menuitem"]';const all=Array.from(document.querySelectorAll(selector)).filter(shown);const rows=all.slice(0,300).map(e=>{const r=e.getBoundingClientRect();const name=String(e.getAttribute('aria-label')||e.innerText||e.getAttribute('name')||e.id||'').trim().replace(/\s+/g,' ').slice(0,120);return {name,role:e.getAttribute('role')||e.tagName.toLowerCase(),width:Math.round(r.width*10)/10,height:Math.round(r.height*10)/10,too_small:r.width<minimum||r.height<minimum};});const failed=rows.filter(x=>x.too_small);return {minimum_px:minimum,checked_count:rows.length,too_small_count:failed.length,too_small:failed.slice(0,100),target_size_passed:failed.length===0,truncated:all.length>300||failed.length>100};}""",minimum_px)
         result=self._capture_state("inspect-target-size");result.update({"target_size_audit":audit,"mutation_executed":False});return result
 
+    def inspect_live_region_contract_semantic(self):
+        self._ensure_started();self._reset_diagnostics();audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-live],[role="alert"],[role="status"],[role="log"]'));const rows=all.slice(0,100).map(e=>{const role=e.getAttribute('role')||'';const live=e.getAttribute('aria-live')||({alert:'assertive',status:'polite',log:'polite'}[role]||'');return {role,live,atomic:e.getAttribute('aria-atomic')||'',label:String(e.getAttribute('aria-label')||'').trim().slice(0,120),valid:['off','polite','assertive'].includes(live)};});return {region_count:rows.length,invalid_count:rows.filter(x=>!x.valid).length,regions:rows,live_region_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""");r=self._capture_state("inspect-live-regions");r.update({"live_region_audit":audit,"mutation_executed":False});return r
+
+    def inspect_dialog_contract_semantic(self):
+        self._ensure_started();self._reset_diagnostics();audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[role="dialog"],[role="alertdialog"]'));const rows=all.slice(0,100).map(e=>{const label=String(e.getAttribute('aria-label')||'').trim();const labelled=e.getAttribute('aria-labelledby')||'';const labelNode=labelled?document.getElementById(labelled):null;return {role:e.getAttribute('role'),modal:e.getAttribute('aria-modal')||'',has_name:Boolean(label||labelNode),broken_label_reference:Boolean(labelled&&!labelNode)};});return {dialog_count:rows.length,dialogs:rows,failure_count:rows.filter(x=>!x.has_name||x.broken_label_reference).length,dialog_contract_passed:rows.every(x=>x.has_name&&!x.broken_label_reference),truncated:all.length>100};}""");r=self._capture_state("inspect-dialog-contracts");r.update({"dialog_contract_audit":audit,"mutation_executed":False});return r
+
+    def inspect_field_label_contract_semantic(self, form=None, exact=True):
+        self._ensure_started();self._reset_diagnostics();root=self.page.locator('body')
+        if form:
+            forms=self.page.locator('form');m=[forms.nth(i) for i in range(min(forms.count(),50)) if forms.nth(i).is_visible() and form in [str(forms.nth(i).get_attribute(a) or '').strip() for a in ('aria-label','name','id')]]
+            if len(m)!=1:return {"error":"field_label_form_not_unique","matches":len(m),"executed":False}
+            root=m[0]
+        audit=root.evaluate("""root=>{const all=Array.from(root.querySelectorAll('input:not([type="hidden"]),select,textarea'));const rows=all.slice(0,200).map(e=>{const label=String((e.labels&&e.labels[0]&&e.labels[0].innerText)||e.getAttribute('aria-label')||'').trim().slice(0,160);const ids=(e.getAttribute('aria-describedby')||'').split(/\s+/).filter(Boolean);return {label,has_label:Boolean(label),description_ids:ids.slice(0,20),broken_description_count:ids.filter(id=>!document.getElementById(id)).length};});return {field_count:rows.length,unlabeled_count:rows.filter(x=>!x.has_label).length,broken_description_count:rows.reduce((n,x)=>n+x.broken_description_count,0),fields:rows,field_label_contract_passed:rows.every(x=>x.has_label&&x.broken_description_count===0),truncated:all.length>200};}""");r=self._capture_state("inspect-field-label-contract");r.update({"field_label_form":form,"field_label_audit":audit,"mutation_executed":False});return r
+
     def click_semantic(
         self,
         name: str,
@@ -12263,6 +12277,15 @@ def inspect_text_clipping_semantic() -> dict:
 
 def inspect_target_size_semantic(minimum_px: int = 24) -> dict:
     return _session.inspect_target_size_semantic(minimum_px)
+
+def inspect_live_region_contract_semantic() -> dict:
+    return _session.inspect_live_region_contract_semantic()
+
+def inspect_dialog_contract_semantic() -> dict:
+    return _session.inspect_dialog_contract_semantic()
+
+def inspect_field_label_contract_semantic(form: str = None, exact: bool = True) -> dict:
+    return _session.inspect_field_label_contract_semantic(form, exact)
 
 
 def click_semantic(
