@@ -10849,6 +10849,47 @@ class BrowserSession:
         result.update({"form": form, "form_dirty_operation": operation, "form_dirty": dirty, "form_control_count": len(snapshot), "baseline_present": key in self._form_state_baselines, "mutation_executed": False})
         return result
 
+    def inspect_tabs_contract_semantic(self, tablist=None, exact=True):
+        """Audit one ARIA tablist and its controlled tabpanels."""
+        self._ensure_started(); self._reset_diagnostics()
+        lists = self.page.get_by_role("tablist", name=tablist, exact=exact) if tablist else self.page.get_by_role("tablist")
+        visible = [lists.nth(i) for i in range(min(lists.count(), 50)) if lists.nth(i).is_visible()]
+        if len(visible) != 1:
+            return {"error": "tablist_not_unique", "matches": len(visible), "executed": False}
+        audit = visible[0].evaluate("""root => {
+          const shown = el => { const r=el.getBoundingClientRect(),s=getComputedStyle(el); return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'; };
+          const tabs=Array.from(root.querySelectorAll('[role="tab"]')).slice(0,100).map(el=>{const id=el.getAttribute('aria-controls')||''; const panel=id?document.getElementById(id):null; return {label:String(el.getAttribute('aria-label')||el.innerText||'').trim().slice(0,160),selected:el.getAttribute('aria-selected')==='true',controls:id,panel_exists:Boolean(panel),panel_visible:Boolean(panel&&shown(panel))};});
+          const selected=tabs.filter(x=>x.selected); const broken=tabs.filter(x=>!x.controls||!x.panel_exists);
+          return {tab_count:tabs.length,selected_count:selected.length,tabs,broken_reference_count:broken.length,tabs_contract_passed:tabs.length>0&&selected.length===1&&selected[0].panel_visible&&broken.length===0,truncated:root.querySelectorAll('[role="tab"]').length>100};
+        }""")
+        result=self._capture_state("inspect-tabs-contract"); result.update({"tablist":tablist,"tabs_audit":audit,"mutation_executed":False}); return result
+
+    def inspect_disclosure_contract_semantic(self, target, exact=True):
+        """Audit aria-expanded/aria-controls consistency for one button."""
+        self._ensure_started(); self._reset_diagnostics()
+        buttons=self.page.get_by_role("button",name=target,exact=exact)
+        visible=[buttons.nth(i) for i in range(min(buttons.count(),50)) if buttons.nth(i).is_visible()]
+        if len(visible)!=1: return {"error":"disclosure_target_not_unique","matches":len(visible),"executed":False}
+        audit=visible[0].evaluate("""el=>{const expanded=el.getAttribute('aria-expanded');const id=el.getAttribute('aria-controls')||'';const panel=id?document.getElementById(id):null;const shown=x=>{if(!x)return false;const r=x.getBoundingClientRect(),s=getComputedStyle(x);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const panelVisible=shown(panel);return {expanded,controls:id,panel_exists:Boolean(panel),panel_visible:panelVisible,disclosure_contract_passed:(expanded==='true'||expanded==='false')&&Boolean(id)&&Boolean(panel)&&((expanded==='true')===panelVisible)};}""")
+        result=self._capture_state("inspect-disclosure-contract"); result.update({"disclosure_target":target,"disclosure_audit":audit,"mutation_executed":False}); return result
+
+    def inspect_dialog_focus_trap_semantic(self, dialog, cycles=1, exact=True):
+        """Exercise Tab focus inside one dialog and verify it never escapes."""
+        self._ensure_started(); self._reset_diagnostics()
+        if not isinstance(cycles,int) or isinstance(cycles,bool) or not 1<=cycles<=5: return {"error":"focus_trap_cycles_invalid","executed":False}
+        target,error=self._visible_dialog(dialog,exact)
+        if error:return error
+        focusables=target.locator('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')
+        usable=[focusables.nth(i) for i in range(min(focusables.count(),100)) if focusables.nth(i).is_visible()]
+        if not usable:return {"error":"focus_trap_no_focusable_controls","executed":False}
+        usable[0].focus(); escaped=False; samples=[]
+        self._begin_action_execution()
+        for _ in range(len(usable)*cycles+1):
+            self.page.keyboard.press("Tab")
+            state=target.evaluate("root=>({inside:root.contains(document.activeElement),role:document.activeElement&&document.activeElement.getAttribute('role')||'',tag:document.activeElement&&document.activeElement.tagName.toLowerCase()||''})")
+            samples.append(state); escaped=escaped or not state["inside"]
+        result=self._capture_state("inspect-dialog-focus-trap"); result.update({"dialog_name":dialog,"focusable_count":len(usable),"focus_samples":samples[:30],"focus_escaped":escaped,"focus_trap_passed":not escaped,"interaction_executed":True}); return self._finish_action_execution(result)
+
     def click_semantic(
         self,
         name: str,
@@ -12097,6 +12138,15 @@ def inspect_control_state_lifecycle_semantic(target: str, role: str, expected_st
 
 def track_form_dirty_state_semantic(form: str, operation: str = "compare", exact: bool = True) -> dict:
     return _session.track_form_dirty_state_semantic(form, operation, exact)
+
+def inspect_tabs_contract_semantic(tablist: str = None, exact: bool = True) -> dict:
+    return _session.inspect_tabs_contract_semantic(tablist, exact)
+
+def inspect_disclosure_contract_semantic(target: str, exact: bool = True) -> dict:
+    return _session.inspect_disclosure_contract_semantic(target, exact)
+
+def inspect_dialog_focus_trap_semantic(dialog: str, cycles: int = 1, exact: bool = True) -> dict:
+    return _session.inspect_dialog_focus_trap_semantic(dialog, cycles, exact)
 
 
 def click_semantic(

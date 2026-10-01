@@ -395,6 +395,7 @@ Planner отделяет критерии продукта от служебно
 - v098a добавил read-only проверку асинхронного loading lifecycle без привязки к U-Connect: точный scope, `aria-busy`, `role=progressbar`, ограниченное ожидание и строгий режим `busy → ready`. Изолированный fixture, основной runner `52/52` и 11 дополнительных smoke-тестов прошли без реальных действий на стенде; суммарно `63/63`.
 - v098b добавил read-only lifecycle transient-уведомлений `alert/status`: ожидание появления, доказанное `visible → dismissed` и fail-closed при нескольких одинаковых уведомлениях. Основной runner `53/53` и 11 дополнительных smoke-тестов прошли; суммарно `64/64`, без реальных действий на U-Connect.
 - v099a–v099c закрыли три frontend-сценария: ARIA field errors, lifecycle состояния semantic controls и приватный dirty-state формы. Все три fixture smoke прошли, основной runner — `56/56`, дополнительные — `11/11`; суммарно `67/67`, без реальных действий на U-Connect.
+- v100a–v100c добавили audits ARIA tabs, disclosure/accordion и modal focus trap. Изолированные fixtures прошли, основной runner — `59/59`, дополнительные — `11/11`; суммарно `70/70`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 
@@ -423,6 +424,9 @@ Planner отделяет критерии продукта от служебно
 - ARIA-ошибки полей проверяются без Submit и без возврата values: `aria-invalid`, связанные `aria-errormessage/aria-describedby`, отображаемый текст ошибки и broken references.
 - Состояние точного semantic control можно ждать read-only до `visible/hidden/enabled/disabled/checked/unchecked`; неоднозначный target блокируется, а `require_seen` требует наблюдённый переход.
 - Dirty-state формы определяется сравнением приватных SHA-256 fingerprints. Значения полей не попадают в evidence или модель; Core сообщает только наличие baseline, число controls и `dirty/clean`.
+- ARIA tabs проверяются как единый контракт: один видимый tablist, ровно один `aria-selected=true`, существующие `aria-controls` и видимая panel выбранной вкладки.
+- Disclosure/accordion проверяется по согласованности `aria-expanded`, `aria-controls` и фактической видимости controlled panel.
+- Modal focus trap проверяется ограниченным циклом Tab внутри exact dialog. Инструмент меняет только клавиатурный фокус, фиксирует выход за границы dialog и классифицируется как `INTERACT`, а не WRITE.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа

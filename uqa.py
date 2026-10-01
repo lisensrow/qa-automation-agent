@@ -1343,6 +1343,8 @@ def classify_tool_action(
         "browser_inspect_aria_field_errors_semantic",
         "browser_inspect_control_state_lifecycle_semantic",
         "browser_track_form_dirty_state_semantic",
+        "browser_inspect_tabs_contract_semantic",
+        "browser_inspect_disclosure_contract_semantic",
         "browser_observe_iframe_surface_change_semantic",
         "browser_get_network_detail",
         "browser_inspect_semantic",
@@ -1371,6 +1373,9 @@ def classify_tool_action(
         return "observe"
 
     if name == "browser_check_focus_order_semantic":
+        return "interact"
+
+    if name == "browser_inspect_dialog_focus_trap_semantic":
         return "interact"
 
     if name == "browser_set_viewport_semantic":
