@@ -22,6 +22,7 @@ from tools.browser import (
     inspect_iframe_semantic,
     observe_iframe_surface_change_semantic,
     click_iframe_surface_semantic,
+    press_iframe_surface_key_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -569,6 +570,32 @@ TOOLS = [
                 "exact": {"type": "boolean"}
             }, "required": [
                 "name", "expected_url_prefix", "x_ratio", "y_ratio",
+                "expect_change"
+            ]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_press_iframe_surface_key_semantic",
+            "description": (
+                "WRITE: фокусирует подтверждённую iframe surface точечным "
+                "кликом, затем отправляет одну allowlisted служебную клавишу "
+                "без произвольного текста и проверяет private before/after "
+                "hashes. Всегда требует v069 confirmation."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "name": {"type": "string"},
+                "expected_url_prefix": {"type": "string"},
+                "key": {"type": "string"},
+                "x_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+                "y_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+                "expect_change": {"type": "boolean"},
+                "focus_expect_change": {"type": "boolean"},
+                "wait_ms": {"type": "integer", "minimum": 100, "maximum": 5000},
+                "exact": {"type": "boolean"}
+            }, "required": [
+                "name", "expected_url_prefix", "key", "x_ratio", "y_ratio",
                 "expect_change"
             ]}
         }
@@ -1920,6 +1947,15 @@ def execute_tool(name: str, arguments: dict):
             arguments["expect_change"],
             arguments.get("wait_ms", 1000),
             arguments.get("exact", True),
+        )
+
+    if name == "browser_press_iframe_surface_key_semantic":
+        return press_iframe_surface_key_semantic(
+            arguments["name"], arguments["expected_url_prefix"],
+            arguments["key"], arguments["x_ratio"], arguments["y_ratio"],
+            arguments["expect_change"],
+            arguments.get("focus_expect_change", False),
+            arguments.get("wait_ms", 500), arguments.get("exact", True),
         )
 
     if name == "browser_inspect_agent_telemetry_semantic":

@@ -535,6 +535,9 @@ SYSTEM_PROMPT = """
 - Координатный ввод в VNC выполняй только через browser_click_iframe_surface_semantic
   после surface_ready. Это всегда WRITE с v069 confirmation; изменение screenshot
   hash после клика не заменяет проверку ожидаемого результата.
+- Для служебной клавиши внутри VNC используй browser_press_iframe_surface_key_semantic.
+  Произвольный текст запрещён; focus click и key остаются WRITE, а изменение кадра
+  после клавиши не доказывает правильность результата.
 - Для кастомного ARIA calendar сначала используй browser_open_calendar_semantic,
   затем browser_inspect_calendar_semantic и передавай в
   browser_select_calendar_option_semantic только точное наблюдаемое имя даты.
@@ -1371,6 +1374,9 @@ def classify_tool_action(
         return "interact"
 
     if name == "browser_click_iframe_surface_semantic":
+        return "write"
+
+    if name == "browser_press_iframe_surface_key_semantic":
         return "write"
 
     if name == "browser_open_agent_tasks_semantic":

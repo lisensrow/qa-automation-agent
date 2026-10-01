@@ -10184,6 +10184,101 @@ class BrowserSession:
             result["error"] = "iframe_click_result_mismatch"
         return self._finish_action_execution(result)
 
+    def press_iframe_surface_key_semantic(
+        self, name, expected_url_prefix, key, x_ratio, y_ratio,
+        expect_change, focus_expect_change=False, wait_ms=500, exact=True,
+    ):
+        """Focus a verified iframe point, then press one allowlisted key."""
+        allowed = {
+            "Tab", "Shift+Tab", "Escape", "Enter", "Space",
+            "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+            "Home", "End", "PageUp", "PageDown", "Shift+Enter",
+            "Alt+ArrowDown",
+        }
+        normalized = str(key or "").strip()
+        canonical = next(
+            (item for item in allowed if item.casefold() == normalized.casefold()),
+            None,
+        )
+        if canonical is None:
+            return {
+                "error": "unsupported_iframe_keyboard_key",
+                "key": key,
+                "allowed_keys": sorted(allowed),
+                "executed": False,
+            }
+        if type(focus_expect_change) is not bool or type(expect_change) is not bool:
+            return {"error": "iframe_key_expect_change_invalid", "executed": False}
+        if type(wait_ms) is not int or not 100 <= wait_ms <= 5000:
+            return {"error": "iframe_key_wait_invalid", "executed": False}
+
+        focused = self.click_iframe_surface_semantic(
+            name, expected_url_prefix, x_ratio, y_ratio,
+            focus_expect_change, 100, exact,
+        )
+        if focused.get("iframe_click_status") != "verified":
+            focused["iframe_key_status"] = "not_executed"
+            return focused
+
+        frames = self.page.locator("iframe")
+        matches = []
+        expected_name = name if exact else name.casefold()
+        for index in range(min(frames.count(), 50)):
+            candidate = frames.nth(index)
+            if not candidate.is_visible():
+                continue
+            names = [
+                str(candidate.get_attribute(attr) or "").strip()
+                for attr in ("title", "aria-label", "name")
+            ]
+            if (
+                expected_name in names
+                if exact
+                else any(expected_name in value.casefold() for value in names if value)
+            ):
+                matches.append(candidate)
+        if len(matches) != 1:
+            return {"error": "iframe_not_unique", "matches": len(matches), "executed": False}
+        iframe = matches[0]
+        before_path = self.session_dir / f"iframe-key-before-{uuid.uuid4().hex}.png"
+        after_path = self.session_dir / f"iframe-key-after-{uuid.uuid4().hex}.png"
+        self._begin_action_execution()
+        try:
+            iframe.screenshot(path=str(before_path))
+            before_path.chmod(0o600)
+            self.page.keyboard.press(canonical)
+            self.page.wait_for_timeout(wait_ms)
+            iframe.screenshot(path=str(after_path))
+            after_path.chmod(0o600)
+            before_hash = hashlib.sha256(before_path.read_bytes()).hexdigest()
+            after_hash = hashlib.sha256(after_path.read_bytes()).hexdigest()
+        except Exception as exc:
+            result = self._capture_state("press-iframe-surface-key")
+            result.update({
+                "error": "iframe_surface_key_failed",
+                "error_type": type(exc).__name__,
+                "iframe_key_status": "failed",
+                "mutation_executed": False,
+            })
+            return self._finish_action_execution(result)
+        changed = before_hash != after_hash
+        matches_expectation = changed is expect_change
+        result = self._capture_state("press-iframe-surface-key")
+        result.update({
+            "iframe_name": name,
+            "pressed_key": canonical,
+            "surface_expected_change": expect_change,
+            "surface_changed": changed,
+            "surface_change_matches": matches_expectation,
+            "surface_before_sha256": before_hash,
+            "surface_after_sha256": after_hash,
+            "iframe_key_status": "verified" if matches_expectation else "mismatch",
+            "mutation_executed": True,
+        })
+        if not matches_expectation:
+            result["error"] = "iframe_key_result_mismatch"
+        return self._finish_action_execution(result)
+
     def click_semantic(
         self,
         name: str,
@@ -11360,6 +11455,18 @@ def click_iframe_surface_semantic(
     return _session.click_iframe_surface_semantic(
         name, expected_url_prefix, x_ratio, y_ratio,
         expect_change, wait_ms, exact,
+    )
+
+
+def press_iframe_surface_key_semantic(
+    name: str, expected_url_prefix: str, key: str,
+    x_ratio: float, y_ratio: float, expect_change: bool,
+    focus_expect_change: bool = False, wait_ms: int = 500,
+    exact: bool = True,
+) -> dict:
+    return _session.press_iframe_surface_key_semantic(
+        name, expected_url_prefix, key, x_ratio, y_ratio,
+        expect_change, focus_expect_change, wait_ms, exact,
     )
 
 
