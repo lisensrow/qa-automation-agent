@@ -149,6 +149,8 @@ class BrowserSession:
         # operating-system clipboard and is never persisted to artifacts.
         self._private_clipboard_text = None
         self._private_clipboard_source = None
+        # Form values stay private; only their SHA-256 fingerprint is retained.
+        self._form_state_baselines = {}
 
     def _context_kwargs(self):
         context_kwargs = {
@@ -10748,6 +10750,105 @@ class BrowserSession:
             result["error"] = "notification_lifecycle_verification_failed"
         return result
 
+    def inspect_aria_field_errors_semantic(self, form=None, exact=True):
+        """Audit visible ARIA field errors without returning control values."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        root = self.page.locator("body")
+        if form:
+            forms = self.page.locator("form")
+            matches = []
+            expected = form if exact else str(form).casefold()
+            for index in range(min(forms.count(), 50)):
+                candidate = forms.nth(index)
+                names = [str(candidate.get_attribute(a) or "").strip() for a in ("aria-label", "name", "id")]
+                matched = expected in names if exact else any(expected in v.casefold() for v in names if v)
+                if matched and candidate.is_visible():
+                    matches.append(candidate)
+            if len(matches) != 1:
+                return {"error": "aria_error_form_not_unique", "matches": len(matches), "executed": False}
+            root = matches[0]
+        audit = root.evaluate("""
+          root => {
+            const controls = Array.from(root.querySelectorAll('[aria-invalid="true"]')).slice(0, 100);
+            const items = controls.map(el => {
+              const ids = `${el.getAttribute('aria-errormessage') || ''} ${el.getAttribute('aria-describedby') || ''}`.trim().split(/\s+/).filter(Boolean);
+              const messages = ids.map(id => document.getElementById(id)).filter(Boolean);
+              const label = ((el.labels && el.labels[0] && el.labels[0].innerText) || el.getAttribute('aria-label') || el.getAttribute('name') || el.id || '').trim().slice(0, 160);
+              return {label, role: el.getAttribute('role') || '', message_ids: ids.slice(0, 20), messages: messages.map(x => String(x.innerText || '').trim().slice(0, 300)).filter(Boolean).slice(0, 20), broken_reference_count: ids.length - messages.length};
+            });
+            return {invalid_control_count: items.length, invalid_controls: items, aria_errors_passed: items.length === 0, truncated: controls.length > 100};
+          }
+        """)
+        result = self._capture_state("inspect-aria-field-errors")
+        result.update({"aria_error_form": form, "aria_error_audit": audit, "mutation_executed": False})
+        return result
+
+    def inspect_control_state_lifecycle_semantic(self, target, role, expected_state, wait_ms=2000, require_seen=False, exact=True):
+        """Wait for one exact semantic control to reach a UI state."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        allowed_roles = {"button", "link", "textbox", "combobox", "checkbox", "radio", "switch", "tab", "menuitem"}
+        allowed_states = {"visible", "hidden", "enabled", "disabled", "checked", "unchecked"}
+        if role not in allowed_roles or expected_state not in allowed_states:
+            return {"error": "control_state_contract_invalid", "executed": False}
+        if not isinstance(wait_ms, int) or isinstance(wait_ms, bool) or not 0 <= wait_ms <= 10000:
+            return {"error": "control_state_wait_ms_invalid", "executed": False}
+        def sample():
+            locator = self.page.get_by_role(role, name=target, exact=exact)
+            count = min(locator.count(), 50)
+            if count > 1:
+                return {"matches": count, "ambiguous": True, "visible": False, "enabled": False, "checked": None}
+            if count == 0:
+                return {"matches": 0, "ambiguous": False, "visible": False, "enabled": False, "checked": None}
+            item = locator.first
+            visible = item.is_visible()
+            enabled = item.is_enabled() if visible else False
+            checked = item.is_checked() if role in {"checkbox", "radio", "switch"} and visible else None
+            return {"matches": 1, "ambiguous": False, "visible": visible, "enabled": enabled, "checked": checked}
+        def matches_state(state):
+            return {"visible": state["visible"], "hidden": not state["visible"], "enabled": state["visible"] and state["enabled"], "disabled": state["visible"] and not state["enabled"], "checked": state["checked"] is True, "unchecked": state["checked"] is False}[expected_state]
+        first = sample(); current = first; observed_opposite = not matches_state(first); remaining = wait_ms; samples = 1
+        while remaining > 0 and not current["ambiguous"] and not (matches_state(current) and (not require_seen or observed_opposite)):
+            delay = min(100, remaining); self.page.wait_for_timeout(delay); remaining -= delay
+            current = sample(); samples += 1; observed_opposite = observed_opposite or not matches_state(current)
+        verified = not current["ambiguous"] and matches_state(current) and (not require_seen or observed_opposite)
+        result = self._capture_state("inspect-control-state-lifecycle")
+        result.update({"control_target": target, "control_role": role, "control_expected_state": expected_state, "control_initial": first, "control_final": current, "control_observed_opposite": observed_opposite, "control_sample_count": samples, "control_state_status": "verified" if verified else "mismatch", "mutation_executed": False})
+        if current["ambiguous"]: result["error"] = "control_state_target_not_unique"
+        elif not verified: result["error"] = "control_state_verification_failed"
+        return result
+
+    def track_form_dirty_state_semantic(self, form, operation="compare", exact=True):
+        """Capture or compare a private form-value fingerprint."""
+        self._ensure_started(); self._reset_diagnostics()
+        if operation not in {"capture", "compare", "clear"}:
+            return {"error": "form_dirty_operation_invalid", "executed": False}
+        forms = self.page.locator("form"); matches = []; expected = form if exact else str(form).casefold()
+        for index in range(min(forms.count(), 50)):
+            candidate = forms.nth(index)
+            names = [str(candidate.get_attribute(a) or "").strip() for a in ("aria-label", "name", "id")]
+            matched = expected in names if exact else any(expected in v.casefold() for v in names if v)
+            if matched and candidate.is_visible(): matches.append(candidate)
+        if len(matches) != 1:
+            return {"error": "form_dirty_form_not_unique", "matches": len(matches), "executed": False}
+        key = f"{self.page.url}|{form}"
+        if operation == "clear":
+            existed = self._form_state_baselines.pop(key, None) is not None
+            return {"form": form, "form_dirty_operation": operation, "baseline_cleared": existed, "mutation_executed": False}
+        snapshot = matches[0].evaluate("""root => Array.from(root.querySelectorAll('input,select,textarea')).slice(0,200).map((el,i) => ({i, tag:el.tagName, type:el.type || '', name:el.name || el.id || '', value:el.type === 'file' ? Array.from(el.files || []).map(f => [f.name,f.size,f.type]) : el.value, checked:Boolean(el.checked), selected:Array.from(el.selectedOptions || []).map(x => x.value)}))""")
+        digest = hashlib.sha256(json.dumps(snapshot, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+        if operation == "capture":
+            self._form_state_baselines[key] = digest
+            dirty = False
+        else:
+            if key not in self._form_state_baselines:
+                return {"error": "form_dirty_baseline_missing", "executed": False}
+            dirty = digest != self._form_state_baselines[key]
+        result = self._capture_state("track-form-dirty-state")
+        result.update({"form": form, "form_dirty_operation": operation, "form_dirty": dirty, "form_control_count": len(snapshot), "baseline_present": key in self._form_state_baselines, "mutation_executed": False})
+        return result
+
     def click_semantic(
         self,
         name: str,
@@ -11987,6 +12088,15 @@ def inspect_notification_lifecycle_semantic(
     return _session.inspect_notification_lifecycle_semantic(
         expected_text, role, expected_state, wait_ms, require_seen, exact,
     )
+
+def inspect_aria_field_errors_semantic(form: str = None, exact: bool = True) -> dict:
+    return _session.inspect_aria_field_errors_semantic(form, exact)
+
+def inspect_control_state_lifecycle_semantic(target: str, role: str, expected_state: str, wait_ms: int = 2000, require_seen: bool = False, exact: bool = True) -> dict:
+    return _session.inspect_control_state_lifecycle_semantic(target, role, expected_state, wait_ms, require_seen, exact)
+
+def track_form_dirty_state_semantic(form: str, operation: str = "compare", exact: bool = True) -> dict:
+    return _session.track_form_dirty_state_semantic(form, operation, exact)
 
 
 def click_semantic(

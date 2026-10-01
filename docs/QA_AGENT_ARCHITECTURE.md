@@ -394,6 +394,7 @@ Planner отделяет критерии продукта от служебно
 - После введения next-step contract и фильтра служебных checks контрольный Job `20260929-231448-7ce02f71` прошёл без лишних или заблокированных вызовов модели: `browser_open_page → browser_open_agent_tasks_semantic → browser_probe_capabilities → browser_create_managed_agent_task_semantic → browser_inspect_managed_agent_task_result_semantic`. Реальный `WRITE` остался за v069 confirmation, task `6b39f0a3-1edb-4713-9528-f188acaf87d4` автоматически зарегистрирован, exact cleanup прошёл отдельный `DESTRUCTIVE` gate и подтвердил `enabled=0`. Итог: `PASS=1`, `BLOCKED=0`, `cleanup completed`, а полный набор после патча — `45/45` smoke-tests.
 - v098a добавил read-only проверку асинхронного loading lifecycle без привязки к U-Connect: точный scope, `aria-busy`, `role=progressbar`, ограниченное ожидание и строгий режим `busy → ready`. Изолированный fixture, основной runner `52/52` и 11 дополнительных smoke-тестов прошли без реальных действий на стенде; суммарно `63/63`.
 - v098b добавил read-only lifecycle transient-уведомлений `alert/status`: ожидание появления, доказанное `visible → dismissed` и fail-closed при нескольких одинаковых уведомлениях. Основной runner `53/53` и 11 дополнительных smoke-тестов прошли; суммарно `64/64`, без реальных действий на U-Connect.
+- v099a–v099c закрыли три frontend-сценария: ARIA field errors, lifecycle состояния semantic controls и приватный dirty-state формы. Все три fixture smoke прошли, основной runner — `56/56`, дополнительные — `11/11`; суммарно `67/67`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 
@@ -419,6 +420,9 @@ Planner отделяет критерии продукта от служебно
 - Native constraint validation формы проверяется без Submit: Core возвращает только идентичность invalid control и причины `required/type/pattern/range/step/length/bad input/custom validity`, не раскрывая введённые values. Audit может быть ограничен точной формой по `aria-label/name/id`.
 - Асинхронное состояние загрузки проверяется read-only инструментом в точном scope по `aria-label/name/id`. Core наблюдает фактические `aria-busy=true` и `role=progressbar`, умеет подтвердить текущее `busy/ready` и при необходимости требует доказанный переход `busy → ready` за ограниченное время. Отсутствие индикатора без ранее наблюдённого busy не считается доказательством lifecycle, если включён `require_transition`.
 - Кратковременные уведомления проверяются отдельным read-only lifecycle по точному тексту и фактическому `role=alert/status`. Core может дождаться появления одного уведомления либо доказать последовательность `visible → dismissed`; неоднозначные совпадения блокируются, а отсутствие уведомления без ранее наблюдённого `visible` не считается доказательством исчезновения при `require_seen=true`.
+- ARIA-ошибки полей проверяются без Submit и без возврата values: `aria-invalid`, связанные `aria-errormessage/aria-describedby`, отображаемый текст ошибки и broken references.
+- Состояние точного semantic control можно ждать read-only до `visible/hidden/enabled/disabled/checked/unchecked`; неоднозначный target блокируется, а `require_seen` требует наблюдённый переход.
+- Dirty-state формы определяется сравнением приватных SHA-256 fingerprints. Значения полей не попадают в evidence или модель; Core сообщает только наличие baseline, число controls и `dirty/clean`.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа
