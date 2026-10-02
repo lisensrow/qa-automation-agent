@@ -58,6 +58,9 @@ from tools.browser import (
     inspect_lazy_media_contract_semantic,
     inspect_font_readiness_semantic,
     inspect_reduced_motion_contract_semantic,
+    inspect_details_contract_semantic,
+    inspect_popover_contract_semantic,
+    inspect_native_dialog_element_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -739,6 +742,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_lazy_media_contract_semantic","description":"Read-only audit offscreen img/iframe: loading=lazy и стабильные dimensions/aspect-ratio.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_font_readiness_semantic","description":"Read-only ожидает document.fonts.ready и возвращает только status/body font family.","parameters":{"type":"object","properties":{"wait_ms":{"type":"integer","minimum":0,"maximum":10000}}}}},
     {"type":"function","function":{"name":"browser_inspect_reduced_motion_contract_semantic","description":"Read-only audit long CSS animation/transition и prefers-reduced-motion rules.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_details_contract_semantic","description":"Read-only audit native details/summary names и open content visibility.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_popover_contract_semantic","description":"Read-only audit HTML Popover API ids, popovertarget references и actions.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_native_dialog_element_semantic","description":"Read-only audit native dialog accessible names и open/rendered consistency.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2192,6 +2198,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_font_readiness_semantic(arguments.get("wait_ms", 2000))
     if name == "browser_inspect_reduced_motion_contract_semantic":
         return inspect_reduced_motion_contract_semantic()
+    if name == "browser_inspect_details_contract_semantic":
+        return inspect_details_contract_semantic()
+    if name == "browser_inspect_popover_contract_semantic":
+        return inspect_popover_contract_semantic()
+    if name == "browser_inspect_native_dialog_element_semantic":
+        return inspect_native_dialog_element_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

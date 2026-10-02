@@ -11054,6 +11054,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const seconds=v=>String(v).split(',').reduce((m,x)=>{x=x.trim();const n=parseFloat(x)||0;return Math.max(m,x.endsWith('ms')?n/1000:n);},0);const all=Array.from(document.querySelectorAll('body *'));const moving=all.slice(0,500).map(e=>{const s=getComputedStyle(e);return {label:String(e.getAttribute('aria-label')||e.innerText||e.id||'').trim().replace(/\s+/g,' ').slice(0,100),animation_seconds:seconds(s.animationDuration),transition_seconds:seconds(s.transitionDuration)};}).filter(x=>x.animation_seconds>.5||x.transition_seconds>.5);let reduced=false,inaccessible=0;for(const sheet of Array.from(document.styleSheets)){try{for(const rule of Array.from(sheet.cssRules||[])){if(String(rule.cssText||'').toLowerCase().includes('prefers-reduced-motion'))reduced=true;}}catch(_){inaccessible++;}}return {long_motion_count:moving.length,long_motion:moving.slice(0,100),reduced_motion_rule_present:reduced,inaccessible_stylesheet_count:inaccessible,reduced_motion_contract_passed:moving.length===0||reduced,truncated:all.length>500||moving.length>100};}""")
         result=self._capture_state("inspect-reduced-motion-contract");result.update({"reduced_motion_audit":audit,"mutation_executed":False});return result
 
+    def inspect_details_contract_semantic(self):
+        """Audit native details/summary structure and open visibility."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('details'));const rows=all.slice(0,100).map(e=>{const summary=e.querySelector(':scope > summary');const name=String(summary&&summary.innerText||'').trim().replace(/\s+/g,' ').slice(0,160);const contentVisible=e.open&&e.getBoundingClientRect().height>(summary?summary.getBoundingClientRect().height:0);return {open:e.open,summary_present:Boolean(summary),summary_name:name,content_visible_when_open:!e.open||contentVisible,valid:Boolean(summary&&name)&&(!e.open||contentVisible)};});return {details_count:rows.length,failure_count:rows.filter(x=>!x.valid).length,details:rows,details_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
+        result=self._capture_state("inspect-details-contract");result.update({"details_audit":audit,"mutation_executed":False});return result
+
+    def inspect_popover_contract_semantic(self):
+        """Audit HTML Popover API targets and invokers without toggling them."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const pops=Array.from(document.querySelectorAll('[popover]')).slice(0,100).map(e=>({id:e.id||'',mode:e.getAttribute('popover')||'auto',has_id:Boolean(e.id)}));const inv=Array.from(document.querySelectorAll('[popovertarget]')).slice(0,200).map(e=>{const id=e.getAttribute('popovertarget')||'';const target=id?document.getElementById(id):null;const action=e.getAttribute('popovertargetaction')||'toggle';const name=String(e.getAttribute('aria-label')||e.innerText||'').trim().slice(0,160);return {name,target:id,target_exists:Boolean(target&&target.hasAttribute('popover')),action,valid:Boolean(name)&&Boolean(target&&target.hasAttribute('popover'))&&['show','hide','toggle'].includes(action)};});const ids=pops.map(x=>x.id).filter(Boolean);const dup=[...new Set(ids.filter((x,i)=>ids.indexOf(x)!==i))];const failures=pops.filter(x=>!x.has_id).length+inv.filter(x=>!x.valid).length+dup.length;return {popover_count:pops.length,invoker_count:inv.length,popovers:pops,invokers:inv,duplicate_ids:dup,failure_count:failures,popover_contract_passed:failures===0,truncated:document.querySelectorAll('[popover]').length>100||document.querySelectorAll('[popovertarget]').length>200};}""")
+        result=self._capture_state("inspect-popover-contract");result.update({"popover_api_audit":audit,"mutation_executed":False});return result
+
+    def inspect_native_dialog_element_semantic(self):
+        """Audit native dialog names and open/rendered consistency."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('dialog'));const shown=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const rows=all.slice(0,100).map(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const node=labelled?document.getElementById(labelled):null;const name=String(e.getAttribute('aria-label')||(node&&node.innerText)||'').trim().replace(/\s+/g,' ').slice(0,160);const visible=shown(e);return {open:e.open,visible,name,broken_label_reference:Boolean(labelled&&!node),valid:Boolean(name)&&!Boolean(labelled&&!node)&&(e.open===visible)};});return {dialog_count:rows.length,failure_count:rows.filter(x=>!x.valid).length,dialogs:rows,native_dialog_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
+        result=self._capture_state("inspect-native-dialog-element");result.update({"native_dialog_element_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12383,6 +12401,15 @@ def inspect_font_readiness_semantic(wait_ms: int = 2000) -> dict:
 
 def inspect_reduced_motion_contract_semantic() -> dict:
     return _session.inspect_reduced_motion_contract_semantic()
+
+def inspect_details_contract_semantic() -> dict:
+    return _session.inspect_details_contract_semantic()
+
+def inspect_popover_contract_semantic() -> dict:
+    return _session.inspect_popover_contract_semantic()
+
+def inspect_native_dialog_element_semantic() -> dict:
+    return _session.inspect_native_dialog_element_semantic()
 
 
 def click_semantic(

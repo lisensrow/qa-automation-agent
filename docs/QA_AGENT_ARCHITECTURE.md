@@ -404,6 +404,7 @@ Planner отделяет критерии продукта от служебно
 - v106a–v106c добавили read-only audits document metadata, keyboard shortcuts и autofill contracts. Основной runner — `77/77`, дополнительные — `11/11`; суммарно `88/88`, без реальных действий на U-Connect.
 - v107a–v107c добавили read-only frontend security audits form submission, external scripts и media resources. Основной runner — `80/80`, дополнительные — `11/11`; суммарно `91/91`, без реальных действий на U-Connect.
 - v108a–v108c добавили read-only audits lazy media/stable dimensions, CSS Font Loading readiness и reduced-motion contracts. Основной runner — `83/83`, дополнительные — `11/11`; суммарно `94/94`, без реальных действий на U-Connect.
+- v109a–v109c добавили read-only native platform contracts для `details/summary`, HTML Popover API и `<dialog>`. Основной runner — `86/86`, дополнительные — `11/11`; суммарно `97/97`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 
@@ -447,6 +448,7 @@ Planner отделяет критерии продукта от служебно
 - Document metadata audit проверяет непустой title, валидный `html lang` и единственный responsive viewport. Keyboard shortcut audit обнаруживает безымянные/дублирующиеся `accesskey` и `aria-keyshortcuts`. Autofill audit проверяет autocomplete purpose, особенно `current-password/new-password`, не раскрывая values.
 - Frontend security audits read-only проверяют form action/method без values, mixed-content и integrity внешних scripts, а также broken/mixed/autoplay media resources. Все URL проходят очистку секретных query-параметров.
 - Performance/accessibility audits проверяют lazy-loading и stable dimensions offscreen media, готовность web fonts через CSS Font Loading API и наличие `prefers-reduced-motion` при длительных CSS animations/transitions.
+- Native web-platform contracts read-only проверяют `details/summary`, HTML Popover API (`popover`/`popovertarget`) и `<dialog>` accessible name с согласованностью `open` и фактической видимости.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
 
 ## Правило актуализации документа
