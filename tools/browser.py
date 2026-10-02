@@ -11090,6 +11090,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('form button,form input[type="button"],form input[type="submit"],form input[type="reset"]'));const rows=all.slice(0,200).map(e=>{const tag=e.tagName.toLowerCase();const raw=e.getAttribute('type');const effective=String(e.type||'').toLowerCase();const name=String(e.getAttribute('aria-label')||e.innerText||e.value||'').trim().replace(/\s+/g,' ').slice(0,160);const implicitSubmit=tag==='button'&&raw===null;return {name,type:effective,explicit_type:raw!==null,implicit_submit:implicitSubmit,valid:Boolean(name)&&!implicitSubmit&&['button','submit','reset'].includes(effective)};});return {button_count:rows.length,implicit_submit_count:rows.filter(x=>x.implicit_submit).length,unnamed_count:rows.filter(x=>!x.name).length,buttons:rows,failure_count:rows.filter(x=>!x.valid).length,button_type_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
         result=self._capture_state("inspect-button-type-contract");result.update({"button_type_audit":audit,"mutation_executed":False});return result
 
+    def inspect_contenteditable_contract_semantic(self):
+        """Audit editable regions for valid modes and stable accessible names."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[contenteditable]'));const text=e=>String(e&&e.innerText||'').trim().replace(/\s+/g,' ').slice(0,160);const rows=all.slice(0,100).map(e=>{const raw=String(e.getAttribute('contenteditable')||'').toLowerCase();const labelled=e.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const name=String(e.getAttribute('aria-label')||text(ref)||e.getAttribute('title')||'').trim().replace(/\s+/g,' ').slice(0,160);const mode=raw===''?'true':raw;const explicitRole=String(e.getAttribute('role')||'').toLowerCase();const validMode=['true','plaintext-only'].includes(mode);const roleCompatible=!explicitRole||['textbox','searchbox'].includes(explicitRole);return {name,mode,role:explicitRole||'implicit-textbox',multiline:e.getAttribute('aria-multiline'),broken_label_reference:Boolean(labelled&&!ref),valid:Boolean(name)&&validMode&&roleCompatible&&!Boolean(labelled&&!ref)};});return {editable_count:rows.length,unnamed_count:rows.filter(x=>!x.name).length,invalid_mode_count:rows.filter(x=>!['true','plaintext-only'].includes(x.mode)).length,regions:rows,failure_count:rows.filter(x=>!x.valid).length,contenteditable_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
+        result=self._capture_state("inspect-contenteditable-contract");result.update({"contenteditable_audit":audit,"mutation_executed":False});return result
+
+    def inspect_search_contract_semantic(self):
+        """Audit searchboxes and search landmarks without submitting a query."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const text=e=>String(e&&e.innerText||'').trim().replace(/\s+/g,' ').slice(0,160);const name=e=>{const labelled=e.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const label=e.labels&&e.labels[0];return {value:String(e.getAttribute('aria-label')||text(ref)||text(label)||e.getAttribute('placeholder')||'').trim().slice(0,160),broken:Boolean(labelled&&!ref)};};const all=Array.from(document.querySelectorAll('input[type="search"],[role="searchbox"]'));const boxes=all.slice(0,100).map(e=>{const n=name(e);const form=e.closest('form');const submit=Boolean(form&&form.querySelector('button[type="submit"],input[type="submit"],button:not([type])'));return {name:n.value,broken_label_reference:n.broken,inside_form:Boolean(form),submit_control_present:submit,live_filter:!form,valid:Boolean(n.value)&&!n.broken};});const landmarks=Array.from(document.querySelectorAll('[role="search"],search')).slice(0,50).map(e=>{const n=name(e);return {name:n.value,broken_label_reference:n.broken,valid:!n.broken};});const landmarkNamesRequired=landmarks.length>1;landmarks.forEach(x=>x.valid=x.valid&&(!landmarkNamesRequired||Boolean(x.name)));const failures=boxes.filter(x=>!x.valid).length+landmarks.filter(x=>!x.valid).length;return {searchbox_count:boxes.length,search_landmark_count:landmarks.length,searchboxes:boxes,landmarks,form_submit_count:boxes.filter(x=>x.inside_form&&x.submit_control_present).length,live_filter_count:boxes.filter(x=>x.live_filter).length,failure_count:failures,search_contract_passed:failures===0,truncated:all.length>100||document.querySelectorAll('[role="search"],search').length>50};}""")
+        result=self._capture_state("inspect-search-contract");result.update({"search_audit":audit,"mutation_executed":False});return result
+
+    def inspect_breadcrumb_contract_semantic(self):
+        """Audit breadcrumb navigation names, links and current-page marker."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const text=e=>String(e&&e.innerText||'').trim().replace(/\s+/g,' ').slice(0,160);const all=Array.from(document.querySelectorAll('nav,[role="navigation"]')).filter(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const name=String(e.getAttribute('aria-label')||text(ref)||'').toLowerCase();return name.includes('breadcrumb')||name.includes('хлебн');});const rows=all.slice(0,50).map(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const name=String(e.getAttribute('aria-label')||text(ref)||'').trim().slice(0,160);const links=Array.from(e.querySelectorAll('a')).map(a=>({name:String(a.getAttribute('aria-label')||text(a)).trim().slice(0,160),current:a.getAttribute('aria-current')||''}));const currentCount=e.querySelectorAll('[aria-current="page"]').length;return {name,link_count:links.length,current_page_count:currentCount,unnamed_link_count:links.filter(x=>!x.name).length,links:links.slice(0,50),valid:Boolean(name)&&links.length>0&&currentCount===1&&links.every(x=>Boolean(x.name))};});return {breadcrumb_count:rows.length,breadcrumbs:rows,failure_count:rows.filter(x=>!x.valid).length,breadcrumb_contract_passed:rows.every(x=>x.valid),truncated:all.length>50};}""")
+        result=self._capture_state("inspect-breadcrumb-contract");result.update({"breadcrumb_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12437,6 +12455,15 @@ def inspect_radio_group_contract_semantic() -> dict:
 
 def inspect_button_type_contract_semantic() -> dict:
     return _session.inspect_button_type_contract_semantic()
+
+def inspect_contenteditable_contract_semantic() -> dict:
+    return _session.inspect_contenteditable_contract_semantic()
+
+def inspect_search_contract_semantic() -> dict:
+    return _session.inspect_search_contract_semantic()
+
+def inspect_breadcrumb_contract_semantic() -> dict:
+    return _session.inspect_breadcrumb_contract_semantic()
 
 
 def click_semantic(

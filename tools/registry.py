@@ -64,6 +64,9 @@ from tools.browser import (
     inspect_fieldset_contract_semantic,
     inspect_radio_group_contract_semantic,
     inspect_button_type_contract_semantic,
+    inspect_contenteditable_contract_semantic,
+    inspect_search_contract_semantic,
+    inspect_breadcrumb_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -751,6 +754,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_fieldset_contract_semantic","description":"Read-only audit fieldset direct legend, group name и наличие controls.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_radio_group_contract_semantic","description":"Read-only audit radio groups: group identity, labels и не более одного checked.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_button_type_contract_semantic","description":"Read-only audit form buttons: accessible name и explicit type против случайного submit.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_contenteditable_contract_semantic","description":"Read-only audit contenteditable regions: accessible name, valid mode и compatible textbox role.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_search_contract_semantic","description":"Read-only audit searchboxes, search landmarks и submit/live-filter structure.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_breadcrumb_contract_semantic","description":"Read-only audit breadcrumb navigation, named links и ровно один aria-current page.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2216,6 +2222,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_radio_group_contract_semantic()
     if name == "browser_inspect_button_type_contract_semantic":
         return inspect_button_type_contract_semantic()
+    if name == "browser_inspect_contenteditable_contract_semantic":
+        return inspect_contenteditable_contract_semantic()
+    if name == "browser_inspect_search_contract_semantic":
+        return inspect_search_contract_semantic()
+    if name == "browser_inspect_breadcrumb_contract_semantic":
+        return inspect_breadcrumb_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(
