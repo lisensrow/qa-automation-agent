@@ -11072,6 +11072,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('dialog'));const shown=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden';};const rows=all.slice(0,100).map(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const node=labelled?document.getElementById(labelled):null;const name=String(e.getAttribute('aria-label')||(node&&node.innerText)||'').trim().replace(/\s+/g,' ').slice(0,160);const visible=shown(e);return {open:e.open,visible,name,broken_label_reference:Boolean(labelled&&!node),valid:Boolean(name)&&!Boolean(labelled&&!node)&&(e.open===visible)};});return {dialog_count:rows.length,failure_count:rows.filter(x=>!x.valid).length,dialogs:rows,native_dialog_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
         result=self._capture_state("inspect-native-dialog-element");result.update({"native_dialog_element_audit":audit,"mutation_executed":False});return result
 
+    def inspect_fieldset_contract_semantic(self):
+        """Audit fieldset/legend grouping and disabled propagation metadata."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('fieldset'));const rows=all.slice(0,100).map(e=>{const legend=e.querySelector(':scope > legend');const name=String(legend&&legend.innerText||'').trim().replace(/\s+/g,' ').slice(0,160);const controls=e.querySelectorAll('input:not([type="hidden"]),select,textarea,button').length;return {legend_present:Boolean(legend),legend_name:name,control_count:controls,disabled:e.disabled,valid:Boolean(legend&&name)&&controls>0};});return {fieldset_count:rows.length,failure_count:rows.filter(x=>!x.valid).length,fieldsets:rows,fieldset_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
+        result=self._capture_state("inspect-fieldset-contract");result.update({"fieldset_audit":audit,"mutation_executed":False});return result
+
+    def inspect_radio_group_contract_semantic(self):
+        """Audit radio names, labels and one-selected-per-group behavior."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('input[type="radio"],[role="radio"]'));const rows=all.slice(0,200).map(e=>({group:String(e.name||e.closest('[role="radiogroup"]')?.getAttribute('aria-label')||'').trim().slice(0,160),label:String((e.labels&&e.labels[0]&&e.labels[0].innerText)||e.getAttribute('aria-label')||'').trim().slice(0,160),checked:e.checked===true||e.getAttribute('aria-checked')==='true',disabled:e.disabled===true||e.getAttribute('aria-disabled')==='true'}));const groups={};rows.forEach(x=>(groups[x.group]||(groups[x.group]=[])).push(x));const summary=Object.entries(groups).map(([name,items])=>({name,item_count:items.length,checked_count:items.filter(x=>x.checked).length,unlabeled_count:items.filter(x=>!x.label).length,valid:Boolean(name)&&items.filter(x=>x.checked).length<=1&&items.every(x=>Boolean(x.label))}));return {radio_count:rows.length,group_count:summary.length,groups:summary,failure_count:summary.filter(x=>!x.valid).length,radio_group_contract_passed:summary.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-radio-group-contract");result.update({"radio_group_audit":audit,"mutation_executed":False});return result
+
+    def inspect_button_type_contract_semantic(self):
+        """Audit form buttons for names and explicit accidental-submit protection."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('form button,form input[type="button"],form input[type="submit"],form input[type="reset"]'));const rows=all.slice(0,200).map(e=>{const tag=e.tagName.toLowerCase();const raw=e.getAttribute('type');const effective=String(e.type||'').toLowerCase();const name=String(e.getAttribute('aria-label')||e.innerText||e.value||'').trim().replace(/\s+/g,' ').slice(0,160);const implicitSubmit=tag==='button'&&raw===null;return {name,type:effective,explicit_type:raw!==null,implicit_submit:implicitSubmit,valid:Boolean(name)&&!implicitSubmit&&['button','submit','reset'].includes(effective)};});return {button_count:rows.length,implicit_submit_count:rows.filter(x=>x.implicit_submit).length,unnamed_count:rows.filter(x=>!x.name).length,buttons:rows,failure_count:rows.filter(x=>!x.valid).length,button_type_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-button-type-contract");result.update({"button_type_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12410,6 +12428,15 @@ def inspect_popover_contract_semantic() -> dict:
 
 def inspect_native_dialog_element_semantic() -> dict:
     return _session.inspect_native_dialog_element_semantic()
+
+def inspect_fieldset_contract_semantic() -> dict:
+    return _session.inspect_fieldset_contract_semantic()
+
+def inspect_radio_group_contract_semantic() -> dict:
+    return _session.inspect_radio_group_contract_semantic()
+
+def inspect_button_type_contract_semantic() -> dict:
+    return _session.inspect_button_type_contract_semantic()
 
 
 def click_semantic(
