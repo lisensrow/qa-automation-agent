@@ -73,6 +73,9 @@ from tools.browser import (
     inspect_hash_link_contract_semantic,
     inspect_navigation_current_contract_semantic,
     inspect_skip_link_contract_semantic,
+    inspect_required_field_contract_semantic,
+    inspect_describedby_contract_semantic,
+    inspect_invalid_field_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -769,6 +772,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_hash_link_contract_semantic","description":"Read-only audit same-document links: accessible names и существующие hash targets.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_navigation_current_contract_semantic","description":"Read-only audit navigation links и допустимый единственный aria-current внутри landmark.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_skip_link_contract_semantic","description":"Read-only audit ранних skip links, ведущих к main content.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_required_field_contract_semantic","description":"Read-only audit required fields: supported role и accessible name.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_describedby_contract_semantic","description":"Read-only audit aria-describedby: существующие непустые references.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_invalid_field_contract_semantic","description":"Read-only audit aria-invalid fields: name и linked error message.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2252,6 +2258,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_navigation_current_contract_semantic()
     if name == "browser_inspect_skip_link_contract_semantic":
         return inspect_skip_link_contract_semantic()
+    if name == "browser_inspect_required_field_contract_semantic":
+        return inspect_required_field_contract_semantic()
+    if name == "browser_inspect_describedby_contract_semantic":
+        return inspect_describedby_contract_semantic()
+    if name == "browser_inspect_invalid_field_contract_semantic":
+        return inspect_invalid_field_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

@@ -11144,6 +11144,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const focusable=Array.from(document.querySelectorAll('a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])')).slice(0,10);const rows=focusable.filter(e=>e.tagName==='A'&&String(e.getAttribute('href')||'').startsWith('#')).map(e=>{const href=e.getAttribute('href')||'';const id=href.slice(1);const target=id?document.getElementById(id):null;const name=String(e.getAttribute('aria-label')||e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const bypasses=Boolean(target&&(target.tagName==='MAIN'||target.getAttribute('role')==='main'||target.querySelector('main,[role="main"]')));return {name,href,target_exists:Boolean(target),bypasses_to_main:bypasses,valid:Boolean(name)&&Boolean(target)&&bypasses};});return {skip_link_count:rows.length,skip_link_present:rows.length>0,links:rows,failure_count:rows.filter(x=>!x.valid).length,skip_link_contract_passed:rows.every(x=>x.valid)};}""")
         result=self._capture_state("inspect-skip-link-contract");result.update({"skip_link_audit":audit,"mutation_executed":False});return result
 
+    def inspect_required_field_contract_semantic(self):
+        """Audit explicit required fields for supported roles and accessible names."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const text=e=>String(e&&e.innerText||e&&e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const name=e=>{const labelled=e.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const label=e.labels&&e.labels[0];return {value:String(e.getAttribute('aria-label')||text(ref)||text(label)||'').trim().slice(0,160),broken:Boolean(labelled&&!ref)};};const all=Array.from(document.querySelectorAll('[required],[aria-required="true"]'));const allowed=['INPUT','SELECT','TEXTAREA'];const roles=['textbox','combobox','listbox','radiogroup','checkbox','spinbutton','searchbox','tree'];const rows=all.slice(0,200).map(e=>{const n=name(e);const supported=allowed.includes(e.tagName)||roles.includes(String(e.getAttribute('role')||'').toLowerCase());return {name:n.value,tag:e.tagName.toLowerCase(),role:e.getAttribute('role')||'',native_required:e.required===true,aria_required:e.getAttribute('aria-required')==='true',broken_label_reference:n.broken,supported,valid:Boolean(n.value)&&supported&&!n.broken};});return {required_field_count:rows.length,fields:rows,unnamed_count:rows.filter(x=>!x.name).length,failure_count:rows.filter(x=>!x.valid).length,required_field_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-required-field-contract");result.update({"required_field_audit":audit,"mutation_executed":False});return result
+
+    def inspect_describedby_contract_semantic(self):
+        """Audit aria-describedby references and non-empty descriptions."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-describedby]'));const rows=all.slice(0,200).map(e=>{const ids=String(e.getAttribute('aria-describedby')||'').trim().split(/\s+/).filter(Boolean);const refs=ids.map(id=>document.getElementById(id));const missing=ids.filter((id,i)=>!refs[i]);const empty=refs.filter(x=>x&&!String(x.innerText||x.textContent||'').trim()).length;const label=String(e.getAttribute('aria-label')||(e.labels&&e.labels[0]&&e.labels[0].innerText)||e.id||e.tagName).trim().replace(/\s+/g,' ').slice(0,160);return {label,reference_count:ids.length,missing_references:missing,empty_reference_count:empty,valid:ids.length>0&&missing.length===0&&empty===0};});return {described_element_count:rows.length,elements:rows,failure_count:rows.filter(x=>!x.valid).length,describedby_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-describedby-contract");result.update({"describedby_audit":audit,"mutation_executed":False});return result
+
+    def inspect_invalid_field_contract_semantic(self):
+        """Audit explicitly invalid fields for names and linked error messages."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const text=e=>String(e&&e.innerText||e&&e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const all=Array.from(document.querySelectorAll('[aria-invalid="true"]'));const rows=all.slice(0,200).map(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const labelRef=labelled?document.getElementById(labelled):null;const label=e.labels&&e.labels[0];const name=String(e.getAttribute('aria-label')||text(labelRef)||text(label)||'').trim().slice(0,160);const ids=String(e.getAttribute('aria-errormessage')||e.getAttribute('aria-describedby')||'').trim().split(/\s+/).filter(Boolean);const refs=ids.map(id=>document.getElementById(id));const messages=refs.filter(Boolean).map(text).filter(Boolean);return {name,message_reference_count:ids.length,existing_message_count:messages.length,messages:messages.slice(0,10),broken_label_reference:Boolean(labelled&&!labelRef),valid:Boolean(name)&&ids.length>0&&messages.length===ids.length&&!Boolean(labelled&&!labelRef)};});return {invalid_field_count:rows.length,fields:rows,failure_count:rows.filter(x=>!x.valid).length,invalid_field_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-invalid-field-contract");result.update({"invalid_field_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12518,6 +12536,15 @@ def inspect_navigation_current_contract_semantic() -> dict:
 
 def inspect_skip_link_contract_semantic() -> dict:
     return _session.inspect_skip_link_contract_semantic()
+
+def inspect_required_field_contract_semantic() -> dict:
+    return _session.inspect_required_field_contract_semantic()
+
+def inspect_describedby_contract_semantic() -> dict:
+    return _session.inspect_describedby_contract_semantic()
+
+def inspect_invalid_field_contract_semantic() -> dict:
+    return _session.inspect_invalid_field_contract_semantic()
 
 
 def click_semantic(

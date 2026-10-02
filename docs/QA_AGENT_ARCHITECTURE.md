@@ -409,6 +409,7 @@ Planner отделяет критерии продукта от служебно
 - v111a–v111c добавили read-only audits редактируемых `contenteditable`-областей, поиска и breadcrumb-навигации. Основной runner — `92/92`, дополнительные — `11/11`; суммарно `103/103`, без реальных действий на U-Connect.
 - v112a–v112c добавили read-only audits структуры data tables, native/ARIA lists и пар `dt/dd` в description lists. Основной runner — `95/95`, дополнительные — `11/11`; суммарно `106/106`, без реальных действий на U-Connect.
 - v113a–v113c добавили read-only audits same-document hash links, `aria-current` внутри navigation landmarks и skip links к основному содержимому. Основной runner — `98/98`, дополнительные — `11/11`; суммарно `109/109`, без реальных действий на U-Connect.
+- v114a–v114c добавили read-only audits обязательных полей, `aria-describedby` и явно невалидных полей со связанными сообщениями ошибок. Основной runner — `101/101`, дополнительные — `11/11`; суммарно `112/112`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 
