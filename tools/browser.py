@@ -11035,6 +11035,25 @@ class BrowserSession:
         failures=sum(1 for x in rows if x["mixed_content"] or x["image_broken"] or x["autoplay_unmuted"])
         result=self._capture_state("inspect-media-resource");result.update({"media_resource_audit":{"resource_count":len(rows),"resources":rows,"failure_count":failures,"media_resource_passed":failures==0,"truncated":len(rows)>=200},"mutation_executed":False});return result
 
+    def inspect_lazy_media_contract_semantic(self):
+        """Audit offscreen images/iframes for lazy loading and stable dimensions."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('img,iframe'));const rows=all.slice(0,200).map(e=>{const r=e.getBoundingClientRect();const offscreen=r.top>innerHeight;const loading=String(e.getAttribute('loading')||'').toLowerCase();const stable=Boolean((e.getAttribute('width')&&e.getAttribute('height'))||getComputedStyle(e).aspectRatio!=='auto');return {tag:e.tagName.toLowerCase(),label:String(e.getAttribute('alt')||e.getAttribute('title')||e.getAttribute('aria-label')||'').trim().slice(0,120),offscreen,loading,stable_dimensions:stable,lazy_missing:offscreen&&loading!=='lazy',dimensions_missing:!stable};});const failures=rows.filter(x=>x.lazy_missing||x.dimensions_missing);return {resource_count:rows.length,failure_count:failures.length,failures:failures.slice(0,100),lazy_media_contract_passed:failures.length===0,truncated:all.length>200||failures.length>100};}""")
+        result=self._capture_state("inspect-lazy-media-contract");result.update({"lazy_media_audit":audit,"mutation_executed":False});return result
+
+    def inspect_font_readiness_semantic(self, wait_ms=2000):
+        """Wait for the CSS Font Loading API without exposing font files."""
+        self._ensure_started(); self._reset_diagnostics()
+        if not isinstance(wait_ms,int) or isinstance(wait_ms,bool) or not 0<=wait_ms<=10000:return {"error":"font_wait_ms_invalid","executed":False}
+        audit=self.page.evaluate("""async wait=>{if(!document.fonts)return {supported:false,status:'unsupported',font_readiness_passed:false};let timedOut=false;await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(()=>{timedOut=true;r();},wait))]);const family=getComputedStyle(document.body).fontFamily.slice(0,300);return {supported:true,status:document.fonts.status,timed_out:timedOut,body_font_family:family,font_readiness_passed:!timedOut&&document.fonts.status==='loaded'};}""",wait_ms)
+        result=self._capture_state("inspect-font-readiness");result.update({"font_readiness_audit":audit,"mutation_executed":False});return result
+
+    def inspect_reduced_motion_contract_semantic(self):
+        """Audit long CSS motion and presence of prefers-reduced-motion rules."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const seconds=v=>String(v).split(',').reduce((m,x)=>{x=x.trim();const n=parseFloat(x)||0;return Math.max(m,x.endsWith('ms')?n/1000:n);},0);const all=Array.from(document.querySelectorAll('body *'));const moving=all.slice(0,500).map(e=>{const s=getComputedStyle(e);return {label:String(e.getAttribute('aria-label')||e.innerText||e.id||'').trim().replace(/\s+/g,' ').slice(0,100),animation_seconds:seconds(s.animationDuration),transition_seconds:seconds(s.transitionDuration)};}).filter(x=>x.animation_seconds>.5||x.transition_seconds>.5);let reduced=false,inaccessible=0;for(const sheet of Array.from(document.styleSheets)){try{for(const rule of Array.from(sheet.cssRules||[])){if(String(rule.cssText||'').toLowerCase().includes('prefers-reduced-motion'))reduced=true;}}catch(_){inaccessible++;}}return {long_motion_count:moving.length,long_motion:moving.slice(0,100),reduced_motion_rule_present:reduced,inaccessible_stylesheet_count:inaccessible,reduced_motion_contract_passed:moving.length===0||reduced,truncated:all.length>500||moving.length>100};}""")
+        result=self._capture_state("inspect-reduced-motion-contract");result.update({"reduced_motion_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12355,6 +12374,15 @@ def inspect_script_security_semantic() -> dict:
 
 def inspect_media_resource_semantic() -> dict:
     return _session.inspect_media_resource_semantic()
+
+def inspect_lazy_media_contract_semantic() -> dict:
+    return _session.inspect_lazy_media_contract_semantic()
+
+def inspect_font_readiness_semantic(wait_ms: int = 2000) -> dict:
+    return _session.inspect_font_readiness_semantic(wait_ms)
+
+def inspect_reduced_motion_contract_semantic() -> dict:
+    return _session.inspect_reduced_motion_contract_semantic()
 
 
 def click_semantic(

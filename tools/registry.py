@@ -55,6 +55,9 @@ from tools.browser import (
     inspect_form_submission_contract_semantic,
     inspect_script_security_semantic,
     inspect_media_resource_semantic,
+    inspect_lazy_media_contract_semantic,
+    inspect_font_readiness_semantic,
+    inspect_reduced_motion_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -733,6 +736,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_form_submission_contract_semantic","description":"Read-only audit form method/action; блокирует mixed content и password через GET, values не читает.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_script_security_semantic","description":"Read-only audit scripts: mixed content и integrity для cross-origin sources; URL очищаются.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_media_resource_semantic","description":"Read-only audit img/video/audio: broken images, mixed content и unmuted autoplay; содержимое не скачивает.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_lazy_media_contract_semantic","description":"Read-only audit offscreen img/iframe: loading=lazy и стабильные dimensions/aspect-ratio.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_font_readiness_semantic","description":"Read-only ожидает document.fonts.ready и возвращает только status/body font family.","parameters":{"type":"object","properties":{"wait_ms":{"type":"integer","minimum":0,"maximum":10000}}}}},
+    {"type":"function","function":{"name":"browser_inspect_reduced_motion_contract_semantic","description":"Read-only audit long CSS animation/transition и prefers-reduced-motion rules.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2180,6 +2186,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_script_security_semantic()
     if name == "browser_inspect_media_resource_semantic":
         return inspect_media_resource_semantic()
+    if name == "browser_inspect_lazy_media_contract_semantic":
+        return inspect_lazy_media_contract_semantic()
+    if name == "browser_inspect_font_readiness_semantic":
+        return inspect_font_readiness_semantic(arguments.get("wait_ms", 2000))
+    if name == "browser_inspect_reduced_motion_contract_semantic":
+        return inspect_reduced_motion_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(
