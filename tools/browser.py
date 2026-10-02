@@ -11108,6 +11108,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const text=e=>String(e&&e.innerText||'').trim().replace(/\s+/g,' ').slice(0,160);const all=Array.from(document.querySelectorAll('nav,[role="navigation"]')).filter(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const name=String(e.getAttribute('aria-label')||text(ref)||'').toLowerCase();return name.includes('breadcrumb')||name.includes('хлебн');});const rows=all.slice(0,50).map(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const name=String(e.getAttribute('aria-label')||text(ref)||'').trim().slice(0,160);const links=Array.from(e.querySelectorAll('a')).map(a=>({name:String(a.getAttribute('aria-label')||text(a)).trim().slice(0,160),current:a.getAttribute('aria-current')||''}));const currentCount=e.querySelectorAll('[aria-current="page"]').length;return {name,link_count:links.length,current_page_count:currentCount,unnamed_link_count:links.filter(x=>!x.name).length,links:links.slice(0,50),valid:Boolean(name)&&links.length>0&&currentCount===1&&links.every(x=>Boolean(x.name))};});return {breadcrumb_count:rows.length,breadcrumbs:rows,failure_count:rows.filter(x=>!x.valid).length,breadcrumb_contract_passed:rows.every(x=>x.valid),truncated:all.length>50};}""")
         result=self._capture_state("inspect-breadcrumb-contract");result.update({"breadcrumb_audit":audit,"mutation_executed":False});return result
 
+    def inspect_table_structure_contract_semantic(self):
+        """Audit native data-table headers and row geometry."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const text=e=>String(e&&e.innerText||'').trim().replace(/\s+/g,' ').slice(0,160);const all=Array.from(document.querySelectorAll('table')).filter(e=>!['presentation','none'].includes(String(e.getAttribute('role')||'').toLowerCase()));const rows=all.slice(0,50).map(t=>{const caption=t.querySelector(':scope > caption');const labelled=t.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const name=String(t.getAttribute('aria-label')||text(ref)||text(caption)||'').trim().slice(0,160);const trs=Array.from(t.rows||[]);const widths=trs.map(r=>Array.from(r.cells||[]).reduce((n,c)=>n+(Number(c.colSpan)||1),0));const headerCount=t.querySelectorAll('th,[role="columnheader"],[role="rowheader"]').length;const dataCount=t.querySelectorAll('td,[role="cell"],[role="gridcell"]').length;const rectangular=widths.length<2||new Set(widths).size===1;const broken=Boolean(labelled&&!ref);return {name,row_count:trs.length,header_count:headerCount,data_cell_count:dataCount,column_counts:widths.slice(0,100),rectangular,broken_label_reference:broken,valid:trs.length>0&&headerCount>0&&rectangular&&!broken};});return {table_count:rows.length,named_table_count:rows.filter(x=>x.name).length,tables:rows,failure_count:rows.filter(x=>!x.valid).length,table_structure_contract_passed:rows.every(x=>x.valid),truncated:all.length>50};}""")
+        result=self._capture_state("inspect-table-structure-contract");result.update({"table_structure_audit":audit,"mutation_executed":False});return result
+
+    def inspect_list_structure_contract_semantic(self):
+        """Audit native and ARIA list ownership without reading application data."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('ul,ol,[role="list"]'));const rows=all.slice(0,100).map(e=>{const native=['UL','OL'].includes(e.tagName);const children=Array.from(e.children);const items=children.filter(x=>native?x.tagName==='LI':x.getAttribute('role')==='listitem');const invalid=children.filter(x=>native?x.tagName!=='LI':x.getAttribute('role')!=='listitem');return {kind:native?e.tagName.toLowerCase():'aria-list',child_count:children.length,item_count:items.length,invalid_direct_child_count:invalid.length,valid:items.length>0&&invalid.length===0};});return {list_count:rows.length,lists:rows,failure_count:rows.filter(x=>!x.valid).length,list_structure_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
+        result=self._capture_state("inspect-list-structure-contract");result.update({"list_structure_audit":audit,"mutation_executed":False});return result
+
+    def inspect_description_list_contract_semantic(self):
+        """Audit definition-list term/description pairing."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const text=e=>String(e&&e.innerText||'').trim().replace(/\s+/g,' ').slice(0,120);const all=Array.from(document.querySelectorAll('dl'));const rows=all.slice(0,100).map(e=>{const c=Array.from(e.children).filter(x=>['DT','DD'].includes(x.tagName));let terms=0,descriptions=0,orphan=0,empty=0,active=false,described=false;for(const x of c){if(!text(x))empty++;if(x.tagName==='DT'){if(active&&!described)orphan++;active=true;described=false;terms++;}else{descriptions++;if(!active)orphan++;else described=true;}}if(active&&!described)orphan++;return {term_count:terms,description_count:descriptions,orphan_count:orphan,empty_item_count:empty,valid:terms>0&&descriptions>0&&orphan===0&&empty===0};});return {description_list_count:rows.length,lists:rows,failure_count:rows.filter(x=>!x.valid).length,description_list_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
+        result=self._capture_state("inspect-description-list-contract");result.update({"description_list_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12464,6 +12482,15 @@ def inspect_search_contract_semantic() -> dict:
 
 def inspect_breadcrumb_contract_semantic() -> dict:
     return _session.inspect_breadcrumb_contract_semantic()
+
+def inspect_table_structure_contract_semantic() -> dict:
+    return _session.inspect_table_structure_contract_semantic()
+
+def inspect_list_structure_contract_semantic() -> dict:
+    return _session.inspect_list_structure_contract_semantic()
+
+def inspect_description_list_contract_semantic() -> dict:
+    return _session.inspect_description_list_contract_semantic()
 
 
 def click_semantic(

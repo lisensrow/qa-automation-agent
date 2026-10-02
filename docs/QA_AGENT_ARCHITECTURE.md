@@ -407,6 +407,7 @@ Planner отделяет критерии продукта от служебно
 - v109a–v109c добавили read-only native platform contracts для `details/summary`, HTML Popover API и `<dialog>`. Основной runner — `86/86`, дополнительные — `11/11`; суммарно `97/97`, без реальных действий на U-Connect.
 - v110a–v110c добавили read-only audits `fieldset/legend`, семантики radio-group и явных типов кнопок внутри форм. Основной runner — `89/89`, дополнительные — `11/11`; суммарно `100/100`, без реальных действий на U-Connect.
 - v111a–v111c добавили read-only audits редактируемых `contenteditable`-областей, поиска и breadcrumb-навигации. Основной runner — `92/92`, дополнительные — `11/11`; суммарно `103/103`, без реальных действий на U-Connect.
+- v112a–v112c добавили read-only audits структуры data tables, native/ARIA lists и пар `dt/dd` в description lists. Основной runner — `95/95`, дополнительные — `11/11`; суммарно `106/106`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 
