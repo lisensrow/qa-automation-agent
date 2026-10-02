@@ -11126,6 +11126,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const text=e=>String(e&&e.innerText||'').trim().replace(/\s+/g,' ').slice(0,120);const all=Array.from(document.querySelectorAll('dl'));const rows=all.slice(0,100).map(e=>{const c=Array.from(e.children).filter(x=>['DT','DD'].includes(x.tagName));let terms=0,descriptions=0,orphan=0,empty=0,active=false,described=false;for(const x of c){if(!text(x))empty++;if(x.tagName==='DT'){if(active&&!described)orphan++;active=true;described=false;terms++;}else{descriptions++;if(!active)orphan++;else described=true;}}if(active&&!described)orphan++;return {term_count:terms,description_count:descriptions,orphan_count:orphan,empty_item_count:empty,valid:terms>0&&descriptions>0&&orphan===0&&empty===0};});return {description_list_count:rows.length,lists:rows,failure_count:rows.filter(x=>!x.valid).length,description_list_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
         result=self._capture_state("inspect-description-list-contract");result.update({"description_list_audit":audit,"mutation_executed":False});return result
 
+    def inspect_hash_link_contract_semantic(self):
+        """Audit same-document links for names and existing targets."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('a[href^="#"]'));const rows=all.slice(0,200).map(e=>{const href=e.getAttribute('href')||'';let id='';try{id=decodeURIComponent(href.slice(1));}catch(_){id=href.slice(1);}const name=String(e.getAttribute('aria-label')||e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const target=id?document.getElementById(id)||document.querySelector(`[name="${CSS.escape(id)}"]`):null;return {name,href,target_exists:Boolean(target),valid:Boolean(name)&&Boolean(id)&&Boolean(target)};});return {hash_link_count:rows.length,links:rows,failure_count:rows.filter(x=>!x.valid).length,hash_link_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-hash-link-contract");result.update({"hash_link_audit":audit,"mutation_executed":False});return result
+
+    def inspect_navigation_current_contract_semantic(self):
+        """Audit navigation link names and aria-current tokens per landmark."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const text=e=>String(e&&e.innerText||e&&e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const allowed=['page','step','location','date','time','true'];const all=Array.from(document.querySelectorAll('nav,[role="navigation"]'));const rows=all.slice(0,100).map(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const name=String(e.getAttribute('aria-label')||text(ref)||'').trim().slice(0,160);const links=Array.from(e.querySelectorAll('a,[role="link"]'));const current=links.filter(x=>x.hasAttribute('aria-current'));const invalid=current.filter(x=>!allowed.includes(String(x.getAttribute('aria-current')||'').toLowerCase()));const unnamed=links.filter(x=>!String(x.getAttribute('aria-label')||text(x)).trim());return {name,link_count:links.length,current_count:current.length,invalid_current_count:invalid.length,unnamed_link_count:unnamed.length,broken_label_reference:Boolean(labelled&&!ref),valid:invalid.length===0&&current.length<=1&&unnamed.length===0&&!Boolean(labelled&&!ref)};});return {navigation_count:rows.length,named_navigation_count:rows.filter(x=>x.name).length,navigations:rows,failure_count:rows.filter(x=>!x.valid).length,navigation_current_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
+        result=self._capture_state("inspect-navigation-current-contract");result.update({"navigation_current_audit":audit,"mutation_executed":False});return result
+
+    def inspect_skip_link_contract_semantic(self):
+        """Audit early same-document links that bypass repeated navigation."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const focusable=Array.from(document.querySelectorAll('a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])')).slice(0,10);const rows=focusable.filter(e=>e.tagName==='A'&&String(e.getAttribute('href')||'').startsWith('#')).map(e=>{const href=e.getAttribute('href')||'';const id=href.slice(1);const target=id?document.getElementById(id):null;const name=String(e.getAttribute('aria-label')||e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const bypasses=Boolean(target&&(target.tagName==='MAIN'||target.getAttribute('role')==='main'||target.querySelector('main,[role="main"]')));return {name,href,target_exists:Boolean(target),bypasses_to_main:bypasses,valid:Boolean(name)&&Boolean(target)&&bypasses};});return {skip_link_count:rows.length,skip_link_present:rows.length>0,links:rows,failure_count:rows.filter(x=>!x.valid).length,skip_link_contract_passed:rows.every(x=>x.valid)};}""")
+        result=self._capture_state("inspect-skip-link-contract");result.update({"skip_link_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12491,6 +12509,15 @@ def inspect_list_structure_contract_semantic() -> dict:
 
 def inspect_description_list_contract_semantic() -> dict:
     return _session.inspect_description_list_contract_semantic()
+
+def inspect_hash_link_contract_semantic() -> dict:
+    return _session.inspect_hash_link_contract_semantic()
+
+def inspect_navigation_current_contract_semantic() -> dict:
+    return _session.inspect_navigation_current_contract_semantic()
+
+def inspect_skip_link_contract_semantic() -> dict:
+    return _session.inspect_skip_link_contract_semantic()
 
 
 def click_semantic(

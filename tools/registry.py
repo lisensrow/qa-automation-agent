@@ -70,6 +70,9 @@ from tools.browser import (
     inspect_table_structure_contract_semantic,
     inspect_list_structure_contract_semantic,
     inspect_description_list_contract_semantic,
+    inspect_hash_link_contract_semantic,
+    inspect_navigation_current_contract_semantic,
+    inspect_skip_link_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -763,6 +766,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_table_structure_contract_semantic","description":"Read-only audit native data tables: headers, row geometry и label references.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_list_structure_contract_semantic","description":"Read-only audit native и ARIA list ownership/direct listitems.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_description_list_contract_semantic","description":"Read-only audit dl term/description pairing и empty items.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_hash_link_contract_semantic","description":"Read-only audit same-document links: accessible names и существующие hash targets.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_navigation_current_contract_semantic","description":"Read-only audit navigation links и допустимый единственный aria-current внутри landmark.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_skip_link_contract_semantic","description":"Read-only audit ранних skip links, ведущих к main content.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2240,6 +2246,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_list_structure_contract_semantic()
     if name == "browser_inspect_description_list_contract_semantic":
         return inspect_description_list_contract_semantic()
+    if name == "browser_inspect_hash_link_contract_semantic":
+        return inspect_hash_link_contract_semantic()
+    if name == "browser_inspect_navigation_current_contract_semantic":
+        return inspect_navigation_current_contract_semantic()
+    if name == "browser_inspect_skip_link_contract_semantic":
+        return inspect_skip_link_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(
