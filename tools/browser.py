@@ -11162,6 +11162,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const text=e=>String(e&&e.innerText||e&&e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const all=Array.from(document.querySelectorAll('[aria-invalid="true"]'));const rows=all.slice(0,200).map(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const labelRef=labelled?document.getElementById(labelled):null;const label=e.labels&&e.labels[0];const name=String(e.getAttribute('aria-label')||text(labelRef)||text(label)||'').trim().slice(0,160);const ids=String(e.getAttribute('aria-errormessage')||e.getAttribute('aria-describedby')||'').trim().split(/\s+/).filter(Boolean);const refs=ids.map(id=>document.getElementById(id));const messages=refs.filter(Boolean).map(text).filter(Boolean);return {name,message_reference_count:ids.length,existing_message_count:messages.length,messages:messages.slice(0,10),broken_label_reference:Boolean(labelled&&!labelRef),valid:Boolean(name)&&ids.length>0&&messages.length===ids.length&&!Boolean(labelled&&!labelRef)};});return {invalid_field_count:rows.length,fields:rows,failure_count:rows.filter(x=>!x.valid).length,invalid_field_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
         result=self._capture_state("inspect-invalid-field-contract");result.update({"invalid_field_audit":audit,"mutation_executed":False});return result
 
+    def inspect_text_length_contract_semantic(self):
+        """Audit minlength/maxlength relationships on text-entry controls."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('input[minlength],input[maxlength],textarea[minlength],textarea[maxlength]'));const rows=all.slice(0,200).map(e=>{const min=e.hasAttribute('minlength')?Number(e.getAttribute('minlength')):null;const max=e.hasAttribute('maxlength')?Number(e.getAttribute('maxlength')):null;const minValid=min===null||(Number.isInteger(min)&&min>=0);const maxValid=max===null||(Number.isInteger(max)&&max>=0);const ordered=min===null||max===null||min<=max;return {tag:e.tagName.toLowerCase(),type:String(e.type||'').toLowerCase(),minlength:min,maxlength:max,current_length:String(e.value||'').length,valid:minValid&&maxValid&&ordered};});return {control_count:rows.length,controls:rows,failure_count:rows.filter(x=>!x.valid).length,text_length_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-text-length-contract");result.update({"text_length_audit":audit,"mutation_executed":False});return result
+
+    def inspect_range_constraint_contract_semantic(self):
+        """Audit min/max/step syntax and ordering for constrained inputs."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('input[min],input[max],input[step]'));const parse=(type,v)=>{if(v===null)return null;const x=document.createElement('input');x.type=type;x.value=v;return Number.isFinite(x.valueAsNumber)?x.valueAsNumber:NaN;};const rows=all.slice(0,200).map(e=>{const type=String(e.type||'text').toLowerCase();const minRaw=e.getAttribute('min'),maxRaw=e.getAttribute('max'),stepRaw=e.getAttribute('step');const min=parse(type,minRaw),max=parse(type,maxRaw);const stepValid=stepRaw===null||stepRaw==='any'||(Number.isFinite(Number(stepRaw))&&Number(stepRaw)>0);const minValid=minRaw===null||Number.isFinite(min);const maxValid=maxRaw===null||Number.isFinite(max);const ordered=min===null||max===null||!Number.isFinite(min)||!Number.isFinite(max)||min<=max;return {type,min:minRaw,max:maxRaw,step:stepRaw,min_valid:minValid,max_valid:maxValid,step_valid:stepValid,ordered,valid:minValid&&maxValid&&stepValid&&ordered};});return {control_count:rows.length,controls:rows,failure_count:rows.filter(x=>!x.valid).length,range_constraint_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-range-constraint-contract");result.update({"range_constraint_audit":audit,"mutation_executed":False});return result
+
+    def inspect_inputmode_contract_semantic(self):
+        """Audit inputmode tokens and names on virtual-keyboard hints."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const allowed=['none','text','decimal','numeric','tel','search','email','url'];const all=Array.from(document.querySelectorAll('[inputmode]'));const rows=all.slice(0,200).map(e=>{const mode=String(e.getAttribute('inputmode')||'').toLowerCase();const label=e.labels&&e.labels[0];const name=String(e.getAttribute('aria-label')||(label&&label.innerText)||'').trim().replace(/\s+/g,' ').slice(0,160);const editable=['INPUT','TEXTAREA'].includes(e.tagName)||e.isContentEditable;return {name,tag:e.tagName.toLowerCase(),inputmode:mode,editable,valid:Boolean(name)&&editable&&allowed.includes(mode)};});return {control_count:rows.length,controls:rows,failure_count:rows.filter(x=>!x.valid).length,inputmode_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-inputmode-contract");result.update({"inputmode_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12545,6 +12563,15 @@ def inspect_describedby_contract_semantic() -> dict:
 
 def inspect_invalid_field_contract_semantic() -> dict:
     return _session.inspect_invalid_field_contract_semantic()
+
+def inspect_text_length_contract_semantic() -> dict:
+    return _session.inspect_text_length_contract_semantic()
+
+def inspect_range_constraint_contract_semantic() -> dict:
+    return _session.inspect_range_constraint_contract_semantic()
+
+def inspect_inputmode_contract_semantic() -> dict:
+    return _session.inspect_inputmode_contract_semantic()
 
 
 def click_semantic(

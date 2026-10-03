@@ -76,6 +76,9 @@ from tools.browser import (
     inspect_required_field_contract_semantic,
     inspect_describedby_contract_semantic,
     inspect_invalid_field_contract_semantic,
+    inspect_text_length_contract_semantic,
+    inspect_range_constraint_contract_semantic,
+    inspect_inputmode_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -775,6 +778,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_required_field_contract_semantic","description":"Read-only audit required fields: supported role и accessible name.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_describedby_contract_semantic","description":"Read-only audit aria-describedby: существующие непустые references.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_invalid_field_contract_semantic","description":"Read-only audit aria-invalid fields: name и linked error message.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_text_length_contract_semantic","description":"Read-only audit minlength/maxlength syntax и ordering.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_range_constraint_contract_semantic","description":"Read-only audit input min/max/step syntax и ordering.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_inputmode_contract_semantic","description":"Read-only audit inputmode tokens, editable targets и accessible names.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2264,6 +2270,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_describedby_contract_semantic()
     if name == "browser_inspect_invalid_field_contract_semantic":
         return inspect_invalid_field_contract_semantic()
+    if name == "browser_inspect_text_length_contract_semantic":
+        return inspect_text_length_contract_semantic()
+    if name == "browser_inspect_range_constraint_contract_semantic":
+        return inspect_range_constraint_contract_semantic()
+    if name == "browser_inspect_inputmode_contract_semantic":
+        return inspect_inputmode_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(
