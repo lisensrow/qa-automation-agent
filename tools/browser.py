@@ -11234,6 +11234,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-owns]'));const rows=all.slice(0,300).map(e=>{const ids=String(e.getAttribute('aria-owns')||'').trim().split(/\s+/).filter(Boolean);const refs=ids.map(id=>document.getElementById(id));const missing=ids.filter((id,i)=>!refs[i]);const duplicate=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];const self=Boolean(e.id&&ids.includes(e.id));const ancestor=refs.some(x=>x&&x.contains(e));return {owner:String(e.getAttribute('aria-label')||e.id||e.tagName).trim().slice(0,120),target_ids:ids,missing_targets:missing,duplicate_targets:duplicate,self_reference:self,ancestor_cycle:ancestor,valid:ids.length>0&&missing.length===0&&duplicate.length===0&&!self&&!ancestor};});return {owner_count:rows.length,owners:rows,failure_count:rows.filter(x=>!x.valid).length,aria_owns_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
         result=self._capture_state("inspect-aria-owns-contract");result.update({"aria_owns_audit":audit,"mutation_executed":False});return result
 
+    def inspect_checkbox_contract_semantic(self):
+        """Audit native and ARIA checkbox names and checked-state tokens."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('input[type="checkbox"],[role="checkbox"]'));const rows=all.slice(0,300).map(e=>{const native=e.matches('input[type="checkbox"]');const label=e.labels&&e.labels[0];const name=String(e.getAttribute('aria-label')||(label&&label.innerText)||e.innerText||'').trim().replace(/\s+/g,' ').slice(0,160);const raw=native?(e.indeterminate?'mixed':String(e.checked)):String(e.getAttribute('aria-checked')||'');const validState=['true','false','mixed'].includes(raw);return {name,native,state:raw,disabled:e.disabled===true||e.getAttribute('aria-disabled')==='true',valid:Boolean(name)&&validState};});return {checkbox_count:rows.length,checkboxes:rows,failure_count:rows.filter(x=>!x.valid).length,checkbox_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-checkbox-contract");result.update({"checkbox_audit":audit,"mutation_executed":False});return result
+
+    def inspect_switch_contract_semantic(self):
+        """Audit ARIA switches for names and boolean checked state."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[role="switch"]'));const rows=all.slice(0,300).map(e=>{const name=String(e.getAttribute('aria-label')||e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const state=String(e.getAttribute('aria-checked')||'').toLowerCase();return {name,state,disabled:e.getAttribute('aria-disabled')==='true',valid:Boolean(name)&&['true','false'].includes(state)};});return {switch_count:rows.length,switches:rows,failure_count:rows.filter(x=>!x.valid).length,switch_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-switch-contract");result.update({"switch_audit":audit,"mutation_executed":False});return result
+
+    def inspect_toggle_button_contract_semantic(self):
+        """Audit aria-pressed toggle buttons for names and valid states."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-pressed]'));const rows=all.slice(0,300).map(e=>{const name=String(e.getAttribute('aria-label')||e.innerText||e.value||'').trim().replace(/\s+/g,' ').slice(0,160);const state=String(e.getAttribute('aria-pressed')||'').toLowerCase();const button=e.tagName==='BUTTON'||e.getAttribute('role')==='button'||(e.tagName==='INPUT'&&['button','submit','reset'].includes(String(e.type).toLowerCase()));return {name,state,button,disabled:e.disabled===true||e.getAttribute('aria-disabled')==='true',valid:Boolean(name)&&button&&['true','false','mixed'].includes(state)};});return {toggle_button_count:rows.length,buttons:rows,failure_count:rows.filter(x=>!x.valid).length,toggle_button_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-toggle-button-contract");result.update({"toggle_button_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12653,6 +12671,15 @@ def inspect_aria_labelledby_contract_semantic() -> dict:
 
 def inspect_aria_owns_contract_semantic() -> dict:
     return _session.inspect_aria_owns_contract_semantic()
+
+def inspect_checkbox_contract_semantic() -> dict:
+    return _session.inspect_checkbox_contract_semantic()
+
+def inspect_switch_contract_semantic() -> dict:
+    return _session.inspect_switch_contract_semantic()
+
+def inspect_toggle_button_contract_semantic() -> dict:
+    return _session.inspect_toggle_button_contract_semantic()
 
 
 def click_semantic(

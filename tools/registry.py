@@ -88,6 +88,9 @@ from tools.browser import (
     inspect_aria_controls_contract_semantic,
     inspect_aria_labelledby_contract_semantic,
     inspect_aria_owns_contract_semantic,
+    inspect_checkbox_contract_semantic,
+    inspect_switch_contract_semantic,
+    inspect_toggle_button_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -799,6 +802,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_aria_controls_contract_semantic","description":"Read-only audit aria-controls references, duplicates и self-reference.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_aria_labelledby_contract_semantic","description":"Read-only audit aria-labelledby references и resulting non-empty names.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_aria_owns_contract_semantic","description":"Read-only audit aria-owns references, duplicates и ownership cycles.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_checkbox_contract_semantic","description":"Read-only audit native/ARIA checkbox names и checked states.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_switch_contract_semantic","description":"Read-only audit ARIA switch names и boolean aria-checked.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_toggle_button_contract_semantic","description":"Read-only audit aria-pressed toggle buttons, names и state tokens.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2312,6 +2318,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_aria_labelledby_contract_semantic()
     if name == "browser_inspect_aria_owns_contract_semantic":
         return inspect_aria_owns_contract_semantic()
+    if name == "browser_inspect_checkbox_contract_semantic":
+        return inspect_checkbox_contract_semantic()
+    if name == "browser_inspect_switch_contract_semantic":
+        return inspect_switch_contract_semantic()
+    if name == "browser_inspect_toggle_button_contract_semantic":
+        return inspect_toggle_button_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(
