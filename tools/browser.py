@@ -11198,6 +11198,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const allowed=['no-referrer','no-referrer-when-downgrade','origin','origin-when-cross-origin','same-origin','strict-origin','strict-origin-when-cross-origin','unsafe-url'];const all=Array.from(document.querySelectorAll('[referrerpolicy]'));const rows=all.slice(0,200).map(e=>{const policy=String(e.getAttribute('referrerpolicy')||'').toLowerCase();const target=String(e.getAttribute('href')||e.getAttribute('src')||'').slice(0,300);return {tag:e.tagName.toLowerCase(),policy,target_present:Boolean(target),valid:allowed.includes(policy)&&Boolean(target)};});return {element_count:rows.length,elements:rows,failure_count:rows.filter(x=>!x.valid).length,referrerpolicy_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
         result=self._capture_state("inspect-referrerpolicy-contract");result.update({"referrerpolicy_audit":audit,"mutation_executed":False});return result
 
+    def inspect_tabindex_contract_semantic(self):
+        """Audit explicit tabindex values and detect positive focus-order overrides."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[tabindex]'));const rows=all.slice(0,300).map(e=>{const raw=e.getAttribute('tabindex')||'';const value=Number(raw);const numeric=/^-?\d+$/.test(raw.trim());const name=String(e.getAttribute('aria-label')||e.innerText||e.textContent||e.id||e.tagName).trim().replace(/\s+/g,' ').slice(0,120);return {name,tag:e.tagName.toLowerCase(),tabindex:raw,numeric,positive:numeric&&value>0,valid:numeric&&value<=0};});return {element_count:rows.length,positive_count:rows.filter(x=>x.positive).length,elements:rows,failure_count:rows.filter(x=>!x.valid).length,tabindex_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-tabindex-contract");result.update({"tabindex_audit":audit,"mutation_executed":False});return result
+
+    def inspect_disabled_control_contract_semantic(self):
+        """Audit native and ARIA disabled controls for names and state metadata."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[disabled],[aria-disabled="true"]'));const rows=all.slice(0,300).map(e=>{const label=e.labels&&e.labels[0];const name=String(e.getAttribute('aria-label')||(label&&label.innerText)||e.innerText||e.value||'').trim().replace(/\s+/g,' ').slice(0,160);const native=e.matches('button,input,select,textarea,fieldset,optgroup,option')&&e.disabled===true;const aria=e.getAttribute('aria-disabled')==='true';const actionable=e.matches('button,input,select,textarea,a[href],[role="button"],[role="menuitem"],[role="option"],[role="tab"],[role="checkbox"],[role="radio"]');return {name,tag:e.tagName.toLowerCase(),native_disabled:native,aria_disabled:aria,actionable,focusable:e.tabIndex>=0,valid:Boolean(name)&&actionable&&(native||aria)};});return {disabled_control_count:rows.length,native_count:rows.filter(x=>x.native_disabled).length,aria_count:rows.filter(x=>x.aria_disabled).length,controls:rows,failure_count:rows.filter(x=>!x.valid).length,disabled_control_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-disabled-control-contract");result.update({"disabled_control_audit":audit,"mutation_executed":False});return result
+
+    def inspect_readonly_contract_semantic(self):
+        """Audit readonly states on native inputs and supported ARIA widgets."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[readonly],[aria-readonly="true"]'));const roles=['textbox','searchbox','combobox','grid','gridcell','spinbutton'];const rows=all.slice(0,300).map(e=>{const label=e.labels&&e.labels[0];const name=String(e.getAttribute('aria-label')||(label&&label.innerText)||'').trim().replace(/\s+/g,' ').slice(0,160);const native=['INPUT','TEXTAREA'].includes(e.tagName)&&e.readOnly===true;const aria=e.getAttribute('aria-readonly')==='true';const role=String(e.getAttribute('role')||'').toLowerCase();const supported=native||(aria&&roles.includes(role));return {name,tag:e.tagName.toLowerCase(),role,native_readonly:native,aria_readonly:aria,supported,valid:Boolean(name)&&supported};});return {readonly_control_count:rows.length,controls:rows,failure_count:rows.filter(x=>!x.valid).length,readonly_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-readonly-contract");result.update({"readonly_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12599,6 +12617,15 @@ def inspect_iframe_contract_semantic() -> dict:
 
 def inspect_referrerpolicy_contract_semantic() -> dict:
     return _session.inspect_referrerpolicy_contract_semantic()
+
+def inspect_tabindex_contract_semantic() -> dict:
+    return _session.inspect_tabindex_contract_semantic()
+
+def inspect_disabled_control_contract_semantic() -> dict:
+    return _session.inspect_disabled_control_contract_semantic()
+
+def inspect_readonly_contract_semantic() -> dict:
+    return _session.inspect_readonly_contract_semantic()
 
 
 def click_semantic(

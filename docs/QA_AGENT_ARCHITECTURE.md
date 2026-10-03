@@ -412,6 +412,7 @@ Planner отделяет критерии продукта от служебно
 - v114a–v114c добавили read-only audits обязательных полей, `aria-describedby` и явно невалидных полей со связанными сообщениями ошибок. Основной runner — `101/101`, дополнительные — `11/11`; суммарно `112/112`, без реальных действий на U-Connect.
 - v115a–v115c добавили read-only audits `minlength/maxlength`, диапазонов `min/max/step` и подсказок виртуальной клавиатуры `inputmode`. Основной runner — `104/104`, дополнительные — `11/11`; суммарно `115/115`, без реальных действий на U-Connect.
 - v116a–v116c добавили read-only audits external `target=_blank` links, iframe contracts и объявленных `referrerpolicy`. Основной runner — `107/107`, дополнительные — `11/11`; суммарно `118/118`, без реальных действий на U-Connect.
+- v117a–v117c добавили read-only audits явного `tabindex`, disabled controls и readonly states. Основной runner — `110/110`, дополнительные — `11/11`; суммарно `121/121`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 
