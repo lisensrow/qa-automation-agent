@@ -79,6 +79,9 @@ from tools.browser import (
     inspect_text_length_contract_semantic,
     inspect_range_constraint_contract_semantic,
     inspect_inputmode_contract_semantic,
+    inspect_new_tab_link_contract_semantic,
+    inspect_iframe_contract_semantic,
+    inspect_referrerpolicy_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -781,6 +784,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_text_length_contract_semantic","description":"Read-only audit minlength/maxlength syntax и ordering.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_range_constraint_contract_semantic","description":"Read-only audit input min/max/step syntax и ordering.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_inputmode_contract_semantic","description":"Read-only audit inputmode tokens, editable targets и accessible names.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_new_tab_link_contract_semantic","description":"Read-only audit target=_blank names, destinations и opener isolation для external links.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_iframe_contract_semantic","description":"Read-only audit iframe title, source, sandbox и loading metadata.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_referrerpolicy_contract_semantic","description":"Read-only audit declared referrerpolicy tokens и resource targets.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2276,6 +2282,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_range_constraint_contract_semantic()
     if name == "browser_inspect_inputmode_contract_semantic":
         return inspect_inputmode_contract_semantic()
+    if name == "browser_inspect_new_tab_link_contract_semantic":
+        return inspect_new_tab_link_contract_semantic()
+    if name == "browser_inspect_iframe_contract_semantic":
+        return inspect_iframe_contract_semantic()
+    if name == "browser_inspect_referrerpolicy_contract_semantic":
+        return inspect_referrerpolicy_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

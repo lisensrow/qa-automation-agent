@@ -11180,6 +11180,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const allowed=['none','text','decimal','numeric','tel','search','email','url'];const all=Array.from(document.querySelectorAll('[inputmode]'));const rows=all.slice(0,200).map(e=>{const mode=String(e.getAttribute('inputmode')||'').toLowerCase();const label=e.labels&&e.labels[0];const name=String(e.getAttribute('aria-label')||(label&&label.innerText)||'').trim().replace(/\s+/g,' ').slice(0,160);const editable=['INPUT','TEXTAREA'].includes(e.tagName)||e.isContentEditable;return {name,tag:e.tagName.toLowerCase(),inputmode:mode,editable,valid:Boolean(name)&&editable&&allowed.includes(mode)};});return {control_count:rows.length,controls:rows,failure_count:rows.filter(x=>!x.valid).length,inputmode_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
         result=self._capture_state("inspect-inputmode-contract");result.update({"inputmode_audit":audit,"mutation_executed":False});return result
 
+    def inspect_new_tab_link_contract_semantic(self):
+        """Audit target=_blank links for names, destinations and opener isolation."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('a[target="_blank"]'));const rows=all.slice(0,200).map(e=>{const href=e.getAttribute('href')||'';const name=String(e.getAttribute('aria-label')||e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const rel=String(e.getAttribute('rel')||'').toLowerCase().split(/\s+/).filter(Boolean);let external=false;try{external=new URL(e.href,location.href).origin!==location.origin;}catch(_){}const isolated=rel.includes('noopener')||rel.includes('noreferrer');return {name,href,external,rel,opener_isolated:isolated,valid:Boolean(name)&&Boolean(href)&&(!external||isolated)};});return {new_tab_link_count:rows.length,external_count:rows.filter(x=>x.external).length,links:rows,failure_count:rows.filter(x=>!x.valid).length,new_tab_link_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-new-tab-link-contract");result.update({"new_tab_link_audit":audit,"mutation_executed":False});return result
+
+    def inspect_iframe_contract_semantic(self):
+        """Audit iframe titles, source presence and sandbox metadata."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('iframe'));const rows=all.slice(0,100).map(e=>{const title=String(e.getAttribute('title')||e.getAttribute('aria-label')||'').trim().replace(/\s+/g,' ').slice(0,160);const src=e.getAttribute('src')||e.getAttribute('srcdoc')||'';let external=false;try{external=Boolean(e.src)&&new URL(e.src,location.href).origin!==location.origin;}catch(_){}return {title,source_present:Boolean(src),external,sandboxed:e.hasAttribute('sandbox'),loading:e.getAttribute('loading')||'',valid:Boolean(title)&&Boolean(src)};});return {iframe_count:rows.length,external_count:rows.filter(x=>x.external).length,sandboxed_count:rows.filter(x=>x.sandboxed).length,iframes:rows,failure_count:rows.filter(x=>!x.valid).length,iframe_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
+        result=self._capture_state("inspect-iframe-contract");result.update({"iframe_contract_audit":audit,"mutation_executed":False});return result
+
+    def inspect_referrerpolicy_contract_semantic(self):
+        """Audit referrerpolicy tokens on elements that declare them."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const allowed=['no-referrer','no-referrer-when-downgrade','origin','origin-when-cross-origin','same-origin','strict-origin','strict-origin-when-cross-origin','unsafe-url'];const all=Array.from(document.querySelectorAll('[referrerpolicy]'));const rows=all.slice(0,200).map(e=>{const policy=String(e.getAttribute('referrerpolicy')||'').toLowerCase();const target=String(e.getAttribute('href')||e.getAttribute('src')||'').slice(0,300);return {tag:e.tagName.toLowerCase(),policy,target_present:Boolean(target),valid:allowed.includes(policy)&&Boolean(target)};});return {element_count:rows.length,elements:rows,failure_count:rows.filter(x=>!x.valid).length,referrerpolicy_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-referrerpolicy-contract");result.update({"referrerpolicy_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12572,6 +12590,15 @@ def inspect_range_constraint_contract_semantic() -> dict:
 
 def inspect_inputmode_contract_semantic() -> dict:
     return _session.inspect_inputmode_contract_semantic()
+
+def inspect_new_tab_link_contract_semantic() -> dict:
+    return _session.inspect_new_tab_link_contract_semantic()
+
+def inspect_iframe_contract_semantic() -> dict:
+    return _session.inspect_iframe_contract_semantic()
+
+def inspect_referrerpolicy_contract_semantic() -> dict:
+    return _session.inspect_referrerpolicy_contract_semantic()
 
 
 def click_semantic(
