@@ -11216,6 +11216,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[readonly],[aria-readonly="true"]'));const roles=['textbox','searchbox','combobox','grid','gridcell','spinbutton'];const rows=all.slice(0,300).map(e=>{const label=e.labels&&e.labels[0];const name=String(e.getAttribute('aria-label')||(label&&label.innerText)||'').trim().replace(/\s+/g,' ').slice(0,160);const native=['INPUT','TEXTAREA'].includes(e.tagName)&&e.readOnly===true;const aria=e.getAttribute('aria-readonly')==='true';const role=String(e.getAttribute('role')||'').toLowerCase();const supported=native||(aria&&roles.includes(role));return {name,tag:e.tagName.toLowerCase(),role,native_readonly:native,aria_readonly:aria,supported,valid:Boolean(name)&&supported};});return {readonly_control_count:rows.length,controls:rows,failure_count:rows.filter(x=>!x.valid).length,readonly_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
         result=self._capture_state("inspect-readonly-contract");result.update({"readonly_audit":audit,"mutation_executed":False});return result
 
+    def inspect_aria_controls_contract_semantic(self):
+        """Audit aria-controls ID references and duplicate targets."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-controls]'));const rows=all.slice(0,300).map(e=>{const ids=String(e.getAttribute('aria-controls')||'').trim().split(/\s+/).filter(Boolean);const missing=ids.filter(id=>!document.getElementById(id));const duplicate=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];return {controller:String(e.getAttribute('aria-label')||e.innerText||e.id||e.tagName).trim().replace(/\s+/g,' ').slice(0,120),target_ids:ids,missing_targets:missing,duplicate_targets:duplicate,self_reference:Boolean(e.id&&ids.includes(e.id)),valid:ids.length>0&&missing.length===0&&duplicate.length===0&&!(e.id&&ids.includes(e.id))};});return {controller_count:rows.length,controllers:rows,failure_count:rows.filter(x=>!x.valid).length,aria_controls_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-aria-controls-contract");result.update({"aria_controls_audit":audit,"mutation_executed":False});return result
+
+    def inspect_aria_labelledby_contract_semantic(self):
+        """Audit aria-labelledby references and resulting non-empty names."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-labelledby]'));const rows=all.slice(0,300).map(e=>{const ids=String(e.getAttribute('aria-labelledby')||'').trim().split(/\s+/).filter(Boolean);const refs=ids.map(id=>document.getElementById(id));const missing=ids.filter((id,i)=>!refs[i]);const duplicate=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];const name=refs.filter(Boolean).map(x=>String(x.innerText||x.textContent||'').trim()).filter(Boolean).join(' ').replace(/\s+/g,' ').slice(0,200);return {target_ids:ids,resolved_name:name,missing_targets:missing,duplicate_targets:duplicate,self_reference:Boolean(e.id&&ids.includes(e.id)),valid:ids.length>0&&Boolean(name)&&missing.length===0&&duplicate.length===0&&!(e.id&&ids.includes(e.id))};});return {element_count:rows.length,elements:rows,failure_count:rows.filter(x=>!x.valid).length,aria_labelledby_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-aria-labelledby-contract");result.update({"aria_labelledby_audit":audit,"mutation_executed":False});return result
+
+    def inspect_aria_owns_contract_semantic(self):
+        """Audit aria-owns references for existence, uniqueness and cycles."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-owns]'));const rows=all.slice(0,300).map(e=>{const ids=String(e.getAttribute('aria-owns')||'').trim().split(/\s+/).filter(Boolean);const refs=ids.map(id=>document.getElementById(id));const missing=ids.filter((id,i)=>!refs[i]);const duplicate=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];const self=Boolean(e.id&&ids.includes(e.id));const ancestor=refs.some(x=>x&&x.contains(e));return {owner:String(e.getAttribute('aria-label')||e.id||e.tagName).trim().slice(0,120),target_ids:ids,missing_targets:missing,duplicate_targets:duplicate,self_reference:self,ancestor_cycle:ancestor,valid:ids.length>0&&missing.length===0&&duplicate.length===0&&!self&&!ancestor};});return {owner_count:rows.length,owners:rows,failure_count:rows.filter(x=>!x.valid).length,aria_owns_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-aria-owns-contract");result.update({"aria_owns_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12626,6 +12644,15 @@ def inspect_disabled_control_contract_semantic() -> dict:
 
 def inspect_readonly_contract_semantic() -> dict:
     return _session.inspect_readonly_contract_semantic()
+
+def inspect_aria_controls_contract_semantic() -> dict:
+    return _session.inspect_aria_controls_contract_semantic()
+
+def inspect_aria_labelledby_contract_semantic() -> dict:
+    return _session.inspect_aria_labelledby_contract_semantic()
+
+def inspect_aria_owns_contract_semantic() -> dict:
+    return _session.inspect_aria_owns_contract_semantic()
 
 
 def click_semantic(

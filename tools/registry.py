@@ -85,6 +85,9 @@ from tools.browser import (
     inspect_tabindex_contract_semantic,
     inspect_disabled_control_contract_semantic,
     inspect_readonly_contract_semantic,
+    inspect_aria_controls_contract_semantic,
+    inspect_aria_labelledby_contract_semantic,
+    inspect_aria_owns_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -793,6 +796,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_tabindex_contract_semantic","description":"Read-only audit explicit tabindex и positive focus-order overrides.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_disabled_control_contract_semantic","description":"Read-only audit native/ARIA disabled controls, names и focusability metadata.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_readonly_contract_semantic","description":"Read-only audit native/ARIA readonly controls и supported roles.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_aria_controls_contract_semantic","description":"Read-only audit aria-controls references, duplicates и self-reference.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_aria_labelledby_contract_semantic","description":"Read-only audit aria-labelledby references и resulting non-empty names.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_aria_owns_contract_semantic","description":"Read-only audit aria-owns references, duplicates и ownership cycles.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2300,6 +2306,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_disabled_control_contract_semantic()
     if name == "browser_inspect_readonly_contract_semantic":
         return inspect_readonly_contract_semantic()
+    if name == "browser_inspect_aria_controls_contract_semantic":
+        return inspect_aria_controls_contract_semantic()
+    if name == "browser_inspect_aria_labelledby_contract_semantic":
+        return inspect_aria_labelledby_contract_semantic()
+    if name == "browser_inspect_aria_owns_contract_semantic":
+        return inspect_aria_owns_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(
