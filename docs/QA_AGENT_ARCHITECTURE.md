@@ -421,6 +421,7 @@ Planner отделяет критерии продукта от служебно
 - v123a–v123c добавили read-only audits language tags, text direction и machine-readable `time[datetime]`. Основной runner — `128/128`, дополнительные — `11/11`; суммарно `139/139`, без реальных действий на U-Connect.
 - v124a–v124c добавили read-only audits canonical URL, alternate `hreflang` links и document base URL. Основной runner — `131/131`, дополнительные — `11/11`; суммарно `142/142`, без реальных действий на U-Connect.
 - v125a начал системную ревизию tool layer: добавлен постоянный registry-integrity gate, который проверяет уникальность деклараций и dispatch, совпадение обычного и cleanup-only реестров с реализацией и допустимые policy-классы инспекторов. Инвентаризация: `154` browser tools, `105` чистых observe tools, дубликатов и потерянных dispatch-веток нет. Основной runner — `132/132`, дополнительные — `11/11`; суммарно `143/143`.
+- v125b довёл прямое smoke-покрытие registry до `154/154`: добавлены проверки очистки private clipboard и безопасной детализации network request с редактированием секретов и фильтрацией headers. Основной runner — `134/134`, дополнительные — `11/11`; суммарно `145/145`.
 
 ## Следующий этап frontend-покрытия
 
