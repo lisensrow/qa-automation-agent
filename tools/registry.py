@@ -103,6 +103,9 @@ from tools.browser import (
     inspect_language_contract_semantic,
     inspect_direction_contract_semantic,
     inspect_time_contract_semantic,
+    inspect_canonical_url_contract_semantic,
+    inspect_alternate_language_contract_semantic,
+    inspect_base_url_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -829,6 +832,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_language_contract_semantic","description":"Read-only audit document/element lang tags и xml:lang consistency.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_direction_contract_semantic","description":"Read-only audit dir tokens и document text direction.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_time_contract_semantic","description":"Read-only audit time elements, visible text и parseable datetime.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_canonical_url_contract_semantic","description":"Read-only audit canonical URL uniqueness и absolute HTTP(S) target.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_alternate_language_contract_semantic","description":"Read-only audit alternate hreflang links, targets и duplicates.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_base_url_contract_semantic","description":"Read-only audit base element uniqueness, href и target.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2372,6 +2378,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_direction_contract_semantic()
     if name == "browser_inspect_time_contract_semantic":
         return inspect_time_contract_semantic()
+    if name == "browser_inspect_canonical_url_contract_semantic":
+        return inspect_canonical_url_contract_semantic()
+    if name == "browser_inspect_alternate_language_contract_semantic":
+        return inspect_alternate_language_contract_semantic()
+    if name == "browser_inspect_base_url_contract_semantic":
+        return inspect_base_url_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

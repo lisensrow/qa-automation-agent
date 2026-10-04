@@ -419,6 +419,7 @@ Planner отделяет критерии продукта от служебно
 - v121a–v121c добавили read-only audits virtual collection positions, virtual grid counts/indexes и hierarchical `aria-level`. Основной runner — `122/122`, дополнительные — `11/11`; суммарно `133/133`, без реальных действий на U-Connect.
 - v122a–v122c добавили read-only audits accessible SVG, canvas fallback и caption tracks у video. Основной runner — `125/125`, дополнительные — `11/11`; суммарно `136/136`, без реальных действий на U-Connect.
 - v123a–v123c добавили read-only audits language tags, text direction и machine-readable `time[datetime]`. Основной runner — `128/128`, дополнительные — `11/11`; суммарно `139/139`, без реальных действий на U-Connect.
+- v124a–v124c добавили read-only audits canonical URL, alternate `hreflang` links и document base URL. Основной runner — `131/131`, дополнительные — `11/11`; суммарно `142/142`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 

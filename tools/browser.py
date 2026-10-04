@@ -11324,6 +11324,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('time'));const duration=/^P(?=\\d|T\\d)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$/i;const rows=all.slice(0,300).map(e=>{const text=String(e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const value=String(e.getAttribute('datetime')||'').trim();const parseable=Boolean(value)&&(duration.test(value)||!Number.isNaN(Date.parse(value))||/^\\d{4}(?:-\\d{2})?$/.test(value)||/^\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?$/.test(value));return {text,datetime:value,parseable,valid:Boolean(text)&&parseable};});return {time_count:rows.length,elements:rows,failure_count:rows.filter(x=>!x.valid).length,time_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
         result=self._capture_state("inspect-time-contract");result.update({"time_audit":audit,"mutation_executed":False});return result
 
+    def inspect_canonical_url_contract_semantic(self):
+        """Audit canonical link uniqueness and absolute HTTP(S) target."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('link[rel~="canonical"]'));const rows=all.slice(0,20).map(e=>{const raw=String(e.getAttribute('href')||'').trim();let valid=false,resolved='';try{const u=new URL(raw,location.href);resolved=u.href;valid=['http:','https:'].includes(u.protocol)&&!u.hash;}catch(_){}return {href:raw,resolved,valid};});return {canonical_count:rows.length,links:rows,failure_count:rows.filter(x=>!x.valid).length+(rows.length>1?rows.length-1:0),canonical_url_contract_passed:rows.length<=1&&rows.every(x=>x.valid),truncated:all.length>20};}""")
+        result=self._capture_state("inspect-canonical-url-contract");result.update({"canonical_url_audit":audit,"mutation_executed":False});return result
+
+    def inspect_alternate_language_contract_semantic(self):
+        """Audit alternate hreflang links for tags, targets and duplicates."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const tag=/^(?:x-default|[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*)$/;const all=Array.from(document.querySelectorAll('link[rel~="alternate"][hreflang]'));const rows=all.slice(0,100).map(e=>{const hreflang=String(e.getAttribute('hreflang')||'').trim();const href=String(e.getAttribute('href')||'').trim();let target=false;try{const u=new URL(href,location.href);target=['http:','https:'].includes(u.protocol);}catch(_){}return {hreflang,href,valid:tag.test(hreflang)&&target};});const langs=rows.map(x=>x.hreflang.toLowerCase());const duplicate=[...new Set(langs.filter((x,i)=>langs.indexOf(x)!==i))];return {alternate_count:rows.length,links:rows,duplicate_languages:duplicate,failure_count:rows.filter(x=>!x.valid).length+duplicate.length,alternate_language_contract_passed:rows.every(x=>x.valid)&&duplicate.length===0,truncated:all.length>100};}""")
+        result=self._capture_state("inspect-alternate-language-contract");result.update({"alternate_language_audit":audit,"mutation_executed":False});return result
+
+    def inspect_base_url_contract_semantic(self):
+        """Audit base element uniqueness and safe absolute URL metadata."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('base'));const rows=all.slice(0,20).map(e=>{const href=String(e.getAttribute('href')||'').trim();const target=String(e.getAttribute('target')||'').trim();let validHref=true,resolved='';if(href){try{const u=new URL(href,location.href);resolved=u.href;validHref=['http:','https:'].includes(u.protocol);}catch(_){validHref=false;}}const validTarget=!target||['_self','_blank','_parent','_top'].includes(target)||/^[A-Za-z][\w.-]*$/.test(target);return {href,resolved,target,valid:validHref&&validTarget&&Boolean(href||target)};});return {base_count:rows.length,elements:rows,failure_count:rows.filter(x=>!x.valid).length+(rows.length>1?rows.length-1:0),base_url_contract_passed:rows.length<=1&&rows.every(x=>x.valid),truncated:all.length>20};}""")
+        result=self._capture_state("inspect-base-url-contract");result.update({"base_url_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12788,6 +12806,15 @@ def inspect_direction_contract_semantic() -> dict:
 
 def inspect_time_contract_semantic() -> dict:
     return _session.inspect_time_contract_semantic()
+
+def inspect_canonical_url_contract_semantic() -> dict:
+    return _session.inspect_canonical_url_contract_semantic()
+
+def inspect_alternate_language_contract_semantic() -> dict:
+    return _session.inspect_alternate_language_contract_semantic()
+
+def inspect_base_url_contract_semantic() -> dict:
+    return _session.inspect_base_url_contract_semantic()
 
 
 def click_semantic(
