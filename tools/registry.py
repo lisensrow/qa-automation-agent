@@ -91,6 +91,9 @@ from tools.browser import (
     inspect_checkbox_contract_semantic,
     inspect_switch_contract_semantic,
     inspect_toggle_button_contract_semantic,
+    inspect_expanded_contract_semantic,
+    inspect_haspopup_contract_semantic,
+    inspect_activedescendant_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -805,6 +808,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_checkbox_contract_semantic","description":"Read-only audit native/ARIA checkbox names и checked states.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_switch_contract_semantic","description":"Read-only audit ARIA switch names и boolean aria-checked.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_toggle_button_contract_semantic","description":"Read-only audit aria-pressed toggle buttons, names и state tokens.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_expanded_contract_semantic","description":"Read-only audit aria-expanded controls и optional controlled targets.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_haspopup_contract_semantic","description":"Read-only audit aria-haspopup tokens, names и popup references.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_activedescendant_contract_semantic","description":"Read-only audit aria-activedescendant target, focusability и ownership relation.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2324,6 +2330,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_switch_contract_semantic()
     if name == "browser_inspect_toggle_button_contract_semantic":
         return inspect_toggle_button_contract_semantic()
+    if name == "browser_inspect_expanded_contract_semantic":
+        return inspect_expanded_contract_semantic()
+    if name == "browser_inspect_haspopup_contract_semantic":
+        return inspect_haspopup_contract_semantic()
+    if name == "browser_inspect_activedescendant_contract_semantic":
+        return inspect_activedescendant_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

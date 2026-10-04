@@ -415,6 +415,7 @@ Planner отделяет критерии продукта от служебно
 - v117a–v117c добавили read-only audits явного `tabindex`, disabled controls и readonly states. Основной runner — `110/110`, дополнительные — `11/11`; суммарно `121/121`, без реальных действий на U-Connect.
 - v118a–v118c добавили read-only audits связей `aria-controls`, `aria-labelledby` и `aria-owns`, включая missing targets, duplicates, self-reference и ownership cycles. Основной runner — `113/113`, дополнительные — `11/11`; суммарно `124/124`, без реальных действий на U-Connect.
 - v119a–v119c добавили read-only audits native/ARIA checkbox, switch и toggle-button states. Основной runner — `116/116`, дополнительные — `11/11`; суммарно `127/127`, без реальных действий на U-Connect.
+- v120a–v120c добавили read-only audits `aria-expanded`, `aria-haspopup` и `aria-activedescendant` с проверкой target/ownership relationships. Основной runner — `119/119`, дополнительные — `11/11`; суммарно `130/130`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 

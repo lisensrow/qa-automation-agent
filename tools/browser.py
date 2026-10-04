@@ -11252,6 +11252,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-pressed]'));const rows=all.slice(0,300).map(e=>{const name=String(e.getAttribute('aria-label')||e.innerText||e.value||'').trim().replace(/\s+/g,' ').slice(0,160);const state=String(e.getAttribute('aria-pressed')||'').toLowerCase();const button=e.tagName==='BUTTON'||e.getAttribute('role')==='button'||(e.tagName==='INPUT'&&['button','submit','reset'].includes(String(e.type).toLowerCase()));return {name,state,button,disabled:e.disabled===true||e.getAttribute('aria-disabled')==='true',valid:Boolean(name)&&button&&['true','false','mixed'].includes(state)};});return {toggle_button_count:rows.length,buttons:rows,failure_count:rows.filter(x=>!x.valid).length,toggle_button_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
         result=self._capture_state("inspect-toggle-button-contract");result.update({"toggle_button_audit":audit,"mutation_executed":False});return result
 
+    def inspect_expanded_contract_semantic(self):
+        """Audit aria-expanded controls and optional controlled targets."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-expanded]'));const rows=all.slice(0,300).map(e=>{const name=String(e.getAttribute('aria-label')||e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const state=String(e.getAttribute('aria-expanded')||'').toLowerCase();const ids=String(e.getAttribute('aria-controls')||'').trim().split(/\s+/).filter(Boolean);const missing=ids.filter(id=>!document.getElementById(id));return {name,state,controlled_ids:ids,missing_targets:missing,valid:Boolean(name)&&['true','false'].includes(state)&&missing.length===0};});return {expanded_control_count:rows.length,controls:rows,failure_count:rows.filter(x=>!x.valid).length,expanded_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-expanded-contract");result.update({"expanded_audit":audit,"mutation_executed":False});return result
+
+    def inspect_haspopup_contract_semantic(self):
+        """Audit aria-haspopup tokens, names and controlled popup references."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const allowed=['true','menu','listbox','tree','grid','dialog'];const all=Array.from(document.querySelectorAll('[aria-haspopup]'));const rows=all.slice(0,300).map(e=>{const name=String(e.getAttribute('aria-label')||e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const popup=String(e.getAttribute('aria-haspopup')||'').toLowerCase();const ids=String(e.getAttribute('aria-controls')||'').trim().split(/\s+/).filter(Boolean);const missing=ids.filter(id=>!document.getElementById(id));return {name,popup,controlled_ids:ids,missing_targets:missing,expanded:e.getAttribute('aria-expanded'),valid:Boolean(name)&&allowed.includes(popup)&&missing.length===0};});return {popup_control_count:rows.length,controls:rows,failure_count:rows.filter(x=>!x.valid).length,haspopup_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-haspopup-contract");result.update({"haspopup_audit":audit,"mutation_executed":False});return result
+
+    def inspect_activedescendant_contract_semantic(self):
+        """Audit aria-activedescendant references and ownership relation."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-activedescendant]'));const rows=all.slice(0,300).map(e=>{const id=String(e.getAttribute('aria-activedescendant')||'').trim();const target=id?document.getElementById(id):null;const owns=String(e.getAttribute('aria-owns')||'').trim().split(/\s+/).filter(Boolean);const related=Boolean(target&&(e.contains(target)||owns.includes(id)));const focusable=e.tabIndex>=0||['INPUT','TEXTAREA','SELECT'].includes(e.tagName);return {active_id:id,target_exists:Boolean(target),related,focusable,valid:Boolean(id)&&Boolean(target)&&related&&focusable};});return {container_count:rows.length,containers:rows,failure_count:rows.filter(x=>!x.valid).length,activedescendant_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-activedescendant-contract");result.update({"activedescendant_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12680,6 +12698,15 @@ def inspect_switch_contract_semantic() -> dict:
 
 def inspect_toggle_button_contract_semantic() -> dict:
     return _session.inspect_toggle_button_contract_semantic()
+
+def inspect_expanded_contract_semantic() -> dict:
+    return _session.inspect_expanded_contract_semantic()
+
+def inspect_haspopup_contract_semantic() -> dict:
+    return _session.inspect_haspopup_contract_semantic()
+
+def inspect_activedescendant_contract_semantic() -> dict:
+    return _session.inspect_activedescendant_contract_semantic()
 
 
 def click_semantic(
