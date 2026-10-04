@@ -123,6 +123,7 @@ SMOKES = [
     "smoke_canonical_url_contract.py",
     "smoke_alternate_language_contract.py",
     "smoke_base_url_contract.py",
+    "smoke_tool_registry_integrity.py",
     "smoke_calendar_overlay.py",
     "smoke_time_picker_overlay.py",
     "smoke_dialog_wizard.py",
