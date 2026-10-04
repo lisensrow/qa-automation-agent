@@ -100,6 +100,9 @@ from tools.browser import (
     inspect_svg_accessibility_contract_semantic,
     inspect_canvas_fallback_contract_semantic,
     inspect_media_caption_contract_semantic,
+    inspect_language_contract_semantic,
+    inspect_direction_contract_semantic,
+    inspect_time_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -823,6 +826,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_svg_accessibility_contract_semantic","description":"Read-only audit exposed SVG graphics и accessible names.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_canvas_fallback_contract_semantic","description":"Read-only audit canvas accessible labels или fallback content.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_media_caption_contract_semantic","description":"Read-only audit video caption tracks и metadata без playback.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_language_contract_semantic","description":"Read-only audit document/element lang tags и xml:lang consistency.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_direction_contract_semantic","description":"Read-only audit dir tokens и document text direction.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_time_contract_semantic","description":"Read-only audit time elements, visible text и parseable datetime.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2360,6 +2366,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_canvas_fallback_contract_semantic()
     if name == "browser_inspect_media_caption_contract_semantic":
         return inspect_media_caption_contract_semantic()
+    if name == "browser_inspect_language_contract_semantic":
+        return inspect_language_contract_semantic()
+    if name == "browser_inspect_direction_contract_semantic":
+        return inspect_direction_contract_semantic()
+    if name == "browser_inspect_time_contract_semantic":
+        return inspect_time_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(

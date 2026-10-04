@@ -11306,6 +11306,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('video'));const rows=all.slice(0,100).map(e=>{const tracks=Array.from(e.querySelectorAll('track')).map(t=>({kind:String(t.kind||t.getAttribute('kind')||'').toLowerCase(),srclang:t.getAttribute('srclang')||'',label:t.getAttribute('label')||'',src:t.getAttribute('src')||''}));const captions=tracks.filter(t=>t.kind==='captions');const captionValid=captions.every(t=>Boolean(t.srclang&&t.label&&t.src));const exempt=e.muted===true||e.hasAttribute('muted');return {muted:exempt,track_count:tracks.length,caption_count:captions.length,tracks:tracks.slice(0,20),valid:(exempt||captions.length>0)&&captionValid};});return {video_count:rows.length,videos:rows,failure_count:rows.filter(x=>!x.valid).length,media_caption_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
         result=self._capture_state("inspect-media-caption-contract");result.update({"media_caption_audit":audit,"mutation_executed":False});return result
 
+    def inspect_language_contract_semantic(self):
+        """Audit declared language tags and lang/xml:lang consistency."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('*')).filter(e=>e.hasAttribute('lang')||e.hasAttribute('xml:lang'));const tag=/^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$/;const rows=all.slice(0,300).map(e=>{const lang=String(e.getAttribute('lang')||'').trim();const xml=String(e.getAttribute('xml:lang')||'').trim();const primary=lang||xml;const consistent=!lang||!xml||lang.toLowerCase()===xml.toLowerCase();return {tag:e.tagName.toLowerCase(),lang,xml_lang:xml,consistent,valid:tag.test(primary)&&consistent};});const documentLanguage=String(document.documentElement.getAttribute('lang')||'').trim();return {declared_count:rows.length,document_language:documentLanguage,elements:rows,failure_count:rows.filter(x=>!x.valid).length,language_contract_passed:Boolean(documentLanguage)&&tag.test(documentLanguage)&&rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-language-contract");result.update({"language_audit":audit,"mutation_executed":False});return result
+
+    def inspect_direction_contract_semantic(self):
+        """Audit explicit text-direction tokens."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const allowed=['ltr','rtl','auto'];const all=Array.from(document.querySelectorAll('[dir]'));const rows=all.slice(0,300).map(e=>{const direction=String(e.getAttribute('dir')||'').toLowerCase();return {tag:e.tagName.toLowerCase(),direction,valid:allowed.includes(direction)};});const documentDirection=String(document.documentElement.getAttribute('dir')||'').toLowerCase();return {declared_count:rows.length,document_direction:documentDirection||'implicit-ltr',elements:rows,failure_count:rows.filter(x=>!x.valid).length,direction_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-direction-contract");result.update({"direction_audit":audit,"mutation_executed":False});return result
+
+    def inspect_time_contract_semantic(self):
+        """Audit time elements for visible text and parseable datetime values."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('time'));const duration=/^P(?=\\d|T\\d)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$/i;const rows=all.slice(0,300).map(e=>{const text=String(e.innerText||e.textContent||'').trim().replace(/\s+/g,' ').slice(0,160);const value=String(e.getAttribute('datetime')||'').trim();const parseable=Boolean(value)&&(duration.test(value)||!Number.isNaN(Date.parse(value))||/^\\d{4}(?:-\\d{2})?$/.test(value)||/^\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?$/.test(value));return {text,datetime:value,parseable,valid:Boolean(text)&&parseable};});return {time_count:rows.length,elements:rows,failure_count:rows.filter(x=>!x.valid).length,time_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-time-contract");result.update({"time_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12761,6 +12779,15 @@ def inspect_canvas_fallback_contract_semantic() -> dict:
 
 def inspect_media_caption_contract_semantic() -> dict:
     return _session.inspect_media_caption_contract_semantic()
+
+def inspect_language_contract_semantic() -> dict:
+    return _session.inspect_language_contract_semantic()
+
+def inspect_direction_contract_semantic() -> dict:
+    return _session.inspect_direction_contract_semantic()
+
+def inspect_time_contract_semantic() -> dict:
+    return _session.inspect_time_contract_semantic()
 
 
 def click_semantic(
