@@ -126,6 +126,7 @@ SMOKES = [
     "smoke_tool_registry_integrity.py",
     "smoke_private_clipboard_clear.py",
     "smoke_network_detail_redaction.py",
+    "smoke_frontend_benchmark_manifest.py",
     "smoke_calendar_overlay.py",
     "smoke_time_picker_overlay.py",
     "smoke_dialog_wizard.py",
