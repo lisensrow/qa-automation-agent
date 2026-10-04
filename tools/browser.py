@@ -9046,6 +9046,28 @@ class BrowserSession:
                             el.getAttribute(
                                 "aria-expanded"
                             ),
+                        aria_checked:
+                            el.getAttribute(
+                                "aria-checked"
+                            ),
+                        aria_selected:
+                            el.getAttribute(
+                                "aria-selected"
+                            ),
+                        aria_required:
+                            el.getAttribute(
+                                "aria-required"
+                            ),
+                        aria_invalid:
+                            el.getAttribute(
+                                "aria-invalid"
+                            ),
+                        aria_readonly:
+                            el.getAttribute(
+                                "aria-readonly"
+                            ),
+                        required_attribute:
+                            el.hasAttribute("required"),
                         aria_controls:
                             el.getAttribute(
                                 "aria-controls"
@@ -9061,6 +9083,10 @@ class BrowserSession:
                             focus_visible: el.matches(":focus-visible"),
                             hovered: el.matches(":hover"),
                             checked: el.matches(":checked"),
+                            selected: (
+                                el.matches(":checked")
+                                || el.getAttribute("aria-selected") === "true"
+                            ),
                             invalid: el.matches(":invalid")
                         },
                         computed_style: computedStyle,
@@ -9173,6 +9199,64 @@ class BrowserSession:
             "inspect-semantic"
         )
 
+        def aria_boolean(value):
+            normalized = str(value or "").strip().lower()
+
+            if normalized == "true":
+                return True
+
+            if normalized == "false":
+                return False
+
+            return None
+
+        element_role = str(
+            metadata.get("role")
+            or requested_role
+            or ""
+        ).strip().lower()
+        element_tag = str(metadata.get("tag") or "").strip().lower()
+        element_type = str(metadata.get("type") or "").strip().lower()
+        visual_state = metadata.get("visual_state") or {}
+        checkable = (
+            element_role in {"checkbox", "radio", "switch", "menuitemcheckbox", "menuitemradio"}
+            or element_type in {"checkbox", "radio"}
+        )
+        selectable = (
+            element_role in {"option", "tab", "treeitem", "row"}
+            or element_tag == "option"
+            or metadata.get("aria_selected") is not None
+        )
+        form_control = (
+            element_tag in {"input", "select", "textarea"}
+            or element_role in {"textbox", "combobox", "spinbutton", "checkbox", "radio", "switch"}
+        )
+        checked = aria_boolean(metadata.get("aria_checked"))
+
+        if checked is None and checkable:
+            checked = bool(visual_state.get("checked"))
+
+        selected = aria_boolean(metadata.get("aria_selected"))
+
+        if selected is None and selectable:
+            selected = bool(visual_state.get("selected"))
+
+        expanded = aria_boolean(metadata.get("aria_expanded"))
+        required = aria_boolean(metadata.get("aria_required"))
+
+        if required is None and form_control:
+            required = bool(metadata.get("required_attribute"))
+
+        invalid = aria_boolean(metadata.get("aria_invalid"))
+
+        if invalid is None and form_control:
+            invalid = bool(visual_state.get("invalid"))
+
+        read_only = aria_boolean(metadata.get("aria_readonly"))
+
+        if read_only is None and form_control:
+            read_only = bool(metadata.get("readonly_attribute"))
+
         result.update(
             {
                 "semantic_name": name,
@@ -9180,6 +9264,12 @@ class BrowserSession:
                 "visible": visible,
                 "enabled": enabled,
                 "editable": editable,
+                "checked": checked,
+                "selected": selected,
+                "expanded": expanded,
+                "required": required,
+                "invalid": invalid,
+                "read_only": read_only,
                 "disabled": (
                     not enabled
                     if enabled is not None

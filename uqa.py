@@ -648,8 +648,8 @@ SYSTEM_PROMPT = """
 - Для такого check добавь поле "observations" со списком реальных uqa_observation_ids, которые вернул тот же tool result.
 - Не придумывай obs-* и не используй observation другого элемента или другого tool-вызова.
 - Для PASS/FAIL на основе browser_inspect_semantic или browser_inspect_table_row поле assertions обязательно.
-- Поддерживаемые assertion fields: visible, enabled, disabled, editable, value, text.
-- Для visible/enabled/disabled/editable используй operator "eq" или "ne" и JSON boolean true/false.
+- Поддерживаемые assertion fields: visible, enabled, disabled, editable, checked, selected, expanded, required, invalid, read_only, value, text.
+- Для visible/enabled/disabled/editable/checked/selected/expanded/required/invalid/read_only используй operator "eq" или "ne" и JSON boolean true/false.
 - Для value/text разрешены operator "eq", "ne", "contains", "not_contains".
 - Не придумывай фактическое значение assertion: actual и satisfied вычисляет UQA Core из observation.
 - Для semantic UI-check окончательный status passed/failed определяет UQA Core по assertions, а не текстовый вывод модели.
@@ -5405,6 +5405,12 @@ UI_ASSERTION_FIELDS = {
     "enabled",
     "disabled",
     "editable",
+    "checked",
+    "selected",
+    "expanded",
+    "required",
+    "invalid",
+    "read_only",
     "value",
     "text",
 }
@@ -5414,6 +5420,12 @@ UI_BOOLEAN_ASSERTION_FIELDS = {
     "enabled",
     "disabled",
     "editable",
+    "checked",
+    "selected",
+    "expanded",
+    "required",
+    "invalid",
+    "read_only",
 }
 
 UI_ASSERTION_OPERATORS = {
@@ -8618,6 +8630,25 @@ def compile_locked_ui_requirement(
         r"скрыт|"
         r"скрыто|"
         r"hidden|"
+        r"не\s+отмечена|"
+        r"не\s+отмечен|"
+        r"не\s+выбрана|"
+        r"не\s+выбран|"
+        r"not\s+checked|"
+        r"unchecked|"
+        r"not\s+selected|"
+        r"св[её]рнута|"
+        r"св[её]рнут|"
+        r"collapsed|"
+        r"отмечена|"
+        r"отмечен|"
+        r"checked|"
+        r"выбрана|"
+        r"выбран|"
+        r"selected|"
+        r"разв[её]рнута|"
+        r"разв[её]рнут|"
+        r"expanded|"
         r"не\s+редактируема|"
         r"не\s+редактируемо|"
         r"только\s+для\s+чтения|"
@@ -8712,6 +8743,77 @@ def compile_locked_ui_requirement(
         }:
             assertion = {
                 "field": "disabled",
+                "operator": "eq",
+                "expected": True,
+            }
+
+        elif state in {
+            "не отмечена",
+            "не отмечен",
+            "not checked",
+            "unchecked",
+        }:
+            assertion = {
+                "field": "checked",
+                "operator": "eq",
+                "expected": False,
+            }
+
+        elif state in {
+            "отмечена",
+            "отмечен",
+            "checked",
+        }:
+            assertion = {
+                "field": "checked",
+                "operator": "eq",
+                "expected": True,
+            }
+
+        elif state in {
+            "не выбрана",
+            "не выбран",
+            "not selected",
+        }:
+            assertion = {
+                "field": "selected",
+                "operator": "eq",
+                "expected": False,
+            }
+
+        elif state in {
+            "выбрана",
+            "выбран",
+            "selected",
+        }:
+            assertion = {
+                "field": "selected",
+                "operator": "eq",
+                "expected": True,
+            }
+
+        elif state in {
+            "свернута",
+            "свёрнута",
+            "свернут",
+            "свёрнут",
+            "collapsed",
+        }:
+            assertion = {
+                "field": "expanded",
+                "operator": "eq",
+                "expected": False,
+            }
+
+        elif state in {
+            "развернута",
+            "развёрнута",
+            "развернут",
+            "развёрнут",
+            "expanded",
+        }:
+            assertion = {
+                "field": "expanded",
                 "operator": "eq",
                 "expected": True,
             }
