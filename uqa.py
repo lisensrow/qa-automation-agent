@@ -6630,6 +6630,9 @@ REGRESSION_PLANNER_PROMPT = """
 {
   "cases": [
     {
+      "case_key": "stable-short-key",
+      "workflow_key": "shared-key-for-dependent-cases-or-null",
+      "depends_on": ["case_key-of-required-previous-case"],
       "title": "Краткое название проверки",
       "task": "Точная задача одного test case",
       "expected": "Общий ожидаемый результат или null",
@@ -6654,6 +6657,13 @@ REGRESSION_PLANNER_PROMPT = """
   а не отдельными cases.
 - Разделяй на несколько cases только проверки, которые можно выполнить
   независимо в чистом контексте без состояния соседнего case.
+- case_key обязан быть уникальным стабильным ключом case внутри этого ответа.
+- Если несколько ошибочно разделённых cases используют общее состояние или
+  один объект, дай им одинаковый непустой workflow_key. Для независимого case
+  используй null.
+- В depends_on перечисляй case_key только тех предыдущих cases, без состояния
+  которых текущий case невозможно выполнить. Для независимого case используй
+  пустой список.
 - Не придумывай требований, которых нет в запросе.
 - Если пользователь явно задал критерий или ожидаемое состояние, сохраняй его смысл точно и не расширяй альтернативами.
   Например: "кнопка недоступна/disabled" нельзя превращать в "неактивна или скрыта".
@@ -6747,12 +6757,37 @@ def _parse_regression_plan(content: str):
             item.get("checks")
         )
 
+        case_key = str(
+            item.get("case_key")
+            or f"case-{index}"
+        ).strip()[:200]
+        workflow_key = str(
+            item.get("workflow_key")
+            or ""
+        ).strip()[:200]
+        raw_depends_on = item.get("depends_on")
+
+        if isinstance(raw_depends_on, str):
+            raw_depends_on = [raw_depends_on]
+
+        depends_on = []
+
+        if isinstance(raw_depends_on, list):
+            for dependency in raw_depends_on:
+                dependency = str(dependency or "").strip()[:200]
+
+                if dependency and dependency not in depends_on:
+                    depends_on.append(dependency)
+
         cases.append(
             {
                 "title": title[:500],
                 "task": task,
                 "expected": expected,
                 "checks": checks,
+                "_planner_case_key": case_key,
+                "_planner_workflow_key": workflow_key or None,
+                "_planner_depends_on": depends_on,
             }
         )
 
@@ -6765,6 +6800,131 @@ def _parse_regression_plan(content: str):
         )
 
     return cases
+
+
+def _coalesce_planner_workflows(request, plan):
+    """Merge only cases explicitly linked by planner workflow metadata."""
+    from copy import deepcopy
+
+    if not isinstance(plan, list):
+        return plan
+
+    cases = deepcopy(plan)
+    parent = list(range(len(cases)))
+
+    def find(index):
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+
+        return index
+
+    def union(left, right):
+        left_root = find(left)
+        right_root = find(right)
+
+        if left_root != right_root:
+            parent[right_root] = left_root
+
+    key_to_index = {}
+    workflow_to_index = {}
+
+    for index, spec in enumerate(cases):
+        if not isinstance(spec, dict):
+            continue
+
+        case_key = str(
+            spec.get("_planner_case_key") or ""
+        ).strip().casefold()
+        workflow_key = str(
+            spec.get("_planner_workflow_key") or ""
+        ).strip().casefold()
+
+        if case_key and case_key not in key_to_index:
+            key_to_index[case_key] = index
+
+        if workflow_key:
+            previous = workflow_to_index.setdefault(
+                workflow_key,
+                index,
+            )
+            union(previous, index)
+
+    for index, spec in enumerate(cases):
+        if not isinstance(spec, dict):
+            continue
+
+        for dependency in spec.get("_planner_depends_on") or []:
+            dependency_index = key_to_index.get(
+                str(dependency).strip().casefold()
+            )
+
+            if dependency_index is not None and dependency_index != index:
+                union(dependency_index, index)
+
+    groups = {}
+
+    for index in range(len(cases)):
+        groups.setdefault(find(index), []).append(index)
+
+    result = []
+    emitted = set()
+
+    for index, spec in enumerate(cases):
+        root = find(index)
+
+        if root in emitted:
+            continue
+
+        emitted.add(root)
+        member_indexes = groups[root]
+
+        if len(member_indexes) == 1:
+            clean = dict(spec)
+            clean.pop("_planner_case_key", None)
+            clean.pop("_planner_workflow_key", None)
+            clean.pop("_planner_depends_on", None)
+            result.append(clean)
+            continue
+
+        members = [cases[item] for item in member_indexes]
+        raw_checks = []
+
+        for member in members:
+            nested = _normalize_planned_checks(member.get("checks"))
+
+            if nested:
+                raw_checks.extend(nested)
+            else:
+                raw_checks.append({
+                    "title": member.get("title") or member.get("task"),
+                    "expected": member.get("expected"),
+                })
+
+        tasks = [
+            str(member.get("task") or "").strip()
+            for member in members
+            if str(member.get("task") or "").strip()
+        ]
+        merged_task = str(request or "").strip()
+
+        if not merged_task:
+            merged_task = "\n".join(
+                f"{item}. {task}"
+                for item, task in enumerate(tasks, start=1)
+            )
+
+        result.append({
+            "title": str(
+                members[0].get("title")
+                or _workflow_case_title(request)
+            )[:500],
+            "task": merged_task,
+            "expected": None,
+            "checks": _normalize_planned_checks(raw_checks),
+        })
+
+    return result
 
 
 def _planned_check_is_execution_meta(title, expected=None):
@@ -7591,6 +7751,11 @@ def plan_regression_cases(
     plan = _parse_regression_plan(
         message.get("content")
         or ""
+    )
+
+    plan = _coalesce_planner_workflows(
+        request,
+        plan,
     )
 
     return _coalesce_declared_single_workflow(

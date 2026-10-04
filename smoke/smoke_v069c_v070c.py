@@ -16,6 +16,7 @@ NAMES = {
     "_workflow_case_title",
     "_request_declares_single_workflow",
     "_coalesce_declared_single_workflow",
+    "_coalesce_planner_workflows",
     "extract_explicit_regression_cases",
     "_parse_regression_plan",
     "_regression_shared_context",
@@ -45,6 +46,7 @@ extract = SCOPE["extract_explicit_regression_cases"]
 parse = SCOPE["_parse_regression_plan"]
 build_prompt = SCOPE["_build_regression_case_prompt"]
 coalesce = SCOPE["_coalesce_declared_single_workflow"]
+coalesce_planner = SCOPE["_coalesce_planner_workflows"]
 
 assert is_read_only(messages("Создай один объект. Не изменяй существующие объекты.")) is False
 assert is_read_only(messages("Не изменяй существующие объекты; создай новый.")) is False
@@ -88,6 +90,56 @@ parsed = parse(json.dumps({
 }, ensure_ascii=False))
 assert len(parsed) == 1
 assert len(parsed[0]["checks"]) == 4
+
+linked = parse(json.dumps({
+    "cases": [
+        {
+            "case_key": "create",
+            "workflow_key": "resource-life",
+            "depends_on": [],
+            "title": "Создание",
+            "task": "Создать временный объект",
+            "expected": "объект создан",
+            "checks": [],
+        },
+        {
+            "case_key": "verify",
+            "workflow_key": "resource-life",
+            "depends_on": ["create"],
+            "title": "Проверка",
+            "task": "Проверить тот же объект",
+            "expected": "объект виден",
+            "checks": [],
+        },
+        {
+            "case_key": "cleanup",
+            "workflow_key": "resource-life",
+            "depends_on": ["verify"],
+            "title": "Очистка",
+            "task": "Удалить тот же объект через cleanup",
+            "expected": "объект отсутствует",
+            "checks": [],
+        },
+        {
+            "case_key": "help",
+            "workflow_key": None,
+            "depends_on": [],
+            "title": "Справка",
+            "task": "Открыть независимую страницу справки",
+            "expected": "страница открыта",
+            "checks": [],
+        },
+    ]
+}, ensure_ascii=False))
+linked = coalesce_planner("Проведи regression.", linked)
+assert len(linked) == 2, linked
+assert len(linked[0]["checks"]) == 3, linked
+assert linked[1]["title"] == "Справка", linked
+assert not any(
+    key.startswith("_planner_")
+    for case in linked
+    for key in case
+), linked
 
 split_plan = [
     {"title": "Создание", "task": "Создать объект", "expected": None, "checks": []},
