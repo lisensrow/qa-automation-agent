@@ -11288,6 +11288,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const allowed=['heading','treeitem','row','listitem'];const all=Array.from(document.querySelectorAll('[aria-level]'));const rows=all.slice(0,500).map(e=>{const raw=e.getAttribute('aria-level')||'';const level=Number(raw);const role=String(e.getAttribute('role')||'').toLowerCase();const implicit=/^H[1-6]$/.test(e.tagName)?'heading':'';const effective=role||implicit;return {role:effective,level:raw,valid:allowed.includes(effective)&&Number.isInteger(level)&&level>0};});return {element_count:rows.length,elements:rows,failure_count:rows.filter(x=>!x.valid).length,aria_level_contract_passed:rows.every(x=>x.valid),truncated:all.length>500};}""")
         result=self._capture_state("inspect-aria-level-contract");result.update({"aria_level_audit":audit,"mutation_executed":False});return result
 
+    def inspect_svg_accessibility_contract_semantic(self):
+        """Audit exposed SVG graphics for accessible names."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('svg')).filter(e=>e.getAttribute('role')==='img'||e.hasAttribute('tabindex')||e.hasAttribute('aria-label')||e.hasAttribute('aria-labelledby'));const rows=all.slice(0,300).map(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const title=e.querySelector(':scope > title');const name=String(e.getAttribute('aria-label')||(ref&&ref.textContent)||(title&&title.textContent)||'').trim().replace(/\s+/g,' ').slice(0,160);return {name,role:e.getAttribute('role')||'',focusable:e.tabIndex>=0,broken_label_reference:Boolean(labelled&&!ref),valid:Boolean(name)&&!Boolean(labelled&&!ref)};});return {exposed_svg_count:rows.length,graphics:rows,failure_count:rows.filter(x=>!x.valid).length,svg_accessibility_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
+        result=self._capture_state("inspect-svg-accessibility-contract");result.update({"svg_accessibility_audit":audit,"mutation_executed":False});return result
+
+    def inspect_canvas_fallback_contract_semantic(self):
+        """Audit canvas elements for accessible fallback or labeling."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('canvas'));const rows=all.slice(0,200).map(e=>{const labelled=e.getAttribute('aria-labelledby')||'';const ref=labelled?document.getElementById(labelled):null;const fallback=String(e.textContent||'').trim().replace(/\s+/g,' ').slice(0,200);const name=String(e.getAttribute('aria-label')||(ref&&ref.textContent)||'').trim().replace(/\s+/g,' ').slice(0,160);const hidden=e.getAttribute('aria-hidden')==='true';return {name,fallback,hidden,broken_label_reference:Boolean(labelled&&!ref),valid:hidden||(Boolean(name||fallback)&&!Boolean(labelled&&!ref))};});return {canvas_count:rows.length,canvases:rows,failure_count:rows.filter(x=>!x.valid).length,canvas_fallback_contract_passed:rows.every(x=>x.valid),truncated:all.length>200};}""")
+        result=self._capture_state("inspect-canvas-fallback-contract");result.update({"canvas_fallback_audit":audit,"mutation_executed":False});return result
+
+    def inspect_media_caption_contract_semantic(self):
+        """Audit video caption tracks and track metadata without playback."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('video'));const rows=all.slice(0,100).map(e=>{const tracks=Array.from(e.querySelectorAll('track')).map(t=>({kind:String(t.kind||t.getAttribute('kind')||'').toLowerCase(),srclang:t.getAttribute('srclang')||'',label:t.getAttribute('label')||'',src:t.getAttribute('src')||''}));const captions=tracks.filter(t=>t.kind==='captions');const captionValid=captions.every(t=>Boolean(t.srclang&&t.label&&t.src));const exempt=e.muted===true||e.hasAttribute('muted');return {muted:exempt,track_count:tracks.length,caption_count:captions.length,tracks:tracks.slice(0,20),valid:(exempt||captions.length>0)&&captionValid};});return {video_count:rows.length,videos:rows,failure_count:rows.filter(x=>!x.valid).length,media_caption_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
+        result=self._capture_state("inspect-media-caption-contract");result.update({"media_caption_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12734,6 +12752,15 @@ def inspect_virtual_grid_contract_semantic() -> dict:
 
 def inspect_aria_level_contract_semantic() -> dict:
     return _session.inspect_aria_level_contract_semantic()
+
+def inspect_svg_accessibility_contract_semantic() -> dict:
+    return _session.inspect_svg_accessibility_contract_semantic()
+
+def inspect_canvas_fallback_contract_semantic() -> dict:
+    return _session.inspect_canvas_fallback_contract_semantic()
+
+def inspect_media_caption_contract_semantic() -> dict:
+    return _session.inspect_media_caption_contract_semantic()
 
 
 def click_semantic(

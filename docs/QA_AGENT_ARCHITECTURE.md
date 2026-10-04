@@ -417,6 +417,7 @@ Planner отделяет критерии продукта от служебно
 - v119a–v119c добавили read-only audits native/ARIA checkbox, switch и toggle-button states. Основной runner — `116/116`, дополнительные — `11/11`; суммарно `127/127`, без реальных действий на U-Connect.
 - v120a–v120c добавили read-only audits `aria-expanded`, `aria-haspopup` и `aria-activedescendant` с проверкой target/ownership relationships. Основной runner — `119/119`, дополнительные — `11/11`; суммарно `130/130`, без реальных действий на U-Connect.
 - v121a–v121c добавили read-only audits virtual collection positions, virtual grid counts/indexes и hierarchical `aria-level`. Основной runner — `122/122`, дополнительные — `11/11`; суммарно `133/133`, без реальных действий на U-Connect.
+- v122a–v122c добавили read-only audits accessible SVG, canvas fallback и caption tracks у video. Основной runner — `125/125`, дополнительные — `11/11`; суммарно `136/136`, без реальных действий на U-Connect.
 
 ## Следующий этап frontend-покрытия
 

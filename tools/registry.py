@@ -97,6 +97,9 @@ from tools.browser import (
     inspect_set_position_contract_semantic,
     inspect_virtual_grid_contract_semantic,
     inspect_aria_level_contract_semantic,
+    inspect_svg_accessibility_contract_semantic,
+    inspect_canvas_fallback_contract_semantic,
+    inspect_media_caption_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -817,6 +820,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_set_position_contract_semantic","description":"Read-only audit aria-setsize/aria-posinset pairs и ordering.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_virtual_grid_contract_semantic","description":"Read-only audit virtual grid row/column counts и indexes.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_aria_level_contract_semantic","description":"Read-only audit positive aria-level values на hierarchical roles.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_svg_accessibility_contract_semantic","description":"Read-only audit exposed SVG graphics и accessible names.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_canvas_fallback_contract_semantic","description":"Read-only audit canvas accessible labels или fallback content.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_media_caption_contract_semantic","description":"Read-only audit video caption tracks и metadata без playback.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2348,6 +2354,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_virtual_grid_contract_semantic()
     if name == "browser_inspect_aria_level_contract_semantic":
         return inspect_aria_level_contract_semantic()
+    if name == "browser_inspect_svg_accessibility_contract_semantic":
+        return inspect_svg_accessibility_contract_semantic()
+    if name == "browser_inspect_canvas_fallback_contract_semantic":
+        return inspect_canvas_fallback_contract_semantic()
+    if name == "browser_inspect_media_caption_contract_semantic":
+        return inspect_media_caption_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(
