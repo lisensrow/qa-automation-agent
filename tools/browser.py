@@ -11270,6 +11270,24 @@ class BrowserSession:
         audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-activedescendant]'));const rows=all.slice(0,300).map(e=>{const id=String(e.getAttribute('aria-activedescendant')||'').trim();const target=id?document.getElementById(id):null;const owns=String(e.getAttribute('aria-owns')||'').trim().split(/\s+/).filter(Boolean);const related=Boolean(target&&(e.contains(target)||owns.includes(id)));const focusable=e.tabIndex>=0||['INPUT','TEXTAREA','SELECT'].includes(e.tagName);return {active_id:id,target_exists:Boolean(target),related,focusable,valid:Boolean(id)&&Boolean(target)&&related&&focusable};});return {container_count:rows.length,containers:rows,failure_count:rows.filter(x=>!x.valid).length,activedescendant_contract_passed:rows.every(x=>x.valid),truncated:all.length>300};}""")
         result=self._capture_state("inspect-activedescendant-contract");result.update({"activedescendant_audit":audit,"mutation_executed":False});return result
 
+    def inspect_set_position_contract_semantic(self):
+        """Audit aria-setsize/aria-posinset pairs for virtual collections."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-setsize],[aria-posinset]'));const rows=all.slice(0,500).map(e=>{const sizeRaw=e.getAttribute('aria-setsize'),posRaw=e.getAttribute('aria-posinset');const size=Number(sizeRaw),pos=Number(posRaw);const sizeValid=sizeRaw!==null&&Number.isInteger(size)&&(size===-1||size>0);const posValid=posRaw!==null&&Number.isInteger(pos)&&pos>0;const ordered=size===-1||!sizeValid||!posValid||pos<=size;return {role:e.getAttribute('role')||'',setsize:sizeRaw,posinset:posRaw,size_valid:sizeValid,position_valid:posValid,ordered,valid:sizeValid&&posValid&&ordered};});return {item_count:rows.length,items:rows,failure_count:rows.filter(x=>!x.valid).length,set_position_contract_passed:rows.every(x=>x.valid),truncated:all.length>500};}""")
+        result=self._capture_state("inspect-set-position-contract");result.update({"set_position_audit":audit,"mutation_executed":False});return result
+
+    def inspect_virtual_grid_contract_semantic(self):
+        """Audit virtual grid row/column counts and indexed descendants."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const all=Array.from(document.querySelectorAll('[aria-rowcount],[aria-colcount]'));const rows=all.slice(0,100).map(e=>{const rr=e.getAttribute('aria-rowcount'),cr=e.getAttribute('aria-colcount');const rc=rr===null?null:Number(rr),cc=cr===null?null:Number(cr);const rcValid=rr===null||(Number.isInteger(rc)&&(rc===-1||rc>0));const ccValid=cr===null||(Number.isInteger(cc)&&(cc===-1||cc>0));const rowIndexes=Array.from(e.querySelectorAll('[aria-rowindex]')).map(x=>Number(x.getAttribute('aria-rowindex')));const colIndexes=Array.from(e.querySelectorAll('[aria-colindex]')).map(x=>Number(x.getAttribute('aria-colindex')));const indexesValid=rowIndexes.every(x=>Number.isInteger(x)&&x>0&&(rc===-1||rc===null||x<=rc))&&colIndexes.every(x=>Number.isInteger(x)&&x>0&&(cc===-1||cc===null||x<=cc));return {role:e.getAttribute('role')||e.tagName.toLowerCase(),rowcount:rr,colcount:cr,indexed_rows:rowIndexes.length,indexed_columns:colIndexes.length,valid:(rr!==null||cr!==null)&&rcValid&&ccValid&&indexesValid};});return {grid_count:rows.length,grids:rows,failure_count:rows.filter(x=>!x.valid).length,virtual_grid_contract_passed:rows.every(x=>x.valid),truncated:all.length>100};}""")
+        result=self._capture_state("inspect-virtual-grid-contract");result.update({"virtual_grid_audit":audit,"mutation_executed":False});return result
+
+    def inspect_aria_level_contract_semantic(self):
+        """Audit aria-level values on hierarchical roles."""
+        self._ensure_started(); self._reset_diagnostics()
+        audit=self.page.evaluate("""()=>{const allowed=['heading','treeitem','row','listitem'];const all=Array.from(document.querySelectorAll('[aria-level]'));const rows=all.slice(0,500).map(e=>{const raw=e.getAttribute('aria-level')||'';const level=Number(raw);const role=String(e.getAttribute('role')||'').toLowerCase();const implicit=/^H[1-6]$/.test(e.tagName)?'heading':'';const effective=role||implicit;return {role:effective,level:raw,valid:allowed.includes(effective)&&Number.isInteger(level)&&level>0};});return {element_count:rows.length,elements:rows,failure_count:rows.filter(x=>!x.valid).length,aria_level_contract_passed:rows.every(x=>x.valid),truncated:all.length>500};}""")
+        result=self._capture_state("inspect-aria-level-contract");result.update({"aria_level_audit":audit,"mutation_executed":False});return result
+
     def click_semantic(
         self,
         name: str,
@@ -12707,6 +12725,15 @@ def inspect_haspopup_contract_semantic() -> dict:
 
 def inspect_activedescendant_contract_semantic() -> dict:
     return _session.inspect_activedescendant_contract_semantic()
+
+def inspect_set_position_contract_semantic() -> dict:
+    return _session.inspect_set_position_contract_semantic()
+
+def inspect_virtual_grid_contract_semantic() -> dict:
+    return _session.inspect_virtual_grid_contract_semantic()
+
+def inspect_aria_level_contract_semantic() -> dict:
+    return _session.inspect_aria_level_contract_semantic()
 
 
 def click_semantic(

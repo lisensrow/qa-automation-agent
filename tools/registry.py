@@ -94,6 +94,9 @@ from tools.browser import (
     inspect_expanded_contract_semantic,
     inspect_haspopup_contract_semantic,
     inspect_activedescendant_contract_semantic,
+    inspect_set_position_contract_semantic,
+    inspect_virtual_grid_contract_semantic,
+    inspect_aria_level_contract_semantic,
     context_menu_semantic,
     fill_semantic,
     inspect_file_input_semantic,
@@ -811,6 +814,9 @@ TOOLS = [
     {"type":"function","function":{"name":"browser_inspect_expanded_contract_semantic","description":"Read-only audit aria-expanded controls и optional controlled targets.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_haspopup_contract_semantic","description":"Read-only audit aria-haspopup tokens, names и popup references.","parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"browser_inspect_activedescendant_contract_semantic","description":"Read-only audit aria-activedescendant target, focusability и ownership relation.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_set_position_contract_semantic","description":"Read-only audit aria-setsize/aria-posinset pairs и ordering.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_virtual_grid_contract_semantic","description":"Read-only audit virtual grid row/column counts и indexes.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"browser_inspect_aria_level_contract_semantic","description":"Read-only audit positive aria-level values на hierarchical roles.","parameters":{"type":"object","properties":{}}}},
     {
         "type": "function",
         "function": {
@@ -2336,6 +2342,12 @@ def execute_tool(name: str, arguments: dict):
         return inspect_haspopup_contract_semantic()
     if name == "browser_inspect_activedescendant_contract_semantic":
         return inspect_activedescendant_contract_semantic()
+    if name == "browser_inspect_set_position_contract_semantic":
+        return inspect_set_position_contract_semantic()
+    if name == "browser_inspect_virtual_grid_contract_semantic":
+        return inspect_virtual_grid_contract_semantic()
+    if name == "browser_inspect_aria_level_contract_semantic":
+        return inspect_aria_level_contract_semantic()
 
     if name == "browser_inspect_agent_telemetry_semantic":
         return inspect_agent_telemetry_semantic(
