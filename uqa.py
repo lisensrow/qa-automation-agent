@@ -12135,6 +12135,44 @@ def _agent_telemetry_ci_name_from_request(request_text):
     return None
 
 
+def _read_only_agent_telemetry_followup(tool_name, arguments, result, ci_name):
+    if not ci_name or not isinstance(result, dict) or result.get("error"):
+        return None
+    requested_name = " ".join(
+        str((arguments or {}).get("name") or "").casefold().split()
+    )
+    expected_name = " ".join(str(ci_name).casefold().split())
+    if (
+        tool_name == "browser_inspect_table_row"
+        and requested_name == expected_name
+    ):
+        return {
+            "role": "user",
+            "content": (
+                "[UQA CORE: TELEMETRY ROUTE NEXT STEP]\n"
+                "The exact CI row is confirmed. Do not inspect the table or "
+                "pagination again. Call browser_click_semantic now with "
+                f"name={ci_name!r}, exact=true and role='row'."
+            ),
+        }
+    if (
+        tool_name == "browser_click_semantic"
+        and requested_name == expected_name
+        and str((arguments or {}).get("role") or "").casefold() == "row"
+    ):
+        return {
+            "role": "user",
+            "content": (
+                "[UQA CORE: TELEMETRY ROUTE NEXT STEP]\n"
+                "The exact CI row is open. Do not click it again and do not "
+                "inspect the table. Call "
+                "browser_inspect_agent_telemetry_semantic now with "
+                f"ci_name={ci_name!r}, then return the structured verdict."
+            ),
+        }
+    return None
+
+
 def run_turn(
     messages,
     job_id=None,
@@ -13217,6 +13255,16 @@ def run_turn(
                     ),
                 }
             )
+
+            if telemetry_route_message:
+                telemetry_followup = _read_only_agent_telemetry_followup(
+                    name,
+                    arguments,
+                    result,
+                    telemetry_ci_name,
+                )
+                if telemetry_followup:
+                    messages.append(telemetry_followup)
 
             completed_key = _completed_core_observation_key(
                 name,
