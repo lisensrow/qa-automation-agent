@@ -12084,6 +12084,31 @@ def _completed_core_observation_key(name, arguments, result):
     return key
 
 
+def _read_only_agent_telemetry_route_message(request_text, ci_name):
+    text = str(request_text or "")
+    if not ci_name or not re.search(
+        r"(?i)(telemetr|телеметр|\bcpu\b|\bram\b|процессор|памят|озу)",
+        text,
+    ):
+        return None
+    if not _request_is_read_only([{"role": "user", "content": text}]):
+        return None
+    return {
+        "role": "user",
+        "content": (
+            "[UQA CORE: READ-ONLY AGENT TELEMETRY ROUTE]\n"
+            f"Exact CI: {ci_name}\n"
+            "This case must not enter any create/edit flow. Never click Add, "
+            "plus, Save, Delete or Archive. Use this route only: open CMDB if "
+            "needed; browser_inspect_table_row with the exact CI name; "
+            "browser_click_semantic with the same exact name and role=row; "
+            "browser_inspect_agent_telemetry_semantic for that CI; then return "
+            "the structured verdict for every planned check. Do not inspect "
+            "table pagination when the exact row is already visible."
+        ),
+    }
+
+
 def run_turn(
     messages,
     job_id=None,
@@ -12109,6 +12134,12 @@ def run_turn(
     managed_agent_ci_name = _managed_agent_ci_name_from_request(
         managed_agent_request_text
     )
+    telemetry_route_message = _read_only_agent_telemetry_route_message(
+        managed_agent_request_text,
+        managed_agent_ci_name,
+    )
+    if telemetry_route_message:
+        messages.append(telemetry_route_message)
     managed_agent_fixture_id = _managed_agent_fixture_from_request(
         managed_agent_request_text
     )

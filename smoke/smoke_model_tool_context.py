@@ -39,6 +39,18 @@ assert uqa._completed_core_observation_key(
     {"observation_result": "PASS", "uqa_evidence_id": None},
 ) is None
 
+route_message = uqa._read_only_agent_telemetry_route_message(
+    "Строго read-only: проверь online, CPU и RAM для test-windows.",
+    "test-windows",
+)
+assert route_message is not None
+assert "role=row" in route_message["content"]
+assert "Never click Add" in route_message["content"]
+assert uqa._read_only_agent_telemetry_route_message(
+    "Создай тестовую задачу для test-windows.",
+    "test-windows",
+) is None
+
 managed_request = (
     "Create windows_cmd_echo_marker_v1 for exact CI test-windows and verify it"
 )
