@@ -9,6 +9,10 @@ telemetry = {
     "statuses": {"ui": "online", "ci": "online", "agent": "online"},
     "monitoring_fresh": True,
     "monitoring_at": "2026-09-17T08:29:00Z",
+    "cpu_usage_raw": [12.5, 9.0],
+    "ram_usage_raw": 1073741824,
+    "ram_usage_percent": 50.0,
+    "uptime_seconds": 3600,
     "observation_result": "PASS",
     "reason": None,
 }
@@ -29,6 +33,8 @@ audit_observation = extract_observations(
      "expected_version": "1.3.6"}, audit,
 )[0]
 assert telemetry_observation["type"] == "agent_telemetry"
+assert telemetry_observation["data"]["cpu_usage_raw"] == [12.5, 9.0]
+assert telemetry_observation["data"]["ram_usage_percent"] == 50.0
 assert audit_observation["type"] == "agent_plugin_audit"
 telemetry_observation["observation_id"] = "obs-telemetry"
 audit_observation["observation_id"] = "obs-audit"
@@ -69,6 +75,55 @@ try:
     assert verified[1]["status"] == "blocked", verified[1]
     assert verified[1]["reason"] == "UQA CORE: plugin_audit_stale"
     assert verified[1]["observations"] == ["obs-audit"]
+finally:
+    uqa.get_job = original_get_job
+
+planned_job = {
+    "test_cases": [{
+        "case_id": "tc-telemetry",
+        "planned_checks": [
+            {"check_id": "planned-001", "title": "Агент online",
+             "expected": "Агент указан как online"},
+            {"check_id": "planned-002", "title": "Отображается телеметрия CPU",
+             "expected": "Телеметрия CPU отображается"},
+            {"check_id": "planned-003", "title": "Отображается телеметрия RAM",
+             "expected": "Телеметрия RAM отображается"},
+        ],
+        "evidence": [{
+            "evidence_id": "ev-telemetry",
+            "type": "browser_inspect_agent_telemetry_semantic",
+            "observation_ids": ["obs-telemetry"],
+            "usable_for_verdict": True,
+        }],
+        "observations": [telemetry_observation],
+    }],
+}
+try:
+    uqa.get_job = lambda job_id: planned_job
+    generic = [{
+        "check_id": "check-001",
+        "title": "Agent telemetry",
+        "status": "passed",
+        "evidence": ["ev-telemetry"],
+    }]
+    expanded, coverage_errors = uqa.verify_planned_check_coverage(
+        "job-planned", "tc-telemetry", generic,
+    )
+    assert not coverage_errors, coverage_errors
+    assert [item["check_id"] for item in expanded] == [
+        "planned-001", "planned-002", "planned-003",
+    ]
+    verified, evidence_errors = uqa.verify_structured_check_evidence(
+        "job-planned", "tc-telemetry", expanded,
+    )
+    assert not evidence_errors, evidence_errors
+    assert [item["status"] for item in verified] == [
+        "passed", "passed", "passed",
+    ], verified
+    assert verified[0]["title"] == "Агент online"
+    assert "statuses" in verified[0]["actual"]
+    assert "cpu_usage_raw" in verified[1]["actual"]
+    assert "ram_usage_percent" in verified[2]["actual"]
 finally:
     uqa.get_job = original_get_job
 

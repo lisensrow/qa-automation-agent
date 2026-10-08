@@ -73,5 +73,8 @@ assert compiled["collapsed"]["assertions"][0] == {
 assert compile_locked_ui_requirement({
     "title": "После сохранения флажок Enabled отмечен",
 }) is None
+assert compile_locked_ui_requirement({
+    "task": "Проверить объект home-server в режиме read-only",
+}) is None
 
 print("UI assertion library smoke: PASS")

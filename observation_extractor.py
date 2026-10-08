@@ -521,6 +521,8 @@ def extract_observations(
             ("ci_name", "agent_version", "os_name", "os_version",
              "architecture", "statuses", "monitoring_at",
              "monitoring_age_seconds", "monitoring_fresh",
+             "cpu_usage_raw", "ram_usage_raw", "ram_usage_percent",
+             "uptime_seconds",
              "observation_result", "reason", "source_request_ids"),
         ),
         "browser_inspect_agent_plugins_semantic": (

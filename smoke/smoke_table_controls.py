@@ -82,6 +82,30 @@ try:
     assert paged.get("table_page_status") == "changed", paged
     assert paged["table_after"]["rows"][0]["cells"][1] == "Gamma", paged
 
+    session.page.set_content(
+        """
+        <h1>All PC</h1>
+        <table>
+          <thead><tr><th>Status</th><th>Name</th><th>Agent</th></tr></thead>
+          <tbody><tr><td>online</td><td>ubuntu-agent</td><td>1.2.25</td></tr></tbody>
+        </table>
+        """
+    )
+    fallback = session.inspect_table_semantic("CMDB")
+    assert fallback.get("table_resolution") == "unique_visible_fallback", fallback
+    assert fallback["table_summary"]["rows"][0]["values_by_header"]["Name"] == (
+        "ubuntu-agent"
+    ), fallback
+
+    session.page.set_content(
+        """
+        <table><tbody><tr><td>one</td></tr></tbody></table>
+        <table><tbody><tr><td>two</td></tr></tbody></table>
+        """
+    )
+    ambiguous = session.inspect_table_semantic("CMDB")
+    assert ambiguous.get("error") == "table_not_found", ambiguous
+
     assert classify_tool_action(
         "browser_inspect_table_semantic",
         {"table": "Users"},

@@ -11,6 +11,33 @@ assert "last_browser_fingerprint" in uqa_source
 assert "repeated_semantic_inspection_blocked" in uqa_source
 assert "Do not repeat browser_inspect_semantic" in uqa_source
 assert "managed_agent_route_required" in uqa_source
+assert uqa.classify_tool_action(
+    "browser_click_semantic", {"name": "plus"},
+) == "write"
+assert uqa.classify_tool_action(
+    "browser_click_semantic", {"name": "+"},
+) == "write"
+telemetry_key = uqa._core_observation_call_key(
+    "browser_inspect_agent_telemetry_semantic",
+    {"ci_name": " Example CI ", "max_age_seconds": 60},
+)
+assert telemetry_key == (
+    "browser_inspect_agent_telemetry_semantic", "example ci",
+)
+assert telemetry_key == uqa._core_observation_call_key(
+    "browser_inspect_agent_telemetry_semantic",
+    {"ci_name": "example ci", "max_age_seconds": 3600},
+)
+assert uqa._completed_core_observation_key(
+    "browser_inspect_agent_telemetry_semantic",
+    {"ci_name": "example ci"},
+    {"observation_result": "PASS", "uqa_evidence_id": "ev-one"},
+) == telemetry_key
+assert uqa._completed_core_observation_key(
+    "browser_inspect_agent_telemetry_semantic",
+    {"ci_name": "example ci"},
+    {"observation_result": "PASS", "uqa_evidence_id": None},
+) is None
 
 managed_request = (
     "Create windows_cmd_echo_marker_v1 for exact CI test-windows and verify it"

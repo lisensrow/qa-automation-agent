@@ -1671,6 +1671,7 @@ def classify_tool_action(
             r"^(добав|созда|сохран|примен|подтверд|установ|"
             r"восстанов|включ|выключ|запуст|останов|перезап|"
             r"измен|переимен|назнач)",
+            r"^(plus|\+)$",
         )
 
         if any(
@@ -5957,7 +5958,12 @@ def verify_structured_check_evidence(
                     "issues": ["agent_observation_invalid"],
                 })
                 continue
-            check["title"] = core_title
+            planned_title = str(check.get("title") or "").strip()
+            check["title"] = (
+                planned_title
+                if observation_type == "agent_telemetry" and planned_title
+                else core_title
+            )
             check["subject"] = (
                 data.get("plugin_name")
                 if observation_type == "agent_plugin_audit"
@@ -5965,12 +5971,79 @@ def verify_structured_check_evidence(
             )
             check["observations"] = [core_observation["observation_id"]]
             check["assertions"] = []
-            check["actual"] = json.dumps(data, ensure_ascii=False, default=str)
-            check["status"] = "passed" if outcome == "PASS" else "blocked"
-            check["reason"] = (
-                None if outcome == "PASS"
-                else "UQA CORE: " + str(data.get("reason") or "agent_observation_blocked")
-            )
+            if observation_type == "agent_telemetry" and outcome == "PASS":
+                check_text = " ".join((
+                    str(check.get("title") or ""),
+                    str(check.get("expected") or ""),
+                )).casefold()
+                if any(token in check_text for token in (
+                    "cpu", "processor", "процессор", "цп",
+                )):
+                    cpu_values = [
+                        value for value in (data.get("cpu_usage_raw") or [])
+                        if isinstance(value, (int, float))
+                        and not isinstance(value, bool)
+                    ]
+                    check["actual"] = json.dumps(
+                        {"cpu_usage_raw": cpu_values}, ensure_ascii=False,
+                    )
+                    check["status"] = "passed" if cpu_values else "blocked"
+                    check["reason"] = (
+                        None if cpu_values
+                        else "UQA CORE: telemetry_cpu_missing"
+                    )
+                elif any(token in check_text for token in (
+                    "ram", "memory", "памят", "озу",
+                )):
+                    ram_values = {
+                        "ram_usage_raw": data.get("ram_usage_raw"),
+                        "ram_usage_percent": data.get("ram_usage_percent"),
+                    }
+                    ram_present = any(
+                        isinstance(value, (int, float))
+                        and not isinstance(value, bool)
+                        for value in ram_values.values()
+                    )
+                    check["actual"] = json.dumps(
+                        ram_values, ensure_ascii=False,
+                    )
+                    check["status"] = "passed" if ram_present else "blocked"
+                    check["reason"] = (
+                        None if ram_present
+                        else "UQA CORE: telemetry_ram_missing"
+                    )
+                elif any(token in check_text for token in (
+                    "online", "онлайн", "status", "статус",
+                )):
+                    statuses = data.get("statuses") or {}
+                    online = bool(statuses) and all(
+                        value == "online" for value in statuses.values()
+                    )
+                    check["actual"] = json.dumps(
+                        {"statuses": statuses}, ensure_ascii=False,
+                    )
+                    check["status"] = "passed" if online else "blocked"
+                    check["reason"] = (
+                        None if online
+                        else "UQA CORE: agent_status_not_online"
+                    )
+                else:
+                    check["actual"] = json.dumps(
+                        data, ensure_ascii=False, default=str,
+                    )
+                    check["status"] = "passed"
+                    check["reason"] = None
+            else:
+                check["actual"] = json.dumps(
+                    data, ensure_ascii=False, default=str,
+                )
+                check["status"] = "passed" if outcome == "PASS" else "blocked"
+                check["reason"] = (
+                    None if outcome == "PASS"
+                    else "UQA CORE: " + str(
+                        data.get("reason") or "agent_observation_blocked"
+                    )
+                )
             continue
 
         if (
@@ -6676,6 +6749,8 @@ REGRESSION_PLANNER_PROMPT = """
 - В depends_on перечисляй case_key только тех предыдущих cases, без состояния
   которых текущий case невозможно выполнить. Для независимого case используй
   пустой список.
+- Если пользователь явно требует независимые cases или запрещает их объединять,
+  используй отдельные case_key, workflow_key=null и пустой depends_on для каждого.
 - Не придумывай требований, которых нет в запросе.
 - Если пользователь явно задал критерий или ожидаемое состояние, сохраняй его смысл точно и не расширяй альтернативами.
   Например: "кнопка недоступна/disabled" нельзя превращать в "неактивна или скрыта".
@@ -6822,6 +6897,22 @@ def _coalesce_planner_workflows(request, plan):
         return plan
 
     cases = deepcopy(plan)
+
+    if _request_forbids_case_coalescing(request):
+        result = []
+
+        for spec in cases:
+            if not isinstance(spec, dict):
+                continue
+
+            clean = dict(spec)
+            clean.pop("_planner_case_key", None)
+            clean.pop("_planner_workflow_key", None)
+            clean.pop("_planner_depends_on", None)
+            result.append(clean)
+
+        return result
+
     parent = list(range(len(cases)))
 
     def find(index):
@@ -6937,6 +7028,26 @@ def _coalesce_planner_workflows(request, plan):
         })
 
     return result
+
+
+def _request_forbids_case_coalescing(request):
+    """Honor an explicit user boundary between independent test cases."""
+    value = re.sub(
+        r"\s+",
+        " ",
+        str(request or "").strip().casefold(),
+    )
+    patterns = (
+        r"\bне\s+объединяй\b",
+        r"\bне\s+объединять\b",
+        r"\bdo\s+not\s+merge\b",
+        r"\bdon't\s+merge\b",
+        r"\bровно\s+(?:\d+|один|два|три|четыре|пять)\s+"
+        r"независим\w*\s+(?:test\s*case|тест\w*\s+кейс\w*|кейс\w*)\b",
+        r"\bexactly\s+(?:\d+|one|two|three|four|five)\s+"
+        r"independent\s+(?:test\s+)?cases?\b",
+    )
+    return any(re.search(pattern, value, re.IGNORECASE) for pattern in patterns)
 
 
 def _planned_check_is_execution_meta(title, expected=None):
@@ -7078,6 +7189,36 @@ def verify_planned_check_coverage(job_id, case_id, checks):
 
     if not planned:
         return verified, []
+
+    # A single Core telemetry observation may prove several planned facts.
+    # Expand only an unambiguous one-evidence result; each expanded check is
+    # still evaluated independently by the evidence verifier.
+    if len(verified) == 1 and len(planned) > 1:
+        source_check = verified[0]
+        refs = [
+            str(value).strip()
+            for value in (source_check.get("evidence") or [])
+            if str(value).strip()
+        ]
+        evidence_by_id = {
+            str(item.get("evidence_id") or "").strip(): item
+            for item in case.get("evidence", [])
+            if str(item.get("evidence_id") or "").strip()
+        }
+        if (
+            len(refs) == 1
+            and evidence_by_id.get(refs[0], {}).get("type")
+            == "browser_inspect_agent_telemetry_semantic"
+        ):
+            model_check_id = str(source_check.get("check_id") or "").strip()
+            verified = []
+            for planned_item in planned:
+                expanded = deepcopy(source_check)
+                expanded["model_check_id"] = model_check_id or None
+                expanded["check_id"] = planned_item["check_id"]
+                expanded["title"] = planned_item["title"]
+                expanded["expected"] = planned_item.get("expected")
+                verified.append(expanded)
 
     def normalized_title(item):
         return " ".join(
@@ -8716,7 +8857,7 @@ def compile_locked_ui_requirement(
         if re.search(
             r"(?i)\b(?:"
             r"без|после|до|при|"
-            r"если|когда|перед"
+            r"если|когда|перед|режим\w*|mode"
             r")\b",
             subject,
         ):
@@ -11915,6 +12056,34 @@ def artifact_public_url(
         return None
 
 
+def _core_observation_call_key(name, arguments):
+    if name != "browser_inspect_agent_telemetry_semantic":
+        return None
+
+    ci_name = " ".join(
+        str((arguments or {}).get("ci_name") or "")
+        .strip()
+        .casefold()
+        .split()
+    )
+    return (name, ci_name) if ci_name else None
+
+
+def _completed_core_observation_key(name, arguments, result):
+    key = _core_observation_call_key(name, arguments)
+
+    if (
+        key is None
+        or not isinstance(result, dict)
+        or result.get("error")
+        or result.get("observation_result") not in {"PASS", "BLOCKED"}
+        or not result.get("uqa_evidence_id")
+    ):
+        return None
+
+    return key
+
+
 def run_turn(
     messages,
     job_id=None,
@@ -11923,6 +12092,8 @@ def run_turn(
     action_policy="legacy",
 ):
     failed_semantic_inspections = {}
+    completed_core_observations = {}
+    repeated_completed_observations = set()
     last_browser_fingerprint = None
     blocked_mutation_calls = set()
     managed_agent_route_required = None
@@ -12654,6 +12825,13 @@ def run_turn(
             )
             semantic_inspection_key = None
             repeated_semantic_inspection = False
+            core_observation_key = (
+                _core_observation_call_key(name, arguments)
+            )
+            repeated_completed_observation = (
+                core_observation_key is not None
+                and core_observation_key in completed_core_observations
+            )
             mutation_call_key = None
             repeated_blocked_mutation = False
 
@@ -12690,7 +12868,28 @@ def run_turn(
             )
 
             try:
-                if repeated_semantic_inspection:
+                if repeated_completed_observation:
+                    previous = completed_core_observations[
+                        core_observation_key
+                    ]
+                    result = {
+                        "error": "completed_observation_already_recorded",
+                        "status": "blocked",
+                        "executed": False,
+                        "action_class": "observe",
+                        "action_policy_status": "auto_allowed",
+                        "observation_result": previous.get(
+                            "observation_result"
+                        ),
+                        "prior_evidence_id": previous.get(
+                            "uqa_evidence_id"
+                        ),
+                        "reason": (
+                            "UQA Core already recorded this Core-owned "
+                            "observation for the same exact subject."
+                        ),
+                    }
+                elif repeated_semantic_inspection:
                     result = {
                         "error": "repeated_semantic_inspection_blocked",
                         "status": "blocked",
@@ -12958,6 +13157,82 @@ def run_turn(
                     ),
                 }
             )
+
+            completed_key = _completed_core_observation_key(
+                name,
+                arguments,
+                result,
+            )
+
+            if completed_key is not None:
+                completed_core_observations[completed_key] = {
+                    "observation_result": result.get("observation_result"),
+                    "uqa_evidence_id": result.get("uqa_evidence_id"),
+                    "uqa_observation_ids": result.get("uqa_observation_ids"),
+                }
+                planned_verdict_contract = ""
+                if job_id and case_id:
+                    current_job = get_job(job_id) or {}
+                    current_case = next((
+                        item for item in current_job.get("test_cases", [])
+                        if item.get("case_id") == case_id
+                    ), {})
+                    planned_checks = _normalize_planned_checks(
+                        current_case.get("planned_checks")
+                    )
+                    if planned_checks:
+                        planned_verdict_contract = (
+                            "\nReturn exactly one UQA_CHECKS_JSON entry for "
+                            "each authoritative planned check below. Preserve "
+                            "every check_id and title exactly:\n"
+                            + json.dumps(planned_checks, ensure_ascii=False)
+                        )
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "[UQA CORE: CORE-OWNED OBSERVATION COMPLETE]\n"
+                        f"tool={name}\n"
+                        f"subject={arguments.get('ci_name')}\n"
+                        f"observation_result={result.get('observation_result')}\n"
+                        f"evidence_id={result.get('uqa_evidence_id')}\n"
+                        "The required Core-owned observation is recorded. "
+                        "Do not call this observation tool again for the same "
+                        "subject. Produce the final structured verdict now "
+                        "using the recorded evidence and observation IDs."
+                        + planned_verdict_contract
+                    ),
+                })
+
+            if repeated_completed_observation:
+                if core_observation_key in repeated_completed_observations:
+                    if job_id and case_id:
+                        finalize_case_blocked(
+                            job_id,
+                            case_id,
+                            "repeated_completed_observation",
+                            (
+                                "The agent repeated a Core-owned observation "
+                                "after Core directed it to produce a verdict."
+                            ),
+                        )
+
+                    console.print(
+                        "[yellow]UQA Core stopped a repeated completed "
+                        "observation; case marked BLOCKED.[/yellow]"
+                    )
+                    compact_completed_history(messages)
+                    return
+
+                repeated_completed_observations.add(core_observation_key)
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "[UQA CORE: OBSERVATION REUSE BLOCKED]\n"
+                        "The same Core-owned observation already has usable "
+                        "evidence. Do not request it again or vary freshness "
+                        "arguments. Return the final structured verdict now."
+                    ),
+                })
 
             route_requirement = _managed_agent_route_requirement(
                 managed_agent_request_text,

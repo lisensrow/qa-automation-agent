@@ -6316,6 +6316,20 @@ class BrowserSession:
         self._ensure_started()
         self._reset_diagnostics()
         locator, error = self._resolve_table(table, exact)
+
+        resolution = "named" if table else "unique_visible"
+
+        # Read-only inspection may safely recover when the model supplied a
+        # visual section name but the page exposes one unlabeled HTML table.
+        # Mutating table helpers intentionally keep strict named resolution.
+        if error and table and error.get("error") == "table_not_found":
+            fallback, fallback_error = self._resolve_table(None, exact)
+
+            if fallback_error is None:
+                locator = fallback
+                error = None
+                resolution = "unique_visible_fallback"
+
         if error:
             return error
         summary = self._table_snapshot(locator)
@@ -6323,6 +6337,7 @@ class BrowserSession:
         result.update(
             {
                 "table_name": table,
+                "table_resolution": resolution,
                 "table_inspection_status": "observed",
                 "table_summary": summary,
                 "mutation_executed": False,

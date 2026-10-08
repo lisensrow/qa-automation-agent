@@ -17,6 +17,7 @@ NAMES = {
     "_request_declares_single_workflow",
     "_coalesce_declared_single_workflow",
     "_coalesce_planner_workflows",
+    "_request_forbids_case_coalescing",
     "extract_explicit_regression_cases",
     "_parse_regression_plan",
     "_regression_shared_context",
@@ -140,6 +141,35 @@ assert not any(
     for case in linked
     for key in case
 ), linked
+
+independent_payload = parse(json.dumps({
+    "cases": [
+        {
+            "case_key": "windows",
+            "workflow_key": "agent-telemetry",
+            "depends_on": [],
+            "title": "Windows",
+            "task": "Проверить Windows КЕ",
+            "expected": None,
+            "checks": ["online", "CPU", "RAM"],
+        },
+        {
+            "case_key": "ubuntu",
+            "workflow_key": "agent-telemetry",
+            "depends_on": [],
+            "title": "Ubuntu",
+            "task": "Проверить Ubuntu КЕ",
+            "expected": None,
+            "checks": ["online", "CPU", "RAM"],
+        },
+    ]
+}, ensure_ascii=False))
+independent_payload = coalesce_planner(
+    "Сделай ровно два независимых test case. Не объединяй ОС в один case.",
+    independent_payload,
+)
+assert len(independent_payload) == 2, independent_payload
+assert [len(item["checks"]) for item in independent_payload] == [3, 3]
 
 split_plan = [
     {"title": "Создание", "task": "Создать объект", "expected": None, "checks": []},
