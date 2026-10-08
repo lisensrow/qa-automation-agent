@@ -58,6 +58,22 @@ assert uqa._read_only_agent_telemetry_route_message(
     "Создай тестовую задачу для test-windows.",
     "test-windows",
 ) is None
+row_followup = uqa._read_only_agent_telemetry_followup(
+    "browser_inspect_table_row",
+    {"name": "test-windows", "exact": True},
+    {"table_row_name": "test-windows"},
+    "test-windows",
+)
+assert row_followup is not None
+assert "role='row'" in row_followup["content"]
+telemetry_followup = uqa._read_only_agent_telemetry_followup(
+    "browser_click_semantic",
+    {"name": "test-windows", "exact": True, "role": "row"},
+    {"clicked_element": {"text": "test-windows"}},
+    "test-windows",
+)
+assert telemetry_followup is not None
+assert "browser_inspect_agent_telemetry_semantic" in telemetry_followup["content"]
 
 managed_request = (
     "Create windows_cmd_echo_marker_v1 for exact CI test-windows and verify it"
