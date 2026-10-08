@@ -39,9 +39,17 @@ assert uqa._completed_core_observation_key(
     {"observation_result": "PASS", "uqa_evidence_id": None},
 ) is None
 
+telemetry_request = (
+    "Строго read-only: найди конфигурационную единицу test-windows и "
+    "проверь online, CPU и RAM."
+)
+telemetry_ci_name = uqa._agent_telemetry_ci_name_from_request(
+    telemetry_request
+)
+assert telemetry_ci_name == "test-windows"
 route_message = uqa._read_only_agent_telemetry_route_message(
-    "Строго read-only: проверь online, CPU и RAM для test-windows.",
-    "test-windows",
+    telemetry_request,
+    telemetry_ci_name,
 )
 assert route_message is not None
 assert "role=row" in route_message["content"]

@@ -12109,6 +12109,26 @@ def _read_only_agent_telemetry_route_message(request_text, ci_name):
     }
 
 
+def _agent_telemetry_ci_name_from_request(request_text):
+    text = str(request_text or "")
+    managed_name = _managed_agent_ci_name_from_request(text)
+    if managed_name:
+        return managed_name
+    patterns = (
+        r"(?i)конфигурационн\w*\s+единиц\w*\s+"
+        r"[«\"']?([A-Za-z0-9][A-Za-z0-9._:-]{2,127})",
+        r"(?i)(?:точн\w*|exact)\s+(?:КЕ|CI)\s+"
+        r"[«\"']?([A-Za-z0-9][A-Za-z0-9._:-]{2,127})",
+        r"(?i)ci_name\s*[:=]\s*[«\"']?"
+        r"([A-Za-z0-9][A-Za-z0-9._:-]{2,127})",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            return match.group(1).rstrip(".,;:»\"'")
+    return None
+
+
 def run_turn(
     messages,
     job_id=None,
@@ -12134,9 +12154,12 @@ def run_turn(
     managed_agent_ci_name = _managed_agent_ci_name_from_request(
         managed_agent_request_text
     )
+    telemetry_ci_name = _agent_telemetry_ci_name_from_request(
+        managed_agent_request_text
+    )
     telemetry_route_message = _read_only_agent_telemetry_route_message(
         managed_agent_request_text,
-        managed_agent_ci_name,
+        telemetry_ci_name,
     )
     if telemetry_route_message:
         messages.append(telemetry_route_message)
