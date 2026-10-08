@@ -12091,7 +12091,13 @@ def _read_only_agent_telemetry_route_message(request_text, ci_name):
         text,
     ):
         return None
-    if not _request_is_read_only([{"role": "user", "content": text}]):
+    # This routing hint is intentionally narrower than the global action-policy
+    # detector. A read-only request often names forbidden buttons ("do not
+    # click Add/Save"), which must not turn the route itself into a write flow.
+    if not re.search(
+        r"(?i)(?:read[\s-]*only|только\s+чтен|без\s+изменен)",
+        text,
+    ):
         return None
     return {
         "role": "user",

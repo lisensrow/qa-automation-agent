@@ -41,7 +41,7 @@ assert uqa._completed_core_observation_key(
 
 telemetry_request = (
     "Строго read-only: найди конфигурационную единицу test-windows и "
-    "проверь online, CPU и RAM."
+    "проверь online, CPU и RAM. Не нажимай Add, Save, Delete или плюс."
 )
 telemetry_ci_name = uqa._agent_telemetry_ci_name_from_request(
     telemetry_request
