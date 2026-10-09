@@ -12138,6 +12138,16 @@ def _agent_telemetry_ci_name_from_request(request_text):
 def _read_only_agent_telemetry_followup(tool_name, arguments, result, ci_name):
     if not ci_name or not isinstance(result, dict) or result.get("error"):
         return None
+    if tool_name == "browser_open_page":
+        return {
+            "role": "user",
+            "content": (
+                "[UQA CORE: TELEMETRY ROUTE NEXT STEP]\n"
+                "The CMDB page is open. Do not click Add/plus and do not "
+                "probe write capabilities. Call browser_inspect_table_row "
+                f"now with name={ci_name!r} and exact=true."
+            ),
+        }
     requested_name = " ".join(
         str((arguments or {}).get("name") or "").casefold().split()
     )

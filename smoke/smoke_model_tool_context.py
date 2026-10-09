@@ -66,6 +66,15 @@ row_followup = uqa._read_only_agent_telemetry_followup(
 )
 assert row_followup is not None
 assert "role='row'" in row_followup["content"]
+open_followup = uqa._read_only_agent_telemetry_followup(
+    "browser_open_page",
+    {"url": "https://example.test/cmdb"},
+    {"http_status": 200},
+    "test-windows",
+)
+assert open_followup is not None
+assert "browser_inspect_table_row" in open_followup["content"]
+assert "Add/plus" in open_followup["content"]
 telemetry_followup = uqa._read_only_agent_telemetry_followup(
     "browser_click_semantic",
     {"name": "test-windows", "exact": True, "role": "row"},
