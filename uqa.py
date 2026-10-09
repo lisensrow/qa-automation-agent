@@ -1092,6 +1092,11 @@ def _managed_agent_required_call(
             "tool": "browser_probe_capabilities",
             "arguments": {},
         }
+    if phase == "readiness":
+        return {
+            "tool": "browser_inspect_agent_telemetry_semantic",
+            "arguments": {"ci_name": ci_name},
+        }
     if phase == "create":
         return {
             "tool": "browser_create_managed_agent_task_semantic",
@@ -1138,6 +1143,12 @@ def _managed_agent_workflow_call_allowed(
         )
     if phase == "probe":
         return tool_name == "browser_probe_capabilities"
+    if phase == "readiness":
+        return (
+            tool_name == "browser_inspect_agent_telemetry_semantic"
+            and str(arguments.get("ci_name") or "").casefold()
+            == str(ci_name or "").casefold()
+        )
     if phase == "create":
         return (
             tool_name == "browser_create_managed_agent_task_semantic"
@@ -1155,6 +1166,30 @@ def _managed_agent_workflow_call_allowed(
     if phase == "verdict":
         return False
     return True
+
+
+def _managed_agent_readiness_allows_create(ci_name, result):
+    if not isinstance(result, dict):
+        return False
+    statuses = result.get("statuses") or {}
+    return (
+        str(result.get("ci_name") or "").casefold()
+        == str(ci_name or "").casefold()
+        and result.get("observation_result") == "PASS"
+        and result.get("monitoring_fresh") is True
+        and bool(statuses)
+        and all(value == "online" for value in statuses.values())
+        and bool(result.get("uqa_evidence_id"))
+    )
+
+
+def _managed_agent_route_failed(result):
+    return (
+        isinstance(result, dict)
+        and result.get("navigation_status") == "blocked"
+        and bool(result.get("error"))
+        and result.get("mutation_executed") is not True
+    )
 
 
 def _managed_agent_route_requirement(
@@ -13305,21 +13340,30 @@ def run_turn(
                             "every check_id and title exactly:\n"
                             + json.dumps(planned_checks, ensure_ascii=False)
                         )
-                messages.append({
-                    "role": "user",
-                    "content": (
-                        "[UQA CORE: CORE-OWNED OBSERVATION COMPLETE]\n"
-                        f"tool={name}\n"
-                        f"subject={arguments.get('ci_name')}\n"
-                        f"observation_result={result.get('observation_result')}\n"
-                        f"evidence_id={result.get('uqa_evidence_id')}\n"
-                        "The required Core-owned observation is recorded. "
-                        "Do not call this observation tool again for the same "
-                        "subject. Produce the final structured verdict now "
-                        "using the recorded evidence and observation IDs."
-                        + planned_verdict_contract
-                    ),
-                })
+                managed_readiness_passed = (
+                    managed_agent_workflow_phase == "readiness"
+                    and _managed_agent_readiness_allows_create(
+                        managed_agent_ci_name,
+                        result,
+                    )
+                )
+                if not managed_readiness_passed:
+                    messages.append({
+                        "role": "user",
+                        "content": (
+                            "[UQA CORE: CORE-OWNED OBSERVATION COMPLETE]\n"
+                            f"tool={name}\n"
+                            f"subject={arguments.get('ci_name')}\n"
+                            f"observation_result={result.get('observation_result')}\n"
+                            f"evidence_id={result.get('uqa_evidence_id')}\n"
+                            "The required Core-owned observation is recorded. "
+                            "Do not call this observation tool again for the "
+                            "same subject. Produce the final structured verdict "
+                            "now using the recorded evidence and observation "
+                            "IDs."
+                            + planned_verdict_contract
+                        ),
+                    })
 
             if repeated_completed_observation:
                 if core_observation_key in repeated_completed_observations:
@@ -13396,11 +13440,49 @@ def run_turn(
                     (str(job_id), str(case_id)), None,
                 )
             elif (
+                managed_agent_workflow_phase == "route"
+                and name == "browser_open_agent_tasks_semantic"
+                and _managed_agent_route_failed(result)
+            ):
+                managed_agent_workflow_phase = "verdict"
+                managed_agent_route_required = None
+                managed_agent_route_page_ready = False
+                _PENDING_NAVIGATION_CANDIDATES.pop(
+                    (str(job_id), str(case_id)), None,
+                )
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "[UQA CORE: MANAGED AGENT ROUTE BLOCKED]\n"
+                        "The deterministic route to the exact CI task list "
+                        "failed before any mutation. Do not retry the route "
+                        "and do not call another tool. Return the final "
+                        "structured BLOCKED verdict using this reason: "
+                        + str(result.get("error"))
+                    ),
+                })
+            elif (
                 managed_agent_workflow_phase == "probe"
                 and name == "browser_probe_capabilities"
                 and not result.get("error")
             ):
+                managed_agent_workflow_phase = "readiness"
+            elif (
+                managed_agent_workflow_phase == "readiness"
+                and name == "browser_inspect_agent_telemetry_semantic"
+                and _managed_agent_readiness_allows_create(
+                    managed_agent_ci_name,
+                    result,
+                )
+            ):
                 managed_agent_workflow_phase = "create"
+            elif (
+                managed_agent_workflow_phase == "readiness"
+                and name == "browser_inspect_agent_telemetry_semantic"
+                and result.get("observation_result") == "BLOCKED"
+                and result.get("uqa_evidence_id")
+            ):
+                managed_agent_workflow_phase = "verdict"
             elif (
                 managed_agent_workflow_phase == "create"
                 and name == "browser_create_managed_agent_task_semantic"

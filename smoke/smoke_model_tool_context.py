@@ -117,6 +117,12 @@ assert uqa._managed_agent_required_call(
     "arguments": {},
 }
 assert uqa._managed_agent_required_call(
+    "readiness", "test-windows", "windows_cmd_echo_marker_v1", None,
+) == {
+    "tool": "browser_inspect_agent_telemetry_semantic",
+    "arguments": {"ci_name": "test-windows"},
+}
+assert uqa._managed_agent_required_call(
     "create", "test-windows", "windows_cmd_echo_marker_v1", None,
 ) == {
     "tool": "browser_create_managed_agent_task_semantic",
@@ -135,6 +141,45 @@ assert uqa._managed_agent_workflow_call_allowed(
     "probe", "test-windows", "windows_cmd_echo_marker_v1", None,
     "browser_probe_capabilities", {},
 )
+assert uqa._managed_agent_workflow_call_allowed(
+    "readiness", "test-windows", "windows_cmd_echo_marker_v1", None,
+    "browser_inspect_agent_telemetry_semantic", {"ci_name": "test-windows"},
+)
+assert not uqa._managed_agent_workflow_call_allowed(
+    "readiness", "test-windows", "windows_cmd_echo_marker_v1", None,
+    "browser_inspect_agent_telemetry_semantic", {"ci_name": "other-ci"},
+)
+ready_result = {
+    "ci_name": "test-windows",
+    "observation_result": "PASS",
+    "monitoring_fresh": True,
+    "statuses": {"ui": "online", "ci": "online", "agent": "online"},
+    "uqa_evidence_id": "ev-ready",
+}
+assert uqa._managed_agent_readiness_allows_create("test-windows", ready_result)
+assert not uqa._managed_agent_readiness_allows_create(
+    "test-windows", {**ready_result, "monitoring_fresh": False},
+)
+assert not uqa._managed_agent_readiness_allows_create(
+    "test-windows", {**ready_result, "statuses": {"agent": "offline"}},
+)
+assert not uqa._managed_agent_readiness_allows_create(
+    "other-ci", ready_result,
+)
+assert uqa._managed_agent_route_failed({
+    "error": "table_row_not_found",
+    "navigation_status": "blocked",
+    "mutation_executed": False,
+})
+assert not uqa._managed_agent_route_failed({
+    "navigation_status": "ready",
+    "mutation_executed": False,
+})
+assert not uqa._managed_agent_route_failed({
+    "error": "unexpected",
+    "navigation_status": "blocked",
+    "mutation_executed": True,
+})
 assert not uqa._managed_agent_workflow_call_allowed(
     "create", "test-windows", "windows_cmd_echo_marker_v1", None,
     "browser_probe_capabilities", {},
@@ -150,7 +195,10 @@ next_step_message = uqa._managed_agent_next_step_message({
 assert next_step_message["role"] == "user"
 assert "browser_probe_capabilities" in next_step_message["content"]
 assert 'managed_agent_workflow_phase == "probe"' in uqa_source
+assert 'managed_agent_workflow_phase == "readiness"' in uqa_source
 assert 'managed_agent_workflow_phase == "verdict"' in uqa_source
+assert "[UQA CORE: MANAGED AGENT ROUTE BLOCKED]" in uqa_source
+assert "managed_agent_route_required = None" in uqa_source
 assert not uqa._managed_agent_workflow_call_allowed(
     "verdict", "test-windows", "windows_cmd_echo_marker_v1", "task-id",
     "resource_register", {"resource_type": "agent_task"},
