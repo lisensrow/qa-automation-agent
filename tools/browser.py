@@ -2258,13 +2258,44 @@ class BrowserSession:
             ):
                 return ci, payload, request_url, None
 
-        return None, None, None, {
+        return ci, None, None, {
             "error": "task_list_get_not_observed",
             "executed": False,
             "next_step_hint": (
                 "Open the selected CI's Agent → Tasks tab, then retry."
             ),
         }
+
+    def _wait_for_observed_agent_task_context(
+        self, ci_name, timeout_ms=3000, poll_ms=100,
+    ):
+        """Wait briefly for the task-list GET triggered by the exact tab click."""
+        timeout_ms = max(0, min(int(timeout_ms), 5000))
+        poll_ms = max(50, min(int(poll_ms), 500))
+        wait_count = (timeout_ms + poll_ms - 1) // poll_ms
+        retryable_errors = {
+            "ci_observation_missing_or_mismatched",
+            "task_list_get_not_observed",
+        }
+        last = (None, None, None, {
+            "error": "task_list_get_not_observed",
+            "executed": False,
+        })
+
+        for attempt in range(wait_count + 1):
+            last = self._observed_agent_task_context(ci_name)
+            error = last[3]
+            if error is None:
+                return last
+            if error.get("error") not in retryable_errors:
+                return last
+            if attempt < wait_count:
+                self.page.wait_for_timeout(poll_ms)
+
+        error = dict(last[3] or {})
+        error["wait_timeout_ms"] = timeout_ms
+        error["wait_attempts"] = wait_count + 1
+        return last[0], last[1], last[2], error
 
     def open_agent_tasks_semantic(self, ci_name: str):
         """Open one exact CMDB row's Agent → Tasks tab deterministically."""
@@ -2328,8 +2359,30 @@ class BrowserSession:
                 "screenshot": tasks_click.get("screenshot"),
             }
 
-        ci, task_page, _, context_error = self._observed_agent_task_context(ci_name)
+        ci, task_page, _, context_error = (
+            self._wait_for_observed_agent_task_context(ci_name)
+        )
         if context_error:
+            if (
+                context_error.get("error") == "task_list_get_not_observed"
+                and isinstance(ci, dict)
+                and ci.get("id")
+                and ci.get("agent_id")
+            ):
+                return {
+                    "status": "ready_for_readiness",
+                    "executed": True,
+                    "mutation_executed": False,
+                    "navigation_status": "ready",
+                    "ci_name": ci_name,
+                    "ci_id": ci.get("id"),
+                    "agent_id": ci.get("agent_id"),
+                    "task_list_observed": False,
+                    "reason": "task_list_get_not_observed",
+                    "navigation_stages": stages,
+                    "current_url": tasks_click.get("current_url"),
+                    "screenshot": tasks_click.get("screenshot"),
+                }
             return {
                 **context_error,
                 "mutation_executed": False,

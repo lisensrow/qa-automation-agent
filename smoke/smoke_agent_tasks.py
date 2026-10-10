@@ -274,7 +274,7 @@ route_session.click_semantic = lambda name, exact=True, role=None, container=Non
         "screenshot": "/tmp/route.png",
     }
 )
-route_session._observed_agent_task_context = lambda name: (
+route_session._wait_for_observed_agent_task_context = lambda name: (
     ci, task_page, "https://stand/api/v1/agents/agent-1/tasks", None,
 )
 route_result = route_session.open_agent_tasks_semantic("test-linux")
@@ -290,6 +290,65 @@ assert route_calls == [
 assert not {"interactive_elements", "text_preview", "network_requests"} & set(
     route_result
 )
+
+wait_calls = []
+wait_session = object.__new__(BrowserSession)
+wait_session.page = SimpleNamespace(
+    wait_for_timeout=lambda value: wait_calls.append(value),
+)
+wait_results = [
+    (None, None, None, {
+        "error": "task_list_get_not_observed", "executed": False,
+    }),
+    (ci, task_page, "https://stand/api/v1/agents/agent-1/tasks", None),
+]
+wait_session._observed_agent_task_context = lambda name: wait_results.pop(0)
+waited = wait_session._wait_for_observed_agent_task_context(
+    "test-linux", timeout_ms=500, poll_ms=100,
+)
+assert waited[3] is None, waited
+assert wait_calls == [100], wait_calls
+
+timeout_calls = []
+timeout_session = object.__new__(BrowserSession)
+timeout_session.page = SimpleNamespace(
+    wait_for_timeout=lambda value: timeout_calls.append(value),
+)
+timeout_session._observed_agent_task_context = lambda name: (
+    None, None, None, {
+        "error": "task_list_get_not_observed", "executed": False,
+    },
+)
+timed_out = timeout_session._wait_for_observed_agent_task_context(
+    "test-linux", timeout_ms=200, poll_ms=100,
+)
+assert timed_out[3]["error"] == "task_list_get_not_observed"
+assert timed_out[3]["wait_timeout_ms"] == 200
+assert timed_out[3]["wait_attempts"] == 3
+assert timeout_calls == [100, 100], timeout_calls
+
+readiness_route = object.__new__(BrowserSession)
+readiness_route._ensure_started = lambda: None
+readiness_route.inspect_table_row = lambda name, exact=True: {
+    "row_match_count": 1, "current_url": "https://stand/cmdb",
+}
+readiness_route.click_semantic = lambda name, exact=True, role=None, container=None: {
+    "click_status": "executed", "current_url": "https://stand/cmdb",
+    "screenshot": "/tmp/readiness-route.png",
+}
+readiness_route._wait_for_observed_agent_task_context = lambda name: (
+    ci, None, None, {
+        "error": "task_list_get_not_observed", "executed": False,
+        "wait_timeout_ms": 3000, "wait_attempts": 31,
+    },
+)
+readiness_result = readiness_route.open_agent_tasks_semantic("test-linux")
+assert readiness_result["navigation_status"] == "ready", readiness_result
+assert readiness_result["status"] == "ready_for_readiness"
+assert readiness_result["task_list_observed"] is False
+assert readiness_result["agent_id"] == "agent-1"
+assert readiness_result["mutation_executed"] is False
+
 assert uqa.classify_tool_action(
     "browser_open_agent_tasks_semantic", {"ci_name": "test-linux"},
 ) == "interact"

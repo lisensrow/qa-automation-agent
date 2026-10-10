@@ -48,6 +48,18 @@ parse = SCOPE["_parse_regression_plan"]
 build_prompt = SCOPE["_build_regression_case_prompt"]
 coalesce = SCOPE["_coalesce_declared_single_workflow"]
 coalesce_planner = SCOPE["_coalesce_planner_workflows"]
+normalize_checks = SCOPE["_normalize_planned_checks"]
+
+normalized_duplicates = normalize_checks([
+    {"check_id": "planned-001", "title": "Agent online"},
+    {"check_id": "planned-002", "title": "Monitoring fresh"},
+    {"check_id": "planned-001", "title": "Fixture created"},
+    {"check_id": "planned-001", "title": "Result verified"},
+])
+assert [item["check_id"] for item in normalized_duplicates] == [
+    "planned-001", "planned-002", "planned-003", "planned-004",
+]
+assert len({item["check_id"] for item in normalized_duplicates}) == 4
 
 assert is_read_only(messages("Создай один объект. Не изменяй существующие объекты.")) is False
 assert is_read_only(messages("Не изменяй существующие объекты; создай новый.")) is False

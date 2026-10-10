@@ -7103,6 +7103,7 @@ def _normalize_planned_checks(raw_checks):
         return []
 
     checks = []
+    used_ids = set()
 
     for index, item in enumerate(raw_checks, start=1):
         if isinstance(item, str):
@@ -7136,9 +7137,19 @@ def _normalize_planned_checks(raw_checks):
         if _planned_check_is_execution_meta(title, expected):
             continue
 
+        check_id = str(check_id or "").strip()[:200]
+        if not check_id or check_id in used_ids:
+            base_id = f"planned-{index:03d}"
+            check_id = base_id
+            suffix = 2
+            while check_id in used_ids:
+                check_id = f"{base_id}-{suffix}"
+                suffix += 1
+        used_ids.add(check_id)
+
         checks.append(
             {
-                "check_id": check_id[:200],
+                "check_id": check_id,
                 "title": title[:500],
                 "expected": expected,
             }
