@@ -175,6 +175,11 @@ assert uqa._managed_agent_required_call(
 }
 assert uqa._managed_agent_workflow_call_allowed(
     "open_page", "test-windows", "windows_cmd_echo_marker_v1", None,
+    "browser_open_page", {"url": "https://stand.example.test/"},
+    "https://stand.example.test",
+)
+assert not uqa._managed_agent_workflow_call_allowed(
+    "open_page", "test-windows", "windows_cmd_echo_marker_v1", None,
     "browser_open_page", {"url": "https://stand.example.test/cmdb"},
     "https://stand.example.test",
 )
@@ -190,6 +195,18 @@ assert not uqa._managed_agent_workflow_call_allowed(
 assert not uqa._managed_agent_workflow_call_allowed(
     "open_page", "test-windows", "windows_cmd_echo_marker_v1", None,
     "browser_open_page", {"url": "https://stand.example.test"}, None,
+)
+assert uqa._managed_stand_entry_url_matches(
+    "https://stand.example.test/base?mode=safe",
+    "https://STAND.example.test:443/base?mode=safe",
+)
+assert not uqa._managed_stand_entry_url_matches(
+    "https://stand.example.test/base?mode=safe",
+    "https://stand.example.test/base?mode=other",
+)
+assert not uqa._managed_stand_entry_url_matches(
+    "https://stand.example.test/base",
+    "https://stand.example.test/logout",
 )
 assert uqa._managed_agent_workflow_call_allowed(
     "probe", "test-windows", "windows_cmd_echo_marker_v1", None,

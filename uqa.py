@@ -1148,6 +1148,34 @@ def _managed_stand_origin_check(expected_url, result):
     }
 
 
+def _managed_stand_entry_url_matches(expected_url, requested_url):
+    from urllib.parse import urlsplit
+
+    expected = _managed_safe_http_url(expected_url)
+    requested = _managed_safe_http_url(requested_url)
+    if not expected or not requested:
+        return False
+
+    def normalized_entry(value):
+        parts = urlsplit(value)
+        port = parts.port
+        if (parts.scheme.casefold(), port) in {
+            ("http", 80),
+            ("https", 443),
+        }:
+            port = None
+        return (
+            parts.scheme.casefold(),
+            (parts.hostname or "").casefold(),
+            port,
+            parts.path or "/",
+            parts.query,
+            parts.fragment,
+        )
+
+    return normalized_entry(expected) == normalized_entry(requested)
+
+
 def _enforce_managed_stand_origin(expected_url, result):
     origin_check = _managed_stand_origin_check(expected_url, result)
     if origin_check["matches"]:
@@ -1254,10 +1282,10 @@ def _managed_agent_workflow_call_allowed(
     if phase == "open_page":
         if tool_name != "browser_open_page":
             return False
-        return _managed_stand_origin_check(
+        return _managed_stand_entry_url_matches(
             stand_url,
-            {"current_url": arguments.get("url")},
-        )["matches"]
+            arguments.get("url"),
+        )
     if phase == "route":
         return (
             tool_name == "browser_open_agent_tasks_semantic"

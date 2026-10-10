@@ -73,6 +73,7 @@
 - Нормализует конечную пунктуацию после exact CI и fallback URL, поэтому двоеточие или точка обычного предложения не становятся частью идентификатора.
 - На каждом pre-create шаге managed workflow машинно сверяет фактический browser origin с разрешённым origin из Stand Store: после открытия страницы, маршрута к КЕ/Tasks, capability probe и telemetry. Другой host, scheme или port, похожий поддельный домен и отсутствие фактического URL завершают сценарий `BLOCKED` до любых мутаций.
 - До первого сетевого перехода managed workflow сверяет origin URL, предложенного моделью, с разрешённым Stand Store origin. Попытка открыть другой host, scheme или port блокируется Core до выполнения `browser_open_page`.
+- Стартовый managed-переход разрешает только точный entry URL из Stand Store с теми же path/query/fragment; произвольный same-origin путь вроде `/logout` не выполняется. После открытия допустим штатный same-origin redirect стенда.
 - Формирует и накапливает продуктовые наблюдения и candidate facts для дальнейшего расширения базы знаний.
 - Архитектура базы знаний допускает масштабирование через нормализованные наблюдения, кандидаты, проверку конфликтов и продвижение подтверждённых знаний, а не через бесконтрольное накопление текста диалогов.
 - Ограничивает объём browser state, передаваемый модели, сохраняя приоритет для menu items, полей ввода, кнопок и навигации; исходный result остаётся доступен evidence/observation pipeline.
@@ -463,6 +464,7 @@ Planner отделяет критерии продукта от служебно
 - v128h распространил stand-origin gate на весь pre-create lifecycle (`open_page → route → probe → readiness`), чтобы переход на другой origin после внутреннего клика или redirect также fail-closed завершал сценарий. Создание managed fixture сохраняет отдельную same-origin проверку внутри browser tool. Основной runner — `137/137`, дополнительные — `11/11`; суммарно `148/148`. Реальный Job `20261010-015208-dea47e0a` прошёл все четыре guarded-шага на разрешённом origin, завершился `BLOCKED: agent_offline`, не создал ресурсов и не выполнил POST/WRITE.
 - v128j перенёс первую origin-проверку перед сетевым переходом: managed `browser_open_page` разрешается только для URL с тем же нормализованным scheme/host/port, что и Stand Store. После перезагрузки UQA-сервера основной runner прошёл `137/137`, дополнительные — `11/11`; суммарно `148/148`.
 - v128k запретил credential-bearing managed URL (`user@host`, `user:password@host`) в request parser, Stand Store resolver и origin matcher. Невалидный порт также отклоняется до браузерного перехода. Основной runner — `137/137`, дополнительные — `11/11`; суммарно `148/148`.
+- v128m ужесточил pre-navigation contract с origin до точного Stand Store entry URL: scheme/host/normalized port/path/query/fragment должны совпадать, при этом отсутствие и наличие корневого `/` эквивалентны. Это блокирует нежелательные same-origin GET-пути до сети, сохраняя разрешение на проверенный redirect после открытия. Основной runner — `137/137`, дополнительные — `11/11`; суммарно `148/148`.
 
 ## Следующий этап frontend-покрытия
 
