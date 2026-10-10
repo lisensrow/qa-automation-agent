@@ -8713,42 +8713,7 @@ class BrowserSession:
                 "screenshot": inspected.get("screenshot"),
             }
 
-        before_url = str(self.page.url or "")
-        clicked = self.click_semantic(name, exact=True, role="row")
-        if clicked.get("error") or clicked.get("click_status") != "executed":
-            return {
-                "error": clicked.get("error") or "table_row_open_failed",
-                "executed": False,
-                "mutation_executed": False,
-                "details_identity_status": "blocked",
-                "failed_stage": "exact_row_open",
-                "name": name,
-                "current_url": clicked.get("current_url"),
-                "screenshot": clicked.get("screenshot"),
-            }
-
-        self.page.wait_for_timeout(250)
-        after_url = str(self.page.url or "")
-        before = urlsplit(before_url)
-        after = urlsplit(after_url)
-        if (
-            before.scheme.casefold(), before.netloc.casefold()
-        ) != (
-            after.scheme.casefold(), after.netloc.casefold()
-        ):
-            return {
-                "error": "details_origin_mismatch",
-                "executed": False,
-                "mutation_executed": False,
-                "details_identity_status": "blocked",
-                "failed_stage": "same_origin_verification",
-                "name": name,
-                "current_url": after_url,
-                "screenshot": clicked.get("screenshot"),
-            }
-
-        identity = self.page.evaluate(
-            """
+        identity_script = """
             wanted => {
                 const clean = value => String(value || '')
                     .replace(/\\s+/g, ' ').trim();
@@ -8786,14 +8751,54 @@ class BrowserSession:
                     document_title_match: clean(document.title) === wanted,
                 };
             }
-            """,
-            " ".join(str(name or "").split()),
-        )
+        """
+        normalized_name = " ".join(str(name or "").split())
+        before_url = str(self.page.url or "")
+        before_identity = self.page.evaluate(identity_script, normalized_name)
+        clicked = self.click_semantic(name, exact=True, role="row")
+        if clicked.get("error") or clicked.get("click_status") != "executed":
+            return {
+                "error": clicked.get("error") or "table_row_open_failed",
+                "executed": False,
+                "mutation_executed": False,
+                "details_identity_status": "blocked",
+                "failed_stage": "exact_row_open",
+                "name": name,
+                "current_url": clicked.get("current_url"),
+                "screenshot": clicked.get("screenshot"),
+            }
+
+        self.page.wait_for_timeout(250)
+        after_url = str(self.page.url or "")
+        before = urlsplit(before_url)
+        after = urlsplit(after_url)
+        if (
+            before.scheme.casefold(), before.netloc.casefold()
+        ) != (
+            after.scheme.casefold(), after.netloc.casefold()
+        ):
+            return {
+                "error": "details_origin_mismatch",
+                "executed": False,
+                "mutation_executed": False,
+                "details_identity_status": "blocked",
+                "failed_stage": "same_origin_verification",
+                "name": name,
+                "current_url": after_url,
+                "screenshot": clicked.get("screenshot"),
+            }
+
+        identity = self.page.evaluate(identity_script, normalized_name)
         url_changed = before_url != after_url
+        exact_visible_count_increased = (
+            identity.get("exact_visible_count", 0)
+            > before_identity.get("exact_visible_count", 0)
+        )
         identity_passed = bool(
             identity.get("anchor_match_count")
             or identity.get("document_title_match")
             or (url_changed and identity.get("exact_visible_count", 0) > 0)
+            or exact_visible_count_increased
         )
         result = self._capture_state("open-exact-table-row-details")
         result.update({
@@ -8804,11 +8809,23 @@ class BrowserSession:
             "row_match_count": 1,
             "row_opened": True,
             "url_changed": url_changed,
+            "before_identity": before_identity,
             "identity": identity,
+            "exact_visible_count_increased": exact_visible_count_increased,
             "details_identity_status": (
                 "verified" if identity_passed else "not_confirmed"
             ),
             "details_identity_passed": identity_passed,
+            "observation_result": "PASS" if identity_passed else "BLOCKED",
+            "observation_reason": (
+                "exact_table_row_details_identity_verified"
+                if identity_passed
+                else "details_identity_not_confirmed"
+            ),
+            "next_step_hint": (
+                "Do not re-inspect the source table or pagination. Continue "
+                "with requested detail-surface checks, or finalize the verdict."
+            ),
         })
         if not identity_passed:
             result["error"] = "details_identity_not_confirmed"

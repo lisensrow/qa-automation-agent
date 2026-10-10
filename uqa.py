@@ -1444,6 +1444,18 @@ def _request_has_explicit_mutation_intent(text):
 def _request_is_read_only(messages):
     text = _latest_user_text(messages).lower()
 
+    # An explicit global read-only mode is authoritative and fail-closed.
+    # It must not be cancelled by mutation words listed inside a prohibition,
+    # for example: "read-only; do not use Add/Create/Edit/Save/Delete".
+    explicit_read_only_markers = (
+        "read-only",
+        "read only",
+        "readonly",
+        "только чтение",
+    )
+    if any(marker in text for marker in explicit_read_only_markers):
+        return True
+
     # Explicit create/update/delete intent wins over a scoped protection such
     # as "do not modify existing objects". The individual action still passes
     # through the existing MANAGED_ACTIONS classification and confirmation.
@@ -1458,8 +1470,6 @@ def _request_is_read_only(messages):
         "не создавай",
         "только проверь",
         "только проверить",
-        "read-only",
-        "readonly",
         "do not modify",
         "do not change",
     )
@@ -12257,6 +12267,15 @@ def artifact_public_url(
 
 
 def _core_observation_call_key(name, arguments):
+    if name == "browser_open_exact_table_row_details_semantic":
+        exact_name = " ".join(
+            str((arguments or {}).get("name") or "")
+            .strip()
+            .casefold()
+            .split()
+        )
+        return (name, exact_name) if exact_name else None
+
     if name != "browser_inspect_agent_telemetry_semantic":
         return None
 
@@ -13538,7 +13557,7 @@ def run_turn(
                         "content": (
                             "[UQA CORE: CORE-OWNED OBSERVATION COMPLETE]\n"
                             f"tool={name}\n"
-                            f"subject={arguments.get('ci_name')}\n"
+                            f"subject={arguments.get('ci_name') or arguments.get('name')}\n"
                             f"observation_result={result.get('observation_result')}\n"
                             f"evidence_id={result.get('uqa_evidence_id')}\n"
                             "The required Core-owned observation is recorded. "

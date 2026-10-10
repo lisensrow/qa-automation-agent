@@ -1,5 +1,5 @@
 from tools.browser import BrowserSession
-from uqa import classify_tool_action
+from uqa import _core_observation_call_key, classify_tool_action
 
 
 class FakePage:
@@ -7,11 +7,17 @@ class FakePage:
         self.url = before_url
         self.after_url = after_url
         self.identity = identity
+        self.evaluate_count = 0
 
     def wait_for_timeout(self, _milliseconds):
         self.url = self.after_url
 
     def evaluate(self, _script, _wanted):
+        if isinstance(self.identity, list):
+            index = min(self.evaluate_count, len(self.identity) - 1)
+            value = self.identity[index]
+            self.evaluate_count += 1
+            return dict(value)
         return dict(self.identity)
 
 
@@ -40,6 +46,9 @@ def make_session(before_url, after_url, identity):
 assert classify_tool_action(
     "browser_open_exact_table_row_details_semantic", {"name": "Exact row"}
 ) == "interact"
+assert _core_observation_call_key(
+    "browser_open_exact_table_row_details_semantic", {"name": " Exact  row "}
+) == ("browser_open_exact_table_row_details_semantic", "exact row")
 
 heading_session = make_session(
     "https://stand.example.test/items",
@@ -54,6 +63,7 @@ heading_session = make_session(
 heading_result = heading_session.open_exact_table_row_details_semantic("Exact row")
 assert heading_result["details_identity_passed"] is True
 assert heading_result["details_identity_status"] == "verified"
+assert heading_result["observation_result"] == "PASS"
 assert heading_result["mutation_executed"] is False
 assert heading_result["url_changed"] is True
 
@@ -70,6 +80,29 @@ transition_session = make_session(
 assert transition_session.open_exact_table_row_details_semantic(
     "Exact row"
 )["details_identity_passed"] is True
+
+drawer_session = make_session(
+    "https://stand.example.test/items",
+    "https://stand.example.test/items",
+    [
+        {
+            "anchor_types": [],
+            "anchor_match_count": 0,
+            "exact_visible_count": 1,
+            "document_title_match": False,
+        },
+        {
+            "anchor_types": [],
+            "anchor_match_count": 0,
+            "exact_visible_count": 2,
+            "document_title_match": False,
+        },
+    ],
+)
+drawer_result = drawer_session.open_exact_table_row_details_semantic("Exact row")
+assert drawer_result["details_identity_passed"] is True
+assert drawer_result["url_changed"] is False
+assert drawer_result["exact_visible_count_increased"] is True
 
 unproven_session = make_session(
     "https://stand.example.test/items",

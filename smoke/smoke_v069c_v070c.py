@@ -67,6 +67,12 @@ assert is_read_only(messages("Create one object; do not modify existing objects.
 assert is_read_only(messages("Только проверь, ничего не меняй и не создавай.")) is True
 assert is_read_only(messages("Do not create or change anything; read-only.")) is True
 assert is_read_only(messages(
+    "Run one read-only case. Do not use Add/Create/Edit/Save/Delete."
+)) is True
+assert is_read_only(messages(
+    "Выполни read-only проверку; не выполняй Add/Create/Edit/Save/Delete."
+)) is True
+assert is_read_only(messages(
     "Только read-only. Ничего не создавай и не изменяй. Сохрани evidence и результат."
 )) is True
 
