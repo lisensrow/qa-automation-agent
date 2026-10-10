@@ -13552,6 +13552,21 @@ def run_turn(
                     )
                 )
                 if not managed_readiness_passed:
+                    completion_instruction = (
+                        "The required Core-owned observation is recorded. "
+                        "Do not call this observation tool again for the "
+                        "same subject. Produce the final structured verdict "
+                        "now using the recorded evidence and observation IDs."
+                    )
+                    if name == "browser_open_exact_table_row_details_semantic":
+                        completion_instruction = (
+                            "The exact row and details identity are recorded. "
+                            "Do not inspect the source table or pagination "
+                            "again and do not reopen the row. If the original "
+                            "case explicitly requests checks inside the opened "
+                            "details surface, continue only with those checks; "
+                            "otherwise produce the final structured verdict now."
+                        )
                     messages.append({
                         "role": "user",
                         "content": (
@@ -13560,11 +13575,7 @@ def run_turn(
                             f"subject={arguments.get('ci_name') or arguments.get('name')}\n"
                             f"observation_result={result.get('observation_result')}\n"
                             f"evidence_id={result.get('uqa_evidence_id')}\n"
-                            "The required Core-owned observation is recorded. "
-                            "Do not call this observation tool again for the "
-                            "same subject. Produce the final structured verdict "
-                            "now using the recorded evidence and observation "
-                            "IDs."
+                            + completion_instruction
                             + planned_verdict_contract
                         ),
                     })
