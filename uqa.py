@@ -1083,6 +1083,66 @@ def _managed_agent_stand_url_for_job(job, request_text=""):
     return _managed_agent_stand_url_from_request(request_text)
 
 
+def _managed_stand_origin_check(expected_url, result):
+    """Compare the configured stand origin with the browser's final origin."""
+    from urllib.parse import urlsplit
+
+    def normalized_origin(value):
+        try:
+            parts = urlsplit(str(value or "").strip())
+            scheme = parts.scheme.casefold()
+            hostname = (parts.hostname or "").casefold()
+            port = parts.port
+        except (TypeError, ValueError):
+            return None
+
+        if scheme not in {"http", "https"} or not hostname:
+            return None
+        if (scheme, port) in {("http", 80), ("https", 443)}:
+            port = None
+        return scheme, hostname, port
+
+    expected = normalized_origin(expected_url)
+    actual = normalized_origin(
+        (result or {}).get("current_url")
+        or (result or {}).get("final_url")
+    )
+
+    def public_origin(origin):
+        if not origin:
+            return None
+        scheme, hostname, port = origin
+        suffix = f":{port}" if port is not None else ""
+        return f"{scheme}://{hostname}{suffix}"
+
+    return {
+        "matches": bool(expected and actual and expected == actual),
+        "expected_origin": public_origin(expected),
+        "actual_origin": public_origin(actual),
+    }
+
+
+def _enforce_managed_stand_origin(expected_url, result):
+    origin_check = _managed_stand_origin_check(expected_url, result)
+    if origin_check["matches"]:
+        return result
+
+    blocked = dict(result or {})
+    blocked.update({
+        "error": "managed_stand_origin_mismatch",
+        "status": "blocked",
+        "executed": False,
+        "expected_origin": origin_check["expected_origin"],
+        "actual_origin": origin_check["actual_origin"],
+        "reason": (
+            "The browser did not finish on the exact configured stand "
+            "origin. Managed workflow stopped before route discovery or "
+            "mutation."
+        ),
+    })
+    return blocked
+
+
 def _managed_agent_required_call(
     phase, ci_name, fixture_id, task_id, request_text="", stand_url=None,
 ):
@@ -13169,6 +13229,17 @@ def run_turn(
                             action_policy == "confirm_mutations"
                         ),
                     )
+                if (
+                    managed_agent_workflow_phase == "open_page"
+                    and name == "browser_open_page"
+                    and isinstance(result, dict)
+                    and not result.get("error")
+                    and result.get("http_status") in {200, 204, 304}
+                ):
+                    result = _enforce_managed_stand_origin(
+                        managed_agent_stand_url,
+                        result,
+                    )
                 record_required_selection_result(
                     job_id,
                     case_id,
@@ -13439,6 +13510,25 @@ def run_turn(
             if route_requirement:
                 managed_agent_route_required = route_requirement
                 managed_agent_route_page_ready = True
+            elif (
+                managed_agent_workflow_phase == "open_page"
+                and name == "browser_open_page"
+                and result.get("error")
+                == "managed_stand_origin_mismatch"
+            ):
+                managed_agent_workflow_phase = "verdict"
+                managed_agent_route_required = None
+                managed_agent_route_page_ready = False
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "[UQA CORE: MANAGED STAND ORIGIN BLOCKED]\n"
+                        "The browser did not finish on the configured stand "
+                        "origin. Do not retry, navigate elsewhere, or call "
+                        "another tool. Return the final structured BLOCKED "
+                        "verdict using reason managed_stand_origin_mismatch."
+                    ),
+                })
             elif (
                 managed_agent_route_required
                 and name == "browser_open_page"
