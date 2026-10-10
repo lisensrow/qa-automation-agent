@@ -8696,6 +8696,124 @@ class BrowserSession:
         )
         return result
 
+    def open_exact_table_row_details_semantic(self, name: str):
+        """Open one uniquely inspected row and verify the resulting identity."""
+        self._ensure_started()
+        inspected = self.inspect_table_row(name, exact=True)
+        if inspected.get("error") or inspected.get("row_match_count") != 1:
+            return {
+                "error": inspected.get("error") or "table_row_not_unique",
+                "executed": False,
+                "mutation_executed": False,
+                "details_identity_status": "blocked",
+                "failed_stage": "exact_row_inspection",
+                "name": name,
+                "row_match_count": inspected.get("row_match_count"),
+                "current_url": inspected.get("current_url"),
+                "screenshot": inspected.get("screenshot"),
+            }
+
+        before_url = str(self.page.url or "")
+        clicked = self.click_semantic(name, exact=True, role="row")
+        if clicked.get("error") or clicked.get("click_status") != "executed":
+            return {
+                "error": clicked.get("error") or "table_row_open_failed",
+                "executed": False,
+                "mutation_executed": False,
+                "details_identity_status": "blocked",
+                "failed_stage": "exact_row_open",
+                "name": name,
+                "current_url": clicked.get("current_url"),
+                "screenshot": clicked.get("screenshot"),
+            }
+
+        self.page.wait_for_timeout(250)
+        after_url = str(self.page.url or "")
+        before = urlsplit(before_url)
+        after = urlsplit(after_url)
+        if (
+            before.scheme.casefold(), before.netloc.casefold()
+        ) != (
+            after.scheme.casefold(), after.netloc.casefold()
+        ):
+            return {
+                "error": "details_origin_mismatch",
+                "executed": False,
+                "mutation_executed": False,
+                "details_identity_status": "blocked",
+                "failed_stage": "same_origin_verification",
+                "name": name,
+                "current_url": after_url,
+                "screenshot": clicked.get("screenshot"),
+            }
+
+        identity = self.page.evaluate(
+            """
+            wanted => {
+                const clean = value => String(value || '')
+                    .replace(/\\s+/g, ' ').trim();
+                const visible = el => {
+                    const style = getComputedStyle(el);
+                    return !el.hidden && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && el.getClientRects().length > 0;
+                };
+                const anchors = [];
+                const selectors = [
+                    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                    '[role="heading"]', '[aria-current="page"]'
+                ];
+                for (const el of document.querySelectorAll(selectors.join(','))) {
+                    if (visible(el) && clean(el.innerText || el.textContent) === wanted) {
+                        anchors.push(
+                            el.matches('[aria-current="page"]')
+                                ? 'aria-current'
+                                : (el.getAttribute('role') || el.tagName.toLowerCase())
+                        );
+                    }
+                }
+                let exactVisibleCount = 0;
+                for (const el of document.querySelectorAll('body *')) {
+                    if (
+                        el.children.length === 0 && visible(el)
+                        && clean(el.innerText || el.textContent) === wanted
+                    ) exactVisibleCount += 1;
+                }
+                return {
+                    anchor_types: Array.from(new Set(anchors)),
+                    anchor_match_count: anchors.length,
+                    exact_visible_count: exactVisibleCount,
+                    document_title_match: clean(document.title) === wanted,
+                };
+            }
+            """,
+            " ".join(str(name or "").split()),
+        )
+        url_changed = before_url != after_url
+        identity_passed = bool(
+            identity.get("anchor_match_count")
+            or identity.get("document_title_match")
+            or (url_changed and identity.get("exact_visible_count", 0) > 0)
+        )
+        result = self._capture_state("open-exact-table-row-details")
+        result.update({
+            "status": "ready" if identity_passed else "blocked",
+            "executed": True,
+            "mutation_executed": False,
+            "name": name,
+            "row_match_count": 1,
+            "row_opened": True,
+            "url_changed": url_changed,
+            "identity": identity,
+            "details_identity_status": (
+                "verified" if identity_passed else "not_confirmed"
+            ),
+            "details_identity_passed": identity_passed,
+        })
+        if not identity_passed:
+            result["error"] = "details_identity_not_confirmed"
+        return result
+
     def inspect_semantic(
         self,
         name: str,
@@ -13032,6 +13150,10 @@ def inspect_table_row(
         name,
         exact,
     )
+
+
+def open_exact_table_row_details_semantic(name: str) -> dict:
+    return _session.open_exact_table_row_details_semantic(name)
 
 
 def reset_case_context() -> dict:

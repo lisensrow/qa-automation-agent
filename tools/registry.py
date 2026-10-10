@@ -14,6 +14,7 @@ from tools.browser import (
     inspect_managed_agent_task_result_semantic,
     disable_agent_task_semantic,
     inspect_table_row,
+    open_exact_table_row_details_semantic,
     click_semantic,
     download_semantic,
     verify_download_structure_semantic,
@@ -1793,6 +1794,28 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_open_exact_table_row_details_semantic",
+            "description": (
+                "Проверяет ровно одну строку таблицы по точному значению ячейки, "
+                "открывает только эту уже проверенную строку и машинно подтверждает "
+                "identity details-поверхности. Не нажимает Add/Save/Delete и не "
+                "изменяет данные."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Точное видимое значение ячейки строки",
+                    }
+                },
+                "required": ["name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_agent_telemetry_semantic",
             "description": (
                 "Read-only связывает открытую карточку точной КЕ с уже "
@@ -2390,6 +2413,9 @@ def execute_tool(name: str, arguments: dict):
             arguments["ci_name"],
             arguments.get("max_age_seconds", 300),
         )
+
+    if name == "browser_open_exact_table_row_details_semantic":
+        return open_exact_table_row_details_semantic(arguments.get("name"))
 
     if name == "browser_inspect_agent_plugins_semantic":
         return inspect_agent_plugins_semantic(

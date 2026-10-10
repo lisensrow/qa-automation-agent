@@ -1645,6 +1645,9 @@ def classify_tool_action(
     if name == "browser_navigate_history_semantic":
         return "interact"
 
+    if name == "browser_open_exact_table_row_details_semantic":
+        return "interact"
+
     if name == "browser_inspect_hover_tooltip_semantic":
         return "interact"
 
