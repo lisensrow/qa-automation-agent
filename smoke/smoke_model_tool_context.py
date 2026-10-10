@@ -103,6 +103,15 @@ assert uqa._managed_agent_stand_url_from_request(
 assert uqa._managed_agent_stand_url_from_request(
     managed_request + " on https://uc.lab.local:"
 ) == "https://uc.lab.local"
+assert uqa._managed_agent_stand_url_from_request(
+    managed_request + " on https://user:secret@uc.lab.local"
+) is None
+assert uqa._managed_safe_http_url("https://uc.lab.local/path") == (
+    "https://uc.lab.local/path"
+)
+assert uqa._managed_safe_http_url("https://user@uc.lab.local") is None
+assert uqa._managed_safe_http_url("https://user:secret@uc.lab.local") is None
+assert uqa._managed_safe_http_url("https://uc.lab.local:bad") is None
 original_get_stand = uqa.get_stand
 try:
     uqa.get_stand = lambda stand_id: {
@@ -164,6 +173,24 @@ assert uqa._managed_agent_required_call(
     "tool": "browser_inspect_managed_agent_task_result_semantic",
     "arguments": {"ci_name": "test-windows", "task_id": "task-id"},
 }
+assert uqa._managed_agent_workflow_call_allowed(
+    "open_page", "test-windows", "windows_cmd_echo_marker_v1", None,
+    "browser_open_page", {"url": "https://stand.example.test/cmdb"},
+    "https://stand.example.test",
+)
+assert not uqa._managed_agent_workflow_call_allowed(
+    "open_page", "test-windows", "windows_cmd_echo_marker_v1", None,
+    "browser_open_page", {"url": "https://other.example.test"},
+    "https://stand.example.test",
+)
+assert not uqa._managed_agent_workflow_call_allowed(
+    "open_page", "test-windows", "windows_cmd_echo_marker_v1", None,
+    "browser_open_page", {}, "https://stand.example.test",
+)
+assert not uqa._managed_agent_workflow_call_allowed(
+    "open_page", "test-windows", "windows_cmd_echo_marker_v1", None,
+    "browser_open_page", {"url": "https://stand.example.test"}, None,
+)
 assert uqa._managed_agent_workflow_call_allowed(
     "probe", "test-windows", "windows_cmd_echo_marker_v1", None,
     "browser_probe_capabilities", {},

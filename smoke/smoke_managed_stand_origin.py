@@ -79,6 +79,13 @@ invalid_expected = check(
 assert invalid_expected["matches"] is False
 assert invalid_expected["expected_origin"] is None
 
+credential_url = check(
+    "https://stand.example.test",
+    {"current_url": "https://user:secret@stand.example.test/cmdb"},
+)
+assert credential_url["matches"] is False
+assert credential_url["actual_origin"] is None
+
 allowed_result = {
     "http_status": 200,
     "current_url": "https://stand.example.test/cmdb",

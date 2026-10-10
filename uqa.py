@@ -1065,20 +1065,41 @@ def _managed_agent_fixture_from_request(text):
     return None
 
 
+def _managed_safe_http_url(value):
+    from urllib.parse import urlsplit
+
+    candidate = str(value or "").strip()
+    try:
+        parts = urlsplit(candidate)
+        if (
+            parts.scheme.casefold() not in {"http", "https"}
+            or not parts.hostname
+            or parts.username is not None
+            or parts.password is not None
+        ):
+            return None
+        parts.port
+    except (TypeError, ValueError):
+        return None
+    return candidate
+
+
 def _managed_agent_stand_url_from_request(text):
     match = re.search(
         r"(?i)https?://[^\s<>\"']+",
         str(text or ""),
     )
-    return match.group(0).rstrip(".,;:)") if match else None
+    if not match:
+        return None
+    return _managed_safe_http_url(match.group(0).rstrip(".,;:)"))
 
 
 def _managed_agent_stand_url_for_job(job, request_text=""):
     stand_id = str((job or {}).get("stand") or "").strip()
     if stand_id:
         stand = get_stand(stand_id) or {}
-        resolved_url = str(stand.get("web_url") or "").strip()
-        if re.match(r"(?i)^https?://[^\s<>\"']+$", resolved_url):
+        resolved_url = _managed_safe_http_url(stand.get("web_url"))
+        if resolved_url:
             return resolved_url
     return _managed_agent_stand_url_from_request(request_text)
 
@@ -1096,7 +1117,12 @@ def _managed_stand_origin_check(expected_url, result):
         except (TypeError, ValueError):
             return None
 
-        if scheme not in {"http", "https"} or not hostname:
+        if (
+            scheme not in {"http", "https"}
+            or not hostname
+            or parts.username is not None
+            or parts.password is not None
+        ):
             return None
         if (scheme, port) in {("http", 80), ("https", 443)}:
             port = None
@@ -1223,9 +1249,15 @@ def _managed_agent_next_step_message(required_call):
 
 def _managed_agent_workflow_call_allowed(
     phase, ci_name, fixture_id, task_id, tool_name, arguments,
+    stand_url=None,
 ):
     if phase == "open_page":
-        return tool_name == "browser_open_page"
+        if tool_name != "browser_open_page":
+            return False
+        return _managed_stand_origin_check(
+            stand_url,
+            {"current_url": arguments.get("url")},
+        )["matches"]
     if phase == "route":
         return (
             tool_name == "browser_open_agent_tasks_semantic"
@@ -13164,6 +13196,7 @@ def run_turn(
                         managed_agent_task_id,
                         name,
                         arguments,
+                        managed_agent_stand_url,
                     )
                 ):
                     required_managed_call = _managed_agent_required_call(
