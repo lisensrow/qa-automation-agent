@@ -97,12 +97,33 @@ managed_request_with_url = (
 assert uqa._managed_agent_stand_url_from_request(
     managed_request_with_url
 ) == "https://uc.lab.local/"
+original_get_stand = uqa.get_stand
+try:
+    uqa.get_stand = lambda stand_id: {
+        "stand_id": stand_id,
+        "web_url": "https://resolved.lab.local",
+    }
+    assert uqa._managed_agent_stand_url_for_job(
+        {"stand": "saved-stand"}, managed_request_with_url,
+    ) == "https://resolved.lab.local"
+finally:
+    uqa.get_stand = original_get_stand
+assert uqa._managed_agent_stand_url_for_job(
+    {}, managed_request_with_url,
+) == "https://uc.lab.local/"
 assert uqa._managed_agent_required_call(
     "open_page", "test-windows", "windows_cmd_echo_marker_v1", None,
     managed_request_with_url,
 ) == {
     "tool": "browser_open_page",
     "arguments": {"url": "https://uc.lab.local/"},
+}
+assert uqa._managed_agent_required_call(
+    "open_page", "test-windows", "windows_cmd_echo_marker_v1", None,
+    managed_request_with_url, "https://resolved.lab.local",
+) == {
+    "tool": "browser_open_page",
+    "arguments": {"url": "https://resolved.lab.local"},
 }
 assert uqa._managed_agent_required_call(
     "route", "test-windows", "windows_cmd_echo_marker_v1", None,

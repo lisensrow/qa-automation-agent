@@ -1073,11 +1073,24 @@ def _managed_agent_stand_url_from_request(text):
     return match.group(0).rstrip(".,;)") if match else None
 
 
+def _managed_agent_stand_url_for_job(job, request_text=""):
+    stand_id = str((job or {}).get("stand") or "").strip()
+    if stand_id:
+        stand = get_stand(stand_id) or {}
+        resolved_url = str(stand.get("web_url") or "").strip()
+        if re.match(r"(?i)^https?://[^\s<>\"']+$", resolved_url):
+            return resolved_url
+    return _managed_agent_stand_url_from_request(request_text)
+
+
 def _managed_agent_required_call(
-    phase, ci_name, fixture_id, task_id, request_text="",
+    phase, ci_name, fixture_id, task_id, request_text="", stand_url=None,
 ):
     if phase == "open_page":
-        stand_url = _managed_agent_stand_url_from_request(request_text)
+        stand_url = (
+            str(stand_url or "").strip()
+            or _managed_agent_stand_url_from_request(request_text)
+        )
         return {
             "tool": "browser_open_page",
             "arguments": {"url": stand_url} if stand_url else {},
@@ -12244,12 +12257,15 @@ def run_turn(
     managed_agent_route_required = None
     managed_agent_route_page_ready = False
     managed_agent_request_text = ""
+    managed_agent_job = {}
     if job_id:
         try:
+            managed_agent_job = get_job(job_id) or {}
             managed_agent_request_text = str(
-                (get_job(job_id) or {}).get("request") or ""
+                managed_agent_job.get("request") or ""
             )
         except Exception:
+            managed_agent_job = {}
             managed_agent_request_text = ""
     managed_agent_ci_name = _managed_agent_ci_name_from_request(
         managed_agent_request_text
@@ -12265,6 +12281,10 @@ def run_turn(
         messages.append(telemetry_route_message)
     managed_agent_fixture_id = _managed_agent_fixture_from_request(
         managed_agent_request_text
+    )
+    managed_agent_stand_url = _managed_agent_stand_url_for_job(
+        managed_agent_job,
+        managed_agent_request_text,
     )
     managed_agent_workflow_phase = (
         "open_page"
@@ -12284,6 +12304,7 @@ def run_turn(
         managed_agent_fixture_id,
         managed_agent_task_id,
         managed_agent_request_text,
+        managed_agent_stand_url,
     )
     if initial_managed_call:
         messages.append(
@@ -12340,6 +12361,7 @@ def run_turn(
                     managed_agent_fixture_id,
                     managed_agent_task_id,
                     managed_agent_request_text,
+                    managed_agent_stand_url,
                 )
                 messages.append({
                     "role": "user",
@@ -13072,6 +13094,7 @@ def run_turn(
                         managed_agent_fixture_id,
                         managed_agent_task_id,
                         managed_agent_request_text,
+                        managed_agent_stand_url,
                     )
                     result = {
                         "error": "managed_agent_workflow_step_required",
@@ -13537,6 +13560,7 @@ def run_turn(
                     managed_agent_fixture_id,
                     managed_agent_task_id,
                     managed_agent_request_text,
+                    managed_agent_stand_url,
                 )
                 if next_managed_call:
                     messages.append(
