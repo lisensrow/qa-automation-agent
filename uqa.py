@@ -1658,6 +1658,9 @@ def classify_tool_action(
     if name == "browser_open_exact_table_row_details_semantic":
         return "interact"
 
+    if name == "browser_verify_exact_table_row_tabs_semantic":
+        return "interact"
+
     if name == "browser_inspect_hover_tooltip_semantic":
         return "interact"
 
@@ -12267,7 +12270,10 @@ def artifact_public_url(
 
 
 def _core_observation_call_key(name, arguments):
-    if name == "browser_open_exact_table_row_details_semantic":
+    if name in {
+        "browser_open_exact_table_row_details_semantic",
+        "browser_verify_exact_table_row_tabs_semantic",
+    }:
         exact_name = " ".join(
             str((arguments or {}).get("name") or "")
             .strip()

@@ -8831,6 +8831,172 @@ class BrowserSession:
             result["error"] = "details_identity_not_confirmed"
         return result
 
+    def verify_exact_table_row_tabs_semantic(
+        self, name: str, tabs: list, tablist: str = None,
+    ):
+        """Open one exact row and verify selected tab/panel contracts in order."""
+        self._ensure_started()
+        if (
+            not isinstance(tabs, list)
+            or not 1 <= len(tabs) <= 20
+            or any(not isinstance(tab, str) or not tab.strip() for tab in tabs)
+        ):
+            return {
+                "error": "requested_tabs_invalid",
+                "executed": False,
+                "mutation_executed": False,
+                "observation_result": "BLOCKED",
+            }
+        requested_tabs = [" ".join(tab.split()) for tab in tabs]
+        if len({tab.casefold() for tab in requested_tabs}) != len(requested_tabs):
+            return {
+                "error": "requested_tabs_not_unique",
+                "executed": False,
+                "mutation_executed": False,
+                "observation_result": "BLOCKED",
+            }
+
+        details = self.open_exact_table_row_details_semantic(name)
+        if details.get("error") or not details.get("details_identity_passed"):
+            result = dict(details)
+            result.update({
+                "error": details.get("error") or "details_identity_not_confirmed",
+                "failed_stage": "exact_row_details",
+                "requested_tabs": requested_tabs,
+                "tabs_verified": [],
+                "observation_result": "BLOCKED",
+                "mutation_executed": False,
+            })
+            return result
+
+        allowed_origin = urlsplit(str(self.page.url or ""))
+        verified = []
+        for tab_name in requested_tabs:
+            inspected = self.inspect_semantic(tab_name, exact=True, role="tab")
+            if inspected.get("error"):
+                return {
+                    "error": inspected.get("error"),
+                    "status": "blocked",
+                    "executed": True,
+                    "mutation_executed": False,
+                    "failed_stage": "exact_tab_inspection",
+                    "failed_tab": tab_name,
+                    "requested_tabs": requested_tabs,
+                    "tabs_verified": verified,
+                    "details_identity_passed": True,
+                    "observation_result": "BLOCKED",
+                    "current_url": str(self.page.url or ""),
+                }
+
+            clicked = self.click_semantic(tab_name, exact=True, role="tab")
+            if clicked.get("error") or clicked.get("click_status") != "executed":
+                return {
+                    "error": clicked.get("error") or "exact_tab_open_failed",
+                    "status": "blocked",
+                    "executed": True,
+                    "mutation_executed": False,
+                    "failed_stage": "exact_tab_open",
+                    "failed_tab": tab_name,
+                    "requested_tabs": requested_tabs,
+                    "tabs_verified": verified,
+                    "details_identity_passed": True,
+                    "observation_result": "BLOCKED",
+                    "current_url": str(self.page.url or ""),
+                }
+
+            self.page.wait_for_timeout(150)
+            current_url = str(self.page.url or "")
+            current_origin = urlsplit(current_url)
+            if (
+                allowed_origin.scheme.casefold(), allowed_origin.netloc.casefold()
+            ) != (
+                current_origin.scheme.casefold(), current_origin.netloc.casefold()
+            ):
+                return {
+                    "error": "tab_navigation_origin_mismatch",
+                    "status": "blocked",
+                    "executed": True,
+                    "mutation_executed": False,
+                    "failed_stage": "same_origin_verification",
+                    "failed_tab": tab_name,
+                    "requested_tabs": requested_tabs,
+                    "tabs_verified": verified,
+                    "details_identity_passed": True,
+                    "observation_result": "BLOCKED",
+                    "current_url": current_url,
+                }
+
+            contract = self.inspect_tabs_contract_semantic(tablist, exact=True)
+            audit = contract.get("tabs_audit") or {}
+            selected = [item for item in audit.get("tabs", []) if item.get("selected")]
+            selected_name = (
+                " ".join(str(selected[0].get("label") or "").split())
+                if len(selected) == 1
+                else ""
+            )
+            tab_passed = bool(
+                not contract.get("error")
+                and len(selected) == 1
+                and selected_name.casefold() == tab_name.casefold()
+                and bool(selected[0].get("controls"))
+                and selected[0].get("panel_exists") is True
+                and selected[0].get("panel_visible") is True
+            )
+            verification = {
+                "tab": tab_name,
+                "selected_tab": selected_name,
+                "selected_count": audit.get("selected_count"),
+                "panel_visible": (
+                    selected[0].get("panel_visible")
+                    if len(selected) == 1
+                    else False
+                ),
+                "controls": (
+                    selected[0].get("controls")
+                    if len(selected) == 1
+                    else ""
+                ),
+                "panel_exists": (
+                    selected[0].get("panel_exists")
+                    if len(selected) == 1
+                    else False
+                ),
+                "tabs_contract_passed": bool(audit.get("tabs_contract_passed")),
+                "passed": tab_passed,
+            }
+            verified.append(verification)
+            if not tab_passed:
+                return {
+                    "error": contract.get("error") or "selected_tab_panel_mismatch",
+                    "status": "blocked",
+                    "executed": True,
+                    "mutation_executed": False,
+                    "failed_stage": "tab_panel_contract",
+                    "failed_tab": tab_name,
+                    "requested_tabs": requested_tabs,
+                    "tabs_verified": verified,
+                    "details_identity_passed": True,
+                    "observation_result": "BLOCKED",
+                    "current_url": current_url,
+                }
+
+        result = self._capture_state("verify-exact-table-row-tabs")
+        result.update({
+            "status": "ready",
+            "executed": True,
+            "mutation_executed": False,
+            "name": name,
+            "row_match_count": 1,
+            "details_identity_passed": True,
+            "requested_tabs": requested_tabs,
+            "tabs_verified": verified,
+            "verified_tab_count": len(verified),
+            "tabs_workflow_passed": True,
+            "observation_result": "PASS",
+            "observation_reason": "exact_row_tabs_and_panels_verified",
+        })
+        return result
+
     def inspect_semantic(
         self,
         name: str,
@@ -13171,6 +13337,12 @@ def inspect_table_row(
 
 def open_exact_table_row_details_semantic(name: str) -> dict:
     return _session.open_exact_table_row_details_semantic(name)
+
+
+def verify_exact_table_row_tabs_semantic(
+    name: str, tabs: list, tablist: str = None,
+) -> dict:
+    return _session.verify_exact_table_row_tabs_semantic(name, tabs, tablist)
 
 
 def reset_case_context() -> dict:

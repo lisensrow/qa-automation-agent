@@ -25,6 +25,7 @@ SMOKES = [
     "smoke_planned_lifecycle_verdict.py",
     "smoke_exact_resource_name.py",
     "smoke_exact_table_row_details.py",
+    "smoke_exact_table_row_tabs.py",
     "smoke_browser_field_matching.py",
     "smoke_form_controls.py",
     "smoke_advanced_form_controls.py",

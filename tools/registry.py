@@ -15,6 +15,7 @@ from tools.browser import (
     disable_agent_task_semantic,
     inspect_table_row,
     open_exact_table_row_details_semantic,
+    verify_exact_table_row_tabs_semantic,
     click_semantic,
     download_semantic,
     verify_download_structure_semantic,
@@ -1816,6 +1817,32 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_verify_exact_table_row_tabs_semantic",
+            "description": (
+                "Read-only открывает одну точную строку таблицы, подтверждает "
+                "identity details-поверхности, затем по порядку выбирает "
+                "заданные exact ARIA tabs и после каждой машинно проверяет "
+                "единственный selected tab и видимую aria-controls panel."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "tabs": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 1,
+                        "maxItems": 20,
+                    },
+                    "tablist": {"type": "string"},
+                },
+                "required": ["name", "tabs"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_agent_telemetry_semantic",
             "description": (
                 "Read-only связывает открытую карточку точной КЕ с уже "
@@ -2416,6 +2443,13 @@ def execute_tool(name: str, arguments: dict):
 
     if name == "browser_open_exact_table_row_details_semantic":
         return open_exact_table_row_details_semantic(arguments.get("name"))
+
+    if name == "browser_verify_exact_table_row_tabs_semantic":
+        return verify_exact_table_row_tabs_semantic(
+            arguments.get("name"),
+            arguments.get("tabs"),
+            arguments.get("tablist"),
+        )
 
     if name == "browser_inspect_agent_plugins_semantic":
         return inspect_agent_plugins_semantic(
