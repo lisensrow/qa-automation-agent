@@ -466,7 +466,7 @@ Planner отделяет критерии продукта от служебно
 - v128k запретил credential-bearing managed URL (`user@host`, `user:password@host`) в request parser, Stand Store resolver и origin matcher. Невалидный порт также отклоняется до браузерного перехода. Основной runner — `137/137`, дополнительные — `11/11`; суммарно `148/148`.
 - v128m ужесточил pre-navigation contract с origin до точного Stand Store entry URL: scheme/host/normalized port/path/query/fragment должны совпадать, при этом отсутствие и наличие корневого `/` эквивалентны. Это блокирует нежелательные same-origin GET-пути до сети, сохраняя разрешение на проверенный redirect после открытия. Основной runner — `137/137`, дополнительные — `11/11`; суммарно `148/148`.
 
-## Следующий этап frontend-покрытия
+## Реализованное frontend-покрытие
 
 - Scoped modal/wizard workflow: точный `dialog/alertdialog`, read-only snapshot active step/buttons/fields и нажатие exact button только внутри подтверждённого scope. Переход `Next/Back` проверяется по смене active step, закрытие — по исчезновению dialog; `Save/Submit/Delete` сохраняют обычную v069-классификацию.
 - Кастомные ARIA calendar overlays: exact trigger через `aria-controls`, обязательный `role=grid`, read-only snapshot наблюдаемых дат и policy-controlled выбор одной точной date option с post-click verification.
@@ -511,6 +511,14 @@ Planner отделяет критерии продукта от служебно
 - Native web-platform contracts read-only проверяют `details/summary`, HTML Popover API (`popover`/`popovertarget`) и `<dialog>` accessible name с согласованностью `open` и фактической видимости.
 - Form structure audits проверяют direct `legend` у fieldset, identity/labels/checked-count radio groups и explicit button types внутри form, чтобы обнаруживать случайный implicit submit.
 - Access Zone blocker оставить до появления продуктовой поддержки и автоматически перепроверить после изменения версии.
+
+## Актуальная очередь развития
+
+1. Собрать и прогнать на реальном U-Connect репрезентативный корпус ручных frontend-задач тестировщика: навигация, формы, таблицы, фильтры, сортировки, модальные сценарии, файлы, адаптивность, accessibility и agent UI. Fixture benchmark остаётся нижним техническим уровнем, а не доказательством полного продуктового покрытия.
+2. Для повторяющихся бизнес-сценариев добавить машинно проверяемые workflow-контракты: состояние до действия, точное изменение, сохранение после повторного открытия и отсутствие побочных изменений. Контракты должны оставаться описательными и не содержать U-Connect-specific route if/else в Core.
+3. После появления online Windows/Ubuntu КЕ завершить реальную проверку managed lifecycle `create → result → ledger → cleanup disable`, включая периодические задачи. До этого offline readiness остаётся корректным `BLOCKED`, а не дефектом UQA.
+4. После закрытия ручного frontend-контура перейти к full-back проверкам API, фоновых задач, БД и межсервисных связей с отдельными permission/policy boundaries.
+5. Затем добавить понимание новых функций, расширяемую продуктовую базу знаний и интеграцию с Jira. Эти слои не должны подменять evidence и детерминированные проверки Core.
 
 ## Правило актуализации документа
 
