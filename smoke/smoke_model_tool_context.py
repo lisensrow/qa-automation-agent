@@ -88,6 +88,9 @@ managed_request = (
     "Create windows_cmd_echo_marker_v1 for exact CI test-windows and verify it"
 )
 assert uqa._managed_agent_ci_name_from_request(managed_request) == "test-windows"
+assert uqa._managed_agent_ci_name_from_request(
+    "Create windows_cmd_echo_marker_v1 for exact CI test-windows: verify it"
+) == "test-windows"
 assert uqa._managed_agent_fixture_from_request(managed_request) == (
     "windows_cmd_echo_marker_v1"
 )
@@ -97,6 +100,9 @@ managed_request_with_url = (
 assert uqa._managed_agent_stand_url_from_request(
     managed_request_with_url
 ) == "https://uc.lab.local/"
+assert uqa._managed_agent_stand_url_from_request(
+    managed_request + " on https://uc.lab.local:"
+) == "https://uc.lab.local"
 original_get_stand = uqa.get_stand
 try:
     uqa.get_stand = lambda stand_id: {

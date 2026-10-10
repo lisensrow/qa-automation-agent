@@ -1051,7 +1051,7 @@ def _managed_agent_ci_name_from_request(text):
         r"\s+[\"'“]?([\w.:-]+)",
         str(text or ""),
     )
-    return match.group(1).strip().rstrip(".,;") if match else None
+    return match.group(1).strip().rstrip(".,;:") if match else None
 
 
 def _managed_agent_fixture_from_request(text):
@@ -1070,7 +1070,7 @@ def _managed_agent_stand_url_from_request(text):
         r"(?i)https?://[^\s<>\"']+",
         str(text or ""),
     )
-    return match.group(0).rstrip(".,;)") if match else None
+    return match.group(0).rstrip(".,;:)") if match else None
 
 
 def _managed_agent_stand_url_for_job(job, request_text=""):
