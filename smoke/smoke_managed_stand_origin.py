@@ -13,6 +13,7 @@ functions = [
     and node.name in {
         "_managed_stand_origin_check",
         "_enforce_managed_stand_origin",
+        "_managed_agent_origin_guard_applies",
     }
 ]
 scope = {}
@@ -22,6 +23,7 @@ exec(
 )
 check = scope["_managed_stand_origin_check"]
 enforce = scope["_enforce_managed_stand_origin"]
+guard_applies = scope["_managed_agent_origin_guard_applies"]
 
 same = check(
     "https://Stand.Example.Test",
@@ -95,6 +97,37 @@ assert blocked_result["status"] == "blocked"
 assert blocked_result["executed"] is False
 assert blocked_result["expected_origin"] == "https://stand.example.test"
 assert blocked_result["actual_origin"] == "https://wrong.example.test"
+
+assert guard_applies(
+    "open_page",
+    "browser_open_page",
+    {"http_status": 200, "current_url": "https://stand.example.test"},
+)
+assert not guard_applies(
+    "open_page",
+    "browser_open_page",
+    {"http_status": 500, "current_url": "https://stand.example.test"},
+)
+for phase, tool_name in (
+    ("route", "browser_open_agent_tasks_semantic"),
+    ("probe", "browser_probe_capabilities"),
+    ("readiness", "browser_inspect_agent_telemetry_semantic"),
+):
+    assert guard_applies(
+        phase,
+        tool_name,
+        {"executed": True, "current_url": "https://stand.example.test/cmdb"},
+    )
+    assert not guard_applies(
+        phase,
+        tool_name,
+        {"error": "failed", "executed": False},
+    )
+assert not guard_applies(
+    "create",
+    "browser_create_managed_agent_task_semantic",
+    {"executed": True},
+)
 
 assert 'managed_agent_workflow_phase = "verdict"' in source
 assert "MANAGED STAND ORIGIN BLOCKED" in source

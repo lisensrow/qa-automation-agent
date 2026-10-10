@@ -1143,6 +1143,24 @@ def _enforce_managed_stand_origin(expected_url, result):
     return blocked
 
 
+def _managed_agent_origin_guard_applies(phase, tool_name, result):
+    guarded_tools = {
+        "open_page": "browser_open_page",
+        "route": "browser_open_agent_tasks_semantic",
+        "probe": "browser_probe_capabilities",
+        "readiness": "browser_inspect_agent_telemetry_semantic",
+    }
+    if (
+        guarded_tools.get(phase) != tool_name
+        or not isinstance(result, dict)
+        or result.get("error")
+    ):
+        return False
+    if phase == "open_page":
+        return result.get("http_status") in {200, 204, 304}
+    return result.get("executed") is not False
+
+
 def _managed_agent_required_call(
     phase, ci_name, fixture_id, task_id, request_text="", stand_url=None,
 ):
@@ -13229,12 +13247,10 @@ def run_turn(
                             action_policy == "confirm_mutations"
                         ),
                     )
-                if (
-                    managed_agent_workflow_phase == "open_page"
-                    and name == "browser_open_page"
-                    and isinstance(result, dict)
-                    and not result.get("error")
-                    and result.get("http_status") in {200, 204, 304}
+                if _managed_agent_origin_guard_applies(
+                    managed_agent_workflow_phase,
+                    name,
+                    result,
                 ):
                     result = _enforce_managed_stand_origin(
                         managed_agent_stand_url,
@@ -13507,15 +13523,7 @@ def run_turn(
                 arguments,
                 result,
             )
-            if route_requirement:
-                managed_agent_route_required = route_requirement
-                managed_agent_route_page_ready = True
-            elif (
-                managed_agent_workflow_phase == "open_page"
-                and name == "browser_open_page"
-                and result.get("error")
-                == "managed_stand_origin_mismatch"
-            ):
+            if result.get("error") == "managed_stand_origin_mismatch":
                 managed_agent_workflow_phase = "verdict"
                 managed_agent_route_required = None
                 managed_agent_route_page_ready = False
@@ -13529,6 +13537,9 @@ def run_turn(
                         "verdict using reason managed_stand_origin_mismatch."
                     ),
                 })
+            elif route_requirement:
+                managed_agent_route_required = route_requirement
+                managed_agent_route_page_ready = True
             elif (
                 managed_agent_route_required
                 and name == "browser_open_page"
