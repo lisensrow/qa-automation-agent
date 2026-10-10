@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "product": "U-Connect",
+  "purpose": "Product-level manual frontend task corpus; Core remains product-agnostic.",
+  "cases": [
+    {
+      "case_id": "uc-front-001",
+      "category": "navigation",
+      "title": "Open exact CMDB configuration item",
+      "task": "Open the saved U-Connect stand, find one exact named CMDB row, open it, and verify the details surface.",
+      "action_profile": "read_only",
+      "execution_status": "ready",
+      "prerequisites": ["saved_stand", "exact_ci_name"],
+      "checks": ["exact row is unique", "details surface belongs to the same CI", "browser remains on the saved stand origin"]
+    },
+    {
+      "case_id": "uc-front-002",
+      "category": "navigation",
+      "title": "Navigate configuration item tabs",
+      "task": "For one exact CMDB item, open each requested visible tab and verify that the selected tab and panel agree.",
+      "action_profile": "read_only",
+      "execution_status": "ready",
+      "prerequisites": ["saved_stand", "exact_ci_name", "requested_tab_names"],
+      "checks": ["one exact tab is selected", "controlled panel is visible", "no unrelated item is opened"]
+    },
+    {
+      "case_id": "uc-front-003",
+      "category": "data_views",
+      "title": "Filter a CMDB table",
+      "task": "Apply one exact non-destructive table filter and verify the visible rows and reported total without changing records.",
+      "action_profile": "write_ui_state",
+      "execution_status": "ready",
+      "policy_required": true,
+      "cleanup_contract": "clear_filter_v1",
+      "prerequisites": ["saved_stand", "filter_field", "filter_value"],
+      "checks": ["filter control contains the requested value", "visible rows satisfy the filter", "clearing the filter restores the prior view"]
+    },
+    {
+      "case_id": "uc-front-004",
+      "category": "data_views",
+      "title": "Verify CMDB pagination",
+      "task": "Inspect pagination, move to one adjacent page, and verify the visible range and row identity without bulk actions.",
+      "action_profile": "write_ui_state",
+      "execution_status": "ready",
+      "policy_required": true,
+      "cleanup_contract": "return_to_initial_page_v1",
+      "prerequisites": ["saved_stand", "multi_page_table"],
+      "checks": ["current page changes once", "visible range is consistent with total", "selected-row ledger is not treated as product evidence"]
+    },
+    {
+      "case_id": "uc-front-005",
+      "category": "data_views",
+      "title": "Verify one sortable column",
+      "task": "Toggle one exact sortable header and verify the observed order, then restore the initial sort state.",
+      "action_profile": "write_ui_state",
+      "execution_status": "candidate",
+      "policy_required": true,
+      "cleanup_contract": "restore_sort_v1",
+      "prerequisites": ["saved_stand", "sortable_column", "comparable_rows"],
+      "checks": ["sort direction is observable", "rows follow the requested order", "initial sort state is restored"]
+    },
+    {
+      "case_id": "uc-front-006",
+      "category": "forms",
+      "title": "Validate required fields without submit",
+      "task": "Inspect one exact form and verify required-field, label, description, and native validation contracts without submitting it.",
+      "action_profile": "read_only",
+      "execution_status": "ready",
+      "prerequisites": ["saved_stand", "exact_form_name"],
+      "checks": ["required fields are identified", "labels and descriptions resolve", "no submit request is sent"]
+    },
+    {
+      "case_id": "uc-front-007",
+      "category": "forms",
+      "title": "Edit and persist a disposable frontend fixture",
+      "task": "Change one allowed field on an owned disposable resource, save it, reopen it, and verify persistence and absence of unrelated changes.",
+      "action_profile": "write_resource",
+      "execution_status": "candidate",
+      "policy_required": true,
+      "cleanup_contract": "registered_resource_cleanup_required",
+      "prerequisites": ["saved_stand", "owned_resource_id", "allowed_field", "safe_value"],
+      "checks": ["dirty state appears after edit", "save succeeds", "value persists after reopen", "unrelated observed fields remain unchanged"]
+    },
+    {
+      "case_id": "uc-front-008",
+      "category": "forms",
+      "title": "Walk a modal wizard without final submit",
+      "task": "Open one exact wizard, verify step transitions and Back behavior, then close it without Save or Submit.",
+      "action_profile": "write_ui_state",
+      "execution_status": "ready",
+      "policy_required": true,
+      "cleanup_contract": "close_dialog_without_submit_v1",
+      "prerequisites": ["saved_stand", "wizard_trigger", "expected_steps"],
+      "checks": ["dialog identity is exact", "Next and Back change the active step", "closing removes the dialog", "no submit request is sent"]
+    },
+    {
+      "case_id": "uc-front-009",
+      "category": "agent_ui",
+      "title": "Read exact agent telemetry",
+      "task": "Open Agent for one exact CI and verify UI, CI, agent, and monitoring status with freshness evidence.",
+      "action_profile": "read_only",
+      "execution_status": "ready",
+      "prerequisites": ["saved_stand", "exact_ci_name"],
+      "checks": ["CI and agent IDs correlate", "all observed statuses are reported", "monitoring freshness is explicit", "evidence belongs to the exact CI"]
+    },
+    {
+      "case_id": "uc-front-010",
+      "category": "agent_ui",
+      "title": "Audit installed agent plugins",
+      "task": "For one exact CI, inspect the observed plugin list and verify one requested plugin name, version, and freshness.",
+      "action_profile": "read_only",
+      "execution_status": "ready",
+      "prerequisites": ["saved_stand", "exact_ci_name", "plugin_name"],
+      "checks": ["plugin belongs to the selected agent", "version is explicit", "audit freshness is explicit"]
+    },
+    {
+      "case_id": "uc-front-011",
+      "category": "agent_ui",
+      "title": "Run managed non-periodic agent task",
+      "task": "Create one allowlisted managed executeCommand fixture for an exact online CI, verify its closed result, register it in the ledger, and disable it during cleanup.",
+      "action_profile": "write_resource",
+      "execution_status": "blocked_external",
+      "policy_required": true,
+      "cleanup_contract": "agent_task_disable_v1",
+      "blocker": "online_agent_required",
+      "prerequisites": ["saved_stand", "exact_online_ci", "fresh_monitoring", "allowlisted_fixture"],
+      "checks": ["readiness passes before create", "task identity matches the exact agent", "closed result matches the private marker", "cleanup disables the registered task"]
+    },
+    {
+      "case_id": "uc-front-012",
+      "category": "agent_ui",
+      "title": "Verify periodic agent task second run",
+      "task": "For an owned periodic managed task, prove a second completed run by a newer processed timestamp without exposing command output.",
+      "action_profile": "write_resource",
+      "execution_status": "blocked_external",
+      "policy_required": true,
+      "cleanup_contract": "agent_task_disable_v1",
+      "blocker": "online_agent_required",
+      "prerequisites": ["saved_stand", "exact_online_ci", "periodic_fixture"],
+      "checks": ["private baseline is stored", "second processed timestamp is newer", "task output remains private", "cleanup disables the task"]
+    },
+    {
+      "case_id": "uc-front-013",
+      "category": "agent_ui",
+      "title": "Inspect VNC surface readiness",
+      "task": "Inspect the exact remote-console iframe and verify surface readiness and frame change without sending keyboard or pointer input.",
+      "action_profile": "read_only",
+      "execution_status": "candidate",
+      "prerequisites": ["saved_stand", "exact_ci_name", "vnc_frame_identity"],
+      "checks": ["iframe identity and origin match", "surface has non-zero visible dimensions", "frame-change evidence uses private hashes", "no input action is sent"]
+    },
+    {
+      "case_id": "uc-front-014",
+      "category": "responsive_accessibility",
+      "title": "Check three fixed viewport profiles",
+      "task": "Open one exact U-Connect page under mobile, tablet, and desktop profiles and report horizontal overflow and hidden critical controls.",
+      "action_profile": "read_only",
+      "execution_status": "ready",
+      "prerequisites": ["saved_stand", "page_identity"],
+      "checks": ["all three fixed profiles run", "horizontal overflow is explicit", "critical controls remain observable", "viewport is restored"]
+    },
+    {
+      "case_id": "uc-front-015",
+      "category": "responsive_accessibility",
+      "title": "Run page accessibility and health audit",
+      "task": "Audit one exact page for accessible names, broken ARIA references, headings, landmarks, contrast, target size, console errors, and failed requests.",
+      "action_profile": "read_only",
+      "execution_status": "ready",
+      "prerequisites": ["saved_stand", "page_identity"],
+      "checks": ["accessibility categories are reported separately", "frontend health is explicit", "network URLs are redacted", "response bodies and stack traces are not exposed"]
+    },
+    {
+      "case_id": "uc-front-016",
+      "category": "files_notifications",
+      "title": "Verify a generated report download",
+      "task": "Trigger one expected report download and verify filename, format signature, hash when known, and safe structural bounds without returning file contents.",
+      "action_profile": "write_ui_state",
+      "execution_status": "candidate",
+      "policy_required": true,
+      "cleanup_contract": "close_download_context_v1",
+      "prerequisites": ["saved_stand", "download_trigger", "expected_filename"],
+      "checks": ["one expected download is captured", "signature matches the format", "structure stays within expected bounds", "contents are not returned to the model"]
+    }
+  ]
+}
