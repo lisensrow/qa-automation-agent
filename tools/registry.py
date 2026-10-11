@@ -135,6 +135,7 @@ from tools.browser import (
     set_table_row_selected,
     table_page_semantic,
     fill_table_filter_semantic,
+    verify_table_text_filter_roundtrip_semantic,
     apply_table_filter_popover_semantic,
     inspect_popover_semantic,
     open_popover_semantic,
@@ -1519,6 +1520,23 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_verify_table_text_filter_roundtrip_semantic",
+            "description": "Атомарно применяет точный именованный text/search filter, проверяет строки выбранной колонки и reported total, затем обязательно восстанавливает исходный filter и набор строк. Записи продукта не изменяются.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "filter_name": {"type": "string"},
+                    "value": {"type": "string"},
+                    "column": {"type": "string"},
+                    "table": {"type": "string"}
+                },
+                "required": ["filter_name", "value", "column"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_inspect_popover_semantic",
             "description": "Read-only снимок открытого popup, связанного с точной кнопкой через aria-controls.",
             "parameters": {"type": "object", "properties": {
@@ -2737,6 +2755,14 @@ def execute_tool(name: str, arguments: dict):
             arguments["text"],
             arguments.get("table"),
             arguments.get("exact", True),
+        )
+
+    if name == "browser_verify_table_text_filter_roundtrip_semantic":
+        return verify_table_text_filter_roundtrip_semantic(
+            arguments["filter_name"],
+            arguments["value"],
+            arguments["column"],
+            arguments.get("table"),
         )
 
     if name == "browser_inspect_popover_semantic":

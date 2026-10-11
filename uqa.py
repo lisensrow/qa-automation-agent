@@ -1741,6 +1741,7 @@ def classify_tool_action(
         "browser_set_table_row_selected",
         "browser_table_page_semantic",
         "browser_fill_table_filter_semantic",
+        "browser_verify_table_text_filter_roundtrip_semantic",
         "browser_apply_table_filter_popover_semantic",
         "browser_set_table_all_selected",
     }:
@@ -12271,6 +12272,13 @@ def artifact_public_url(
 
 
 def _core_observation_call_key(name, arguments):
+    if name == "browser_verify_table_text_filter_roundtrip_semantic":
+        parts = tuple(
+            " ".join(str((arguments or {}).get(key) or "").strip().casefold().split())
+            for key in ("filter_name", "value", "column")
+        )
+        return (name,) + parts if all(parts) else None
+
     if name == "browser_verify_exact_form_required_contract_semantic":
         exact_form = " ".join(
             str((arguments or {}).get("form") or "")

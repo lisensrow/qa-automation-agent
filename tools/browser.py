@@ -6917,6 +6917,163 @@ class BrowserSession:
             result["error"] = "table_filter_not_applied"
         return result
 
+    def verify_table_text_filter_roundtrip_semantic(
+        self,
+        filter_name: str,
+        value: str,
+        column: str,
+        table: str = None,
+    ):
+        """Apply, verify, and restore one exact non-destructive text filter."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        filter_name = str(filter_name or "").strip()
+        value = str(value or "").strip()
+        column = str(column or "").strip()
+        if not filter_name or len(filter_name) > 200:
+            return {"error": "table_filter_name_invalid", "executed": False}
+        if not value or len(value) > 500:
+            return {"error": "table_filter_value_invalid", "executed": False}
+        if not column or len(column) > 200:
+            return {"error": "table_filter_column_invalid", "executed": False}
+
+        table_locator, error = self._resolve_table(table, True)
+        if error:
+            return error
+        candidates = []
+        for role in ("searchbox", "textbox"):
+            locator = self.page.get_by_role(role, name=filter_name, exact=True)
+            role_candidates = []
+            for index in range(min(locator.count(), 50)):
+                candidate = locator.nth(index)
+                if candidate.is_visible():
+                    role_candidates.append(candidate)
+            if role_candidates:
+                candidates = role_candidates
+                break
+        if len(candidates) != 1:
+            return {
+                "error": "table_filter_control_not_unique",
+                "matches": len(candidates),
+                "executed": False,
+            }
+        target = candidates[0]
+        if (target.get_attribute("type") or "").casefold() == "password":
+            return {"error": "table_filter_password_forbidden", "executed": False}
+
+        original_value = target.input_value()
+        if original_value == value:
+            return {
+                "error": "table_filter_value_already_present",
+                "executed": False,
+                "mutation_executed": False,
+            }
+        before_url = str(self.page.url or "")
+        before = self._table_snapshot(table_locator)
+        filtered = None
+        pagination = {}
+        observed_value = None
+        restored = None
+        restored_value = None
+        execution_error = None
+
+        execution_id = self._begin_action_execution()
+        try:
+            target.fill(value)
+            self.page.wait_for_timeout(700)
+            observed_value = target.input_value()
+            filtered = self._table_snapshot(table_locator)
+            pagination_result = self.inspect_table_pagination_semantic(table, True)
+            self.active_action_execution_id = execution_id
+            pagination = {
+                key: pagination_result.get(key)
+                for key in (
+                    "visible_row_count", "total_row_count", "total_source",
+                    "visible_range_start", "visible_range_end", "current_page",
+                )
+            }
+        except Exception as exc:
+            execution_error = type(exc).__name__
+        finally:
+            try:
+                target.fill(original_value)
+                for _ in range(12):
+                    self.page.wait_for_timeout(250)
+                    restored_value = target.input_value()
+                    restored = self._table_snapshot(table_locator)
+                    if (
+                        restored_value == original_value
+                        and restored.get("row_signature")
+                        == before.get("row_signature")
+                    ):
+                        break
+            except Exception as exc:
+                execution_error = execution_error or type(exc).__name__
+
+        filtered = filtered or {"rows": [], "visible_row_count": 0}
+        rows = filtered.get("rows") or []
+        normalized = value.casefold()
+        row_matches = [
+            normalized in str(
+                (row.get("values_by_header") or {}).get(column) or ""
+            ).casefold()
+            for row in rows
+        ]
+        visible_rows_match = bool(rows) and all(row_matches)
+        total = pagination.get("total_row_count")
+        total_present = isinstance(total, int) and not isinstance(total, bool)
+        total_consistent = bool(
+            total_present and total >= len(rows)
+        )
+        restored_passed = bool(
+            restored_value == original_value
+            and restored
+            and restored.get("row_signature") == before.get("row_signature")
+        )
+        current_url = str(self.page.url or "")
+        before_origin = urlsplit(before_url)
+        current_origin = urlsplit(current_url)
+        same_origin = (
+            before_origin.scheme.casefold(), before_origin.netloc.casefold()
+        ) == (
+            current_origin.scheme.casefold(), current_origin.netloc.casefold()
+        )
+        contract_passed = bool(
+            execution_error is None
+            and observed_value == value
+            and visible_rows_match
+            and total_consistent
+            and restored_passed
+            and same_origin
+        )
+        result = self._capture_state("verify-table-text-filter-roundtrip")
+        result.update({
+            "status": "verified" if contract_passed else "blocked",
+            "executed": observed_value is not None,
+            "mutation_executed": False,
+            "interaction_executed": observed_value is not None,
+            "table_name": table,
+            "filter_name": filter_name,
+            "filter_value": value,
+            "filtered_column": column,
+            "observed_filter_value": observed_value,
+            "visible_row_count": len(rows),
+            "visible_rows_match_filter": visible_rows_match,
+            "reported_total": total,
+            "reported_total_present": total_present,
+            "reported_total_consistent": total_consistent,
+            "filter_restored": restored_passed,
+            "restored_filter_value": restored_value,
+            "same_origin": same_origin,
+            "filter_roundtrip_passed": contract_passed,
+            "observation_result": "PASS" if contract_passed else "BLOCKED",
+        })
+        if execution_error:
+            result["execution_error_type"] = execution_error
+        if not contract_passed:
+            result["error"] = "table_filter_roundtrip_contract_failed"
+        return self._finish_action_execution(result)
+
     def _controlled_popover(self, trigger, exact=True):
         buttons = self.page.get_by_role("button", name=trigger, exact=exact)
         visible = [
@@ -12925,6 +13082,17 @@ def fill_table_filter_semantic(
         text,
         table,
         exact,
+    )
+
+
+def verify_table_text_filter_roundtrip_semantic(
+    filter_name: str,
+    value: str,
+    column: str,
+    table: str = None,
+) -> dict:
+    return _session.verify_table_text_filter_roundtrip_semantic(
+        filter_name, value, column, table,
     )
 
 
