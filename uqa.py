@@ -28,7 +28,7 @@ from stands import (
 
 from ssh_worker import probe_stand
 from artifact_staging import stage_test_artifact, get_verified_staged_artifact
-from tools.browser import set_staged_file_semantic
+from tools.browser import set_staged_file_semantic, edit_form_field_roundtrip_semantic
 from job_store import (
     create_job,
     add_test_case,
@@ -140,6 +140,30 @@ CORE_RESOURCE_TOOLS = [
                     },
                 },
                 "required": ["resource_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_edit_owned_resource_roundtrip_semantic",
+            "description": (
+                "После ledger ownership-gate изменяет одно exact поле "
+                "одноразового ресурса, нажимает exact Save, перезагружает "
+                "страницу и проверяет persistence и неизменность остальных "
+                "полей. Это WRITE и всегда проходит v069 policy."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "resource_id": {"type": "string"},
+                    "form": {"type": "string"},
+                    "field": {"type": "string"},
+                    "value": {"type": "string"},
+                    "save_button": {"type": "string"},
+                    "exact": {"type": "boolean"},
+                },
+                "required": ["resource_id", "form", "field", "value"],
             },
         },
     },
@@ -1750,6 +1774,9 @@ def classify_tool_action(
         return "destructive" if trigger_action == "destructive" else "write"
 
     if name in {"stage_test_artifact", "browser_upload_staged_artifact_semantic"}:
+        return "write"
+
+    if name == "browser_edit_owned_resource_roundtrip_semantic":
         return "write"
 
     if name == "browser_click_popover_button_semantic":
@@ -3732,6 +3759,32 @@ def execute_resource_tool(
                 "authorization": authorization,
             }
 
+        if name == "browser_edit_owned_resource_roundtrip_semantic":
+            authorization = authorize_test_resource_edit(
+                job_id=job_id,
+                resource_id=arguments.get("resource_id"),
+                field=arguments.get("field"),
+                value=arguments.get("value"),
+            )
+            if not authorization.get("edit_authorized"):
+                return {
+                    "status": "blocked",
+                    "executed": False,
+                    "mutation_executed": False,
+                    "authorization": authorization,
+                    "error": "resource_edit_scope_denied",
+                }
+            result = edit_form_field_roundtrip_semantic(
+                form=arguments.get("form"),
+                field=arguments.get("field"),
+                value=arguments.get("value"),
+                save_button=arguments.get("save_button", "Save"),
+                exact=arguments.get("exact", True),
+            )
+            result["authorization"] = authorization
+            result["resource_id"] = authorization.get("resource_id")
+            return result
+
         if name == "table_selection_list":
             selections = list_table_selections(
                 job_id=job_id,
@@ -4336,6 +4389,7 @@ def execute_tool_with_policy(
         "table_selection_list",
         "stage_test_artifact",
         "browser_upload_staged_artifact_semantic",
+        "browser_edit_owned_resource_roundtrip_semantic",
     }:
         result = execute_resource_tool(
             name,
@@ -9550,6 +9604,7 @@ def _cleanup_tools():
         "table_selection_list",
         "stage_test_artifact",
         "browser_upload_staged_artifact_semantic",
+        "browser_edit_owned_resource_roundtrip_semantic",
         "browser_create_managed_agent_task_semantic",
         "browser_inspect_managed_agent_task_result_semantic",
         "browser_disable_agent_task_semantic",

@@ -11868,6 +11868,219 @@ class BrowserSession:
         result.update({"form": form, "form_dirty_operation": operation, "form_dirty": dirty, "form_control_count": len(snapshot), "baseline_present": key in self._form_state_baselines, "mutation_executed": False})
         return result
 
+    def edit_form_field_roundtrip_semantic(
+        self, form, field, value, save_button="Save", exact=True,
+    ):
+        """Edit one exact field, save, reload and verify private form state."""
+        self._ensure_started()
+        self._reset_diagnostics()
+
+        def resolve_form():
+            forms = self.page.locator("form")
+            matches = []
+            expected = form if exact else str(form).casefold()
+            for index in range(min(forms.count(), 50)):
+                candidate = forms.nth(index)
+                names = [
+                    str(candidate.get_attribute(attribute) or "").strip()
+                    for attribute in ("aria-label", "name", "id")
+                ]
+                matched = (
+                    expected in names
+                    if exact
+                    else any(expected in item.casefold() for item in names if item)
+                )
+                if matched and candidate.is_visible():
+                    matches.append(candidate)
+            return matches
+
+        def resolve_field(root):
+            matches = []
+            seen = set()
+            for role in ("textbox", "searchbox", "combobox", "spinbutton"):
+                locator = root.get_by_role(role, name=field, exact=exact)
+                for index in range(min(locator.count(), 20)):
+                    candidate = locator.nth(index)
+                    try:
+                        if candidate.is_visible():
+                            key = candidate.evaluate(
+                                "el => String(Array.from(el.form.elements).indexOf(el))"
+                            )
+                            if key not in seen:
+                                seen.add(key)
+                                matches.append(candidate)
+                    except Exception:
+                        continue
+            labelled = root.get_by_label(field, exact=exact)
+            for index in range(min(labelled.count(), 20)):
+                candidate = labelled.nth(index)
+                try:
+                    if candidate.is_visible():
+                        key = candidate.evaluate(
+                            "el => String(Array.from(el.form.elements).indexOf(el))"
+                        )
+                        if key not in seen:
+                            seen.add(key)
+                            matches.append(candidate)
+                except Exception:
+                    continue
+            return matches
+
+        def snapshot(root):
+            raw = root.evaluate("""
+              root => Array.from(root.querySelectorAll('input,select,textarea'))
+                .filter(el => el.type !== 'hidden' && el.type !== 'file')
+                .slice(0, 200)
+                .map((el, index) => ({
+                  key: `index:${index}`,
+                  tag: el.tagName.toLowerCase(),
+                  type: el.type || '',
+                  value: el.value,
+                  checked: Boolean(el.checked),
+                  selected: Array.from(el.selectedOptions || []).map(option => option.value)
+                }))
+            """)
+            return {
+                item["key"]: hashlib.sha256(
+                    json.dumps(item, sort_keys=True, ensure_ascii=False)
+                    .encode("utf-8")
+                ).hexdigest()
+                for item in raw
+            }
+
+        forms = resolve_form()
+        if len(forms) != 1:
+            return {
+                "error": "edit_roundtrip_form_not_unique",
+                "matches": len(forms),
+                "executed": False,
+                "mutation_executed": False,
+            }
+        root = forms[0]
+        fields = resolve_field(root)
+        if len(fields) != 1:
+            return {
+                "error": "edit_roundtrip_field_not_unique",
+                "matches": len(fields),
+                "executed": False,
+                "mutation_executed": False,
+            }
+        target = fields[0]
+        field_type = str(target.get_attribute("type") or "").casefold()
+        if field_type in {"password", "file", "hidden", "checkbox", "radio"}:
+            return {
+                "error": "edit_roundtrip_field_type_not_supported",
+                "executed": False,
+                "mutation_executed": False,
+            }
+        target_key = target.evaluate(
+            "el => `index:${Array.from(el.form.querySelectorAll('input,select,textarea'))"
+            ".filter(x => x.type !== 'hidden' && x.type !== 'file').indexOf(el)}`"
+        )
+        baseline = snapshot(root)
+        unrelated_keys = set(baseline) - {target_key}
+        if not unrelated_keys:
+            return {
+                "error": "edit_roundtrip_unrelated_baseline_missing",
+                "executed": False,
+                "mutation_executed": False,
+            }
+
+        buttons = root.get_by_role("button", name=save_button, exact=True)
+        visible_buttons = [
+            buttons.nth(index)
+            for index in range(min(buttons.count(), 20))
+            if buttons.nth(index).is_visible()
+        ]
+        if len(visible_buttons) != 1 or not visible_buttons[0].is_enabled():
+            return {
+                "error": "edit_roundtrip_save_button_not_ready",
+                "matches": len(visible_buttons),
+                "executed": False,
+                "mutation_executed": False,
+                "observation_result": "BLOCKED",
+            }
+
+        before_url = str(self.page.url or "")
+        self._begin_action_execution()
+        target.fill(str(value))
+        edited = snapshot(root)
+        dirty = edited != baseline and edited.get(target_key) != baseline.get(target_key)
+        if not dirty:
+            result = self._capture_state("edit-form-field-roundtrip")
+            result.update({
+                "error": "edit_roundtrip_dirty_state_not_observed",
+                "executed": True,
+                "mutation_executed": True,
+                "form_dirty": False,
+                "observation_result": "BLOCKED",
+            })
+            return self._finish_action_execution(result)
+
+        visible_buttons[0].click()
+        self.page.wait_for_timeout(250)
+        self.page.reload(wait_until="domcontentloaded")
+        self.page.wait_for_timeout(150)
+        after_url = str(self.page.url or "")
+        before_origin = urlsplit(before_url)
+        after_origin = urlsplit(after_url)
+        same_origin = (
+            before_origin.scheme.casefold(), before_origin.netloc.casefold()
+        ) == (
+            after_origin.scheme.casefold(), after_origin.netloc.casefold()
+        )
+
+        reopened_forms = resolve_form()
+        if len(reopened_forms) != 1:
+            result = self._capture_state("edit-form-field-roundtrip")
+            result.update({
+                "error": "edit_roundtrip_reopened_form_not_unique",
+                "executed": True,
+                "mutation_executed": True,
+                "form_dirty": True,
+                "same_origin": same_origin,
+                "observation_result": "BLOCKED",
+            })
+            return self._finish_action_execution(result)
+
+        reopened_root = reopened_forms[0]
+        reopened_fields = resolve_field(reopened_root)
+        persisted = bool(
+            len(reopened_fields) == 1
+            and reopened_fields[0].input_value() == str(value)
+        )
+        final_snapshot = snapshot(reopened_root)
+        unrelated_unchanged = bool(
+            unrelated_keys
+            and all(final_snapshot.get(key) == baseline.get(key) for key in unrelated_keys)
+        )
+        passed = bool(same_origin and dirty and persisted and unrelated_unchanged)
+        result = self._capture_state("edit-form-field-roundtrip")
+        result.update({
+            "status": "verified" if passed else "blocked",
+            "executed": True,
+            "mutation_executed": True,
+            "form": form,
+            "field": field,
+            "form_dirty": dirty,
+            "save_clicked": True,
+            "reopened": True,
+            "same_origin": same_origin,
+            "value_persisted": persisted,
+            "unrelated_field_count": len(unrelated_keys),
+            "unrelated_fields_unchanged": unrelated_unchanged,
+            "edit_roundtrip_passed": passed,
+            "observation_result": "PASS" if passed else "BLOCKED",
+            "observation_reason": (
+                "owned_fixture_edit_persisted"
+                if passed
+                else "edit_persistence_contract_failed"
+            ),
+        })
+        if not passed:
+            result["error"] = "edit_persistence_contract_failed"
+        return self._finish_action_execution(result)
+
     def inspect_tabs_contract_semantic(self, tablist=None, exact=True):
         """Audit one ARIA tablist and its controlled tabpanels."""
         self._ensure_started(); self._reset_diagnostics()
@@ -13648,6 +13861,9 @@ def inspect_control_state_lifecycle_semantic(target: str, role: str, expected_st
 
 def track_form_dirty_state_semantic(form: str, operation: str = "compare", exact: bool = True) -> dict:
     return _session.track_form_dirty_state_semantic(form, operation, exact)
+
+def edit_form_field_roundtrip_semantic(form: str, field: str, value: str, save_button: str = "Save", exact: bool = True) -> dict:
+    return _session.edit_form_field_roundtrip_semantic(form, field, value, save_button, exact)
 
 def inspect_tabs_contract_semantic(tablist: str = None, exact: bool = True) -> dict:
     return _session.inspect_tabs_contract_semantic(tablist, exact)
