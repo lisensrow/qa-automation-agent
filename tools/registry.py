@@ -132,6 +132,7 @@ from tools.browser import (
     resize_semantic,
     inspect_table_semantic,
     sort_table_semantic,
+    verify_table_sort_roundtrip_semantic,
     set_table_row_selected,
     table_page_semantic,
     verify_table_pagination_roundtrip_semantic,
@@ -1453,6 +1454,22 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_verify_table_sort_roundtrip_semantic",
+            "description": "Переключает одну точную sortable column в заданное направление, проверяет aria-sort и фактическую монотонность строк, затем обязательно восстанавливает исходный sort state и row identity.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "column": {"type": "string"},
+                    "direction": {"type": "string", "enum": ["ascending", "descending", "asc", "desc"]},
+                    "table": {"type": "string"}
+                },
+                "required": ["column", "direction"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_set_table_row_selected",
             "description": (
                 "Идемпотентно устанавливает checkbox выбора ровно одной строки, "
@@ -2749,6 +2766,13 @@ def execute_tool(name: str, arguments: dict):
             arguments["direction"],
             arguments.get("table"),
             arguments.get("exact", True),
+        )
+
+    if name == "browser_verify_table_sort_roundtrip_semantic":
+        return verify_table_sort_roundtrip_semantic(
+            arguments["column"],
+            arguments["direction"],
+            arguments.get("table"),
         )
 
     if name == "browser_set_table_row_selected":

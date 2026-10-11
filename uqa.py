@@ -1738,6 +1738,7 @@ def classify_tool_action(
 
     if name in {
         "browser_sort_table_semantic",
+        "browser_verify_table_sort_roundtrip_semantic",
         "browser_set_table_row_selected",
         "browser_table_page_semantic",
         "browser_verify_table_pagination_roundtrip_semantic",
@@ -12273,6 +12274,13 @@ def artifact_public_url(
 
 
 def _core_observation_call_key(name, arguments):
+    if name == "browser_verify_table_sort_roundtrip_semantic":
+        parts = tuple(
+            " ".join(str((arguments or {}).get(key) or "").strip().casefold().split())
+            for key in ("column", "direction")
+        )
+        return (name,) + parts if all(parts) else None
+
     if name == "browser_verify_table_pagination_roundtrip_semantic":
         parts = tuple(
             " ".join(str((arguments or {}).get(key) or "").strip().casefold().split())

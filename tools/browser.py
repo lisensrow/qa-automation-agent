@@ -6539,6 +6539,143 @@ class BrowserSession:
             result["error"] = "table_sort_not_observed"
         return result
 
+    def verify_table_sort_roundtrip_semantic(
+        self,
+        column: str,
+        direction: str,
+        table: str = None,
+    ):
+        """Verify one exact sortable column and restore its initial order."""
+        self._ensure_started()
+        column = str(column or "").strip()
+        wanted = {
+            "asc": "ascending", "ascending": "ascending",
+            "desc": "descending", "descending": "descending",
+        }.get(str(direction or "").strip().casefold())
+        if not column or len(column) > 200:
+            return {"error": "table_sort_column_invalid", "executed": False}
+        if not wanted:
+            return {"error": "unsupported_sort_direction", "executed": False}
+        table_locator, error = self._resolve_table(table, True)
+        if error:
+            return error
+        before = self._table_snapshot(table_locator)
+
+        def snapshot_sort(snapshot):
+            for item in snapshot.get("headers") or []:
+                if str(item.get("name") or "").strip().casefold() == column.casefold():
+                    return str(item.get("aria_sort") or "").strip().casefold()
+            return ""
+
+        initial_sort = snapshot_sort(before)
+        if initial_sort == wanted:
+            return {
+                "error": "requested_sort_already_initial",
+                "executed": False,
+                "mutation_executed": False,
+            }
+        before_url = str(self.page.url or "")
+        forward = self.sort_table_semantic(column, wanted, table, True)
+        forward_clicked = bool(forward.get("action_execution_id"))
+        sorted_snapshot = forward.get("table_after") or before
+        restore_error = None
+        restored_snapshot = before
+        restored_sort = initial_sort
+        if forward_clicked:
+            try:
+                if initial_sort in {"ascending", "descending"}:
+                    restored_result = self.sort_table_semantic(
+                        column, initial_sort, table, True,
+                    )
+                    restore_error = restored_result.get("error")
+                    restored_snapshot = (
+                        restored_result.get("table_after")
+                        or restored_result.get("table_before")
+                        or {}
+                    )
+                else:
+                    self.page.reload(wait_until="domcontentloaded", timeout=20000)
+                    self.page.wait_for_timeout(700)
+                    restored_table, restore_resolution_error = self._resolve_table(
+                        table, True,
+                    )
+                    if restore_resolution_error:
+                        restore_error = restore_resolution_error.get("error")
+                        restored_snapshot = {}
+                    else:
+                        restored_snapshot = self._table_snapshot(restored_table)
+                restored_sort = snapshot_sort(restored_snapshot)
+            except Exception as exc:
+                restore_error = type(exc).__name__
+                restored_snapshot = {}
+
+        values = [
+            str((row.get("values_by_header") or {}).get(column) or "").strip()
+            for row in sorted_snapshot.get("rows") or []
+        ]
+        comparable = len(values) >= 2 and all(values)
+        normalized = [value.casefold() for value in values]
+        if wanted == "ascending":
+            order_matches = comparable and all(
+                left <= right for left, right in zip(normalized, normalized[1:])
+            )
+        else:
+            order_matches = comparable and all(
+                left >= right for left, right in zip(normalized, normalized[1:])
+            )
+        observed_sort = snapshot_sort(sorted_snapshot)
+        sort_observable = observed_sort == wanted
+        current_url = str(self.page.url or "")
+        before_origin = urlsplit(before_url)
+        current_origin = urlsplit(current_url)
+        same_origin = (
+            before_origin.scheme.casefold(), before_origin.netloc.casefold()
+        ) == (
+            current_origin.scheme.casefold(), current_origin.netloc.casefold()
+        )
+        restored_passed = bool(
+            forward_clicked
+            and restore_error is None
+            and restored_sort == initial_sort
+            and restored_snapshot.get("row_signature") == before.get("row_signature")
+            and same_origin
+        )
+        contract_passed = bool(
+            not forward.get("error")
+            and forward_clicked
+            and sort_observable
+            and order_matches
+            and restored_passed
+        )
+        result = self._capture_state("verify-table-sort-roundtrip")
+        result.update({
+            "status": "verified" if contract_passed else "blocked",
+            "executed": forward_clicked,
+            "interaction_executed": forward_clicked,
+            "mutation_executed": False,
+            "table_name": table,
+            "sorted_column": column,
+            "requested_sort": wanted,
+            "initial_sort": initial_sort or None,
+            "observed_sort": observed_sort or None,
+            "sort_direction_observable": sort_observable,
+            "comparable_row_count": len(values),
+            "rows_follow_requested_order": order_matches,
+            "restored_sort": restored_sort or None,
+            "initial_sort_restored": restored_passed,
+            "restore_error": restore_error,
+            "same_origin": same_origin,
+            "sort_roundtrip_passed": contract_passed,
+            "observation_result": "PASS" if contract_passed else "BLOCKED",
+        })
+        if not contract_passed:
+            result["error"] = (
+                forward.get("error")
+                or restore_error
+                or "table_sort_roundtrip_contract_failed"
+            )
+        return result
+
     def set_table_row_selected(
         self,
         name: str,
@@ -13161,6 +13298,16 @@ def sort_table_semantic(
         direction,
         table,
         exact,
+    )
+
+
+def verify_table_sort_roundtrip_semantic(
+    column: str,
+    direction: str,
+    table: str = None,
+) -> dict:
+    return _session.verify_table_sort_roundtrip_semantic(
+        column, direction, table,
     )
 
 
