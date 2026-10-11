@@ -320,6 +320,16 @@ UQA_THINK = (
 
 LLM_CALL_COUNTER = 0
 
+OLLAMA_READINESS_TTL_SECONDS = max(
+    0,
+    int(os.getenv("UQA_OLLAMA_READINESS_TTL_SECONDS", "600")),
+)
+OLLAMA_WARMUP_TIMEOUT_SECONDS = max(
+    10,
+    int(os.getenv("UQA_OLLAMA_WARMUP_TIMEOUT_SECONDS", "180")),
+)
+_OLLAMA_READY_UNTIL = 0.0
+
 LLM_LOCK_PATH = os.getenv(
     "UQA_LLM_LOCK_PATH",
     "/run/lock/uqa/llm.lock",
@@ -4662,13 +4672,93 @@ def banner():
     )
 
 
+def ensure_ollama_ready(force=False):
+    """Verify model availability with one bounded inference warmup."""
+    import time
+
+    global _OLLAMA_READY_UNTIL
+
+    now = time.monotonic()
+    if not force and now < _OLLAMA_READY_UNTIL:
+        return {
+            "status": "ready",
+            "model": MODEL,
+            "cached": True,
+        }
+
+    llm_lock = None
+    started = time.perf_counter()
+    try:
+        llm_lock, queue_seconds = acquire_llm_gate("warmup")
+        console.print(
+            f"[dim]Ollama preflight: model={MODEL}, "
+            f"timeout={OLLAMA_WARMUP_TIMEOUT_SECONDS}s[/dim]"
+        )
+        timeout = httpx.Timeout(
+            float(OLLAMA_WARMUP_TIMEOUT_SECONDS),
+            connect=5.0,
+        )
+        with httpx.Client(timeout=timeout) as client:
+            tags_response = client.get(f"{OLLAMA_URL}/api/tags")
+            tags_response.raise_for_status()
+            model_names = {
+                str(item.get("name") or "")
+                for item in (tags_response.json().get("models") or [])
+                if isinstance(item, dict)
+            }
+            if MODEL not in model_names:
+                raise RuntimeError(
+                    f"configured Ollama model is not installed: {MODEL}"
+                )
+
+            warmup_response = client.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={
+                    "model": MODEL,
+                    "prompt": "Reply with OK.",
+                    "stream": False,
+                    "keep_alive": "30m",
+                    "options": {
+                        "num_ctx": min(UQA_NUM_CTX, 2048),
+                        "num_predict": 1,
+                        "temperature": 0,
+                    },
+                },
+            )
+            warmup_response.raise_for_status()
+            warmup_payload = warmup_response.json()
+            if warmup_payload.get("done") is not True:
+                raise RuntimeError("Ollama warmup did not finish")
+
+        elapsed = time.perf_counter() - started
+        _OLLAMA_READY_UNTIL = time.monotonic() + OLLAMA_READINESS_TTL_SECONDS
+        console.print(
+            f"[green]Ollama ready[/green] "
+            f"[dim](warmup={elapsed:.1f}s, queue={queue_seconds:.1f}s)[/dim]"
+        )
+        return {
+            "status": "ready",
+            "model": MODEL,
+            "cached": False,
+            "warmup_seconds": round(elapsed, 3),
+            "queue_seconds": round(queue_seconds, 3),
+        }
+    except Exception:
+        _OLLAMA_READY_UNTIL = 0.0
+        raise
+    finally:
+        release_llm_gate(llm_lock)
+
+
 def ask_ollama(
     messages,
     tools=TOOLS,
 ):
     import time
 
-    global LLM_CALL_COUNTER
+    global LLM_CALL_COUNTER, _OLLAMA_READY_UNTIL
+
+    ensure_ollama_ready()
 
     LLM_CALL_COUNTER += 1
     call_id = LLM_CALL_COUNTER
@@ -4714,26 +4804,30 @@ def ask_ollama(
 
         started = time.perf_counter()
 
-        with httpx.Client(
-            timeout=httpx.Timeout(
-                600.0,
-                connect=10.0,
-            )
-        ) as client:
-            response = client.post(
-                f"{OLLAMA_URL}/api/chat",
-                json={
-                    "model": MODEL,
-                    "messages": model_messages,
-                    "tools": tools,
-                    "stream": False,
-                    "think": UQA_THINK,
-                    "keep_alive": "30m",
-                    "options": {
-                        "num_ctx": UQA_NUM_CTX,
+        try:
+            with httpx.Client(
+                timeout=httpx.Timeout(
+                    600.0,
+                    connect=10.0,
+                )
+            ) as client:
+                response = client.post(
+                    f"{OLLAMA_URL}/api/chat",
+                    json={
+                        "model": MODEL,
+                        "messages": model_messages,
+                        "tools": tools,
+                        "stream": False,
+                        "think": UQA_THINK,
+                        "keep_alive": "30m",
+                        "options": {
+                            "num_ctx": UQA_NUM_CTX,
+                        },
                     },
-                },
-            )
+                )
+        except httpx.TimeoutException:
+            _OLLAMA_READY_UNTIL = 0.0
+            raise
 
         wall_seconds = (
             time.perf_counter()
@@ -14531,6 +14625,15 @@ def main():
 
         job_id = None
         case_id = None
+
+        try:
+            ensure_ollama_ready()
+        except Exception as exc:
+            console.print(
+                "[red]Ollama недоступна до создания Job:[/red] "
+                f"{type(exc).__name__}: {str(exc)[:500]}"
+            )
+            continue
 
         if request_is_qa_job(user_input):
             stand_identity = None
