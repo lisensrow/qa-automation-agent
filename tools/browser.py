@@ -8111,6 +8111,108 @@ class BrowserSession:
         })
         return self._finish_action_execution(result)
 
+    def verify_dialog_wizard_roundtrip_semantic(
+        self, trigger, dialog, steps, next_button="Next",
+        back_button="Back", close_button="Cancel", exact=True,
+    ):
+        """Walk a wizard forward/backward and close it without submitting."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        if (
+            not isinstance(steps, list)
+            or not 2 <= len(steps) <= 10
+            or any(not isinstance(step, str) or not step.strip() for step in steps)
+        ):
+            return {"error": "wizard_steps_invalid", "executed": False}
+        expected_steps = [" ".join(step.split()) for step in steps]
+        if len({step.casefold() for step in expected_steps}) != len(expected_steps):
+            return {"error": "wizard_steps_not_unique", "executed": False}
+        protected_names = re.compile(
+            r"(?i)\b(save|submit|finish|create|apply|delete|archive|сохран|"
+            r"отправ|заверш|созда|примен|удал|архив)"
+        )
+        if any(protected_names.search(str(name or "")) for name in (
+            next_button, back_button, close_button,
+        )):
+            return {"error": "wizard_submit_like_button_forbidden", "executed": False}
+
+        triggers = self.page.get_by_role("button", name=trigger, exact=exact)
+        visible_triggers = [
+            triggers.nth(index)
+            for index in range(min(triggers.count(), 50))
+            if triggers.nth(index).is_visible()
+        ]
+        if len(visible_triggers) != 1 or not visible_triggers[0].is_enabled():
+            return {"error": "wizard_trigger_not_ready", "matches": len(visible_triggers), "executed": False}
+
+        observed_steps = []
+        backward_steps = []
+        forward_verified = True
+        backward_verified = True
+        failed_stage = None
+        self._begin_action_execution()
+        visible_triggers[0].click()
+        self.page.wait_for_timeout(150)
+        target, error = self._visible_dialog(dialog, exact)
+        if error:
+            result = self._capture_state("verify-dialog-wizard-roundtrip")
+            result.update({"error": error.get("error") or "wizard_dialog_not_ready", "executed": True, "interaction_executed": True, "mutation_executed": False, "observation_result": "BLOCKED"})
+            return self._finish_action_execution(result)
+
+        def active_step():
+            active = self._dialog_snapshot(target).get("active_steps") or []
+            return active[0] if len(active) == 1 else None
+
+        def exact_button(name):
+            controls = target.get_by_role("button", name=name, exact=True)
+            matches = [controls.nth(index) for index in range(min(controls.count(), 20)) if controls.nth(index).is_visible()]
+            return matches[0] if len(matches) == 1 and matches[0].is_enabled() else None
+
+        current = active_step()
+        observed_steps.append(current)
+        if current != expected_steps[0]:
+            forward_verified = False
+            failed_stage = "initial_step"
+        if forward_verified:
+            for expected in expected_steps[1:]:
+                control = exact_button(next_button)
+                if control is None:
+                    forward_verified = False; failed_stage = "next_button"; break
+                control.click(); self.page.wait_for_timeout(100)
+                current = active_step(); observed_steps.append(current)
+                if current != expected:
+                    forward_verified = False; failed_stage = "forward_step"; break
+        if forward_verified:
+            for expected in reversed(expected_steps[:-1]):
+                control = exact_button(back_button)
+                if control is None:
+                    backward_verified = False; failed_stage = "back_button"; break
+                control.click(); self.page.wait_for_timeout(100)
+                current = active_step(); backward_steps.append(current)
+                if current != expected:
+                    backward_verified = False; failed_stage = "backward_step"; break
+        else:
+            backward_verified = False
+
+        close_control = exact_button(close_button)
+        dialog_closed = False
+        if close_control is not None:
+            close_control.click(); self.page.wait_for_timeout(100)
+            try:
+                dialog_closed = not target.is_visible()
+            except Exception:
+                dialog_closed = True
+        else:
+            failed_stage = failed_stage or "close_button"
+
+        write_requests = [event for event in self.network_events if str(event.get("method") or "").upper() in {"POST", "PUT", "PATCH", "DELETE"}]
+        passed = bool(forward_verified and backward_verified and dialog_closed and not write_requests)
+        result = self._capture_state("verify-dialog-wizard-roundtrip")
+        result.update({"status": "verified" if passed else "blocked", "executed": True, "interaction_executed": True, "mutation_executed": False, "wizard_trigger": trigger, "dialog_name": dialog, "expected_steps": expected_steps, "observed_forward_steps": observed_steps, "observed_backward_steps": backward_steps, "forward_steps_verified": forward_verified, "backward_steps_verified": backward_verified, "dialog_closed": dialog_closed, "write_request_count": len(write_requests), "no_submit_request_sent": not write_requests, "wizard_roundtrip_passed": passed, "failed_stage": failed_stage, "observation_result": "PASS" if passed else "BLOCKED"})
+        if not passed:
+            result["error"] = "wizard_roundtrip_contract_failed"
+        return self._finish_action_execution(result)
+
     def apply_table_filter_popover_semantic(
         self,
         column: str,
@@ -13636,6 +13738,15 @@ def click_dialog_button_semantic(
     dialog: str, button: str, exact: bool = True,
 ) -> dict:
     return _session.click_dialog_button_semantic(dialog, button, exact)
+
+def verify_dialog_wizard_roundtrip_semantic(
+    trigger: str, dialog: str, steps: list, next_button: str = "Next",
+    back_button: str = "Back", close_button: str = "Cancel",
+    exact: bool = True,
+) -> dict:
+    return _session.verify_dialog_wizard_roundtrip_semantic(
+        trigger, dialog, steps, next_button, back_button, close_button, exact,
+    )
 
 
 def apply_table_filter_popover_semantic(

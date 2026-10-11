@@ -1759,6 +1759,9 @@ def classify_tool_action(
             {"name": arguments.get("button")},
         )
 
+    if name == "browser_verify_dialog_wizard_roundtrip_semantic":
+        return "interact"
+
     if name == "browser_select_popover_option_semantic":
         option_action = classify_tool_action(
             "browser_click_semantic",

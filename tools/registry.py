@@ -152,6 +152,7 @@ from tools.browser import (
     select_time_picker_option_semantic,
     inspect_dialog_semantic,
     click_dialog_button_semantic,
+    verify_dialog_wizard_roundtrip_semantic,
     inspect_table_pagination_semantic,
     set_table_all_selected,
     inspect_bulk_action_semantic,
@@ -1722,6 +1723,26 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_verify_dialog_wizard_roundtrip_semantic",
+            "description": (
+                "Открывает exact wizard, проверяет заданные active steps через "
+                "Next и Back, закрывает Cancel/Close и доказывает отсутствие "
+                "POST/PUT/PATCH/DELETE. Save/Submit/Finish запрещены."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "trigger": {"type": "string"},
+                "dialog": {"type": "string"},
+                "steps": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 10},
+                "next_button": {"type": "string"},
+                "back_button": {"type": "string"},
+                "close_button": {"type": "string"},
+                "exact": {"type": "boolean"}
+            }, "required": ["trigger", "dialog", "steps"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_select_popover_option_semantic",
             "description": (
                 "Выбирает единственную точную role=option с явным aria-selected "
@@ -2868,6 +2889,15 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_click_dialog_button_semantic":
         return click_dialog_button_semantic(
             arguments["dialog"], arguments["button"],
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_verify_dialog_wizard_roundtrip_semantic":
+        return verify_dialog_wizard_roundtrip_semantic(
+            arguments["trigger"], arguments["dialog"], arguments["steps"],
+            arguments.get("next_button", "Next"),
+            arguments.get("back_button", "Back"),
+            arguments.get("close_button", "Cancel"),
             arguments.get("exact", True),
         )
 
