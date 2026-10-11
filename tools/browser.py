@@ -10990,6 +10990,162 @@ class BrowserSession:
         })
         return result
 
+    def verify_exact_form_required_contract_semantic(
+        self,
+        form,
+        expected_required_fields=None,
+    ):
+        """Verify one exact form's required-field contract without submitting."""
+        self._ensure_started()
+        self._reset_diagnostics()
+        form = str(form or "").strip()
+        if not form or len(form) > 200:
+            return {"error": "validation_form_name_invalid", "executed": False}
+        if expected_required_fields is None:
+            expected_required_fields = []
+        if (
+            not isinstance(expected_required_fields, list)
+            or not 0 <= len(expected_required_fields) <= 50
+            or any(
+                not isinstance(item, str)
+                or not item.strip()
+                or len(item.strip()) > 200
+                for item in expected_required_fields
+            )
+        ):
+            return {"error": "expected_required_fields_invalid", "executed": False}
+        expected_required_fields = [item.strip() for item in expected_required_fields]
+        if len(set(expected_required_fields)) != len(expected_required_fields):
+            return {"error": "expected_required_fields_duplicate", "executed": False}
+
+        forms = self.page.locator("form")
+        matches = []
+        for index in range(min(forms.count(), 50)):
+            candidate = forms.nth(index)
+            names = [
+                str(candidate.get_attribute(attribute) or "").strip()
+                for attribute in ("aria-label", "name", "id")
+            ]
+            if form in names and candidate.is_visible():
+                matches.append(candidate)
+        if len(matches) != 1:
+            return {
+                "error": "validation_form_not_unique",
+                "matches": len(matches),
+                "executed": False,
+            }
+
+        audit = matches[0].evaluate(
+            """
+            root => {
+              const shown = el => {
+                const rect = el.getBoundingClientRect();
+                const style = getComputedStyle(el);
+                return rect.width > 0 && rect.height > 0
+                  && style.display !== 'none' && style.visibility !== 'hidden';
+              };
+              const normalize = value => String(value || '').trim()
+                .replace(/\s+/g, ' ').slice(0, 200);
+              const references = raw => String(raw || '').trim()
+                .split(/\s+/).filter(Boolean).slice(0, 20);
+              const selector = 'input:not([type="hidden"]),select,textarea,'
+                + '[role="textbox"],[role="combobox"],[role="spinbutton"],'
+                + '[role="checkbox"],[role="radio"],[role="switch"]';
+              const allControls = Array.from(root.querySelectorAll(selector));
+              const controls = allControls.filter(shown).slice(0, 200);
+              const fields = controls.map(el => {
+                const labelledbyIds = references(el.getAttribute('aria-labelledby'));
+                const describedbyIds = references(el.getAttribute('aria-describedby'));
+                const labelledbyNodes = labelledbyIds
+                  .map(id => document.getElementById(id)).filter(Boolean);
+                const describedbyNodes = describedbyIds
+                  .map(id => document.getElementById(id)).filter(Boolean);
+                const nativeLabel = el.labels && el.labels[0]
+                  ? normalize(el.labels[0].innerText) : '';
+                const ariaLabel = normalize(el.getAttribute('aria-label'));
+                const referencedLabel = normalize(
+                  labelledbyNodes.map(node => node.innerText || node.textContent).join(' ')
+                );
+                const label = nativeLabel || ariaLabel || referencedLabel;
+                const required = el.required === true
+                  || el.getAttribute('aria-required') === 'true';
+                const validity = el.validity || null;
+                return {
+                  label,
+                  tag: el.tagName.toLowerCase(),
+                  role: el.getAttribute('role') || '',
+                  required,
+                  has_label: Boolean(label),
+                  labelledby_ids: labelledbyIds,
+                  broken_label_reference_count:
+                    labelledbyIds.length - labelledbyNodes.length,
+                  description_ids: describedbyIds,
+                  broken_description_reference_count:
+                    describedbyIds.length - describedbyNodes.length,
+                  native_will_validate: Boolean(el.willValidate),
+                  native_invalid: Boolean(el.willValidate && validity && !validity.valid),
+                  value_missing: Boolean(validity && validity.valueMissing)
+                };
+              });
+              const required = fields.filter(field => field.required);
+              return {
+                visible_control_count: fields.length,
+                required_field_count: required.length,
+                required_fields: required,
+                unlabeled_required_count:
+                  required.filter(field => !field.has_label).length,
+                broken_label_reference_count: fields.reduce(
+                  (total, field) => total + field.broken_label_reference_count, 0
+                ),
+                broken_description_reference_count: fields.reduce(
+                  (total, field) => total + field.broken_description_reference_count, 0
+                ),
+                truncated: allControls.length > 200
+              };
+            }
+            """
+        )
+        actual_required_fields = [
+            item.get("label")
+            for item in audit.get("required_fields", [])
+            if item.get("label")
+        ]
+        expected_match = (
+            not expected_required_fields
+            or set(actual_required_fields) == set(expected_required_fields)
+        )
+        write_methods = {"POST", "PUT", "PATCH", "DELETE"}
+        write_requests = [
+            event for event in self.network_events
+            if str(event.get("method") or "").upper() in write_methods
+        ]
+        contract_passed = bool(
+            audit.get("required_field_count", 0) > 0
+            and audit.get("unlabeled_required_count") == 0
+            and audit.get("broken_label_reference_count") == 0
+            and audit.get("broken_description_reference_count") == 0
+            and expected_match
+            and not audit.get("truncated")
+            and not write_requests
+        )
+        audit.update({
+            "expected_required_fields": expected_required_fields,
+            "expected_required_fields_match": expected_match,
+            "write_request_count": len(write_requests),
+            "no_submit_request_sent": not write_requests,
+            "form_required_contract_passed": contract_passed,
+        })
+        result = self._capture_state("verify-exact-form-required-contract")
+        result.update({
+            "validation_form": form,
+            "form_required_audit": audit,
+            "mutation_executed": False,
+            "observation_result": "PASS" if contract_passed else "BLOCKED",
+        })
+        if not contract_passed:
+            result["error"] = "form_required_contract_failed"
+        return result
+
     def inspect_loading_state_semantic(
         self,
         scope=None,
@@ -13015,6 +13171,14 @@ def handle_native_dialog_semantic(
 
 def inspect_form_validation_semantic(form: str = None, exact: bool = True) -> dict:
     return _session.inspect_form_validation_semantic(form, exact)
+
+def verify_exact_form_required_contract_semantic(
+    form: str,
+    expected_required_fields: list = None,
+) -> dict:
+    return _session.verify_exact_form_required_contract_semantic(
+        form, expected_required_fields,
+    )
 
 
 def inspect_loading_state_semantic(

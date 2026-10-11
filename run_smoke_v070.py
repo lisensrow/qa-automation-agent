@@ -47,6 +47,7 @@ SMOKES = [
     "smoke_hover_tooltip.py",
     "smoke_native_dialog.py",
     "smoke_form_validation.py",
+    "smoke_exact_form_required_contract.py",
     "smoke_loading_state.py",
     "smoke_notification_lifecycle.py",
     "smoke_aria_field_errors.py",

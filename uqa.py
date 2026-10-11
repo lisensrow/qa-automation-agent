@@ -1534,6 +1534,7 @@ def classify_tool_action(
         "browser_inspect_accessibility_semantic",
         "browser_inspect_iframe_semantic",
         "browser_inspect_form_validation_semantic",
+        "browser_verify_exact_form_required_contract_semantic",
         "browser_inspect_loading_state_semantic",
         "browser_inspect_notification_lifecycle_semantic",
         "browser_inspect_aria_field_errors_semantic",
@@ -12270,6 +12271,15 @@ def artifact_public_url(
 
 
 def _core_observation_call_key(name, arguments):
+    if name == "browser_verify_exact_form_required_contract_semantic":
+        exact_form = " ".join(
+            str((arguments or {}).get("form") or "")
+            .strip()
+            .casefold()
+            .split()
+        )
+        return (name, exact_form) if exact_form else None
+
     if name in {
         "browser_open_exact_table_row_details_semantic",
         "browser_verify_exact_table_row_tabs_semantic",
@@ -13578,7 +13588,7 @@ def run_turn(
                         "content": (
                             "[UQA CORE: CORE-OWNED OBSERVATION COMPLETE]\n"
                             f"tool={name}\n"
-                            f"subject={arguments.get('ci_name') or arguments.get('name')}\n"
+                            f"subject={arguments.get('ci_name') or arguments.get('name') or arguments.get('form')}\n"
                             f"observation_result={result.get('observation_result')}\n"
                             f"evidence_id={result.get('uqa_evidence_id')}\n"
                             + completion_instruction

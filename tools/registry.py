@@ -28,6 +28,7 @@ from tools.browser import (
     inspect_hover_tooltip_semantic,
     handle_native_dialog_semantic,
     inspect_form_validation_semantic,
+    verify_exact_form_required_contract_semantic,
     inspect_loading_state_semantic,
     inspect_notification_lifecycle_semantic,
     inspect_aria_field_errors_semantic,
@@ -728,6 +729,20 @@ TOOLS = [
             "parameters": {"type": "object", "properties": {
                 "form": {"type": "string"}, "exact": {"type": "boolean"}
             }}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_verify_exact_form_required_contract_semantic",
+            "description": "Read-only atomic audit одной exact form: обязательные поля, labels, aria-labelledby/aria-describedby и отсутствие write/submit requests; поля не изменяются и Submit не нажимается.",
+            "parameters": {"type": "object", "properties": {
+                "form": {"type": "string"},
+                "expected_required_fields": {
+                    "type": "array", "items": {"type": "string"},
+                    "maxItems": 50, "uniqueItems": True
+                }
+            }, "required": ["form"]}
         }
     },
     {
@@ -2259,6 +2274,11 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_inspect_form_validation_semantic":
         return inspect_form_validation_semantic(
             arguments.get("form"), arguments.get("exact", True),
+        )
+
+    if name == "browser_verify_exact_form_required_contract_semantic":
+        return verify_exact_form_required_contract_semantic(
+            arguments["form"], arguments.get("expected_required_fields"),
         )
 
     if name == "browser_inspect_loading_state_semantic":
