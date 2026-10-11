@@ -1781,6 +1781,112 @@ def get_test_resource(
     return deepcopy(resource)
 
 
+def authorize_test_resource_edit(
+    job_id: str,
+    resource_id: str,
+    field: str,
+    value: str,
+):
+    """Authorize one exact edit against an owned disposable resource.
+
+    This is a ledger-only guard.  It does not prove that a product object
+    exists and it never performs the requested edit.
+    """
+    job = get_job(job_id)
+
+    if job is None:
+        raise FileNotFoundError(job_id)
+
+    field = str(field or "").strip()
+    value = str(value or "")
+
+    if not field:
+        raise ValueError("edit field missing")
+
+    if len(field) > 200:
+        raise ValueError("edit field too long")
+
+    if len(value) > 4000:
+        raise ValueError("edit value too long")
+
+    resource = _find_test_resource(job, resource_id)
+
+    if resource is None:
+        return {
+            "status": "blocked",
+            "edit_authorized": False,
+            "reason": "resource_not_found",
+            "resource_id": str(resource_id or "").strip() or None,
+            "edit_field": field,
+        }
+
+    metadata = resource.get("metadata")
+    metadata = metadata if isinstance(metadata, dict) else {}
+    owner_case = str(resource.get("created_by_case") or "").strip()
+    owner_case_exists = bool(owner_case) and any(
+        case.get("case_id") == owner_case
+        for case in job.get("test_cases", [])
+        if isinstance(case, dict)
+    )
+    allowed_fields = metadata.get("allowed_edit_fields")
+    allowed_fields = (
+        allowed_fields
+        if isinstance(allowed_fields, list)
+        else []
+    )
+    allowed_values = metadata.get("allowed_edit_values")
+    allowed_values = (
+        allowed_values
+        if isinstance(allowed_values, dict)
+        else {}
+    )
+    field_values = allowed_values.get(field)
+    field_values = field_values if isinstance(field_values, list) else []
+    cleanup_contract = metadata.get("cleanup_contract")
+
+    checks = {
+        "resource_active": resource.get("status") == "active",
+        "cleanup_required": resource.get("cleanup_required") is True,
+        "owned_by_job": owner_case_exists,
+        "disposable": metadata.get("disposable") is True,
+        "cleanup_contract_present": bool(
+            isinstance(cleanup_contract, str)
+            and cleanup_contract.strip()
+        ),
+        "field_allowed": field in allowed_fields,
+        "value_allowed": value in field_values,
+    }
+    reason_by_check = {
+        "resource_active": "resource_not_active",
+        "cleanup_required": "cleanup_not_required",
+        "owned_by_job": "resource_owner_not_verified",
+        "disposable": "resource_not_disposable",
+        "cleanup_contract_present": "cleanup_contract_missing",
+        "field_allowed": "edit_field_not_allowed",
+        "value_allowed": "edit_value_not_allowed",
+    }
+    failed_check = next(
+        (name for name, passed in checks.items() if not passed),
+        None,
+    )
+    authorized = failed_check is None
+
+    return {
+        "status": "authorized" if authorized else "blocked",
+        "edit_authorized": authorized,
+        "reason": (
+            "authorized"
+            if authorized
+            else reason_by_check[failed_check]
+        ),
+        "resource_id": resource.get("resource_id"),
+        "resource_type": resource.get("type"),
+        "resource_name": resource.get("name"),
+        "edit_field": field,
+        **checks,
+    }
+
+
 def list_test_resources(
     job_id: str,
     status: str = None,

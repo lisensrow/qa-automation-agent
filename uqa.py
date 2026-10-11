@@ -40,6 +40,7 @@ from job_store import (
     get_job,
     add_test_resource,
     get_test_resource,
+    authorize_test_resource_edit,
     update_test_resource,
     list_test_resources,
     list_cleanup_candidates,
@@ -139,6 +140,27 @@ CORE_RESOURCE_TOOLS = [
                     },
                 },
                 "required": ["resource_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "resource_assert_edit_scope",
+            "description": (
+                "Проверяет по ledger, что одно точное поле одноразового "
+                "ресурса текущего QA Job разрешено изменить на одно точное "
+                "безопасное значение. Ничего на стенде не изменяет и не "
+                "является runtime evidence продукта."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "resource_id": {"type": "string"},
+                    "field": {"type": "string"},
+                    "value": {"type": "string"},
+                },
+                "required": ["resource_id", "field", "value"],
             },
         },
     },
@@ -1635,6 +1657,7 @@ def classify_tool_action(
         "browser_inspect_agent_task_result_semantic",
         "browser_inspect_managed_agent_task_result_semantic",
         "resource_list",
+        "resource_assert_edit_scope",
         "table_selection_list",
     }
 
@@ -3691,6 +3714,22 @@ def execute_resource_tool(
                 "executed": True,
                 "count": len(resources),
                 "resources": resources,
+            }
+
+        if name == "resource_assert_edit_scope":
+            authorization = authorize_test_resource_edit(
+                job_id=job_id,
+                resource_id=arguments.get("resource_id"),
+                field=arguments.get("field"),
+                value=arguments.get("value"),
+            )
+
+            return {
+                "status": "ok",
+                "executed": False,
+                "bookkeeping_only": True,
+                "product_evidence": False,
+                "authorization": authorization,
             }
 
         if name == "table_selection_list":
