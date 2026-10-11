@@ -6778,6 +6778,116 @@ class BrowserSession:
             result["error"] = "table_page_not_changed"
         return result
 
+    def verify_table_pagination_roundtrip_semantic(
+        self,
+        forward_control: str,
+        return_control: str,
+        table: str = None,
+    ):
+        """Move to one adjacent page and always return to the initial page."""
+        self._ensure_started()
+        forward_control = str(forward_control or "").strip()
+        return_control = str(return_control or "").strip()
+        if not forward_control or len(forward_control) > 200:
+            return {"error": "pagination_forward_control_invalid", "executed": False}
+        if not return_control or len(return_control) > 200:
+            return {"error": "pagination_return_control_invalid", "executed": False}
+        if forward_control.casefold() == return_control.casefold():
+            return {"error": "pagination_controls_must_differ", "executed": False}
+
+        before = self.inspect_table_pagination_semantic(table, True)
+        if before.get("error"):
+            return before
+        forward = self.table_page_semantic(forward_control, table, True)
+        forward_clicked = bool(forward.get("action_execution_id"))
+        after = None
+        returned = None
+        restored = None
+        cleanup_error = None
+        try:
+            if forward_clicked:
+                after = self.inspect_table_pagination_semantic(table, True)
+        finally:
+            if forward_clicked:
+                returned = self.table_page_semantic(return_control, table, True)
+                restored = self.inspect_table_pagination_semantic(table, True)
+                if returned.get("error"):
+                    cleanup_error = returned.get("error")
+
+        after = after or {}
+        restored = restored or before
+        before_page = before.get("current_page")
+        after_page = after.get("current_page")
+        restored_page = restored.get("current_page")
+        page_changed_once = bool(
+            isinstance(before_page, int)
+            and not isinstance(before_page, bool)
+            and isinstance(after_page, int)
+            and not isinstance(after_page, bool)
+            and abs(after_page - before_page) == 1
+        )
+        total = after.get("total_row_count")
+        range_start = after.get("visible_range_start")
+        range_end = after.get("visible_range_end")
+        visible_count = after.get("visible_row_count")
+        range_consistent = bool(
+            isinstance(total, int)
+            and not isinstance(total, bool)
+            and isinstance(range_start, int)
+            and isinstance(range_end, int)
+            and isinstance(visible_count, int)
+            and 1 <= range_start <= range_end <= total
+            and visible_count == range_end - range_start + 1
+        )
+        rows_changed = bool(
+            after.get("row_signature")
+            and after.get("row_signature") != before.get("row_signature")
+        )
+        restored_passed = bool(
+            cleanup_error is None
+            and restored.get("row_signature") == before.get("row_signature")
+            and restored_page == before_page
+        )
+        contract_passed = bool(
+            not forward.get("error")
+            and page_changed_once
+            and rows_changed
+            and range_consistent
+            and restored_passed
+        )
+        result = self._capture_state("verify-table-pagination-roundtrip")
+        result.update({
+            "status": "verified" if contract_passed else "blocked",
+            "executed": forward_clicked,
+            "interaction_executed": forward_clicked,
+            "mutation_executed": False,
+            "table_name": table,
+            "forward_control": forward_control,
+            "return_control": return_control,
+            "initial_page": before_page,
+            "adjacent_page": after_page,
+            "restored_page": restored_page,
+            "page_changed_once": page_changed_once,
+            "rows_changed": rows_changed,
+            "visible_range_start": range_start,
+            "visible_range_end": range_end,
+            "visible_row_count": visible_count,
+            "reported_total": total,
+            "visible_range_consistent": range_consistent,
+            "initial_page_restored": restored_passed,
+            "cleanup_error": cleanup_error,
+            "selection_ledger_used_as_product_evidence": False,
+            "pagination_roundtrip_passed": contract_passed,
+            "observation_result": "PASS" if contract_passed else "BLOCKED",
+        })
+        if not contract_passed:
+            result["error"] = (
+                forward.get("error")
+                or cleanup_error
+                or "table_pagination_roundtrip_contract_failed"
+            )
+        return result
+
     def fill_table_filter_semantic(
         self,
         column: str,
@@ -13069,6 +13179,16 @@ def table_page_semantic(
     exact: bool = True,
 ) -> dict:
     return _session.table_page_semantic(control, table, exact)
+
+
+def verify_table_pagination_roundtrip_semantic(
+    forward_control: str,
+    return_control: str,
+    table: str = None,
+) -> dict:
+    return _session.verify_table_pagination_roundtrip_semantic(
+        forward_control, return_control, table,
+    )
 
 
 def fill_table_filter_semantic(

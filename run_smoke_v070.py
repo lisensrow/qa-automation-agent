@@ -144,6 +144,7 @@ SMOKES = [
     "smoke_table_controls.py",
     "smoke_table_filters_bulk.py",
     "smoke_table_filter_roundtrip.py",
+    "smoke_table_pagination_roundtrip.py",
     "smoke_table_popover_totals.py",
     "smoke_cross_page_selection.py",
     "smoke_compatibility_layer.py",

@@ -134,6 +134,7 @@ from tools.browser import (
     sort_table_semantic,
     set_table_row_selected,
     table_page_semantic,
+    verify_table_pagination_roundtrip_semantic,
     fill_table_filter_semantic,
     verify_table_text_filter_roundtrip_semantic,
     apply_table_filter_popover_semantic,
@@ -1499,6 +1500,22 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_verify_table_pagination_roundtrip_semantic",
+            "description": "Переходит точным pagination control на одну соседнюю страницу, проверяет page/range/total и row identity, затем обязательно возвращается точным обратным control и доказывает восстановление исходной страницы.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "forward_control": {"type": "string"},
+                    "return_control": {"type": "string"},
+                    "table": {"type": "string"}
+                },
+                "required": ["forward_control", "return_control"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_fill_table_filter_semantic",
             "description": (
                 "Заполняет единственный filter control точной колонки таблицы "
@@ -2747,6 +2764,13 @@ def execute_tool(name: str, arguments: dict):
             arguments["control"],
             arguments.get("table"),
             arguments.get("exact", True),
+        )
+
+    if name == "browser_verify_table_pagination_roundtrip_semantic":
+        return verify_table_pagination_roundtrip_semantic(
+            arguments["forward_control"],
+            arguments["return_control"],
+            arguments.get("table"),
         )
 
     if name == "browser_fill_table_filter_semantic":
