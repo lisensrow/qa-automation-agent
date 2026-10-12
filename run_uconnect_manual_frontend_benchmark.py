@@ -9,6 +9,7 @@ ROOT = Path(os.getenv("UQA_SMOKE_ROOT", "/opt/uqa")).resolve()
 MANIFEST = ROOT / "benchmarks" / "uconnect_manual_frontend_cases.json"
 ACTION_PROFILES = {"read_only", "write_ui_state", "write_resource"}
 EXECUTION_STATUSES = {"ready", "candidate", "blocked_external"}
+ACTIVE_PREPARED_JOB_STATUSES = {"created", "running"}
 
 
 def load_and_validate_manifest():
@@ -159,12 +160,70 @@ def build_job_spec(document, case_id, stand, bindings=None):
     }
 
 
-def materialize_job(spec, job_creator=None, case_adder=None):
-    if job_creator is None or case_adder is None:
-        from job_store import add_test_case, create_job
+def find_existing_prepared_job(spec, jobs):
+    expected_case = spec["case"]
+    expected_requirement = expected_case["requirement"]
+    for job in jobs or []:
+        if job.get("status") not in ACTIVE_PREPARED_JOB_STATUSES:
+            continue
+        if job.get("job_type") != spec["job_type"]:
+            continue
+        if job.get("external_id") != spec["external_id"]:
+            continue
+        if job.get("stand") != spec["stand"]:
+            continue
+
+        cases = job.get("test_cases") or []
+        if len(cases) != 1:
+            continue
+        case = cases[0]
+        requirement = case.get("requirement") or {}
+        if requirement.get("source") != expected_requirement.get("source"):
+            continue
+        if requirement.get("execution_status") != "ready":
+            continue
+        if requirement.get("bindings") != expected_requirement.get("bindings"):
+            continue
+        if case.get("planned_checks") != expected_case.get("planned_checks"):
+            continue
+
+        return {
+            "job_id": job.get("job_id"),
+            "case_id": case.get("case_id"),
+            "source_case_id": spec["external_id"],
+            "stand": spec["stand"],
+            "reused": True,
+        }
+    return None
+
+
+def materialize_job(
+    spec,
+    job_creator=None,
+    case_adder=None,
+    job_lister=None,
+):
+    custom_store = any(
+        item is not None
+        for item in (job_creator, case_adder, job_lister)
+    )
+    if job_creator is None or case_adder is None or job_lister is None:
+        from job_store import add_test_case, create_job, list_jobs
 
         job_creator = job_creator or create_job
         case_adder = case_adder or add_test_case
+        job_lister = job_lister or (
+            (lambda limit: [])
+            if custom_store
+            else list_jobs
+        )
+
+    existing = find_existing_prepared_job(
+        spec,
+        job_lister(100),
+    )
+    if existing is not None:
+        return existing
 
     job = job_creator(
         spec["request"],
@@ -178,6 +237,7 @@ def materialize_job(spec, job_creator=None, case_adder=None):
         "case_id": case["case_id"],
         "source_case_id": spec["external_id"],
         "stand": spec["stand"],
+        "reused": False,
     }
 
 

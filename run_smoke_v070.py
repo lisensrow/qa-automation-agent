@@ -179,6 +179,7 @@ SMOKES = [
     "smoke_upload_fixture.py",
     "smoke_prepared_regression_job.py",
     "smoke_job_cli_summary.py",
+    "smoke_prepared_job_deduplication.py",
 ]
 
 
