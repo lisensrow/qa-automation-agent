@@ -4739,7 +4739,8 @@ def banner():
             f"Thinking: {'ON' if UQA_THINK else 'OFF'}\n"
             f"Ollama: {OLLAMA_URL}\n"
             f"Tools: {len(tool_names)} available\n\n"
-            f"/clear  /status  /blockers  /exit",
+            f"/clear  /status  /blockers  /run-job JOB_ID\n"
+            f"/cleanup JOB_ID  /exit",
             title="U-Connect QA Agent",
         )
     )
