@@ -164,6 +164,7 @@ SMOKES = [
     "smoke_product_version_recheck.py",
     "smoke_model_tool_context.py",
     "smoke_repeated_unchanged_observation.py",
+    "smoke_read_only_agent_plugin_route.py",
     "smoke_ollama_readiness.py",
 ]
 

@@ -12507,6 +12507,28 @@ def _core_observation_call_key(name, arguments):
         )
         return (name, exact_name) if exact_name else None
 
+    if name == "browser_inspect_agent_plugins_semantic":
+        parts = tuple(
+            " ".join(
+                str((arguments or {}).get(key) or "")
+                .strip()
+                .casefold()
+                .split()
+            )
+            for key in ("ci_name", "plugin_name")
+        )
+        expected_version = " ".join(
+            str((arguments or {}).get("expected_version") or "")
+            .strip()
+            .casefold()
+            .split()
+        )
+        return (
+            (name,) + parts + (expected_version,)
+            if all(parts)
+            else None
+        )
+
     if name != "browser_inspect_agent_telemetry_semantic":
         return None
 
@@ -12605,6 +12627,155 @@ def _agent_telemetry_ci_name_from_request(request_text):
     return None
 
 
+def _agent_plugin_target_from_request(request_text):
+    text = str(request_text or "")
+    if not re.search(r"(?i)(?:plugins?|плагин)", text):
+        return None
+
+    patterns = (
+        r"(?i)(?:plugins?|плагин\w*)\s+"
+        r"(?:проверь\w*|verify|inspect|audit)\s+"
+        r"[«\"']?([A-Za-z][A-Za-z0-9._-]{1,127})",
+        r"(?i)(?:плагин|plugin)\s*(?:name|имя)?\s*[:=]?\s*"
+        r"[«\"']?([A-Za-z][A-Za-z0-9._-]{1,127})",
+        r"(?i)(?:проверь\w*|verify|inspect|audit)\s+"
+        r"[«\"']?([A-Za-z][A-Za-z0-9._-]{1,127})"
+        r"(?=\s+(?:верс\w*|version|[0-9]+\.|по\s+свеж|fresh\s+audit))",
+    )
+    match = None
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            break
+    if not match:
+        return None
+
+    plugin_name = match.group(1).rstrip(".,;:»\"'")
+    if plugin_name.casefold() in {
+        "name", "version", "requested", "installed", "agent",
+    }:
+        return None
+
+    tail = text[match.end():match.end() + 100]
+    version_match = re.match(
+        r"(?i)^\s+(?:(?:верс\w*|version)\s*)?"
+        r"([0-9]+(?:\.[0-9A-Za-z-]+)+)",
+        tail,
+    )
+    expected_version = (
+        version_match.group(1).rstrip(".,;:»\"'")
+        if version_match
+        else None
+    )
+    return {
+        "plugin_name": plugin_name,
+        "expected_version": expected_version,
+    }
+
+
+def _read_only_agent_plugin_route_message(request_text, ci_name, target):
+    text = str(request_text or "")
+    if not ci_name or not target:
+        return None
+    if not re.search(
+        r"(?i)(?:read[\s-]*only|только\s+чтен|без\s+изменен)",
+        text,
+    ):
+        return None
+    version_instruction = (
+        f" Require expected_version={target['expected_version']!r}."
+        if target.get("expected_version")
+        else " Do not invent an expected version; report the observed version."
+    )
+    return {
+        "role": "user",
+        "content": (
+            "[UQA CORE: READ-ONLY AGENT PLUGIN ROUTE]\n"
+            f"Exact CI: {ci_name}\n"
+            f"Exact plugin: {target['plugin_name']}\n"
+            "This case must not enter any create/edit/audit-trigger flow. Never "
+            "click Add, plus, Create task, Save, Delete, Archive or a refresh "
+            "audit action. Use this route only: open CMDB if needed; inspect "
+            "the exact CI row; open that row; click exact Agent tab; click "
+            "exact Plugins tab; call browser_inspect_agent_plugins_semantic; "
+            "then return the structured verdict for every planned check."
+            + version_instruction
+        ),
+    }
+
+
+def _read_only_agent_plugin_followup(
+    tool_name, arguments, result, ci_name, target,
+):
+    if (
+        not ci_name
+        or not target
+        or not isinstance(result, dict)
+        or result.get("error")
+    ):
+        return None
+    requested_name = " ".join(
+        str((arguments or {}).get("name") or "").casefold().split()
+    )
+    expected_ci = " ".join(str(ci_name).casefold().split())
+    role = str((arguments or {}).get("role") or "").casefold()
+    if tool_name == "browser_open_page":
+        next_step = (
+            "Call browser_inspect_table_row now with "
+            f"name={ci_name!r} and exact=true."
+        )
+    elif tool_name == "browser_inspect_table_row" and requested_name == expected_ci:
+        next_step = (
+            "Call browser_click_semantic now with "
+            f"name={ci_name!r}, exact=true and role='row'."
+        )
+    elif (
+        tool_name == "browser_click_semantic"
+        and requested_name == expected_ci
+        and role == "row"
+    ):
+        next_step = (
+            "The exact CI row is open. Call browser_click_semantic now with "
+            "name='Agent', exact=true and role='tab'."
+        )
+    elif (
+        tool_name == "browser_click_semantic"
+        and requested_name == "agent"
+        and role == "tab"
+    ):
+        next_step = (
+            "The Agent section is open. Call browser_click_semantic now with "
+            "name='Plugins', exact=true and role='tab'."
+        )
+    elif (
+        tool_name == "browser_click_semantic"
+        and requested_name == "plugins"
+        and role == "tab"
+    ):
+        call_arguments = {
+            "ci_name": ci_name,
+            "plugin_name": target["plugin_name"],
+        }
+        if target.get("expected_version"):
+            call_arguments["expected_version"] = target["expected_version"]
+        next_step = (
+            "The Plugins tab is open. Call "
+            "browser_inspect_agent_plugins_semantic now with exactly these "
+            "arguments, then return the structured verdict:\n"
+            + json.dumps(call_arguments, ensure_ascii=False)
+        )
+    else:
+        return None
+    return {
+        "role": "user",
+        "content": (
+            "[UQA CORE: PLUGIN ROUTE NEXT STEP]\n"
+            "Do not inspect the table again and do not use a mutation. "
+            + next_step
+        ),
+    }
+
+
 def _read_only_agent_telemetry_followup(tool_name, arguments, result, ci_name):
     if not ci_name or not isinstance(result, dict) or result.get("error"):
         return None
@@ -12691,6 +12862,20 @@ def run_turn(
     )
     if telemetry_route_message:
         messages.append(telemetry_route_message)
+    plugin_target = _agent_plugin_target_from_request(
+        managed_agent_request_text
+    )
+    plugin_route_message = (
+        _read_only_agent_plugin_route_message(
+            managed_agent_request_text,
+            telemetry_ci_name,
+            plugin_target,
+        )
+        if not telemetry_route_message
+        else None
+    )
+    if plugin_route_message:
+        messages.append(plugin_route_message)
     managed_agent_fixture_id = _managed_agent_fixture_from_request(
         managed_agent_request_text
     )
@@ -13790,6 +13975,17 @@ def run_turn(
                 )
                 if telemetry_followup:
                     messages.append(telemetry_followup)
+
+            if plugin_route_message:
+                plugin_followup = _read_only_agent_plugin_followup(
+                    name,
+                    arguments,
+                    result,
+                    telemetry_ci_name,
+                    plugin_target,
+                )
+                if plugin_followup:
+                    messages.append(plugin_followup)
 
             completed_key = _completed_core_observation_key(
                 name,
