@@ -51,6 +51,7 @@ from job_store import (
     list_product_blockers,
     mark_product_blockers_for_version_change,
     record_product_blocker,
+    update_product_blocker_status,
     record_compatibility_snapshot,
     record_table_selection,
     list_table_selections,
@@ -5546,6 +5547,23 @@ def record_tool_evidence(
                 "managed task creation is allowed."
             ),
         )
+    elif (
+        tool_name == "browser_open_agent_tasks_semantic"
+        and isinstance(result, dict)
+        and result.get("navigation_status") == "ready"
+        and result.get("task_list_observed") is True
+    ):
+        try:
+            update_product_blocker_status(
+                "agent-task-list-backend-unavailable",
+                "resolved",
+                reason=(
+                    "Successful read-only task-list response was observed "
+                    f"for exact CI {str(arguments.get('ci_name') or '').strip()}."
+                ),
+            )
+        except FileNotFoundError:
+            pass
 
     payload = {
         "tool": tool_name,

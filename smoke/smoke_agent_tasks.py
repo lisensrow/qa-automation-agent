@@ -570,6 +570,48 @@ assert captured_blocker["kwargs"]["evidence"] == {
 }
 assert "connection pool" not in str(captured_blocker)
 
+saved_update_product_blocker_status = uqa.update_product_blocker_status
+saved_add_evidence = uqa.add_evidence
+resolved_blocker = {}
+try:
+    uqa.update_product_blocker_status = lambda *args, **kwargs: (
+        resolved_blocker.update({"args": args, "kwargs": kwargs})
+        or {"blocker_id": args[0], "status": args[1]}
+    )
+    uqa.add_evidence = lambda *args, **kwargs: kwargs
+    uqa.record_tool_evidence(
+        "job-recovered", "case-recovered",
+        "browser_open_agent_tasks_semantic",
+        {"ci_name": "test-linux"},
+        route_result,
+    )
+finally:
+    uqa.update_product_blocker_status = saved_update_product_blocker_status
+    uqa.add_evidence = saved_add_evidence
+assert resolved_blocker["args"] == (
+    "agent-task-list-backend-unavailable", "resolved",
+)
+assert "test-linux" in resolved_blocker["kwargs"]["reason"]
+
+saved_update_product_blocker_status = uqa.update_product_blocker_status
+saved_add_evidence = uqa.add_evidence
+try:
+    def missing_blocker(*args, **kwargs):
+        raise FileNotFoundError(args[0])
+
+    uqa.update_product_blocker_status = missing_blocker
+    uqa.add_evidence = lambda *args, **kwargs: kwargs
+    missing_resolution = uqa.record_tool_evidence(
+        "job-no-blocker", "case-no-blocker",
+        "browser_open_agent_tasks_semantic",
+        {"ci_name": "test-linux"},
+        route_result,
+    )
+    assert missing_resolution["eligibility_reason"] == "navigation_only"
+finally:
+    uqa.update_product_blocker_status = saved_update_product_blocker_status
+    uqa.add_evidence = saved_add_evidence
+
 original_get_job = uqa.get_job
 original_execute_tool = uqa.execute_tool
 try:
