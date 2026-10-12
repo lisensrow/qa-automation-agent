@@ -49,6 +49,11 @@ def load_and_validate_manifest():
             "blocker"
         ):
             raise ValueError(f"{case['case_id']}:blocker_required")
+        if case["execution_status"] == "candidate" and (
+            not isinstance(case.get("candidate_reason"), str)
+            or not case["candidate_reason"].strip()
+        ):
+            raise ValueError(f"{case['case_id']}:candidate_reason_required")
     return document
 
 

@@ -23,6 +23,11 @@ assert summary["action_profiles"] == {
     "write_ui_state": 5,
 }
 assert all(
+    case["execution_status"] != "candidate"
+    or case.get("candidate_reason", "").strip()
+    for case in document["cases"]
+)
+assert all(
     case["execution_status"] != "ready"
     or case["action_profile"] == "read_only"
     or case.get("policy_required") is True
