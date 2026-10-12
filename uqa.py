@@ -38,6 +38,7 @@ from job_store import (
     set_job_status,
     set_job_summary,
     get_job,
+    list_jobs,
     add_test_resource,
     get_test_resource,
     authorize_test_resource_edit,
@@ -4739,8 +4740,8 @@ def banner():
             f"Thinking: {'ON' if UQA_THINK else 'OFF'}\n"
             f"Ollama: {OLLAMA_URL}\n"
             f"Tools: {len(tool_names)} available\n\n"
-            f"/clear  /status  /blockers  /run-job JOB_ID\n"
-            f"/cleanup JOB_ID  /exit",
+            f"/clear  /status  /blockers  /jobs  /job JOB_ID\n"
+            f"/run-job JOB_ID  /cleanup JOB_ID  /exit",
             title="U-Connect QA Agent",
         )
     )
@@ -12081,6 +12082,97 @@ def _parse_run_job_command(value):
     return match.group(1) or ""
 
 
+def _parse_job_command(value):
+    match = re.fullmatch(
+        r"/job(?:\s+([A-Za-z0-9_-]+))?\s*",
+        str(value or "").strip(),
+    )
+
+    if not match:
+        return None
+
+    return match.group(1) or ""
+
+
+def _safe_job_overview(job):
+    cases = job.get("test_cases") or []
+    resources = job.get("resources") or []
+    return {
+        "job_id": job.get("job_id"),
+        "status": job.get("status"),
+        "job_type": job.get("job_type"),
+        "stand": job.get("stand"),
+        "external_id": job.get("external_id"),
+        "created_at": job.get("created_at"),
+        "updated_at": job.get("updated_at"),
+        "cleanup_status": job.get("cleanup_status"),
+        "case_count": len(cases),
+        "resource_count": len(resources),
+        "cases": [
+            {
+                "case_id": case.get("case_id"),
+                "status": case.get("status"),
+                "planned_checks": len(case.get("planned_checks") or []),
+                "checks": len(case.get("checks") or []),
+                "evidence": len(case.get("evidence") or []),
+                "observations": len(case.get("observations") or []),
+            }
+            for case in cases
+        ],
+    }
+
+
+def _print_recent_jobs(limit=10):
+    jobs = list_jobs(limit)
+    if not jobs:
+        console.print("[yellow]No QA Jobs found.[/yellow]")
+        return []
+
+    overviews = [_safe_job_overview(job) for job in jobs]
+    lines = []
+    for item in overviews:
+        lines.append(
+            f"{item['job_id']} | {item['status']} | "
+            f"{item['job_type']} | stand={item['stand'] or '-'} | "
+            f"cases={item['case_count']} | "
+            f"resources={item['resource_count']} | "
+            f"cleanup={item['cleanup_status'] or '-'}"
+        )
+    console.print(Panel("\n".join(lines), title="Recent QA Jobs"))
+    return overviews
+
+
+def _print_job_overview(job_id):
+    job = get_job(job_id)
+    if job is None:
+        raise FileNotFoundError(job_id)
+
+    item = _safe_job_overview(job)
+    lines = [
+        f"job_id: {item['job_id']}",
+        f"status: {item['status']}",
+        f"job_type: {item['job_type']}",
+        f"stand: {item['stand'] or '-'}",
+        f"external_id: {item['external_id'] or '-'}",
+        f"created_at: {item['created_at'] or '-'}",
+        f"updated_at: {item['updated_at'] or '-'}",
+        f"cleanup_status: {item['cleanup_status'] or '-'}",
+        f"resources: {item['resource_count']}",
+        "cases:",
+    ]
+    for case in item["cases"]:
+        lines.append(
+            "- "
+            f"{case['case_id']} | {case['status']} | "
+            f"planned={case['planned_checks']} | "
+            f"checks={case['checks']} | "
+            f"evidence={case['evidence']} | "
+            f"observations={case['observations']}"
+        )
+    console.print(Panel("\n".join(lines), title="QA Job"))
+    return item
+
+
 def _prepared_regression_case(job_id):
     job = get_job(job_id)
     if job is None:
@@ -14987,6 +15079,34 @@ def main():
                     title="Product blockers",
                 )
             )
+            continue
+
+        if user_input == "/jobs":
+            _print_recent_jobs()
+            continue
+
+        overview_job_id = _parse_job_command(
+            user_input
+        )
+
+        if overview_job_id is not None:
+            if not overview_job_id:
+                console.print(
+                    "[yellow]Usage: /job JOB_ID[/yellow]"
+                )
+                continue
+
+            try:
+                _print_job_overview(
+                    overview_job_id
+                )
+            except Exception as exc:
+                console.print(
+                    "[red]Job lookup error:[/red] "
+                    f"{type(exc).__name__}: "
+                    f"{str(exc)[:500]}"
+                )
+
             continue
 
         cleanup_job_id = _parse_cleanup_command(
