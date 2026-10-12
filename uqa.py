@@ -12534,6 +12534,26 @@ def _completed_core_observation_key(name, arguments, result):
     return key
 
 
+_UNCHANGED_SNAPSHOT_OBSERVATION_TOOLS = {
+    "browser_inspect_table_semantic",
+    "browser_inspect_table_row",
+}
+
+
+def _unchanged_snapshot_observation_key(name, arguments):
+    if name not in _UNCHANGED_SNAPSHOT_OBSERVATION_TOOLS:
+        return None
+
+    return (
+        str(name),
+        json.dumps(
+            arguments or {},
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+    )
+
+
 def _read_only_agent_telemetry_route_message(request_text, ci_name):
     text = str(request_text or "")
     if not ci_name or not re.search(
@@ -12643,6 +12663,7 @@ def run_turn(
     failed_semantic_inspections = {}
     completed_core_observations = {}
     repeated_completed_observations = set()
+    completed_snapshot_observations = {}
     last_browser_fingerprint = None
     blocked_mutation_calls = set()
     managed_agent_route_required = None
@@ -13399,6 +13420,18 @@ def run_turn(
                 core_observation_key is not None
                 and core_observation_key in completed_core_observations
             )
+            snapshot_observation_key = (
+                _unchanged_snapshot_observation_key(name, arguments)
+                if action_class == "observe"
+                else None
+            )
+            repeated_unchanged_observation = (
+                snapshot_observation_key is not None
+                and last_browser_fingerprint is not None
+                and completed_snapshot_observations.get(
+                    snapshot_observation_key
+                ) == last_browser_fingerprint
+            )
             mutation_call_key = None
             repeated_blocked_mutation = False
 
@@ -13454,6 +13487,18 @@ def run_turn(
                         "reason": (
                             "UQA Core already recorded this Core-owned "
                             "observation for the same exact subject."
+                        ),
+                    }
+                elif repeated_unchanged_observation:
+                    result = {
+                        "error": "repeated_unchanged_observation_blocked",
+                        "status": "blocked",
+                        "executed": False,
+                        "action_class": "observe",
+                        "action_policy_status": "auto_allowed",
+                        "reason": (
+                            "UQA Core stopped an identical read-only "
+                            "snapshot observation on an unchanged page."
                         ),
                     }
                 elif repeated_semantic_inspection:
@@ -14002,6 +14047,36 @@ def run_turn(
                     str(result.get("current_url") or ""),
                     str(result.get("text_preview") or "")[:2500],
                 )
+
+            if (
+                snapshot_observation_key is not None
+                and not repeated_unchanged_observation
+                and isinstance(result, dict)
+                and not result.get("error")
+                and last_browser_fingerprint is not None
+            ):
+                completed_snapshot_observations[
+                    snapshot_observation_key
+                ] = last_browser_fingerprint
+
+            if repeated_unchanged_observation:
+                if job_id and case_id:
+                    finalize_case_blocked(
+                        job_id,
+                        case_id,
+                        "repeated_unchanged_observation",
+                        (
+                            "The agent repeated an identical read-only "
+                            "snapshot observation on an unchanged page."
+                        ),
+                    )
+
+                console.print(
+                    "[yellow]UQA Core stopped a repeated unchanged "
+                    "snapshot observation; case marked BLOCKED.[/yellow]"
+                )
+                compact_completed_history(messages)
+                return
 
             if repeated_semantic_inspection:
                 if job_id and case_id:
