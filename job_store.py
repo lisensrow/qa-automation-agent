@@ -2377,18 +2377,20 @@ def finish_cleanup_attempt(
 
 
 
-def list_jobs(limit: int = 20):
+def list_jobs(limit: int | None = 20):
     _ensure_storage()
 
-    try:
-        limit = int(limit)
-    except Exception:
-        limit = 20
+    unlimited = limit is None
+    if not unlimited:
+        try:
+            limit = int(limit)
+        except Exception:
+            limit = 20
 
-    limit = max(
-        1,
-        min(limit, 100),
-    )
+        limit = max(
+            1,
+            min(limit, 100),
+        )
 
     jobs = []
 
@@ -2415,4 +2417,4 @@ def list_jobs(limit: int = 20):
         reverse=True,
     )
 
-    return jobs[:limit]
+    return jobs if unlimited else jobs[:limit]

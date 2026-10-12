@@ -181,6 +181,7 @@ SMOKES = [
     "smoke_prepared_regression_job.py",
     "smoke_job_cli_summary.py",
     "smoke_prepared_job_deduplication.py",
+    "smoke_job_list_all.py",
 ]
 
 
