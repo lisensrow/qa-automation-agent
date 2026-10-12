@@ -23,6 +23,7 @@ from tools.browser import (
     navigate_history_semantic,
     inspect_iframe_semantic,
     observe_iframe_surface_change_semantic,
+    verify_iframe_surface_readiness_semantic,
     click_iframe_surface_semantic,
     press_iframe_surface_key_semantic,
     inspect_hover_tooltip_semantic,
@@ -629,6 +630,26 @@ TOOLS = [
                 "ограниченной паузой и сравнивает SHA-256, не возвращая pixels. "
                 "Проверяет ожидаемое наличие или отсутствие изменения кадра; "
                 "используй для VNC/video только после iframe inspection."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "name": {"type": "string"},
+                "expected_url_prefix": {"type": "string"},
+                "expect_change": {"type": "boolean"},
+                "wait_ms": {"type": "integer", "minimum": 100, "maximum": 5000},
+                "exact": {"type": "boolean"}
+            }, "required": ["name", "expected_url_prefix", "expect_change"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_verify_iframe_surface_readiness_semantic",
+            "description": (
+                "Read-only атомарно проверяет точный iframe, ожидаемый "
+                "HTTP(S) origin/URL prefix, готовую видимую canvas/video "
+                "поверхность ненулевого размера и ожидаемую смену или "
+                "стабильность кадра по приватным SHA-256. Не отправляет "
+                "клавиатурный или pointer input."
             ),
             "parameters": {"type": "object", "properties": {
                 "name": {"type": "string"},
@@ -2304,6 +2325,15 @@ def execute_tool(name: str, arguments: dict):
 
     if name == "browser_observe_iframe_surface_change_semantic":
         return observe_iframe_surface_change_semantic(
+            arguments["name"],
+            arguments["expected_url_prefix"],
+            arguments["expect_change"],
+            arguments.get("wait_ms", 1000),
+            arguments.get("exact", True),
+        )
+
+    if name == "browser_verify_iframe_surface_readiness_semantic":
+        return verify_iframe_surface_readiness_semantic(
             arguments["name"],
             arguments["expected_url_prefix"],
             arguments["expect_change"],

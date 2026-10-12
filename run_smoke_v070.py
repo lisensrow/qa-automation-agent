@@ -42,6 +42,7 @@ SMOKES = [
     "smoke_history_navigation.py",
     "smoke_iframe_inspection.py",
     "smoke_iframe_surface_change.py",
+    "smoke_iframe_surface_readiness.py",
     "smoke_iframe_surface_click.py",
     "smoke_iframe_surface_key.py",
     "smoke_hover_tooltip.py",

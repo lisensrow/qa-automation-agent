@@ -1745,6 +1745,7 @@ def classify_tool_action(
         "browser_inspect_alternate_language_contract_semantic",
         "browser_inspect_base_url_contract_semantic",
         "browser_observe_iframe_surface_change_semantic",
+        "browser_verify_iframe_surface_readiness_semantic",
         "browser_get_network_detail",
         "browser_inspect_semantic",
         "browser_inspect_table_row",

@@ -11152,6 +11152,73 @@ class BrowserSession:
             result["error"] = "iframe_surface_change_mismatch"
         return result
 
+    def verify_iframe_surface_readiness_semantic(
+        self, name, expected_url_prefix, expect_change,
+        wait_ms=1000, exact=True,
+    ):
+        """Verify iframe identity, a usable media surface, and frame activity."""
+        inspected = self.inspect_iframe_semantic(
+            name, expected_url_prefix, exact,
+        )
+        if inspected.get("iframe_status") != "verified":
+            inspected["iframe_readiness_status"] = "not_verified"
+            inspected["input_action_sent"] = False
+            return inspected
+
+        surface = inspected.get("iframe_surface") or {}
+        media = list(surface.get("canvases") or []) + list(
+            surface.get("videos") or []
+        )
+        dimensions_ready = any(
+            item.get("visible") is True
+            and float(item.get("display_width") or 0) > 0
+            and float(item.get("display_height") or 0) > 0
+            for item in media
+        )
+        readiness_ready = (
+            surface.get("surface_present") is True
+            and surface.get("surface_ready") is True
+            and dimensions_ready
+        )
+        if not readiness_ready:
+            inspected.update({
+                "iframe_surface_dimensions_ready": dimensions_ready,
+                "iframe_readiness_status": "not_ready",
+                "input_action_sent": False,
+                "error": "iframe_surface_not_ready",
+            })
+            return inspected
+
+        changed = self.observe_iframe_surface_change_semantic(
+            name,
+            expected_url_prefix,
+            expect_change,
+            wait_ms,
+            exact,
+        )
+        result = dict(changed)
+        result.update({
+            "iframe_name": inspected.get("iframe_name"),
+            "iframe_url": inspected.get("iframe_url"),
+            "iframe_expected_url_prefix": inspected.get(
+                "iframe_expected_url_prefix"
+            ),
+            "iframe_origin_matches": inspected.get(
+                "iframe_origin_matches"
+            ),
+            "iframe_url_matches": inspected.get("iframe_url_matches"),
+            "iframe_surface": surface,
+            "iframe_surface_dimensions_ready": dimensions_ready,
+            "iframe_readiness_status": (
+                "verified"
+                if changed.get("surface_change_status") == "verified"
+                else "mismatch"
+            ),
+            "input_action_sent": False,
+            "mutation_executed": False,
+        })
+        return result
+
     def click_iframe_surface_semantic(
         self, name, expected_url_prefix, x_ratio, y_ratio,
         expect_change, wait_ms=1000, exact=True,
@@ -14001,6 +14068,18 @@ def observe_iframe_surface_change_semantic(
     exact: bool = True,
 ) -> dict:
     return _session.observe_iframe_surface_change_semantic(
+        name, expected_url_prefix, expect_change, wait_ms, exact,
+    )
+
+
+def verify_iframe_surface_readiness_semantic(
+    name: str,
+    expected_url_prefix: str,
+    expect_change: bool,
+    wait_ms: int = 1000,
+    exact: bool = True,
+) -> dict:
+    return _session.verify_iframe_surface_readiness_semantic(
         name, expected_url_prefix, expect_change, wait_ms, exact,
     )
 
