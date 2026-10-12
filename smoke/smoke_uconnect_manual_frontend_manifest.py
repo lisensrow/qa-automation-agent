@@ -44,6 +44,7 @@ assert spec["job_type"] == "regression"
 assert spec["case"]["requirement"]["bindings"] == {
     "exact_ci_name": "test-linux",
 }
+assert spec["case"]["requirement"]["stand"] == "uconnect"
 assert spec["case"]["planned_checks"] == get_case(
     document, "uc-front-009"
 )["checks"]

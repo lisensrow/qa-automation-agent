@@ -177,6 +177,7 @@ SMOKES = [
     "smoke_semantic_navigation_retry.py",
     "smoke_semantic_role_click_fallback.py",
     "smoke_upload_fixture.py",
+    "smoke_prepared_regression_job.py",
 ]
 
 

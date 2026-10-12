@@ -12068,6 +12068,168 @@ def _parse_cleanup_command(value):
     return match.group(1) or ""
 
 
+def _parse_run_job_command(value):
+    match = re.fullmatch(
+        r"/run-job(?:\s+([A-Za-z0-9_-]+))?\s*",
+        str(value or "").strip(),
+    )
+
+    if not match:
+        return None
+
+    return match.group(1) or ""
+
+
+def _prepared_regression_case(job_id):
+    job = get_job(job_id)
+    if job is None:
+        raise FileNotFoundError(job_id)
+    if job.get("job_type") != "regression":
+        raise ValueError("prepared_job_type_invalid")
+    if job.get("status") != "created":
+        raise ValueError("prepared_job_not_created")
+    stand = str(job.get("stand") or "").strip()
+    if not stand:
+        raise ValueError("prepared_job_stand_required")
+    stand_info = get_stand(stand)
+    if not isinstance(stand_info, dict) or not stand_info.get("web_url"):
+        raise ValueError("prepared_job_saved_stand_required")
+
+    cases = job.get("test_cases") or []
+    if len(cases) != 1:
+        raise ValueError("prepared_job_single_case_required")
+
+    case = cases[0]
+    if case.get("status") != "pending":
+        raise ValueError("prepared_case_not_pending")
+
+    requirement = case.get("requirement")
+    if not isinstance(requirement, dict):
+        raise ValueError("prepared_case_requirement_required")
+    if requirement.get("execution_status") != "ready":
+        raise ValueError("prepared_case_not_ready")
+    if requirement.get("action_profile") not in {
+        "read_only",
+        "write_ui_state",
+        "write_resource",
+    }:
+        raise ValueError("prepared_case_action_profile_invalid")
+
+    planned_checks = case.get("planned_checks") or []
+    if not planned_checks:
+        raise ValueError("prepared_case_checks_required")
+
+    requirement = dict(requirement)
+    requirement["stand"] = stand
+
+    spec = {
+        "title": case.get("title") or "Prepared regression case",
+        "task": job.get("request") or case.get("title") or "",
+        "expected": case.get("expected"),
+        "requirement": requirement,
+        "checks": planned_checks,
+    }
+    locked = _lock_regression_plan_stand(
+        [spec],
+        stand,
+    )
+    return job, case, locked[0]
+
+
+def run_prepared_regression_job(job_id):
+    job, case, spec = _prepared_regression_case(job_id)
+    case_id = case["case_id"]
+    safe_request = redact_credentials(job.get("request") or "")
+    stand_context = build_stand_context(job["stand"])
+    if stand_context:
+        safe_request += stand_context
+
+    prepare_locked_requirements([spec])
+    set_job_status(job_id, "running")
+    update_test_case(job_id, case_id, status="running")
+
+    console.print(
+        f"\n[bold cyan]Prepared Regression Job:[/bold cyan] {job_id}"
+    )
+    console.print(f"[cyan]Case: {spec['title']} ({case_id})[/cyan]")
+
+    case_messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": _build_regression_case_prompt(
+                original_request=job.get("request") or "",
+                safe_request=safe_request,
+                job_id=job_id,
+                case_id=case_id,
+                index=1,
+                total=1,
+                case_spec=spec,
+            ),
+        },
+    ]
+
+    try:
+        from tools.browser import reset_case_context
+
+        reset_case_context()
+        run_turn(
+            case_messages,
+            job_id=job_id,
+            case_id=case_id,
+            action_policy="confirm_mutations",
+        )
+        export_regression_case_artifacts(job_id, case_id, 1)
+    except Exception as exc:
+        current = get_job(job_id) or {}
+        current_case = next(
+            (
+                item for item in current.get("test_cases", [])
+                if item.get("case_id") == case_id
+            ),
+            {},
+        )
+        if current_case.get("status") in {"pending", "running"}:
+            finalize_case_blocked(
+                job_id,
+                case_id,
+                "prepared_job_execution_error",
+                f"{type(exc).__name__}: {str(exc)}",
+            )
+        console.print(
+            "[red]Prepared regression execution aborted: "
+            f"{type(exc).__name__}: {str(exc)[:500]}[/red]"
+        )
+
+    run_cleanup_job(job_id)
+    reconciled = reconcile_resource_lifecycle_checks(job_id)
+    if case_id in reconciled:
+        export_regression_case_artifacts(job_id, case_id, 1)
+
+    final_status = recompute_job_status(job_id)
+    stored = get_job(job_id)
+    summary = _regression_summary(stored)
+    set_job_summary(job_id, summary)
+    artifacts = export_regression_job_artifacts(job_id)
+
+    console.print()
+    console.print(
+        Panel(
+            f"{summary}\nOverall: {str(final_status).upper()}",
+            title="Prepared Regression Result",
+        )
+    )
+    if artifacts:
+        report_url = artifacts.get("report_url")
+        if report_url:
+            console.print(
+                "[cyan]Regression report:[/cyan] "
+                f"{report_url}"
+            )
+    console.print(f"[dim]Job saved: {job_id}[/dim]")
+    return job_id
+
+
 
 def run_regression_job(
     original_request: str,
@@ -14844,6 +15006,34 @@ def main():
             except Exception as exc:
                 console.print(
                     "[red]Cleanup error:[/red] "
+                    f"{type(exc).__name__}: "
+                    f"{str(exc)[:500]}"
+                )
+
+            continue
+
+        prepared_job_id = _parse_run_job_command(
+            user_input
+        )
+
+        if prepared_job_id is not None:
+            if not prepared_job_id:
+                console.print(
+                    "[yellow]Usage: /run-job JOB_ID[/yellow]"
+                )
+                continue
+
+            try:
+                _prepared_regression_case(
+                    prepared_job_id
+                )
+                ensure_ollama_ready()
+                run_prepared_regression_job(
+                    prepared_job_id
+                )
+            except Exception as exc:
+                console.print(
+                    "[red]Prepared Job error:[/red] "
                     f"{type(exc).__name__}: "
                     f"{str(exc)[:500]}"
                 )

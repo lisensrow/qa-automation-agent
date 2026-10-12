@@ -141,6 +141,7 @@ def build_job_spec(document, case_id, stand, bindings=None):
         "execution_status": case["execution_status"],
         "prerequisites": list(case["prerequisites"]),
         "bindings": normalized_bindings,
+        "stand": stand,
         "policy_required": case.get("policy_required") is True,
         "cleanup_contract": case.get("cleanup_contract"),
     }

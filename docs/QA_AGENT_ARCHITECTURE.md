@@ -6,6 +6,7 @@
 
 - Понимает QA-запрос на естественном языке и превращает его в проверяемый план.
 - Отличает одиночный последовательный сценарий от набора независимых test case.
+- Материализует готовый сценарий продуктового корпуса в один persistent regression Job и запускает этот же Job командой `/run-job JOB_ID` без повторного LLM-планирования и без создания дубликата.
 - Нормализует planner checks в уникальные стабильные `planned-*` ID; повторённый моделью ID не может слить разные критерии в один результат.
 - Выполняет UI-проверки в браузере по смысловым названиям элементов, а не по хрупким координатам.
 - Выбирает значения native select и ARIA combobox по точным видимым именам без ручного угадывания option.
@@ -503,6 +504,7 @@ Planner отделяет критерии продукта от служебно
 - v140b автоматически регистрирует общий blocker `agent-task-list-backend-unavailable` при подтверждённом не-200 ответе exact task-list endpoint и связывает его с исходным Job и безопасными evidence. Повторная запись без новых version-данных сохраняет уже известные версии компонентов вместо их обнуления. Полный набор smoke-тестов — `161/161`.
 - v140c завершил автоматический lifecycle общего task-list blocker: статус становится `resolved` только после наблюдённого успешного read-only task-list ответа для точной КЕ. Online-флаг, свежая telemetry или отсутствие записи blocker не считаются восстановлением. Полный набор smoke-тестов — `161/161`.
 - v141a связал product-level manual frontend corpus с persistent Job Store. Любой сценарий со статусом `ready` теперь материализуется детерминированно в один regression Job и один test case с исходными checks, точными bound inputs, action profile, policy и cleanup metadata. `candidate` и `blocked_external` fail-closed не материализуются. Реальный Job Store проверен в изолированном каталоге на `uc-front-009`; демонстрационные Jobs не изменялись. Полный набор smoke-тестов — `161/161`.
+- v141b добавил исполнение уже подготовленного single-case regression Job через `/run-job JOB_ID`. Core принимает только Job типа `regression` в статусе `created`, один `pending` case, `ready` requirement, допустимый action profile, сохранённый стенд и непустые planned checks; повторный или повреждённый Job блокируется до выполнения. Перед переводом Job в `running` отдельно проверяется доступность Ollama, а в locked requirement и LLM-контекст передаётся Core-resolved stand. Case запускается с прежней `confirm_mutations` policy, проходит обычные evidence, cleanup, reconciliation, summary и artifact phases, не создавая второй Job и не вызывая planner. STEP/AUTO обычного regression flow не изменены. Полный единый smoke-runner — `162/162`.
 
 ## Реализованное frontend-покрытие
 
