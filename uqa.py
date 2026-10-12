@@ -50,6 +50,7 @@ from job_store import (
     recompute_cleanup_status,
     list_product_blockers,
     mark_product_blockers_for_version_change,
+    record_product_blocker,
     record_compatibility_snapshot,
     record_table_selection,
     list_table_selections,
@@ -5512,6 +5513,39 @@ def record_tool_evidence(
         "table_selection_list",
     }:
         return None
+
+    if (
+        tool_name == "browser_open_agent_tasks_semantic"
+        and isinstance(result, dict)
+        and result.get("error") == "task_list_backend_unavailable"
+    ):
+        safe_status = result.get("task_list_http_status")
+        safe_error_class = str(
+            result.get("backend_error_class") or "backend_http_error"
+        )
+        ci_name = str(arguments.get("ci_name") or "").strip()
+        record_product_blocker(
+            "agent-task-list-backend-unavailable",
+            "Managed agent task-list preflight",
+            (
+                "Observed exact agent task-list endpoint is unavailable: "
+                f"HTTP {safe_status}, class={safe_error_class}."
+            ),
+            source_job=job_id,
+            evidence={
+                "tool": tool_name,
+                "ci_name": ci_name,
+                "http_status": safe_status,
+                "error_class": safe_error_class,
+            },
+            retry_when=(
+                "After task-list backend recovery or product version change"
+            ),
+            required_work=(
+                "Restore a successful read-only task-list response before "
+                "managed task creation is allowed."
+            ),
+        )
 
     payload = {
         "tool": tool_name,

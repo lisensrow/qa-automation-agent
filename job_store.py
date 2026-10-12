@@ -476,8 +476,10 @@ def record_product_blocker(
         "capability": capability,
         "status": status,
         "reason": reason,
-        "product_versions": _sanitize_resource_metadata(
-            product_versions or {}
+        "product_versions": (
+            _sanitize_resource_metadata(product_versions)
+            if product_versions is not None
+            else deepcopy(blocker.get("product_versions") or {})
         ),
         "evidence": _sanitize_resource_metadata(
             evidence or {}

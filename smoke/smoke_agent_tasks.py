@@ -540,6 +540,36 @@ assert failed_context[3]["task_list_http_status"] == 422
 assert failed_context[3]["backend_error_class"] == "backend_timeout"
 assert "connection pool" not in str(failed_context[3])
 
+saved_record_product_blocker = uqa.record_product_blocker
+saved_add_evidence = uqa.add_evidence
+captured_blocker = {}
+try:
+    uqa.record_product_blocker = lambda *args, **kwargs: (
+        captured_blocker.update({"args": args, "kwargs": kwargs})
+        or {"blocker_id": args[0]}
+    )
+    uqa.add_evidence = lambda *args, **kwargs: kwargs
+    uqa.record_tool_evidence(
+        "job-backend", "case-backend",
+        "browser_open_agent_tasks_semantic",
+        {"ci_name": "test-linux"},
+        failed_context[3],
+    )
+finally:
+    uqa.record_product_blocker = saved_record_product_blocker
+    uqa.add_evidence = saved_add_evidence
+assert captured_blocker["args"][0] == (
+    "agent-task-list-backend-unavailable"
+)
+assert captured_blocker["kwargs"]["source_job"] == "job-backend"
+assert captured_blocker["kwargs"]["evidence"] == {
+    "tool": "browser_open_agent_tasks_semantic",
+    "ci_name": "test-linux",
+    "http_status": 422,
+    "error_class": "backend_timeout",
+}
+assert "connection pool" not in str(captured_blocker)
+
 original_get_job = uqa.get_job
 original_execute_tool = uqa.execute_tool
 try:
