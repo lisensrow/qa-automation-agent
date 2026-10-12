@@ -437,6 +437,10 @@ class FakeResponse:
         return self.payload
 
 
+class FailedResponse(FakeResponse):
+    status = 422
+
+
 session = BrowserSession()
 try:
     session._ensure_started()
@@ -504,6 +508,37 @@ try:
         uqa.add_evidence = original_add_evidence
 finally:
     session.close()
+
+backend_failure_session = object.__new__(BrowserSession)
+backend_failure_session.page = SimpleNamespace(
+    locator=lambda selector: SimpleNamespace(
+        inner_text=lambda: "test-linux Agent Tasks"
+    )
+)
+backend_failure_session.network_details = {
+    "ci": {
+        "request": SimpleNamespace(
+            method="GET", url="https://stand/api/v1/cis/ci-1",
+        ),
+        "response": FakeResponse(ci),
+    },
+    "tasks-failed": {
+        "request": SimpleNamespace(
+            method="GET",
+            url="https://stand/api/v1/agents/agent-1/tasks?limit=999",
+        ),
+        "response": FailedResponse({
+            "detail": "TimeoutError: connection pool timed out",
+        }),
+    },
+}
+failed_context = backend_failure_session._observed_agent_task_context(
+    "test-linux"
+)
+assert failed_context[3]["error"] == "task_list_backend_unavailable"
+assert failed_context[3]["task_list_http_status"] == 422
+assert failed_context[3]["backend_error_class"] == "backend_timeout"
+assert "connection pool" not in str(failed_context[3])
 
 original_get_job = uqa.get_job
 original_execute_tool = uqa.execute_tool

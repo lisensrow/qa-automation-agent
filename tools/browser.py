@@ -2258,6 +2258,37 @@ class BrowserSession:
             ):
                 return ci, payload, request_url, None
 
+        # A missing request is different from a request that reached the
+        # product backend and failed. Keep the response body private, but
+        # preserve enough machine-readable health data to report the product
+        # blocker instead of treating it as an ordinary unloaded tab.
+        for _, detail in reversed(list(self.network_details.items())[-200:]):
+            try:
+                request, response = detail["request"], detail["response"]
+                if (
+                    request.method != "GET"
+                    or not urlsplit(request.url).path.endswith(expected_path)
+                    or response.status == 200
+                ):
+                    continue
+                payload = response.json()
+                detail_text = str(
+                    payload.get("detail") if isinstance(payload, dict) else ""
+                )
+                error_class = (
+                    "backend_timeout"
+                    if "timeout" in detail_text.casefold()
+                    else "backend_http_error"
+                )
+                return ci, None, request.url, {
+                    "error": "task_list_backend_unavailable",
+                    "executed": False,
+                    "task_list_http_status": response.status,
+                    "backend_error_class": error_class,
+                }
+            except Exception:
+                continue
+
         return ci, None, None, {
             "error": "task_list_get_not_observed",
             "executed": False,
