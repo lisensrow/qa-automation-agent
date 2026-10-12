@@ -182,6 +182,7 @@ SMOKES = [
     "smoke_job_cli_summary.py",
     "smoke_prepared_job_deduplication.py",
     "smoke_job_list_all.py",
+    "smoke_prepared_job_queue.py",
 ]
 
 

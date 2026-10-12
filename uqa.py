@@ -4741,7 +4741,7 @@ def banner():
             f"Thinking: {'ON' if UQA_THINK else 'OFF'}\n"
             f"Ollama: {OLLAMA_URL}\n"
             f"Tools: {len(tool_names)} available\n\n"
-            f"/clear  /status  /blockers  /jobs  /job JOB_ID\n"
+            f"/clear  /status  /blockers  /jobs  /queue  /job JOB_ID\n"
             f"/run-job JOB_ID  /cleanup JOB_ID  /exit",
             title="U-Connect QA Agent",
         )
@@ -12143,6 +12143,63 @@ def _print_recent_jobs(limit=10):
     return overviews
 
 
+def _prepared_queue_overview(job):
+    if job.get("job_type") != "regression":
+        return None
+    if job.get("status") not in {"created", "running"}:
+        return None
+    cases = job.get("test_cases") or []
+    if len(cases) != 1:
+        return None
+    case = cases[0]
+    if case.get("status") not in {"pending", "running"}:
+        return None
+    requirement = case.get("requirement") or {}
+    if not str(requirement.get("source") or "").strip():
+        return None
+    if requirement.get("execution_status") != "ready":
+        return None
+    if not (case.get("planned_checks") or []):
+        return None
+
+    item = _safe_job_overview(job)
+    return {
+        "job_id": item["job_id"],
+        "status": item["status"],
+        "stand": item["stand"],
+        "external_id": item["external_id"],
+        "updated_at": item["updated_at"],
+        "case_id": item["cases"][0]["case_id"],
+        "case_status": item["cases"][0]["status"],
+        "planned_checks": item["cases"][0]["planned_checks"],
+    }
+
+
+def _print_prepared_job_queue():
+    items = []
+    for job in list_jobs(None):
+        item = _prepared_queue_overview(job)
+        if item is not None:
+            items.append(item)
+
+    if not items:
+        console.print("[yellow]No prepared QA Jobs found.[/yellow]")
+        return []
+
+    lines = [
+        (
+            f"{item['job_id']} | {item['external_id'] or '-'} | "
+            f"{item['status']}/{item['case_status']} | "
+            f"stand={item['stand'] or '-'} | "
+            f"planned={item['planned_checks']} | "
+            f"updated={item['updated_at'] or '-'}"
+        )
+        for item in items
+    ]
+    console.print(Panel("\n".join(lines), title="Prepared QA Queue"))
+    return items
+
+
 def _print_job_overview(job_id):
     job = get_job(job_id)
     if job is None:
@@ -15084,6 +15141,10 @@ def main():
 
         if user_input == "/jobs":
             _print_recent_jobs()
+            continue
+
+        if user_input == "/queue":
+            _print_prepared_job_queue()
             continue
 
         overview_job_id = _parse_job_command(
