@@ -2303,6 +2303,13 @@ class BrowserSession:
         stages = []
 
         inspected = self.inspect_table_row(ci_name, exact=True)
+        if (
+            inspected.get("error") == "table_row_not_found"
+            and getattr(self, "page", None) is not None
+        ):
+            inspected = self._find_exact_cmdb_row_page(ci_name)
+            if inspected.get("row_match_count") == 1:
+                stages.append("ci_page_resolved")
         stages.append("ci_row_inspected")
         if inspected.get("error") or inspected.get("row_match_count") != 1:
             return {
@@ -2408,6 +2415,93 @@ class BrowserSession:
             "navigation_stages": stages,
             "current_url": tasks_click.get("current_url"),
             "screenshot": tasks_click.get("screenshot"),
+        }
+
+    def _find_exact_cmdb_row_page(
+        self, ci_name: str, max_pages: int = 20,
+    ):
+        """Find an exact CI on bounded CMDB pages without mutating the stand."""
+        current = urlsplit(str(getattr(self.page, "url", "") or ""))
+        if (
+            current.scheme != "https"
+            or not current.netloc
+            or current.path.rstrip("/") != "/cmdb"
+        ):
+            return {
+                "error": "table_row_not_found",
+                "status": "error",
+                "name": ci_name,
+                "exact": True,
+                "pagination_scan": "not_available",
+            }
+
+        query = dict(parse_qsl(current.query, keep_blank_values=True))
+        try:
+            limit = int(query.get("limit", 50))
+        except (TypeError, ValueError):
+            limit = 50
+        if limit < 1 or limit > 200:
+            limit = 50
+
+        try:
+            current_offset = int(query.get("offset", 0))
+        except (TypeError, ValueError):
+            current_offset = 0
+
+        scanned_offsets = [current_offset]
+        last = {
+            "error": "table_row_not_found",
+            "status": "error",
+            "name": ci_name,
+            "exact": True,
+        }
+        for page_number in range(max(1, min(int(max_pages), 20))):
+            offset = page_number * limit
+            if offset == current_offset:
+                continue
+            query["limit"] = str(limit)
+            query["offset"] = str(offset)
+            target = urlunsplit((
+                current.scheme,
+                current.netloc,
+                current.path,
+                urlencode(query),
+                "",
+            ))
+            try:
+                self.page.goto(
+                    target,
+                    wait_until="domcontentloaded",
+                    timeout=15000,
+                )
+                self.page.wait_for_timeout(750)
+            except Exception:
+                return {
+                    **last,
+                    "pagination_scan": "navigation_failed",
+                    "pages_scanned": len(scanned_offsets),
+                }
+
+            scanned_offsets.append(offset)
+            last = self.inspect_table_row(ci_name, exact=True)
+            if last.get("row_match_count") == 1 and not last.get("error"):
+                return {
+                    **last,
+                    "pagination_scan": "resolved",
+                    "pages_scanned": len(scanned_offsets),
+                    "resolved_offset": offset,
+                }
+            if last.get("error") != "table_row_not_found":
+                return {
+                    **last,
+                    "pagination_scan": "stopped",
+                    "pages_scanned": len(scanned_offsets),
+                }
+
+        return {
+            **last,
+            "pagination_scan": "not_found",
+            "pages_scanned": len(scanned_offsets),
         }
 
     def _same_https_origin_url(self, observed_url, path):

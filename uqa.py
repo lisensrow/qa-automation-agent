@@ -1331,6 +1331,77 @@ def _managed_agent_next_step_message(required_call):
     }
 
 
+def _managed_agent_verdict_message(job_id, case_id, ci_name, result):
+    evidence_id = (
+        result.get("uqa_evidence_id")
+        if isinstance(result, dict)
+        else None
+    )
+    if not evidence_id:
+        return None
+
+    planned_checks = []
+    if job_id and case_id:
+        current_job = get_job(job_id) or {}
+        current_case = next((
+            item for item in current_job.get("test_cases", [])
+            if item.get("case_id") == case_id
+        ), {})
+        planned_checks = _normalize_planned_checks(
+            current_case.get("planned_checks")
+        )
+
+    status = (
+        "passed"
+        if result.get("assertion_passed") is True
+        else "failed"
+    )
+    reason = (
+        "managed_agent_task_result_verified"
+        if status == "passed"
+        else "managed_agent_task_result_mismatch"
+    )
+    example_check = {
+        "title": "Managed agent task result",
+        "subject": ci_name,
+        "status": status,
+        "expected": "allowlisted private marker matches",
+        "actual": "verified by UQA Core",
+        "assertions": [],
+        "evidence": [evidence_id],
+        "observations": result.get("uqa_observation_ids") or [],
+        "reason": reason,
+    }
+    if planned_checks:
+        example_check["check_id"] = planned_checks[0]["check_id"]
+
+    planned_contract = (
+        "\nAuthoritative planned checks (copy every check_id and title "
+        "exactly, once each):\n"
+        + json.dumps(planned_checks, ensure_ascii=False)
+        if planned_checks
+        else ""
+    )
+    return {
+        "role": "user",
+        "content": (
+            "[UQA CORE: MANAGED AGENT RESULT COMPLETE]\n"
+            "The managed result observation is complete. Do not call another "
+            "tool. The resource is registered but cleanup has NOT executed "
+            "yet; never claim that it is cleaned. Cleanup Manager runs only "
+            "after the case verdict. Return a complete valid JSON block with "
+            "both markers [UQA_CHECKS_JSON] and [/UQA_CHECKS_JSON]. Do not "
+            "truncate or omit the closing marker. Use the following Core "
+            "facts for the execution-result check:\n"
+            + json.dumps(example_check, ensure_ascii=False)
+            + planned_contract
+            + "\nLedger/cleanup planned checks must still be included with "
+            "status=blocked while cleanup has not run. Never use status=pending. "
+            "Their final status is recomputed by Core from persistent state."
+        ),
+    }
+
+
 def _managed_agent_workflow_call_allowed(
     phase, ci_name, fixture_id, task_id, tool_name, arguments,
     stand_url=None,
@@ -6916,6 +6987,25 @@ def extract_structured_checks(content: str):
             "structured_result_checks_empty",
         )
 
+    # A model may describe a pre-cleanup lifecycle check as "pending" even
+    # though pending is not a valid final QA verdict. Fail closed instead of
+    # discarding the entire structured result; Core can later reconcile only
+    # recognized lifecycle checks from persistent cleanup facts.
+    for check in checks:
+        if (
+            isinstance(check, dict)
+            and str(check.get("status") or "").strip().casefold()
+            == "pending"
+        ):
+            check["status"] = "blocked"
+            pending_reason = "UQA CORE: pending_is_not_final_verdict"
+            existing_reason = str(check.get("reason") or "").strip()
+            check["reason"] = (
+                existing_reason + " | " + pending_reason
+                if existing_reason
+                else pending_reason
+            )
+
     try:
         checks = _normalize_checks(
             checks
@@ -7551,10 +7641,18 @@ def _planned_check_lifecycle_kind(check):
         return "cleanup_absence"
 
     if has_cleanup and re.search(
-        r"(?:удал\w*|очищ\w*|\bdelet\w*|\bremov\w*|\bcleaned\b)",
+        r"(?:удал\w*|очищ\w*|выполн\w*|заверш\w*|успеш\w*|"
+        r"\bdelet\w*|\bremov\w*|\bcleaned\b|\bcomplet\w*|"
+        r"\bsuccess\w*)",
         text,
     ):
         return "cleanup_deleted"
+
+    if re.search(
+        r"(?:\benabled\s*=\s*(?:0|false)\b|\bdisabled\b|отключ\w*)",
+        text,
+    ):
+        return "cleanup_disabled"
 
     if (
         re.search(r"(?:ресурс\w*|\bresource\b|\bledger\b)", text)
@@ -7933,6 +8031,53 @@ def verify_resource_lifecycle_checks(
                     else "UQA CORE: cleanup_verification_pending"
                 )
 
+        elif kind == "cleanup_disabled":
+            disable_resources = [
+                item for item in cleanup_resources
+                if (item.get("metadata") or {}).get("cleanup_contract")
+                == "agent_task_disable_v1"
+            ]
+            confirmed = bool(disable_resources) and all(
+                item.get("status") == "cleaned"
+                and any(
+                    event.get("data", {}).get("tool")
+                    == "browser_disable_agent_task_semantic"
+                    and event.get("data", {}).get("result", {}).get(
+                        "post_disable_verified"
+                    ) is True
+                    and event.get("data", {}).get("result", {}).get(
+                        "action_policy_status"
+                    ) == "confirmed"
+                    for attempt in item.get("cleanup_attempts", [])
+                    if attempt.get("status") == "cleaned"
+                    for event in attempt.get("events", [])
+                )
+                for item in disable_resources
+            )
+            if confirmed:
+                check["status"] = "passed"
+                check["actual"] = (
+                    "Cleanup GET confirmed enabled=0 for every managed "
+                    "agent task created by this case."
+                )
+                check["reason"] = "UQA CORE: agent_task_disable_verified"
+            else:
+                failed = any(
+                    item.get("status") == "cleanup_failed"
+                    for item in disable_resources
+                )
+                check["status"] = (
+                    "failed" if phase == "cleanup" and failed else "blocked"
+                )
+                check["actual"] = (
+                    "No completed post-disable enabled=0 proof is stored."
+                )
+                check["reason"] = (
+                    "UQA CORE: agent_task_disable_failed"
+                    if phase == "cleanup" and failed
+                    else "UQA CORE: agent_task_disable_pending"
+                )
+
     return verified, lifecycle_ids
 
 
@@ -8096,6 +8241,54 @@ def _coalesce_declared_single_workflow(request, plan):
             "checks": checks,
         }
     ]
+
+
+def _canonicalize_managed_agent_plan(request, plan):
+    """Replace model-authored managed lifecycle checks with Core contract."""
+    ci_name = _managed_agent_ci_name_from_request(request)
+    fixture_id = _managed_agent_fixture_from_request(request)
+
+    if not ci_name or not fixture_id:
+        return plan
+
+    checks = _normalize_planned_checks([
+        {
+            "title": "Проверка readiness управляемой задачи",
+            "expected": (
+                f"КЕ {ci_name} online, monitoring свежий, fixture "
+                f"{fixture_id} совместима с ОС"
+            ),
+        },
+        {
+            "title": "Проверка точной привязки задачи к агенту",
+            "expected": f"Созданная задача принадлежит точной КЕ {ci_name}",
+        },
+        {
+            "title": "Проверка закрытого результата маркера",
+            "expected": "Приватный allowlisted marker совпадает",
+        },
+        {
+            "title": "Проверка регистрации ресурса в ledger",
+            "expected": (
+                "Созданный resource зарегистрирован в persistent ledger"
+            ),
+        },
+        {
+            "title": "Проверка завершения Cleanup Manager",
+            "expected": "Cleanup Manager успешно завершён",
+        },
+        {
+            "title": "Проверка отключения задачи enabled=0",
+            "expected": "Повторный GET подтвердил enabled=0",
+        },
+    ])
+
+    return [{
+        "title": f"Managed agent task lifecycle: {ci_name}",
+        "task": str(request or "").strip(),
+        "expected": None,
+        "checks": checks,
+    }]
 
 
 def _lock_regression_plan_stand(plan, current_stand):
@@ -11876,6 +12069,10 @@ def run_regression_job(
             plan,
             current_stand,
         )
+        plan = _canonicalize_managed_agent_plan(
+            planning_request,
+            plan,
+        )
     except Exception as exc:
         case = add_test_case(
             job_id,
@@ -14214,6 +14411,14 @@ def run_turn(
                 _PENDING_CONSTRAINED_ACTIONS.pop(
                     (str(job_id), str(case_id)), None,
                 )
+                managed_verdict_message = _managed_agent_verdict_message(
+                    job_id,
+                    case_id,
+                    managed_agent_ci_name,
+                    result,
+                )
+                if managed_verdict_message:
+                    messages.append(managed_verdict_message)
 
             if (
                 len(tool_calls) == 1

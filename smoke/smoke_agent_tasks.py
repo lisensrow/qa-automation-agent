@@ -385,6 +385,48 @@ assert blocked_result["navigation_status"] == "blocked"
 assert blocked_result["failed_stage"] == "ci_row_inspection"
 
 
+class PaginatedCmdbPage:
+    url = "https://stand/cmdb?limit=50&offset=0"
+
+    def __init__(self):
+        self.visited = []
+
+    def goto(self, url, wait_until, timeout):
+        assert wait_until == "domcontentloaded"
+        assert timeout == 15000
+        self.url = url
+        self.visited.append(url)
+
+    def wait_for_timeout(self, value):
+        assert value == 750
+
+
+paginated_route = object.__new__(BrowserSession)
+paginated_route.page = PaginatedCmdbPage()
+
+
+def inspect_paginated(name, exact=True):
+    assert name == "test-linux"
+    assert exact is True
+    if "offset=100" in paginated_route.page.url:
+        return {
+            "row_match_count": 1,
+            "current_url": paginated_route.page.url,
+        }
+    return {"error": "table_row_not_found", "row_match_count": 0}
+
+
+paginated_route.inspect_table_row = inspect_paginated
+paginated_result = paginated_route._find_exact_cmdb_row_page("test-linux")
+assert paginated_result["row_match_count"] == 1, paginated_result
+assert paginated_result["pagination_scan"] == "resolved"
+assert paginated_result["resolved_offset"] == 100
+assert len(paginated_route.page.visited) == 2
+assert all(url.startswith("https://stand/cmdb?") for url in (
+    paginated_route.page.visited
+))
+
+
 class FakeResponse:
     status = 200
 

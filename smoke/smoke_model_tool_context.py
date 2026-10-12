@@ -265,6 +265,58 @@ next_step_message = uqa._managed_agent_next_step_message({
 })
 assert next_step_message["role"] == "user"
 assert "browser_probe_capabilities" in next_step_message["content"]
+verdict_message = uqa._managed_agent_verdict_message(
+    None,
+    None,
+    "test-windows",
+    {
+        "assertion_passed": True,
+        "uqa_evidence_id": "ev-managed",
+        "uqa_observation_ids": ["obs-managed"],
+    },
+)
+assert verdict_message is not None
+assert "cleanup has NOT executed" in verdict_message["content"]
+assert "[/UQA_CHECKS_JSON]" in verdict_message["content"]
+assert '"evidence": ["ev-managed"]' in verdict_message["content"]
+assert "Never use status=pending" in verdict_message["content"]
+assert uqa._managed_agent_verdict_message(
+    None, None, "test-windows", {"assertion_passed": True},
+) is None
+pending_checks, _, pending_error = uqa.extract_structured_checks(
+    '[UQA_CHECKS_JSON]{"checks":[{"title":"Cleanup Manager",'
+    '"status":"pending"}]}[/UQA_CHECKS_JSON]'
+)
+assert pending_error is None
+assert pending_checks[0]["status"] == "blocked"
+assert "pending_is_not_final_verdict" in pending_checks[0]["reason"]
+assert uqa._planned_check_lifecycle_kind({
+    "title": "Проверка выполнения Cleanup Manager",
+    "expected": "Cleanup Manager успешно выполнен",
+}) == "cleanup_deleted"
+assert uqa._planned_check_lifecycle_kind({
+    "title": "Проверка enabled=0",
+    "expected": "enabled=0",
+}) == "cleanup_disabled"
+canonical_managed_plan = uqa._canonicalize_managed_agent_plan(
+    "Один регресс: для точной КЕ test-windows создай "
+    "windows_cmd_echo_marker_v1 и выполни cleanup.",
+    [{
+        "title": "Bad planner expansion",
+        "task": "bad",
+        "checks": [{
+            "title": "Readiness не прошла",
+            "expected": "case BLOCKED",
+        }],
+    }],
+)
+assert len(canonical_managed_plan) == 1
+assert len(canonical_managed_plan[0]["checks"]) == 6
+assert canonical_managed_plan[0]["title"].endswith("test-windows")
+assert all(
+    "не прошла" not in check["title"].casefold()
+    for check in canonical_managed_plan[0]["checks"]
+)
 assert 'managed_agent_workflow_phase == "probe"' in uqa_source
 assert 'managed_agent_workflow_phase == "readiness"' in uqa_source
 assert 'managed_agent_workflow_phase == "verdict"' in uqa_source
