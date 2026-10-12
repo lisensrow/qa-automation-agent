@@ -1,5 +1,9 @@
 from run_uconnect_manual_frontend_benchmark import (
+    build_job_spec,
+    get_case,
     load_and_validate_manifest,
+    materialize_job,
+    parse_bindings,
     summarize,
 )
 
@@ -24,4 +28,80 @@ assert all(
     or case.get("policy_required") is True
     for case in document["cases"]
 )
-print("uconnect manual frontend manifest smoke: PASS (6 categories, 16 cases)")
+
+assert get_case(document, "uc-front-009")["category"] == "agent_ui"
+assert parse_bindings(["exact_ci_name = test-linux"]) == {
+    "exact_ci_name": "test-linux",
+}
+spec = build_job_spec(
+    document,
+    "uc-front-009",
+    "uconnect",
+    {"exact_ci_name": "test-linux"},
+)
+assert spec["external_id"] == "uc-front-009"
+assert spec["job_type"] == "regression"
+assert spec["case"]["requirement"]["bindings"] == {
+    "exact_ci_name": "test-linux",
+}
+assert spec["case"]["planned_checks"] == get_case(
+    document, "uc-front-009"
+)["checks"]
+assert "test-linux" in spec["request"]
+
+captured = {}
+
+
+def fake_create_job(request, **kwargs):
+    captured["job"] = {"request": request, **kwargs}
+    return {"job_id": "job-corpus-smoke"}
+
+
+def fake_add_test_case(job_id, **kwargs):
+    captured["case"] = {"job_id": job_id, **kwargs}
+    return {"case_id": "case-corpus-smoke"}
+
+
+materialized = materialize_job(
+    spec,
+    job_creator=fake_create_job,
+    case_adder=fake_add_test_case,
+)
+assert materialized["job_id"] == "job-corpus-smoke"
+assert materialized["case_id"] == "case-corpus-smoke"
+assert captured["job"]["external_id"] == "uc-front-009"
+assert captured["case"]["job_id"] == "job-corpus-smoke"
+assert captured["case"]["planned_checks"] == spec["case"]["planned_checks"]
+assert captured["case"]["requirement"]["action_profile"] == "read_only"
+
+for case_id, expected_error in (
+    ("uc-front-013", "execution_not_ready:candidate"),
+    ("uc-front-011", "execution_not_ready:blocked_external"),
+):
+    try:
+        build_job_spec(
+            document,
+            case_id,
+            "uconnect",
+            {},
+        )
+        raise AssertionError(f"{case_id} unexpectedly materialized")
+    except ValueError as exc:
+        assert expected_error in str(exc)
+
+try:
+    build_job_spec(document, "uc-front-009", "uconnect", {})
+    raise AssertionError("missing binding unexpectedly accepted")
+except ValueError as exc:
+    assert "bindings_missing:exact_ci_name" in str(exc)
+
+try:
+    parse_bindings(["exact_ci_name=test-linux", "exact_ci_name=test-win"])
+    raise AssertionError("duplicate binding unexpectedly accepted")
+except ValueError as exc:
+    assert "binding_duplicate:exact_ci_name" in str(exc)
+
+print(
+    "uconnect manual frontend manifest smoke: PASS "
+    "(6 categories, 16 cases, deterministic Job spec)"
+)

@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 from collections import Counter
@@ -66,13 +67,161 @@ def summarize(document):
     }
 
 
+def get_case(document, case_id):
+    requested = str(case_id or "").strip()
+    for case in document["cases"]:
+        if case["case_id"] == requested:
+            return case
+    raise ValueError(f"manual_frontend_case_unknown:{requested}")
+
+
+def parse_bindings(items):
+    bindings = {}
+    for item in items or []:
+        key, separator, value = str(item).partition("=")
+        key = key.strip()
+        value = value.strip()
+        if not separator or not key or not value:
+            raise ValueError("manual_frontend_binding_invalid")
+        if key in bindings:
+            raise ValueError(f"manual_frontend_binding_duplicate:{key}")
+        bindings[key] = value
+    return bindings
+
+
+def build_job_spec(document, case_id, stand, bindings=None):
+    case = get_case(document, case_id)
+    stand = str(stand or "").strip()
+    bindings = dict(bindings or {})
+
+    if case["execution_status"] != "ready":
+        raise ValueError(
+            f"{case['case_id']}:execution_not_ready:"
+            f"{case['execution_status']}"
+        )
+    if not stand:
+        raise ValueError(f"{case['case_id']}:stand_required")
+
+    required_bindings = {
+        item for item in case["prerequisites"]
+        if item != "saved_stand"
+    }
+    missing = sorted(required_bindings - set(bindings))
+    unknown = sorted(set(bindings) - required_bindings)
+    if missing:
+        raise ValueError(
+            f"{case['case_id']}:bindings_missing:{','.join(missing)}"
+        )
+    if unknown:
+        raise ValueError(
+            f"{case['case_id']}:bindings_unknown:{','.join(unknown)}"
+        )
+    if any(not str(value).strip() for value in bindings.values()):
+        raise ValueError(f"{case['case_id']}:binding_value_required")
+
+    normalized_bindings = {
+        key: str(bindings[key]).strip()
+        for key in sorted(bindings)
+    }
+    input_lines = [
+        f"- {key}: {value}"
+        for key, value in normalized_bindings.items()
+    ]
+    request = case["task"].strip()
+    if input_lines:
+        request += "\n\nBound inputs:\n" + "\n".join(input_lines)
+
+    requirement = {
+        "source": "uconnect_manual_frontend_corpus",
+        "product": document["product"],
+        "manifest_schema_version": document["schema_version"],
+        "source_case_id": case["case_id"],
+        "category": case["category"],
+        "action_profile": case["action_profile"],
+        "execution_status": case["execution_status"],
+        "prerequisites": list(case["prerequisites"]),
+        "bindings": normalized_bindings,
+        "policy_required": case.get("policy_required") is True,
+        "cleanup_contract": case.get("cleanup_contract"),
+    }
+    return {
+        "request": request,
+        "stand": stand,
+        "external_id": case["case_id"],
+        "job_type": "regression",
+        "case": {
+            "title": case["title"],
+            "expected": "; ".join(case["checks"]),
+            "requirement": requirement,
+            "planned_checks": list(case["checks"]),
+        },
+    }
+
+
+def materialize_job(spec, job_creator=None, case_adder=None):
+    if job_creator is None or case_adder is None:
+        from job_store import add_test_case, create_job
+
+        job_creator = job_creator or create_job
+        case_adder = case_adder or add_test_case
+
+    job = job_creator(
+        spec["request"],
+        stand=spec["stand"],
+        external_id=spec["external_id"],
+        job_type=spec["job_type"],
+    )
+    case = case_adder(job["job_id"], **spec["case"])
+    return {
+        "job_id": job["job_id"],
+        "case_id": case["case_id"],
+        "source_case_id": spec["external_id"],
+        "stand": spec["stand"],
+    }
+
+
+def build_parser():
+    parser = argparse.ArgumentParser(
+        description="Validate or materialize a U-Connect frontend corpus case."
+    )
+    parser.add_argument("--case-id")
+    parser.add_argument("--stand")
+    parser.add_argument(
+        "--bind",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+    )
+    parser.add_argument("--create-job", action="store_true")
+    return parser
+
+
 def main():
-    summary = summarize(load_and_validate_manifest())
+    document = load_and_validate_manifest()
+    summary = summarize(document)
     print(
         "UCONNECT_MANUAL_FRONTEND_BENCHMARK_JSON="
         + json.dumps(summary, ensure_ascii=False, sort_keys=True)
     )
     print(f"uconnect manual frontend manifest: PASS ({summary['total']} cases)")
+
+    args = build_parser().parse_args()
+    if args.create_job:
+        if not args.case_id:
+            raise ValueError("manual_frontend_case_id_required")
+        spec = build_job_spec(
+            document,
+            args.case_id,
+            args.stand,
+            parse_bindings(args.bind),
+        )
+        result = materialize_job(spec)
+        print(
+            "UCONNECT_MANUAL_FRONTEND_JOB_JSON="
+            + json.dumps(result, ensure_ascii=False, sort_keys=True)
+        )
+    elif args.case_id or args.stand or args.bind:
+        raise ValueError("manual_frontend_create_job_required")
 
 
 if __name__ == "__main__":

@@ -166,6 +166,17 @@ SMOKES = [
     "smoke_repeated_unchanged_observation.py",
     "smoke_read_only_agent_plugin_route.py",
     "smoke_ollama_readiness.py",
+    "smoke_agent_check_binding.py",
+    "smoke_agent_observability.py",
+    "smoke_agent_plugins.py",
+    "smoke_agent_tasks.py",
+    "smoke_artifact_staging.py",
+    "smoke_download_semantic.py",
+    "smoke_download_structure.py",
+    "smoke_inspected_table_row_click.py",
+    "smoke_semantic_navigation_retry.py",
+    "smoke_semantic_role_click_fallback.py",
+    "smoke_upload_fixture.py",
 ]
 
 
