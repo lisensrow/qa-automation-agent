@@ -566,6 +566,15 @@ Planner отделяет критерии продукта от служебно
 
 ## Актуальная очередь развития
 
+### Текущий статус после v148a
+
+- Группа 1 (provenance): закрыта; фиктивные/несвязанные observations блокируются, Core-owned контракты могут сами канонизировать ссылки только из доверенных записей текущего case.
+- Группа 2 (начальный navigation workflow): закрыта, реальный Job `20261013-082950-6fca68fa` — PASS по трём машинным контрактам; полный runner — 170/170. Это не полное frontend-покрытие.
+- Группа 3 (agent UI): прогоны выполнены, исправление ещё требуется. Телеметрия `20261012-182623-c59fb24f` — BLOCKED/structured_result_missing, пять evidence; plugin Job `20261012-232354-e2afe101` — BLOCKED/plugin_audit_missing_or_agent_mismatch, два evidence. Ни один не объявлен продуктовым FAIL или PASS.
+- Диагностика группы 3: оба requirement имеют action_profile=read_only, но текстовые route helpers возвращают отсутствие маршрута. Для plugin Job текстовый target не совпадает с сохранённым plugin_name binding. Контракты подготовленных задач теряются при повторном NLP-разборе job.request; это подтверждённый пробел UQA, не доказанный дефект U-Connect.
+- Следующий патч: явный Core-owned observation workflow в данных сценария, передача exact target/action profile из requirement.bindings, загрузка нужного инструмента в progressive catalog и контроль его read-only аргументов. Не вводить U-Connect-specific if/else, не отключать policy и не переписывать завершённые Jobs. После отрицательных smoke повторить оба сценария новыми Jobs и отдельно проверить свежесть telemetry/audit.
+- Группы 4–5 остаются в очереди; нет основания переходить к произвольным WRITE или объявлять пилот готовым. Ниже сохранён предыдущий пересмотр и история выполненных групп.
+
 ### Пересмотр этапов — 13 октября 2026
 
 Техническая база включает persistent Jobs/resources, action-policy, контролируемый cleanup, браузерные инструменты, машинные observations/assertions и подготовку одного workflow в одном case. Полный технический smoke-runner прошёл 167 проверок. Это число не означает 167 выполненных продуктовых сценариев, обучение весов модели или готовность к любой задаче тестировщика.
@@ -630,7 +639,7 @@ uc-front-001 первым получил три контракта в manifest. 
 
 Перед установкой сделаны копии в state/backups/v148a. Профильный smoke проверяет Core integration, замену вымышленных модельных ссылок фактическими, PASS/FAIL/BLOCKED, duplicate row count, exact=false, bool вместо count, чужой subject, false identity, другой host/port, malformed URL, непригодное и неправильно связанное evidence и отсутствие fallback к прежнему успешному наблюдению. Реальных destructive действий нет; STEP/AUTO и action-policy сохраняются.
 
-Реальный read-only Job `20261013-082950-6fca68fa` завершился PASS: все три planned checks passed, у assertions вычислены actual/satisfied (`true`), сохранены четыре evidence и четыре observations. Это доказательство данного exact-row navigation workflow на текущем стенде, не обещание работы любых функций. Группа 2 для начального сценария закрыта; устойчивость требует повторных прогонов. После него начата группа 3: два ранее подготовленных read-only Jobs телеметрии и plugin audit запущены без перепланирования, их результаты ещё не считаются успешными.
+Реальный read-only Job `20261013-082950-6fca68fa` завершился PASS: все три planned checks passed, у assertions вычислены actual/satisfied (`true`), сохранены четыре evidence и четыре observations. Это доказательство данного exact-row navigation workflow на текущем стенде, не обещание работы любых функций. Группа 2 для начального сценария закрыта; устойчивость требует повторных прогонов. После него выполнена группа 3: два ранее подготовленных read-only Jobs телеметрии и plugin audit завершились BLOCKED без перепланирования. Причины и следующий патч отражены в текущем статусе выше; успешными они не считаются.
 
 py_compile и полный technical runner после v148a прошли: `170/170`. Runtime Jobs, credentials и browser artifacts в Git не добавляются.
 
