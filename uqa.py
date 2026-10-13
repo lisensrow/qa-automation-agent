@@ -423,7 +423,7 @@ def completed_readonly_contract_checks(job, case_id):
 
 
 def incomplete_search_phase_message(job, case_id):
-    """One advisory about an unattempted locked phase; never execute or authorize it."""
+    """Explain missing locked reads or restoration; never execute or authorize it."""
     if (not isinstance(job, dict) or job.get("job_type") != "regression"
             or job.get("status") != "running"):
         return None
@@ -456,16 +456,31 @@ def incomplete_search_phase_message(job, case_id):
         if not stand.get("web_url"):
             return None
         missing = []
+        missing_reads = []
+        verified_filtered = 0
         for p in planned:
             computed, error = evaluate_contract(case, req, dict(p, status="blocked"), stand["web_url"])
             if contracts[p["check_id"]]["phase"] == "filtered":
-                if error or computed.get("status") != "passed":
+                if error == "frontend_contract_search_phase_read_missing":
+                    missing_reads.append({"check_id": p["check_id"], "tool": contracts[p["check_id"]]["tool"]})
+                elif error or computed.get("status") != "passed":
                     return None
+                else:
+                    verified_filtered += 1
             elif error == "frontend_contract_search_action_missing":
                 missing.append(p["check_id"])
             elif error or computed.get("status") not in {"passed", "failed"}:
                 return None
-        if not missing:
+        if missing_reads and verified_filtered:
+            return {"role": "user", "content": (
+                "[UQA CORE: LOCKED PHASE READ MISSING]\n"
+                "Some filtered checks are verified, but these declared reads are still missing: "
+                + json.dumps(missing_reads) + ". Load and use the declared observers on the original bound target "
+                "before restoration. A different observer does not satisfy these contracts. "
+                "Do not repeat unchanged reads, bypass policy, retry denied actions, or claim PASS without evidence. "
+                "If the required read is unavailable, return BLOCKED."
+            )}
+        if missing_reads or not missing:
             return None
         return {"role": "user", "content": (
             "[UQA CORE: LOCKED PHASE NOT ATTEMPTED]\n"
@@ -13891,7 +13906,7 @@ def run_turn(
                              managed_agent_job.get("test_cases", []) if case.get("case_id") == case_id), {})
     required_observation_attempted = False
     structured_repair_attempts = 0
-    search_phase_reminded = False
+    search_phase_reminders = set()
     telemetry_ci_name = _agent_telemetry_ci_name_from_request(
         managed_agent_request_text
     )
@@ -13975,6 +13990,12 @@ def run_turn(
     )})
     for _ in range(MAX_TOOL_STEPS):
         try:
+            if job_id and case_id and not blocked_mutation_calls:
+                phase_message = incomplete_search_phase_message(get_job(job_id), case_id)
+                if phase_message and phase_message["content"] not in search_phase_reminders:
+                    if len(search_phase_reminders) < 2:
+                        search_phase_reminders.add(phase_message["content"])
+                        messages.append(phase_message)
             required_names = {required_observation["tool"]} if required_observation else set()
             completed_checks = completed_readonly_contract_checks(get_job(job_id), case_id) if job_id and case_id else None
             if pending_compatibility_probe:
@@ -14031,12 +14052,6 @@ def run_turn(
         messages.append(assistant_message)
 
         if not tool_calls:
-            if job_id and case_id and not search_phase_reminded and not blocked_mutation_calls:
-                phase_message = incomplete_search_phase_message(get_job(job_id), case_id)
-                if phase_message:
-                    search_phase_reminded = True
-                    messages.append(phase_message)
-                    continue
             if required_observation and not required_observation_attempted:
                 messages.append({"role": "user", "content": (
                     "[UQA CORE: REQUIRED READ-ONLY OBSERVATION]\n"
