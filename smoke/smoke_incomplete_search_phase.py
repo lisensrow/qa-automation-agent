@@ -35,6 +35,17 @@ with patch.object(uqa,'get_stand',return_value={'web_url':'https://fixture.test'
             return dict(check,status='blocked'),'frontend_contract_search_phase_read_missing'
         return evaluate(case,req,check,url)
     with patch.object(contracts,'evaluate_contract',partial_evaluate):
+        assert uqa.locked_contract_observer_tools(partial,'case')=={
+            'browser_inspect_semantic','browser_inspect_table_semantic'}
+        partial_bad=deepcopy(partial)
+        del partial_bad['test_cases'][0]['requirement']['check_contracts']['planned-003']
+        assert not uqa.locked_contract_observer_tools(partial_bad,'case')
+        partial_bad=deepcopy(partial)
+        partial_bad['test_cases'][0]['requirement']['locked']=False
+        assert not uqa.locked_contract_observer_tools(partial_bad,'case')
+        partial_bad=deepcopy(partial)
+        partial_bad['test_cases'][0]['requirement']['check_contracts']['planned-003']['tool']='browser_fill_semantic'
+        assert not uqa.locked_contract_observer_tools(partial_bad,'case')
         advisory=uqa.incomplete_search_phase_message(partial,'case')
         assert 'LOCKED PHASE READ MISSING' in advisory['content']
         assert 'browser_inspect_table_semantic' in advisory['content']
@@ -60,8 +71,15 @@ with TemporaryDirectory(prefix='uqa-phase-') as directory, patch.object(job_stor
     calls=[]
     def ask(messages, tools):
         calls.append(True)
-        assert len(calls)==1
+        assert len(calls)<=2
         assert sum(m.get('content')==message['content'] for m in messages)==1
+        if len(calls)==1:
+            return {'message':{'content':'Unable to complete the workflow.'}}
+        repairs=[m['content'] for m in messages if '[UQA CORE: STRUCTURED RESULT REQUIRED]' in m.get('content','')]
+        assert len(repairs)==1
+        parsed,_,error=uqa.extract_structured_checks(repairs[0])
+        assert not error and parsed[0]['check_id']=='planned-001'
+        assert parsed[0]['status']=='blocked' and parsed[0]['evidence']==[]
         return {'message':{'content':uqa.UQA_CHECKS_START +
             '{"checks":[{"check_id":"planned-001","title":"Filter restored","status":"blocked","evidence":[]}]}' + uqa.UQA_CHECKS_END}}
     def reject_execution(*args,**kwargs):
@@ -69,5 +87,5 @@ with TemporaryDirectory(prefix='uqa-phase-') as directory, patch.object(job_stor
     with patch.object(uqa,'ask_ollama',ask), patch.object(uqa,'incomplete_search_phase_message',return_value=message), \
             patch.object(uqa,'execute_tool_with_policy',reject_execution):
         uqa.run_turn([],job_id=stored['job_id'],case_id=case['case_id'],action_policy='confirm_mutations')
-    assert len(calls)==1 and job_store.get_job(stored['job_id'])['status']=='blocked'
+    assert len(calls)==2 and job_store.get_job(stored['job_id'])['status']=='blocked'
 print('incomplete search phase: PASS (advisory only, full contract and facts required)')

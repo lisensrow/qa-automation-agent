@@ -493,6 +493,27 @@ def incomplete_search_phase_message(job, case_id):
         return None
 
 
+def locked_contract_observer_tools(job, case_id):
+    """Expose declared observation schemas, not actions or permission grants."""
+    if not isinstance(job, dict) or job.get("job_type") != "regression":
+        return set()
+    case = next((c for c in job.get("test_cases", []) if c.get("case_id") == case_id), {})
+    req = case.get("requirement") or {}
+    if not isinstance(req, dict) or req.get("locked") is not True or req.get("type") != "frontend_contracts":
+        return set()
+    contracts = req.get("check_contracts")
+    planned = _normalize_planned_checks(case.get("planned_checks"))
+    if not planned or not isinstance(contracts, dict) or set(contracts) != {p["check_id"] for p in planned}:
+        return set()
+    from frontend_check_contracts import validate_contracts
+    try:
+        validate_contracts(contracts)
+        return {c["tool"] for c in contracts.values()
+                if classify_tool_action(c["tool"], {}) == "observe"}
+    except (ValueError, TypeError, KeyError):
+        return set()
+
+
 def prepared_contract_check_templates(job, case_id):
     """Only a complete, locked read-only contract may own final check formatting."""
     case = next((c for c in job.get("test_cases", []) if c.get("case_id") == case_id), {})
@@ -13981,9 +14002,11 @@ def run_turn(
         )
 
     selected_model_tools = {required_observation["tool"]} if required_observation else set()
+    selected_model_tools |= locked_contract_observer_tools(managed_agent_job, case_id)
     messages.append({"role": "user", "content": (
         "[UQA CORE: PROGRESSIVE TOOL CATALOG]\n"
         "Only basic tools are initially loaded. If a specialized tool is needed, "
+        "Validated locked-contract observation schemas may also be preloaded; this executes nothing. "
         "use tool_catalog_select with exact names from its enum, then call the "
         "loaded tool on the next turn. Loading tools performs no action and "
         "does not prove any check. Do not repeat an unchanged observation."
@@ -14062,11 +14085,24 @@ def run_turn(
                 proposed_checks, _, format_error = extract_structured_checks(content)
                 if format_error or proposed_checks is None:
                     structured_repair_attempts += 1
+                    repair_template = ""
+                    if job_id and case_id:
+                        repair_job = get_job(job_id) or {}
+                        repair_case = next((c for c in repair_job.get("test_cases", [])
+                                            if c.get("case_id") == case_id), {})
+                        repair_checks = _normalize_planned_checks(repair_case.get("planned_checks"))
+                        if repair_checks:
+                            repair_template = ("\nExact planned checks, initially BLOCKED (not computed verdicts):\n"
+                                + UQA_CHECKS_START + json.dumps({"checks": [
+                                    {"check_id": p["check_id"], "title": p["title"], "status": "blocked",
+                                     "actual": None, "evidence": [], "observations": [],
+                                     "reason": "Evidence not verified"} for p in repair_checks
+                                ]}, ensure_ascii=False) + UQA_CHECKS_END)
                     messages.append({"role": "user", "content": (
                         "[UQA CORE: STRUCTURED RESULT REQUIRED]\n"
                         "Return a valid UQA_CHECKS_JSON block for every planned check using exact check_ids. "
                         "Use actual evidence IDs; do not invent facts or observations. "
-                        "An unavailable or unverified observation means BLOCKED." )})
+                        "An unavailable or unverified observation means BLOCKED." + repair_template )})
                     continue
             if (
                 managed_agent_workflow_phase
