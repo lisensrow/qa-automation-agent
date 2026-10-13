@@ -2690,8 +2690,27 @@ def _latest_browser_state_for_navigation(messages):
     return None
 
 
+def _positive_navigation_context(text):
+    """Negative action lists are restrictions, not destination hints."""
+    pieces = []
+    text = str(text or "").split("[UQA CORE: RESOLVED STAND]", 1)[0]
+    for clause in re.split(r"[\n\r.!?;]+", str(text or "")):
+        positive = re.split(
+            r"(?iu)\b(?:do\s+not|don't|never|without|не|нельзя|без)\b",
+            clause, maxsplit=1,
+        )[0].strip()
+        if positive:
+            pieces.append(positive)
+    context = " ".join(pieces).casefold()
+    # Execution-policy prose refers to Core, not a product's Policies/Users surface.
+    context = re.sub(r"\baction[\s_-]*policy\b", "execution approval", context)
+    context = re.sub(r"\b(?:the\s+)?user\s+(?:explicitly\s+)?(?:authorized|approved|allowed)\b",
+                     "authorization for", context)
+    return context
+
+
 def _latest_state_matches_navigation_target(messages):
-    task_text = _navigation_task_text(messages).casefold()
+    task_text = _positive_navigation_context(_navigation_task_text(messages))
     target_groups = [
         group
         for group in NAVIGATION_CONCEPT_GROUPS
@@ -2716,7 +2735,41 @@ def _latest_state_matches_navigation_target(messages):
     )
 
 
+def _open_page_proves_named_route(messages):
+    """A successful entry navigation may already be the explicitly requested surface."""
+    from urllib.parse import urlsplit
+    state = _latest_browser_state_for_navigation(messages) or {}
+    current = str(state.get("current_url") or state.get("final_url") or "")
+    if not current:
+        return False
+    try:
+        current_parts = urlsplit(current)
+        leaf = current_parts.path.rstrip("/").rsplit("/", 1)[-1].casefold()
+        if (not re.fullmatch(r"[a-z][a-z_-]{2,63}", leaf)
+                or leaf in {"all", "home", "index", "app", "login", "add", "new", "edit", "view", "details"}):
+            return False
+        task = _positive_navigation_context(_navigation_task_text(messages))
+        if not re.search(r"(?<!\w)" + re.escape(leaf) + r"(?!\w)", task):
+            return False
+        for message in reversed(messages or []):
+            if message.get("role") != "tool" or message.get("tool_name") != "browser_open_page":
+                continue
+            value = message.get("content")
+            result = json.loads(value) if isinstance(value, str) else value
+            if not isinstance(result, dict) or result.get("error") or result.get("executed") is False:
+                return False
+            opened = urlsplit(str(result.get("current_url") or result.get("final_url") or ""))
+            return (result.get("http_status") in {200, 204, 304}
+                    and (opened.scheme, opened.netloc, opened.path.rstrip("/"))
+                    == (current_parts.scheme, current_parts.netloc, current_parts.path.rstrip("/")))
+    except (ValueError, TypeError):
+        return False
+    return False
+
+
 def _managed_navigation_ready(messages):
+    if _open_page_proves_named_route(messages):
+        return True
     if not _history_has_successful_interact_navigation(messages):
         return False
 
@@ -3061,8 +3114,13 @@ def _deterministic_navigation_label(
     label wins only when its concept also occurs in the task or the observed
     documentation; ties remain unresolved for the model to decide.
     """
-    task_context = str(task_text or "").casefold()
+    task_context = _positive_navigation_context(task_text)
     knowledge_context = str(knowledge or "").casefold()
+    exact_labels = [str(label).strip() for label in labels or [] if str(label).strip() and re.search(
+        r"(?<!\w)" + re.escape(str(label).strip().casefold()) + r"(?!\w)", task_context,
+    )]
+    if len(exact_labels) == 1:
+        return exact_labels[0]
     scored = []
 
     for label in labels or []:
@@ -3114,7 +3172,7 @@ def _resolve_navigation_label(messages, labels):
     if not labels:
         return None
 
-    task_text = _navigation_task_text(messages)
+    task_text = _positive_navigation_context(_navigation_task_text(messages))
     knowledge = _latest_navigation_knowledge(messages)
 
     if not knowledge:
@@ -8817,6 +8875,9 @@ def _case_action_instructions(original_request, requirement):
         "целевого ресурса через OBSERVE/INTERACT. Не выбирай Add/Create для "
         "другого типа сущности; если точный маршрут неясен, сначала используй "
         "knowledge_search.\n"
+        "После навигации и перед WRITE вызови browser_probe_capabilities. "
+        "Если Core требует compatibility preflight, выполни этот OBSERVE "
+        "вместо повторения заблокированной мутации.\n"
         "Режим действий UQA Core: MANAGED_ACTIONS. "
         "Выполняй необходимые действия для текущего test case. "
         "UQA Core самостоятельно классифицирует tool-вызовы. "
@@ -13700,7 +13761,8 @@ def _prepared_tabs_route_message(required_observation):
         "role": "user",
         "content": (
             "[UQA CORE: LOCKED TAB OBSERVATION ROUTE]\n"
-            "Open the saved stand entry URL if it is not open. Then call "
+            "Open the saved stand entry URL for this case before the observer. "
+            "Do not assume that the page left by a previous case is the entry surface. Then call "
             "browser_verify_exact_table_row_tabs_semantic with the locked arguments: "
             + json.dumps(required_observation["arguments"], ensure_ascii=False)
             + ". This composite opens or reuses the exact row details and verifies "
@@ -13724,6 +13786,8 @@ def run_turn(
     completed_snapshot_observations = {}
     last_browser_fingerprint = None
     blocked_mutation_calls = set()
+    pending_compatibility_probe = False
+    compatibility_probe_attempts = 0
     managed_agent_route_required = None
     managed_agent_route_page_ready = False
     managed_agent_request_text = ""
@@ -13831,7 +13895,13 @@ def run_turn(
         try:
             required_names = {required_observation["tool"]} if required_observation else set()
             completed_checks = completed_readonly_contract_checks(get_job(job_id), case_id) if job_id and case_id else None
-            if completed_checks is not None:
+            if pending_compatibility_probe:
+                pending_compatibility_probe = False
+                compatibility_probe_attempts += 1
+                data = {"message": {"content": "", "tool_calls": [{"function": {
+                    "name": "browser_probe_capabilities", "arguments": {},
+                }}]}}
+            elif completed_checks is not None:
                 # No further action is needed: the normal verifier rechecks these facts.
                 data = {"message": {"content": UQA_CHECKS_START + json.dumps(
                     {"checks": completed_checks}, ensure_ascii=False) + UQA_CHECKS_END}}
@@ -15285,6 +15355,22 @@ def run_turn(
                 )
                 compact_completed_history(messages)
                 return
+
+            if (
+                result.get("error") == "managed_compatibility_probe_required"
+                and result.get("executed") is False
+                and result.get("action_policy_status") == "blocked_by_compatibility_preflight"
+                and isinstance(result.get("required_action_candidate"), dict)
+                and result.get("required_action_candidate", {}).get("tool") == "browser_probe_capabilities"
+                and result.get("required_action_candidate", {}).get("arguments") == {}
+            ):
+                if compatibility_probe_attempts >= 2:
+                    if job_id and case_id:
+                        finalize_case_blocked(job_id, case_id, "compatibility_preflight_unresolved",
+                                              "Frontend compatibility remained unverified after two Core OBSERVE attempts.")
+                    compact_completed_history(messages)
+                    return
+                pending_compatibility_probe = True
 
             if repeated_blocked_mutation:
                 if job_id and case_id:

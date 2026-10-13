@@ -217,6 +217,8 @@ SMOKES = [
     "smoke_persistent_readonly_policy.py",
     "smoke_case_action_scope.py",
     "smoke_explicit_row_requirement.py",
+    "smoke_compatibility_preflight_progress.py",
+    "smoke_navigation_task_scope.py",
 ]
 
 

@@ -49,3 +49,6 @@ try:
 finally:
     uqa.get_job = saved_get_job
 print('readonly navigation advisory: PASS (persistent task overrides create-like internal text)')
+route = uqa._prepared_tabs_route_message({'arguments': {'name': 'fixture-row', 'tabs': '["Agent"]'}})
+assert 'for this case before the observer' in route['content']
+assert 'previous case' in route['content']
