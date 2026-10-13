@@ -184,6 +184,7 @@ SMOKES = [
     "smoke_job_list_all.py",
     "smoke_prepared_job_queue.py",
     "smoke_model_tool_catalog.py",
+    "smoke_observation_provenance.py",
 ]
 
 

@@ -6746,6 +6746,27 @@ def verify_structured_check_evidence(
                         observation_id
                     )
 
+        # Provenance applies to every observation type, not just ui_element.
+        # Core-owned agent summaries above already canonicalize their bindings.
+        if status in ("passed", "failed"):
+            assertion_refs = [str(item.get("observation_id")).strip()
+                              for item in (check.get("assertions") or [])
+                              if isinstance(item, dict) and item.get("observation_id")]
+            declared_refs = list(dict.fromkeys([*observation_refs, *assertion_refs]))
+            unknown_observations = [ref for ref in declared_refs
+                                    if ref not in observation_by_id]
+            unlinked_observations = [ref for ref in declared_refs
+                                     if ref in observation_by_id
+                                     and ref not in linked_observation_ids]
+            if unknown_observations:
+                issues.append("unknown_observation_ids="
+                              + ",".join(unknown_observations[:10]))
+            if unlinked_observations:
+                issues.append("observation_not_linked_to_evidence="
+                              + ",".join(unlinked_observations[:10]))
+            if linked_observation_ids and not observation_refs:
+                issues.append("observation_missing")
+
         # Regression must never silently fall back from
         # a deterministic locked UI requirement to a
         # model-defined semantic assertion.
@@ -6781,42 +6802,6 @@ def verify_structured_check_evidence(
             if not observation_refs:
                 issues.append(
                     "semantic_observation_missing"
-                )
-
-            unknown_observations = [
-                ref
-                for ref in observation_refs
-                if ref not in observation_by_id
-            ]
-
-            if unknown_observations:
-                issues.append(
-                    "unknown_observation_ids="
-                    + ",".join(
-                        unknown_observations[
-                            :10
-                        ]
-                    )
-                )
-
-            unlinked_observations = [
-                ref
-                for ref in observation_refs
-                if (
-                    ref in observation_by_id
-                    and ref
-                    not in linked_observation_ids
-                )
-            ]
-
-            if unlinked_observations:
-                issues.append(
-                    "observation_not_linked_to_evidence="
-                    + ",".join(
-                        unlinked_observations[
-                            :10
-                        ]
-                    )
                 )
 
             semantic_refs = [
