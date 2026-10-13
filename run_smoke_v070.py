@@ -188,6 +188,7 @@ SMOKES = [
     "smoke_model_tool_catalog.py",
     "smoke_observation_provenance.py",
     "smoke_frontend_check_contracts.py",
+    "smoke_prepared_observation_contract.py",
 ]
 
 

@@ -161,6 +161,9 @@ def build_job_spec(document, case_id, stand, bindings=None):
     if "check_contracts" in case:
         from copy import deepcopy
         requirement["check_contracts"] = deepcopy(case["check_contracts"])
+    if "required_observation" in case:
+        from copy import deepcopy
+        requirement["required_observation"] = deepcopy(case["required_observation"])
     return {
         "request": request,
         "stand": stand,

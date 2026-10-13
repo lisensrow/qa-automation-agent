@@ -333,6 +333,40 @@ def select_model_tools(arguments):
     return set(names)
 
 
+def prepared_observation_contract(job, case_id):
+    """Resolve an explicit read-only tool contract from persisted bindings."""
+    case = next((c for c in job.get("test_cases", []) if c.get("case_id") == case_id), {})
+    requirement = case.get("requirement") or {}
+    contract = requirement.get("required_observation")
+    if contract is None:
+        return None
+    if requirement.get("action_profile") != "read_only" or not isinstance(contract, dict):
+        raise ValueError("prepared_observation_profile_invalid")
+    name = contract.get("tool")
+    schema = next((t["function"] for t in TOOLS if t["function"]["name"] == name), None)
+    if not schema or not name.startswith("browser_"):
+        raise ValueError("prepared_observation_tool_invalid")
+    mappings = contract.get("arguments")
+    properties = schema.get("parameters", {}).get("properties", {})
+    required = set(schema.get("parameters", {}).get("required", []))
+    if not isinstance(mappings, dict) or not required <= set(mappings) <= set(properties):
+        raise ValueError("prepared_observation_arguments_invalid")
+    arguments = {}
+    for key, mapping in mappings.items():
+        if not isinstance(mapping, dict) or set(mapping) != {"binding"}:
+            raise ValueError("prepared_observation_binding_invalid")
+        binding = mapping["binding"]
+        if not isinstance(binding, str):
+            raise ValueError("prepared_observation_binding_invalid")
+        value = (requirement.get("bindings") or {}).get(binding)
+        if properties[key].get("type") != "string" or not isinstance(value, str) or not value.strip():
+            raise ValueError("prepared_observation_binding_missing")
+        arguments[key] = value
+    if classify_tool_action(name, arguments) != "observe":
+        raise ValueError("prepared_observation_not_read_only")
+    return {"tool": name, "arguments": arguments}
+
+
 OLLAMA_URL = os.getenv(
     "OLLAMA_URL",
     "http://192.168.50.51:11434"
@@ -12321,6 +12355,7 @@ def _prepared_regression_case(job_id):
         raise ValueError("prepared_job_single_case_required")
 
     case = cases[0]
+    prepared_observation_contract(job, case.get("case_id"))
     if case.get("status") != "pending":
         raise ValueError("prepared_case_not_pending")
 
@@ -13485,6 +13520,9 @@ def run_turn(
     managed_agent_ci_name = _managed_agent_ci_name_from_request(
         managed_agent_request_text
     )
+    required_observation = prepared_observation_contract(managed_agent_job, case_id)
+    required_observation_attempted = False
+    structured_repair_attempts = 0
     telemetry_ci_name = _agent_telemetry_ci_name_from_request(
         managed_agent_request_text
     )
@@ -13497,9 +13535,23 @@ def run_turn(
     plugin_target = _agent_plugin_target_from_request(
         managed_agent_request_text
     )
+    route_request = managed_agent_request_text
+    if required_observation:
+        bound = required_observation["arguments"]
+        if required_observation["tool"] == "browser_inspect_agent_telemetry_semantic":
+            telemetry_ci_name = bound.get("ci_name")
+            route_request = "READ-ONLY telemetry"
+            telemetry_route_message = _read_only_agent_telemetry_route_message(route_request, telemetry_ci_name)
+            if telemetry_route_message:
+                messages.append(telemetry_route_message)
+        elif required_observation["tool"] == "browser_inspect_agent_plugins_semantic":
+            telemetry_ci_name = bound.get("ci_name")
+            plugin_target = {"plugin_name": bound.get("plugin_name"),
+                             "expected_version": bound.get("expected_version")}
+            route_request = "READ-ONLY plugin audit"
     plugin_route_message = (
         _read_only_agent_plugin_route_message(
-            managed_agent_request_text,
+            route_request,
             telemetry_ci_name,
             plugin_target,
         )
@@ -13540,7 +13592,7 @@ def run_turn(
             _managed_agent_next_step_message(initial_managed_call)
         )
 
-    selected_model_tools = set()
+    selected_model_tools = {required_observation["tool"]} if required_observation else set()
     messages.append({"role": "user", "content": (
         "[UQA CORE: PROGRESSIVE TOOL CATALOG]\n"
         "Only basic tools are initially loaded. If a specialized tool is needed, "
@@ -13550,7 +13602,8 @@ def run_turn(
     )})
     for _ in range(MAX_TOOL_STEPS):
         try:
-            data = ask_ollama(messages, tools=model_tool_catalog(selected_model_tools))
+            required_names = {required_observation["tool"]} if required_observation else set()
+            data = ask_ollama(messages, tools=model_tool_catalog(selected_model_tools | required_names))
         except Exception as exc:
             if job_id and case_id:
                 finalize_case_blocked(
@@ -13588,6 +13641,22 @@ def run_turn(
         messages.append(assistant_message)
 
         if not tool_calls:
+            if required_observation and not required_observation_attempted:
+                messages.append({"role": "user", "content": (
+                    "[UQA CORE: REQUIRED READ-ONLY OBSERVATION]\n"
+                    "The case is incomplete. Follow the exact read-only route and obtain this observation "
+                    "before finalizing:\n" + json.dumps(required_observation))})
+                continue
+            if required_observation and structured_repair_attempts < 2:
+                proposed_checks, _, format_error = extract_structured_checks(content)
+                if format_error or proposed_checks is None:
+                    structured_repair_attempts += 1
+                    messages.append({"role": "user", "content": (
+                        "[UQA CORE: STRUCTURED RESULT REQUIRED]\n"
+                        "Return a valid UQA_CHECKS_JSON block for every planned check using exact check_ids. "
+                        "Use actual evidence IDs; do not invent facts or observations. "
+                        "An unavailable or unverified observation means BLOCKED." )})
+                    continue
             if (
                 managed_agent_workflow_phase
                 and managed_agent_workflow_phase != "verdict"
@@ -14246,6 +14315,12 @@ def run_turn(
                 messages.append({"role": "tool", "tool_name": name,
                                  "content": json.dumps(catalog_result)})
                 continue
+
+            if required_observation and name == required_observation["tool"]:
+                # Reading parameters come from the locked plan, not fresh NLP
+                # guesses (including unrequested plugin version expectations).
+                arguments = dict(required_observation["arguments"])
+                required_observation_attempted = True
 
             action_class = classify_tool_action(
                 name,
