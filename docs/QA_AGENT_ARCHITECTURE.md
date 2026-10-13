@@ -933,6 +933,18 @@ Live `20261013-220011-c4f06af8` закончился BLOCKED после 16 valid
 
 ## Правило актуализации документа
 
+v154c дополняет oracle guard общим fail-closed для write_ui_state acceptance без распознанного requirement: opening ui_state и произвольный scalar audit нельзя превратить в closing PASS. Self-declared locked=true без валидного semantic requirement недостаточен. Declared frontend contracts вычисляются раньше отдельной веткой, доказанный filter workflow сохраняется. Replay оригинальных form checks теперь BLOCKED 3/3; оригинальный PASS и первичный фактический review сохранены в audit_original_* / audit_fact_review_checks. Факты отсутствия input/submit не удалены, но не подменяют полный acceptance контракт.
+
+### v154c — запрет подмены критерия scalar audit
+
+Native metadata реально прочитаны в `20261013-222441-269496d7`: пять page-wide snapshots, по 7 controls, bool native-required/disabled/read-only и native_will_validate доступны, значения не сохранялись. Но модель ошибочно выдала PASS закрытию без closing action и без доказанного lifecycle transition. Prover только по provenance не проверял смысл критерия.
+
+Verifier теперь отклоняет модельные PASS/FAIL, опирающиеся на ui_contract_audit без авторитетного check contract; валидные scalar facts остаются информацией. Объявленные regression frontend contracts проходят отдельное вычисление из фактов, а не этот модельный fallback. Ни policy, ни STEP/AUTO не изменены. Профильная негативная проверка охватывает также корректный, но нерелевантный audit (dialog_count=0): он не является доказательством произвольного условия.
+
+Ложный экспериментальный PASS пересмотрен: две lifecycle проверки BLOCKED, отсутствие input/submit действий оставлено PASS по проверенной истории. Исходные checks/result/status/summary сохранены в audit_original_* этого Job; исходные evidence не удалялись. UI отдельно возвращён на saved entry через разрешённый OBSERVE, HTTP 200/dialog_count=0, не как автономный результат. Этап 5 не закрыт. Следующий шаг — декларативный form lifecycle contract с baseline/open/read/close доказательствами и проверкой реального состояния поверхности, а не одними числами контролов.
+
+Финальная проверка v154c: py_compile и runner 199/199 PASS; replay исходных неподтверждённых form checks BLOCKED 3/3. Исходные результаты сохранены, state/Jobs/secrets не коммитятся. Согласованный 12-stage goal остаётся активным, этап 5 не закрыт.
+
 Документ обновляется при каждом изменении архитектуры, набора возможностей, policy, persistent state, cleanup-механизма, knowledge pipeline или известных ограничений. Временные эксперименты сюда не добавляются, пока они не стали частью установленной и проверенной системы.
 
 Исходный код и архитектурные документы версионируются через Git. Runtime state, credentials, browser artifacts, рабочие базы данных и временные резервные копии не входят в репозиторий.

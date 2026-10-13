@@ -6775,6 +6775,16 @@ def verify_structured_check_evidence(
             or ""
         ).lower()
 
+        if (status in {"passed", "failed"} and isinstance(locked_requirement, dict)
+                and locked_requirement.get("action_profile") == "write_ui_state"
+                and locked_ui_requirement is None):
+            check["original_status"] = status
+            check["status"] = "blocked"
+            check["reason"] = "UQA CORE: write_ui_state_acceptance_contract_missing"
+            errors.append({"check_id": check.get("check_id"), "title": check.get("title"),
+                           "original_status": status, "issues": ["write_ui_state_acceptance_contract_missing"]})
+            continue
+
         if (
             status in (
                 "passed",
@@ -7205,6 +7215,12 @@ def verify_structured_check_evidence(
                     unusable_audits.append(ref)
             if unusable_audits:
                 issues.append("unusable_ui_contract_audit=" + ",".join(unusable_audits[:10]))
+            # A scalar audit can be valid information while proving no planned
+            # lifecycle assertion. Declared frontend contracts are evaluated
+            # above; never accept the model's unrelated PASS/FAIL from counts.
+            if any((observation_by_id.get(ref) or {}).get("type") == "ui_contract_audit"
+                   for ref in set(declared_refs) | linked_observation_ids):
+                issues.append("ui_contract_audit_oracle_missing")
             if linked_observation_ids and not observation_refs:
                 issues.append("observation_missing")
 
