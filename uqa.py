@@ -6972,6 +6972,20 @@ def verify_structured_check_evidence(
             if unlinked_observations:
                 issues.append("observation_not_linked_to_evidence="
                               + ",".join(unlinked_observations[:10]))
+            unusable_audits = []
+            for ref in declared_refs:
+                observation = observation_by_id.get(ref) or {}
+                if observation.get("type") != "ui_contract_audit":
+                    continue
+                audit_data = observation.get("data") or {}
+                if (not isinstance(audit_data, dict)
+                        or audit_data.get("observation_result") != "observed"
+                        or audit_data.get("mutation_executed") is not False
+                        or not isinstance(audit_data.get("audit"), dict)
+                        or not audit_data["audit"]):
+                    unusable_audits.append(ref)
+            if unusable_audits:
+                issues.append("unusable_ui_contract_audit=" + ",".join(unusable_audits[:10]))
             if linked_observation_ids and not observation_refs:
                 issues.append("observation_missing")
 

@@ -40,6 +40,21 @@ try:
                                         "expected": True, "observation_id": reference}]
             verified, errors = uqa.verify_structured_check_evidence("job-local", "case-local", [candidate])
             assert verified[0]["status"] == "blocked" and issue in str(errors)
+        for data in ({}, {'observation_result': 'blocked', 'mutation_executed': False, 'audit': {'dialog_count': 0}},
+                     {'observation_result': 'observed', 'mutation_executed': True, 'audit': {'dialog_count': 0}},
+                     {'observation_result': 'observed', 'mutation_executed': False, 'audit': {}},
+                     'malformed'):
+            fixture = deepcopy(job)
+            fixture['test_cases'][0]['observations'][0].update(type='ui_contract_audit', data=data)
+            uqa.get_job = lambda _: deepcopy(fixture)
+            verified, errors = uqa.verify_structured_check_evidence('job-local', 'case-local', [check])
+            assert verified[0]['status'] == 'blocked'
+            assert 'unusable_ui_contract_audit' in str(errors)
+        fixture['test_cases'][0]['observations'][0]['data'] = {
+            'observation_result': 'observed', 'mutation_executed': False, 'audit': {'dialog_count': 0}}
+        verified, errors = uqa.verify_structured_check_evidence('job-local', 'case-local', [check])
+        assert not errors and verified[0]['status'] == status
+        uqa.get_job = lambda _: deepcopy(job)
 finally:
     uqa.get_job = saved_get_job
 print("all-type observation provenance smoke: PASS")

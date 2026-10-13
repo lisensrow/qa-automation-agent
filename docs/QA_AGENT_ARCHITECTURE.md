@@ -465,6 +465,8 @@ Reader выдаёт навигационную подсказку только f
 
 ### v152e/v152f — отсутствующие click targets и persistent form audit
 
+v152h: verifier дополнительно отклоняет модельные PASS/FAIL, ссылающиеся на ui_contract_audit с observation_result не observed, неизвестной/выполненной мутацией, пустым или malformed audit. Правильный provenance не заменяет пригодность факта. BLOCKED остаётся BLOCKED; валидный audit не получает автоматического semantic verdict. Изолированный smoke проверяет обе исходные модели результата (PASS/FAIL), сохраняет исходный check и не выполняет стендовых действий.
+
 v152g уточняет model-facing контракт click: action label из запроса не является наблюдённым именем кнопки, container ограничен фактическим owner строки/list/treeitem, а не заголовком страницы. Наблюдённая уникальная безымянная иконка вызывается по exact icon_hint без role/container, когда её назначение подтверждено контекстом. Runtime заново разрешает target и применяет прежнюю policy. Enum roles дополнен row/treeitem/combobox, уже поддерживаемыми browser implementation; row сохраняет обязательную exact inspection перед кликом. Это описание существующих механизмов, не автоматическое преобразование Add в plus и не продуктовый if/else.
 
 В run_turn сохраняется ключ неудачного browser_click_semantic (имя, exact, role, container) и fingerprint последнего наблюдаемого состояния. Повтор того же запроса при неизменившемся состоянии блокируется до вызова policy и завершает case как BLOCKED/repeated_missing_semantic_click. Применяется только после semantic_element_not_found без подтверждённого исполнения и при известном fingerprint. Другие ошибки, успешные клики и новые состояния этим правилом не подменяются. Core не выбирает альтернативную кнопку и не меняет роль/container за модель. Первое допустимое действие и новая попытка после изменения состояния проходят обычную policy.
@@ -482,6 +484,8 @@ Observation extractor сохраняет ui_contract_audit для трёх ра�
 После v152g py_compile, профильный model-tool-catalog smoke и полный runner повторно прошли 195/195. Модельный Job `20261013-173047-04082f52`: BLOCKED 3/3; модель признаёт navigation preflight completed, но не открывает форму. Это уточняет текущий пробел: преждевременное завершение при наличии разрешённого действия, а не новая ошибка фактической навигации. Никакой WRITE этим Job не выполнен.
 
 Модельный диагностический Job `20261013-173345-f46ebd9b` с явно переданным observed hint plus дошёл до capability probe и одного подтверждённого исполнения plus; затем BLOCKED 3/3 без observer полей/закрытия. Такая передача подсказки не использовала индексированную память и не доказывает discovery. Исходный BLOCKED сохраняется; несохранённая UI-поверхность закрывается отдельным операторским reset через policy. Следующий пробел автономности — продолжение сбора evidence после фактически выполненного действия.
+
+Последующий реальный read-only recheck: Agent tabs Job `20261013-173812-b02eaed6` PASS 3/3, memory ok/runtime_confirmed; telemetry Job `20261013-173858-51407952` PASS 5/5 reporting; plugin audit Job `20261013-173923-adfd2c15` PASS 3/3 reporting. Ресурсы во всех трёх отсутствуют, команды не исполнялись. В telemetry ui/ci/agent online, но monitoring age 57153 секунд/fresh=false (~15,9 ч). Plugin audit age 86890,8 секунд/fresh=false (~24,1 ч). Это подтверждение чтения старых фактов, не readiness для managed WRITE; stale samples/audit остаются открытым внешним условием.
 
 ### v152c — ограниченный preflight и контекст навигации
 
