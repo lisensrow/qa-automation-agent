@@ -750,9 +750,9 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_inspect_form_validation_semantic",
-            "description": "Read-only audit native form validation без Submit и без возврата values: invalid controls и причины required/type/pattern/range/custom validity.",
+            "description": "Read-only audit native form controls без Submit и без values: для каждого видимого input/select/textarea сообщает snapshot-local index, tag/type, label_hint и native_required/disabled/read_only/will_validate, плюс invalid controls. Label_hint не гарантирует accessible name; index не является устойчивой целью изменения. Native flags не доказывают бизнес-правила required или кастомную валидацию.",
             "parameters": {"type": "object", "properties": {
-                "form": {"type": "string"}, "exact": {"type": "boolean"}
+                "form": {"type": "string", "description": "Только наблюдённые aria-label/name/id реального HTML form; не заголовок панели. Если нужна page-wide перепись native controls, OMIT form. Это не доказательство identity именованной формы."}, "exact": {"type": "boolean"}
             }}
         }
     },

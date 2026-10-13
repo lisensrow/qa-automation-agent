@@ -14,6 +14,21 @@ assert data['audit']['invalid_control_count'] == 1
 assert data['observation_result'] == 'observed'
 assert data['scope_kind'] == 'page'
 assert 'private-fixture-value' not in str(data)
+assert data['control_states_reported'] is False
+metadata=deepcopy(result)
+metadata['validation_audit'].update(control_states_reported=True,control_states=[{
+    'index':i,'tag':'input','type':'text','label_hint':'Field',
+    'native_required':False,'native_disabled':False,'native_read_only':False,'native_will_validate':True,
+    'value':'private-fixture-value'} for i in range(2)])
+observed=extract_observations(tool,{},metadata)[0]['data']
+assert observed['control_states_reported'] is True and len(observed['control_states'])==2
+assert 'private-fixture-value' not in str(observed)
+assert observed['control_states'][0]['native_required'] is False
+for key,value in (('native_required','false'),('index',True),('tag','button')):
+    bad=deepcopy(metadata);bad['validation_audit']['control_states'][0][key]=value
+    assert extract_observations(tool,{},bad)[0]['data']['control_states_reported'] is False
+bad=deepcopy(metadata);bad['validation_audit']['control_states'].pop()
+assert extract_observations(tool,{},bad)[0]['data']['control_states_reported'] is False
 for change in ({'visible_control_count': True}, {'invalid_control_count': -1},
                {'validation_passed': 'true'}, {'truncated': True},
                {'invalid_control_count': 3}, {'validation_passed': True}):

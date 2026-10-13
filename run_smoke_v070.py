@@ -178,6 +178,8 @@ SMOKES = [
     "smoke_read_only_agent_plugin_route.py",
     "smoke_ollama_readiness.py",
     "smoke_ollama_non_actionable.py",
+    "smoke_history_provenance.py",
+    "smoke_form_control_metadata.py",
     "smoke_agent_check_binding.py",
     "smoke_agent_observability.py",
     "smoke_agent_plugins.py",

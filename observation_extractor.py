@@ -555,8 +555,32 @@ def extract_observations(
         elif usable and audit_key == "dialog_contract_audit":
             usable = (safe["failure_count"] <= safe["dialog_count"]
                       and safe["dialog_contract_passed"] == (safe["failure_count"] == 0))
+        states = []
+        states_reported = False
+        if audit_key == "validation_audit" and usable and audit.get("control_states_reported") is True:
+            raw_states = audit.get("control_states")
+            if isinstance(raw_states, list) and len(raw_states) == safe["visible_control_count"] and len(raw_states) <= 200:
+                valid = all(isinstance(row, dict) and type(row.get("index")) is int and row["index"] == i
+                    and isinstance(row.get("tag"), str) and row["tag"] in {"input", "select", "textarea"}
+                    and isinstance(row.get("type"), str) and len(row["type"]) <= 40
+                    and isinstance(row.get("label_hint"), str) and len(row["label_hint"]) <= 200
+                    and all(type(row.get(k)) is bool for k in ("native_required", "native_disabled", "native_will_validate"))
+                    and (row.get("native_read_only") is None or type(row.get("native_read_only")) is bool)
+                    and "native_read_only" in row for i, row in enumerate(raw_states))
+                if valid:
+                    states_reported = True
+                    states = [{k: row[k] for k in ("index", "tag", "type", "label_hint", "native_required",
+                              "native_disabled", "native_read_only", "native_will_validate")} for row in raw_states]
+        extra = {"control_states_reported": states_reported, "control_states": states} if audit_key == "validation_audit" else {}
+        if states_reported:
+            extra["control_state_summary"] = {
+                "native_required_count": sum(row["native_required"] for row in states),
+                "native_disabled_count": sum(row["native_disabled"] for row in states),
+                "native_read_only_count": sum(row["native_read_only"] is True for row in states),
+                "native_read_only_unknown_count": sum(row["native_read_only"] is None for row in states)}
         return [{"type": "ui_contract_audit", "source": "browser", "data": {
             "tool": tool_name, "audit_kind": audit_key, "audit": safe,
+            **extra,
             "scope_kind": "requested_named_form" if arguments.get("form") else "page",
             "observation_result": "observed" if usable else "blocked",
             "mutation_executed": result.get("mutation_executed") if

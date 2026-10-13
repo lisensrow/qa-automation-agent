@@ -11758,7 +11758,8 @@ class BrowserSession:
                 if matched and candidate.is_visible():
                     matches.append(candidate)
             if len(matches) != 1:
-                return {"error": "validation_form_not_unique", "matches": len(matches), "executed": False}
+                return {"error": "validation_form_not_unique", "matches": len(matches), "executed": False,
+                        "scope_hint": "form is an observed HTML form aria-label/name/id, not a panel title. Reconfirm an actual identity; omit form for an explicitly page-wide native-control census. A page census does not prove named-form identity."}
             scope = matches[0]
             form_identity = form
         audit = scope.evaluate(
@@ -11801,6 +11802,23 @@ class BrowserSession:
                 });
               return {
                 visible_control_count: visible.length,
+                control_states_reported: true,
+                native_required_count: visible.filter(el => el.required === true).length,
+                native_disabled_count: visible.filter(el => el.disabled === true).length,
+                native_read_only_count: visible.filter(el => el.readOnly === true).length,
+                native_read_only_unknown_count: visible.filter(el => typeof el.readOnly !== 'boolean').length,
+                control_states: visible.map((el, index) => ({
+                  index,
+                  tag: el.tagName.toLowerCase(),
+                  type: String(el.type || '').slice(0, 40),
+                  label_hint: String((el.labels && el.labels[0] && el.labels[0].innerText)
+                    || el.getAttribute('aria-label') || el.getAttribute('placeholder')
+                    || el.getAttribute('name') || '').trim().slice(0, 200),
+                  native_required: el.required === true,
+                  native_disabled: el.disabled === true,
+                  native_read_only: typeof el.readOnly === 'boolean' ? el.readOnly : null,
+                  native_will_validate: el.willValidate === true
+                })),
                 invalid_control_count: invalid.length,
                 invalid_controls: invalid,
                 validation_passed: invalid.length === 0,

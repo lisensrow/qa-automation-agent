@@ -6315,6 +6315,28 @@ def _historical_browser_result_summary(tool_name, content):
         for key in summary_keys
         if parsed.get(key) not in (None, "", [], {})
     }
+    # Preserve Core provenance and bounded scalar facts, not private field values.
+    usable = parsed.get("uqa_evidence_usable_for_verdict")
+    if type(usable) is bool:
+        summary["uqa_evidence_usable_for_verdict"] = usable
+    observation_ids = parsed.get("uqa_observation_ids")
+    if isinstance(observation_ids, list):
+        summary["uqa_observation_ids"] = [value for value in observation_ids
+            if isinstance(value, str) and re.fullmatch(r"obs-[A-Za-z0-9_-]+", value)]
+    for key in ("visible", "enabled", "editable", "checked", "selected", "expanded", "required", "invalid", "read_only"):
+        if type(parsed.get(key)) is bool:
+            summary[key] = parsed[key]
+    audit_fields = {"visible_control_count", "invalid_control_count", "validation_passed", "field_count",
+                    "unlabeled_count", "broken_description_count", "field_label_contract_passed", "dialog_count",
+                    "failure_count", "dialog_contract_passed", "required_field_count", "unnamed_count",
+                    "required_field_contract_passed", "truncated", "control_states_reported",
+                    "native_required_count", "native_disabled_count", "native_read_only_count", "native_read_only_unknown_count"}
+    for key in ("validation_audit", "field_label_audit", "dialog_contract_audit", "required_field_audit"):
+        audit = parsed.get(key)
+        if isinstance(audit, dict):
+            summary[key] = {name: value for name, value in audit.items() if name in audit_fields
+                            and ((name.endswith("_count") and type(value) is int and value >= 0)
+                                 or (not name.endswith("_count") and type(value) is bool))}
     summary["tool"] = tool_name
     summary["model_history_compacted"] = True
     return summary
