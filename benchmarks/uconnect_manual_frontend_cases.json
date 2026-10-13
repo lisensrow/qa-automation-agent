@@ -38,13 +38,19 @@
       "case_id": "uc-front-003",
       "category": "data_views",
       "title": "Filter a CMDB table",
-      "task": "Apply one exact non-destructive table filter and verify the visible rows and reported total without changing records.",
+      "task": "Search knowledge for the bound filter field. Inspect the table before changing the search. Fill only the bound filter field with the bound value; inspect that field and the table. For the GET request observed in that fill action, load browser_get_network_detail using its actual request_id and correlate the backend request with ssh_find_backend_request if available. Then clear the same field, inspect the empty field and the restored table. Do not modify records, settings or other inputs. Use the existing action policy for both field interactions.",
       "action_profile": "write_ui_state",
       "execution_status": "ready",
       "policy_required": true,
       "cleanup_contract": "clear_filter_v1",
-      "prerequisites": ["saved_stand", "filter_field", "filter_value"],
-      "checks": ["filter control contains the requested value", "visible rows satisfy the filter", "clearing the filter restores the prior view"]
+      "prerequisites": ["saved_stand", "filter_field", "filter_value", "filter_column"],
+      "checks": ["filter control contains the requested value", "visible rows satisfy the filter", "filter control is cleared", "clearing the filter restores the prior visible table"],
+      "check_contracts": {
+        "planned-001": {"tool": "browser_inspect_semantic", "subject_binding": "filter_field", "value_binding": "filter_value", "phase": "filtered", "assertions": [{"field": "value_matches_binding", "operator": "eq", "expected": true}]},
+        "planned-002": {"tool": "browser_inspect_table_semantic", "subject_binding": "filter_field", "value_binding": "filter_value", "column_binding": "filter_column", "phase": "filtered", "assertions": [{"field": "rows_match_binding", "operator": "eq", "expected": true}]},
+        "planned-003": {"tool": "browser_inspect_semantic", "subject_binding": "filter_field", "value_binding": "filter_value", "phase": "restored", "assertions": [{"field": "value_empty", "operator": "eq", "expected": true}]},
+        "planned-004": {"tool": "browser_inspect_table_semantic", "subject_binding": "filter_field", "value_binding": "filter_value", "column_binding": "filter_column", "phase": "restored", "assertions": [{"field": "rows_restored", "operator": "eq", "expected": true}]}
+      }
     },
     {
       "case_id": "uc-front-004",

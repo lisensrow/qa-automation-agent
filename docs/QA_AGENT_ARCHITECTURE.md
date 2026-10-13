@@ -398,6 +398,18 @@ Opt-in не меняет legacy Jobs без memory_query, не разрешён 
 
 Проверка v150d: py_compile успешен, полный runner 181/181. Реальный Job `20261013-122610-66574e6a` загрузил один факт при свежей ansible/server 4.9.0 identity, но стал BLOCKED с repeated_unchanged_observation; это не успех функции и не дефект памяти, доказанный одним прогоном. Повторный Job `20261013-123246-1e1b712b` использовал тот же opt-in на `uc-front-002`/Ubuntu Agent и прошёл три независимых nav checks через locked composite. Число API-binding confirmations осталось 5. Подтверждены загрузка памяти в контекст реальной модели и исполнение UI-сценария с таким контекстом, но не причинное улучшение поведения модели и не сквозное повторное подтверждение Search by name API-функции.
 
+## v151a: первый сквозной Search by name recheck
+
+`uc-front-003` получил четыре независимых контракта: наблюдённое значение поля после fill; соответствие всех видимых строк явно заданной колонке/значению; наблюдённое пустое поле после clear; восстановление исходного видимого row signature и headers. Read-only table inspector теперь сохраняет structured summary в observation. Snapshot completeness исключает более 200 строк, 50 колонок или усечённые cell values. Это PASS видимой таблицы, не всего набора данных или общего total: прежний v132 roundtrip с обязательным reported total остаётся отдельным более сильным критерием.
+
+Generic contract evaluator связывает semantic/table reads с фазой выполненного fill через case-local action_execution_id, closed network window, bound field/text и интервалы между действиями. Проверяются origin, единственность usable evidence, колонка и completeness. Чужие IDs/позднее очищенное поле не подменяют доказательство ранней фазы. Product labels остаются в corpus/bindings, не в Core if/else. Policy и STEP/AUTO не менялись: существующая классификация search/filter поля — INTERACT, обычного поля — WRITE.
+
+Реальные Jobs: `20261013-124126-ac996bcf` BLOCKED из-за выдуманных model observation IDs; изменения поиска были выполнены и очищены. `20261013-130045-8af87fc8` PASSED 4/4 и сохранил UI/API/backend confirmation прежнего факта: facts=1, confirmations=6. Но модель пропустила knowledge_search, поэтому этот Job не доказывает полный memory loop. `20261013-130620-026818a2` явно загрузил один verified факт в контекст qwen3:14b по свежей ansible/server 4.9.0 identity, выполнил ровно fill и clear, получил новые API/backend observations, прошёл 4/4, сохранил седьмое confirmation того же fact_key без дубликата.
+
+Memory preloading opt-in теперь допускает write_ui_state только при policy_required=true и непустом cleanup contract; write_resource по-прежнему отклоняется. Это не разрешение выполнять remembered actions: они проходят прежнюю policy и ограничения задачи. `memory_context` может отметить runtime_confirmed только после ingestion совпадающего preloaded fact_key, passed case и case-local UI/API/backend proofs. Неуспешный/неполный recheck не меняет этот audit в успешный. Knowledge-search observations дополнительно хранят лишь summary загрузки памяти — IDs/число/status, не её raw data; memory enrichment выполняется до записи observations. Проверки установки: py_compile, изолированные negative/DOM tests и полный runner 182/182.
+
+Следующий этап version compatibility: read-only inventory стенда обнаружил backend image tag 4.9.0 и frontend image tag 2.21.0. Это версии контейнерных image tags, не доказательство immutable frontend asset digest. Старые confirmations не содержат frontend compatibility; backend-only matching не выдаётся за проверку после frontend update.
+
 ## Безопасность
 
 - Секреты не печатаются в отчётах и не передаются LLM.

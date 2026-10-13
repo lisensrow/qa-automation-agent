@@ -199,6 +199,7 @@ SMOKES = [
     "smoke_panel_renderer_dom.py",
     "smoke_product_knowledge_retrieval.py",
     "smoke_prepared_memory.py",
+    "smoke_search_phase_contracts.py",
 ]
 
 

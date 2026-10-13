@@ -6380,7 +6380,7 @@ class BrowserSession:
                     ),
                     aria_sort: cell.getAttribute('aria-sort')
                 }));
-                const bodyRows = Array.from(
+                const allBodyRows = Array.from(
                     table.querySelectorAll('tbody tr, [role="rowgroup"] [role="row"]')
                 ).filter(row => {
                     if (row.closest('thead')) return false;
@@ -6389,7 +6389,8 @@ class BrowserSession:
                         && style.display !== 'none'
                         && style.visibility !== 'hidden'
                         && row.getClientRects().length > 0;
-                }).slice(0, 200);
+                });
+                const bodyRows = allBodyRows.slice(0, 200);
                 const rows = bodyRows.map(row => {
                     const cells = Array.from(
                         row.querySelectorAll(':scope > td, :scope > th, :scope > [role="cell"], :scope > [role="gridcell"]')
@@ -6412,6 +6413,9 @@ class BrowserSession:
                 return {
                     headers,
                     rows,
+                    snapshot_complete: allBodyRows.length <= 200 && headerCells.length <= 50
+                        && bodyRows.every(row => Array.from(row.querySelectorAll(':scope > td, :scope > th, :scope > [role="cell"], :scope > [role="gridcell"]')).length <= 50
+                            && Array.from(row.querySelectorAll(':scope > td, :scope > th, :scope > [role="cell"], :scope > [role="gridcell"]')).every(cell => clean(cell.innerText || cell.textContent).length <= 300)),
                     visible_row_count: rows.length,
                     row_signature: rows.map(row => row.cells.join('\u241f'))
                 };

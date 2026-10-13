@@ -43,6 +43,11 @@ try:
 except ValueError:
     pass
 assert len(saved) == 1
+ui_state = deepcopy(base)
+ui_state['test_cases'][0]['requirement'].update(action_profile='write_ui_state',policy_required=True,cleanup_contract='restore_prior_view')
+approved=[]
+prepare_memory_context(ui_state,'fixture-case',detector,lambda _:deepcopy(ui_state),approved.append,retrieve)
+assert len(approved)==1
 def failed_detector(stand):
     raise RuntimeError('private-fixture-only')
 unknown = []
@@ -51,3 +56,17 @@ job, payload = prepare_memory_context(base, 'fixture-case', failed_detector, lam
 assert job['stand_identity']['status'] == 'unknown' and 'server_version' not in job['stand_identity']
 assert 'private-fixture-only' not in str(job)
 print('prepared memory context: PASS (fresh identity, opt-in, no false reconfirmation)')
+
+from prepared_memory import record_memory_reconfirmation
+runtime_job={'job_id':'fixture-job','test_cases':[{'case_id':'fixture-case','status':'passed',
+    'memory_context':{'fact_keys':['fixture-fact']},'observations':[
+        {'observation_id':str(i),'type':kind} for i,kind in enumerate(('ui_state','api_exchange','backend_request'))]}]}
+candidate={'fact_key':'fixture-fact','source_observation_ids':['0','1','2'],
+    'verification':{k:True for k in ('runtime_ui_action_observed','runtime_api_exchange_observed','backend_request_correlated')}}
+updates=[]
+assert record_memory_reconfirmation('fixture-job','fixture-case',candidate,lambda _:deepcopy(runtime_job),updates.append)
+assert updates[0]['test_cases'][0]['memory_context']['binding_reconfirmation']=='runtime_confirmed'
+for change in ({'fact_key':'different'}, {'source_observation_ids':['0','1']}, {'verification':{}}):
+    invalid=dict(candidate,**change)
+    assert not record_memory_reconfirmation('fixture-job','fixture-case',invalid,lambda _:deepcopy(runtime_job),updates.append)
+assert len(updates)==1

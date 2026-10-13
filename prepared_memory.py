@@ -9,7 +9,11 @@ def prepare_memory_context(job, case_id, detector, loader, saver, retriever=None
     query = requirement.get('memory_query')
     if query is None:
         return job, None
-    if (requirement.get('action_profile') != 'read_only' or not isinstance(query, str)
+    profile = requirement.get('action_profile')
+    allowed_profile = profile == 'read_only' or (
+        profile == 'write_ui_state' and requirement.get('policy_required') is True
+        and isinstance(requirement.get('cleanup_contract'), str) and bool(requirement['cleanup_contract'].strip()))
+    if (not allowed_profile or not isinstance(query, str)
             or not 1 <= len(query.strip()) <= 1000):
         raise ValueError('prepared_memory_query_or_profile_invalid')
     stand = job.get('stand')
@@ -41,3 +45,28 @@ def prepare_memory_context(job, case_id, detector, loader, saver, retriever=None
     }
     saver(latest)
     return latest, payload
+
+
+def record_memory_reconfirmation(job_id, case_id, candidate, loader, saver):
+    """Audit an ingested matching fact only with fresh case-local runtime proof."""
+    job = loader(job_id)
+    case = next((c for c in (job or {}).get('test_cases', []) if c.get('case_id') == case_id), {})
+    context = case.get('memory_context') or {}
+    key = candidate.get('fact_key')
+    flags = candidate.get('verification') or {}
+    if case.get('status') != 'passed' or key not in (context.get('fact_keys') or []):
+        return False
+    if not all(flags.get(k) is True for k in (
+            'runtime_ui_action_observed','runtime_api_exchange_observed','backend_request_correlated')):
+        return False
+    refs = candidate.get('source_observation_ids') or []
+    linked = [o for o in case.get('observations', []) if o.get('observation_id') in refs]
+    if not {'ui_state','api_exchange','backend_request'} <= {o.get('type') for o in linked}:
+        return False
+    keys = context.setdefault('reconfirmed_fact_keys', [])
+    if key not in keys:
+        keys.append(key)
+    context.update(binding_reconfirmation='runtime_confirmed', evidence_for_pass=False,
+                   confirmation_job_id=job_id, confirmation_case_id=case_id)
+    saver(job)
+    return True

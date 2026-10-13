@@ -168,6 +168,14 @@ def _documentation_observation(
                 "result_count"
             ),
             "references": refs,
+            "product_memory_summary": {
+                "status": (result.get("product_memory") or {}).get("status"),
+                "loaded_fact_count": len((result.get("product_memory") or {}).get("results") or []),
+                "fact_keys": [item.get("fact_key") for item in
+                              (result.get("product_memory") or {}).get("results") or []
+                              if isinstance(item, dict)],
+                "evidence_for_pass": False,
+            },
         },
     }
 
@@ -257,6 +265,8 @@ def _browser_semantic_observation(
         "data": {
             "tool": tool_name,
             "row_match_count": result.get("row_match_count"),
+            "table_summary": result.get("table_summary"),
+            "table_resolution": result.get("table_resolution"),
             "subject": (
                 result.get(
                     "semantic_name"

@@ -6,6 +6,8 @@ import json
 from urllib.parse import urlsplit
 
 TOOL_FIELDS = {
+    "browser_inspect_semantic": ("ui_element", {"value_matches_binding", "value_empty"}),
+    "browser_inspect_table_semantic": ("ui_element", {"rows_match_binding", "rows_restored"}),
     "browser_inspect_table_row": ("ui_element", {"row_match_count"}),
     "browser_open_exact_table_row_details_semantic": (
         "ui_details_identity", {"details_identity_passed", "row_opened", "url"}),
@@ -47,6 +49,12 @@ def validate_contracts(contracts):
             raise ValueError("frontend_contract_tool_or_subject_invalid")
         if tool == "browser_verify_exact_table_row_tabs_semantic" and not isinstance(contract.get("tabs_binding"), str):
             raise ValueError("frontend_contract_tabs_binding_required")
+        if tool in {"browser_inspect_semantic", "browser_inspect_table_semantic"} and (
+                contract.get("phase") not in {"filtered", "restored"}
+                or not isinstance(contract.get("value_binding"), str)):
+            raise ValueError("frontend_contract_search_phase_required")
+        if tool == "browser_inspect_table_semantic" and not isinstance(contract.get("column_binding"), str):
+            raise ValueError("frontend_contract_search_column_required")
         assertions = contract.get("assertions")
         if not isinstance(assertions, list) or not assertions:
             raise ValueError("frontend_contract_assertions_required")
@@ -186,6 +194,87 @@ def tab_fact(data, field, contract, bindings):
     return all(values)
 
 
+def search_phase_fact(case, requirement, contract, subject, saved_url):
+    """Bind field/table reads to an executed fill, not to whichever read is latest."""
+    if normalized_origin(saved_url) is None:
+        raise ValueError("frontend_contract_search_stand_origin_missing")
+    bindings = requirement.get("bindings") or {}
+    value = bindings.get(contract["value_binding"])
+    if not isinstance(value, str) or not value:
+        raise ValueError("frontend_contract_search_value_missing")
+    observations = case.get("observations") or []
+    wanted = value if contract["phase"] == "filtered" else ""
+    actions = [(i, o) for i, o in enumerate(observations)
+               if o.get("type") == "ui_state" and o.get("data", {}).get("tool") == "browser_fill_semantic"
+               and o["data"].get("input", {}).get("field") == subject
+               and o["data"]["input"].get("text") == wanted]
+    if not actions:
+        raise ValueError("frontend_contract_search_action_missing")
+    start, action = actions[-1]
+    if not action["data"].get("action_execution_id") or action["data"].get("network_window_closed") is not True:
+        raise ValueError("frontend_contract_search_action_unconfirmed")
+    end = next((i for i in range(start + 1, len(observations))
+                if observations[i].get("type") == "ui_state"
+                and observations[i].get("data", {}).get("tool") == "browser_fill_semantic"
+                and observations[i]["data"].get("input", {}).get("field") == subject), len(observations))
+    reads = [o for o in observations[start + 1:end]
+             if o.get("type") == "ui_element" and o.get("data", {}).get("tool") == contract["tool"]
+             and (contract["tool"] != "browser_inspect_semantic" or o["data"].get("subject") == subject)]
+    if not reads:
+        raise ValueError("frontend_contract_search_phase_read_missing")
+    observation = reads[-1]
+    sources = [action, observation]
+    data = observation["data"]
+    if contract["tool"] == "browser_inspect_semantic":
+        if data.get("exact") is not True or not isinstance(data.get("value"), str):
+            raise ValueError("frontend_contract_search_value_not_observed")
+        facts = {"value_matches_binding": data["value"] == value, "value_empty": data["value"] == ""}
+    else:
+        summary = data.get("table_summary") or {}
+        if data.get("table_resolution") not in {"unique_visible", "unique_visible_fallback"} or summary.get("snapshot_complete") is not True:
+            raise ValueError("frontend_contract_table_snapshot_incomplete")
+        rows = summary.get("rows")
+        if not isinstance(rows, list) or type(summary.get("visible_row_count")) is not int or len(rows) != summary["visible_row_count"]:
+            raise ValueError("frontend_contract_table_rows_invalid")
+        signature = summary.get("row_signature")
+        if not isinstance(signature, list) or len(signature) != len(rows) or any(not isinstance(s, str) for s in signature):
+            raise ValueError("frontend_contract_table_signature_invalid")
+        column = bindings.get(contract["column_binding"])
+        headers = [h.get("name") for h in summary.get("headers", [])]
+        if not isinstance(column, str) or headers.count(column) != 1:
+            raise ValueError("frontend_contract_table_column_ambiguous")
+        cells = [r.get("values_by_header", {}).get(column) for r in rows]
+        if any(not isinstance(cell, str) for cell in cells):
+            raise ValueError("frontend_contract_table_cell_missing")
+        facts = {"rows_match_binding": bool(rows) and all(value.casefold() in cell.casefold() for cell in cells)}
+        if any(a["field"] == "rows_restored" for a in contract["assertions"]):
+            first_fill = next((i for i, o in enumerate(observations)
+                               if o.get("type") == "ui_state" and o.get("data", {}).get("tool") == "browser_fill_semantic"
+                               and o["data"].get("input", {}).get("field") == subject
+                               and o["data"]["input"].get("text") == value), None)
+            initial = [o for o in observations[:first_fill or 0]
+                       if o.get("type") == "ui_element" and o.get("data", {}).get("tool") == contract["tool"]]
+            if not initial or initial[-1]["data"].get("table_summary", {}).get("snapshot_complete") is not True:
+                raise ValueError("frontend_contract_initial_table_missing")
+            baseline = initial[-1]["data"]["table_summary"]
+            if initial[-1]["data"].get("table_resolution") not in {"unique_visible", "unique_visible_fallback"}:
+                raise ValueError("frontend_contract_initial_table_ambiguous")
+            if not isinstance(baseline.get("row_signature"), list):
+                raise ValueError("frontend_contract_initial_table_signature_missing")
+            facts["rows_restored"] = summary.get("row_signature") == baseline.get("row_signature") and summary.get("headers") == baseline.get("headers")
+            sources.append(initial[-1])
+    evidence = []
+    for source in sources:
+        if normalized_origin(source.get("data", {}).get("url")) != normalized_origin(saved_url):
+            raise ValueError("frontend_contract_search_origin_mismatch")
+        linked = [e for e in case.get("evidence", []) if source.get("observation_id") in (e.get("observation_ids") or [])
+                  and e.get("type") == source["data"].get("tool")]
+        if len(linked) != 1 or linked[0].get("usable_for_verdict") is not True:
+            raise ValueError("frontend_contract_search_evidence_unusable")
+        evidence.append(linked[0]["evidence_id"])
+    return observation, facts, evidence, [s["observation_id"] for s in sources]
+
+
 def evaluate_contract(case, requirement, check, saved_url):
     """Rebuild references and assertions from Core records, never model claims."""
     output = deepcopy(check)
@@ -199,6 +288,16 @@ def evaluate_contract(case, requirement, check, saved_url):
         if not isinstance(subject, str) or not subject.strip():
             raise ValueError("frontend_contract_subject_missing")
         tool = contract["tool"]
+        if tool in {"browser_inspect_semantic", "browser_inspect_table_semantic"}:
+            observation, facts, refs, obs_refs = search_phase_fact(case, requirement, contract, subject, saved_url)
+            assertions = [{"field": a["field"], "operator": a["operator"], "expected": a["expected"],
+                           "actual": facts[a["field"]], "satisfied": type(facts[a["field"]]) is type(a["expected"]) and facts[a["field"]] == a["expected"],
+                           "observation_id": observation["observation_id"]} for a in contract["assertions"]]
+            output.update(status="passed" if all(a["satisfied"] for a in assertions) else "failed",
+                          subject=subject, evidence=list(dict.fromkeys(refs)), observations=list(dict.fromkeys(obs_refs)),
+                          assertions=assertions, actual={a["field"]: a["actual"] for a in assertions},
+                          reason=None if all(a["satisfied"] for a in assertions) else "UQA CORE: frontend_contract_mismatch")
+            return output, None
         observation_type = TOOL_FIELDS[tool][0]
         evidence_by_observation = {}
         for evidence in case.get("evidence") or []:
