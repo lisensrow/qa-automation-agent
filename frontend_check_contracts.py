@@ -10,7 +10,7 @@ TOOL_FIELDS = {
     "browser_open_exact_table_row_details_semantic": (
         "ui_details_identity", {"details_identity_passed", "row_opened", "url"}),
     "browser_inspect_agent_telemetry_semantic": (
-        "agent_telemetry", {"ci_id", "statuses", "monitoring_ci_id", "monitoring_at",
+        "agent_telemetry", {"ci_id", "statuses", "monitoring_metrics", "monitoring_ci_id", "monitoring_at",
                             "monitoring_age_seconds", "monitoring_fresh"}),
     "browser_inspect_agent_plugins_semantic": (
         "agent_plugin_audit", {"ci_id", "plugin_present", "plugin_version", "last_audit_at",
@@ -18,6 +18,7 @@ TOOL_FIELDS = {
 }
 
 REPORT_OPERATORS = {"ci_id": "nonempty", "monitoring_ci_id": "nonempty", "plugin_version": "nonempty",
+                    "monitoring_metrics": "metrics_reported",
                     "statuses": "statuses_reported", "monitoring_at": "timestamp_reported",
                     "last_audit_at": "timestamp_reported",
                     "monitoring_age_seconds": "age_reported", "audit_age_seconds": "age_reported"}
@@ -77,6 +78,9 @@ def agent_fact(data, field, bindings):
                 raise ValueError("agent_contract_monitoring_identity_missing_or_mismatched")
     elif data.get("audit_agent_id") != data["agent_id"]:
         raise ValueError("agent_contract_audit_identity_mismatch")
+    if field == "monitoring_metrics":
+        return {key: data.get(key) for key in (
+            "cpu_usage_raw", "ram_usage_raw", "ram_usage_percent", "uptime_seconds")}
     if field in {"plugin_present", "plugin_version"}:
         name = bindings.get("plugin_name")
         plugins = data.get("matched_plugins")
@@ -108,6 +112,14 @@ def validate_reported_fact(actual, operator):
             valid = parsed.tzinfo is not None
         except (ValueError, TypeError, AttributeError):
             valid = False
+    elif operator == "metrics_reported":
+        def nonnegative(value):
+            return type(value) in (int, float) and math.isfinite(value) and value >= 0
+        cpu = actual.get("cpu_usage_raw") if isinstance(actual, dict) else None
+        valid = (isinstance(cpu, list) and 1 <= len(cpu) <= 128 and all(nonnegative(value) for value in cpu)
+                 and all(nonnegative(actual.get(key)) for key in
+                         ("ram_usage_raw", "ram_usage_percent", "uptime_seconds"))
+                 and actual["ram_usage_percent"] <= 100)
     else:
         valid = False
     if not valid:

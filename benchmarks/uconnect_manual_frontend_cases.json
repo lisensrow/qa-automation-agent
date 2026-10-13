@@ -108,14 +108,15 @@
         "planned-001": {"tool": "browser_inspect_agent_telemetry_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "ci_id", "operator": "nonempty"}]},
         "planned-002": {"tool": "browser_inspect_agent_telemetry_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "statuses", "operator": "statuses_reported"}]},
         "planned-003": {"tool": "browser_inspect_agent_telemetry_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "monitoring_at", "operator": "timestamp_reported"}, {"field": "monitoring_age_seconds", "operator": "age_reported"}]},
-        "planned-004": {"tool": "browser_inspect_agent_telemetry_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "monitoring_ci_id", "operator": "nonempty"}]}
+        "planned-004": {"tool": "browser_inspect_agent_telemetry_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "monitoring_ci_id", "operator": "nonempty"}]},
+        "planned-005": {"tool": "browser_inspect_agent_telemetry_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "monitoring_metrics", "operator": "metrics_reported"}]}
       },
       "required_observation": {"tool": "browser_inspect_agent_telemetry_semantic", "arguments": {"ci_name": {"binding": "exact_ci_name"}}},
-      "task": "Open Agent for one exact CI and verify UI, CI, agent, and monitoring status with freshness evidence.",
+      "task": "Open details for one exact CI and read UI, CI, agent, and monitoring facts from captured web responses, explicitly reporting sample freshness and numeric values. This does not verify Agent or Monitoring tab rendering.",
       "action_profile": "read_only",
       "execution_status": "ready",
       "prerequisites": ["saved_stand", "exact_ci_name"],
-      "checks": ["CI and agent IDs correlate", "all observed statuses are reported", "monitoring freshness is explicit", "evidence belongs to the exact CI"]
+      "checks": ["CI and agent IDs correlate", "all observed statuses are reported", "monitoring freshness is explicit", "evidence belongs to the exact CI", "monitoring CPU RAM and uptime values are explicit"]
     },
     {
       "case_id": "uc-front-010",

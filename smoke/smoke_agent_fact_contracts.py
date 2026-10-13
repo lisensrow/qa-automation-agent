@@ -12,7 +12,8 @@ now = datetime(2026, 10, 13, 12, tzinfo=timezone.utc)
 ci = {"id": "ci-1", "name": "fixture-ci", "agent_id": "agent-1", "endpoint_status": "online"}
 telemetry = summarize_agent_observation(ci["name"], ci,
     {"id": "agent-1", "status": "online", "version": "1"},
-    {"uid": "ci-1", "created_at": "2026-10-12T01:00:00Z", "cpu_usage": [1]}, "online", now)
+    {"uid": "ci-1", "created_at": "2026-10-12T01:00:00Z", "cpu_usage": [1],
+     "ram_usage": 1024, "ram_usage_percent": 50, "uptime": 123}, "online", now)
 plugins = summarize_plugin_audit(ci, {"agent_id": "agent-1", "last_audit_at": "2026-10-12T01:00:00Z",
     "detail": [{"plugin_name": "fixture-plugin", "plugin_version": "1.2", "load_status": True}]},
     "fixture-plugin", observed_at=now)
