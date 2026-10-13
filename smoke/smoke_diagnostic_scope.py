@@ -16,6 +16,7 @@ for tool in DIAGNOSTIC_TOOLS:
     inconsistent['test_cases'][0]['requirement']['stand']='other'
     assert scope_diagnostic_arguments(tool,{},inconsistent,'case')[1]=='diagnostic_case_scope_inconsistent'
 assert scope_diagnostic_arguments('browser_get_state',{},None,None)==({},None)
+assert scope_diagnostic_arguments('ssh_docker_ps',{},dict(job,job_type='manual'),'case')==({'stand':'fixture'},None)
 saved=uqa.get_job,uqa.execute_tool
 calls=[]
 try:

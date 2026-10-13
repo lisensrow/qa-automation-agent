@@ -13753,7 +13753,7 @@ def run_turn(
                     "The case is incomplete. Follow the exact read-only route and obtain this observation "
                     "before finalizing:\n" + json.dumps(required_observation))})
                 continue
-            if (required_observation or contract_check_templates) and structured_repair_attempts < 2:
+            if (required_observation or contract_check_templates or (job_id and case_id)) and structured_repair_attempts < 2:
                 proposed_checks, _, format_error = extract_structured_checks(content)
                 if format_error or proposed_checks is None:
                     structured_repair_attempts += 1

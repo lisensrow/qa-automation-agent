@@ -440,9 +440,7 @@ Read-only retrieval требует exact architecture/backend/frontend и отд
 
 Кандидат сохраняется существующим Job Store/Product Knowledge pipeline. Это НЕ verified знание: прежний API-binding validator не поддерживает новый тип, reader его не выдаёт модели. Требуется отдельный type-specific validator повторных подтверждений текущего frontend; API/backend proof rules нельзя переносить на client-side навигацию механически. Реальный Job `20261013-135531-1e0f5404` PASSED 3/3, выполнил только open и exact-row/Agent-tab navigation, сохранил ui_navigation candidate при frontend 2.21.0. Изолированные negative tests, py_compile и полный runner 187/187 прошли.
 
-## Безопасность
-
-### v151f: type-specific verification и reuse навигации
+## v151f: type-specific verification и reuse навигации
 
 Закрытый реестр knowledge types задаёт отдельные безопасные поля и runtime proof flags для ui_api_binding и ui_navigation. Navigation validator читает DB только в read-only режиме; promotion через существующий scoped store возможна при двух различных Jobs, одинаковых architecture/backend/frontend, полном navigation proof и traceable observation IDs. Candidate/conflicted/deprecated/unknown scopes, partial deployment, mutable frontend и неполные подтверждения не проходят. Scan ограничен; незавершённый большой scan не даёт promotion. Смена frontend не наследует совместимость от backend-only verified scope.
 
@@ -451,6 +449,16 @@ Reader выдаёт навигационную подсказку только f
 Реальные Jobs: `20261013-140444-33c3d169` PASSED 3/3, добавил второе navigation confirmation и выполнил scoped promotion. `20261013-140525-c1f4a22e` загрузил один navigation fact в контекст qwen3:14b, заново выполнил open/exact-row/Agent-tab, прошёл 3/3 и сохранил третье confirmation; fact_reconfirmation/navigation_reconfirmation=runtime_confirmed, binding_reconfirmation=not_performed. Подтверждено наличие памяти в контексте и её новый runtime recheck, но не причинное улучшение модели или обучение весов. Реального обновления продукта не выполнялось; несовместимые версии проверены изолированно. py_compile и полный runner 188/188 прошли, дополнительно проверены unknown types, sensitive payload и запрет подмены navigation flags API flags.
 
 Следующая группа: устойчивость свободных ручных заданий и полнота завершающих observations; затем таблицы/формы, owned resources и cleanup, телеметрия/плагины/задачи/VNC/reports и пилот. Поддержаны пока два knowledge types, а не все функции продукта. Документальные знания остаются в отдельном FTS5 index; retrieval product facts использует ограниченный version-scoped scan, не заявляется как неограниченный семантический индекс.
+
+## v151g: format recovery для обычных ручных QA cases
+
+Ограниченное требование UQA_CHECKS_JSON распространяется на любой текущий persistent QA Job/case, не только на prepared required observations или locked contracts. Максимум две format-repair попытки не выполняют инструменты автоматически и не меняют проверку evidence. Даже повторённое моделью текстовое PASS после исчерпания попыток даёт BLOCKED со structured_result_missing. Diagnostic scope также не зависит от названия job_type: manual cases с действительным case/stand получают ту же привязку, чужой stand остаётся запрещён.
+
+Это ограниченное улучшение надёжности, не завершение этапа «любая ручная задача». Машинные phase contracts всё ещё требуют нужных наблюдений в нужное время; пропущенную filtered phase нельзя доказать снимком уже очищенного поля. Неисправленные ошибки модели и внешние blockers сохраняются в Jobs и документе, а не маскируются под PASS.
+
+Проверки v151g: py_compile и runner 188/188. Controlled ordinary manual Job `20261013-141544-5c0638ff` с дополнительным force_read_only стал BLOCKED/tool_step_limit, 0 resources; этот strict эксперимент не равен штатному MANAGED_ACTIONS. Повтор `20261013-142120-23fe0bd9` в штатном confirm_mutations также BLOCKED, 0 resources: модель вместо завершения проверки точной строки повторяла запрещённый plus/Add, Core требовал navigation preflight и ничего не создавал. Свободная ручная задача не считается успешно проверенной. Следующая диагностика — согласованность read-only detector с action classifier и использование persistent user request после внутренних Core followups.
+
+## Безопасность
 
 - Секреты не печатаются в отчётах и не передаются LLM.
 - Saved credentials использует только доверенный runtime.

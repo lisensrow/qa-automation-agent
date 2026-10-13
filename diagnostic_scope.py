@@ -1,4 +1,4 @@
-"""Bind bounded read-only diagnostics to the persistent regression stand."""
+"""Bind bounded read-only diagnostics to the persistent QA case stand."""
 DIAGNOSTIC_TOOLS = frozenset({'ssh_docker_ps','ssh_docker_logs','ssh_find_backend_request'})
 
 
@@ -9,7 +9,7 @@ def scope_diagnostic_arguments(name, arguments, job, case_id):
     job = job if isinstance(job,dict) else {}
     case = next((c for c in job.get('test_cases',[]) if c.get('case_id')==case_id),None)
     stand = job.get('stand')
-    if job.get('job_type')!='regression' or not case or not isinstance(stand,str) or not stand.strip():
+    if not case or not isinstance(stand,str) or not stand.strip():
         return arguments, 'diagnostic_case_scope_missing'
     requirement = case.get('requirement') or {}
     if requirement.get('stand') not in (None,stand):
