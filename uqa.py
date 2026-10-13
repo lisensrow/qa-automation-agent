@@ -12446,8 +12446,12 @@ def run_prepared_regression_job(job_id):
     if "memory_query" in (case.get("requirement") or {}):
         from prepared_memory import prepare_memory_context
         from ssh_worker import detect_stand_identity
+        from memory_identity import detect_memory_identity, memory_components_from_inventory
         job, memory_payload = prepare_memory_context(
-            job, case_id, detect_stand_identity, get_job, save_job)
+            job, case_id, lambda stand: detect_memory_identity(
+                stand, detect_stand_identity,
+                lambda target: memory_components_from_inventory(execute_tool("ssh_docker_ps", {"stand":target}))),
+            get_job, save_job)
     safe_request = redact_credentials(job.get("request") or "")
     stand_context = build_stand_context(job["stand"])
     if stand_context:

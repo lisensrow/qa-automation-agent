@@ -14,6 +14,9 @@ PRODUCTION_FILES = [
     ROOT / "job_store.py",
     ROOT / "frontend_check_contracts.py",
     ROOT / "observation_extractor.py",
+    ROOT / "memory_identity.py",
+    ROOT / "prepared_memory.py",
+    ROOT / "product_knowledge_retrieval.py",
     ROOT / "tools" / "registry.py",
     ROOT / "tools" / "browser.py",
 ]
@@ -200,6 +203,7 @@ SMOKES = [
     "smoke_product_knowledge_retrieval.py",
     "smoke_prepared_memory.py",
     "smoke_search_phase_contracts.py",
+    "smoke_memory_identity.py",
 ]
 
 

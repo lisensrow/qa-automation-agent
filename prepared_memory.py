@@ -1,4 +1,4 @@
-"""Explicit opt-in memory context for a prepared read-only Job."""
+"""Explicit opt-in memory hints for a prepared, policy-guarded Job."""
 from datetime import datetime, timezone
 from product_knowledge_retrieval import retrieve_product_knowledge
 
@@ -25,6 +25,8 @@ def prepare_memory_context(job, case_id, detector, loader, saver, retriever=None
         detected = detected if isinstance(detected, dict) else {}
         identity = {k: detected.get(k) for k in (
             'status', 'installation_architecture', 'server_version', 'deployment_partial')}
+        if 'frontend_status' in detected:
+            identity.update({k:detected.get(k) for k in ('frontend_status','frontend_version','frontend_version_source')})
     except Exception as error:
         identity = {'status': 'unknown', 'error_type': type(error).__name__}
     identity.update(stand=stand, checked_at=datetime.now(timezone.utc).isoformat())
@@ -42,6 +44,7 @@ def prepare_memory_context(job, case_id, detector, loader, saver, retriever=None
         'identity_checked_at': identity['checked_at'],
         'evidence_for_pass': False,
         'binding_reconfirmation': 'not_performed',
+        'frontend_recheck_needed_count': payload.get('frontend_recheck_needed_count',0),
     }
     saver(latest)
     return latest, payload

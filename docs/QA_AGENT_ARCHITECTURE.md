@@ -412,6 +412,16 @@ Memory preloading opt-in теперь допускает write_ui_state толь
 
 ## Безопасность
 
+### v151b: совместимость memory hints с frontend
+
+Prepared Jobs с memory_query дополнительно читают inventory контейнеров и сохраняют frontend image tag в свежей identity. Несколько разных frontend tags, mutable/неизвестный tag или ошибка inventory означают unknown, а не выбор первого контейнера. Это не проверка immutable image digest или загруженных browser assets: повторное использование того же tag с другим содержимым пока не обнаруживается.
+
+Read-only retrieval требует exact architecture/backend/frontend и отдельное confirmation для этого frontend с UI/API/backend runtime flags и как минимум тремя различными source observation IDs. Старые backend-only confirmations сохраняются, но не подставляются как совместимые с frontend. Legacy lookup без frontend явно отмечен backend-only. JSON подтверждений используется без миграции DB; result хранит лишь безопасные поля факта и job/case references. Неизвестная identity, слабые подтверждения, конфликт или чужая версия не дают memory hints и никогда не дают PASS.
+
+Проверки: полный runner 183/183, включая отрицательные version/ambiguity/proof tests, hash неизменности read-only DB и py_compile. Реальный Job `20261013-132407-cc4a06e8` BLOCKED: structured result отсутствовал. `20261013-132730-bab3844c` BLOCKED: bare JSON и чтение поля до, а не после очистки. `20261013-133035-1be79141` PASSED по четырём UI-contracts, однако backend correlation не подтверждена: модель указала неверный stand. Его восьмое confirmation содержит только UI/API flags и не разрешило frontend-aware reuse. `20261013-133206-b3e8c2bb` BLOCKED; память также не загрузила слабое confirmation. Сквозной успешный frontend-aware recheck пока НЕ доказан; это не подменяется PASS UI-сценария.
+
+Очередь этапов скорректирована по этим прогонам: перед расширением fact types устранить общие ошибки выбора stand для diagnostics и bounded structured-result recovery. Затем вернуться к новым видам памяти, таблицам/формам, lifecycle и агентным сценариям. STEP/AUTO и v069 policy остаются неизменными. Jobs, DB и секреты сохраняются на сервере, не включаются в новые commits.
+
 - Секреты не печатаются в отчётах и не передаются LLM.
 - Saved credentials использует только доверенный runtime.
 - Неизвестное действие блокируется.

@@ -15,7 +15,8 @@ with TemporaryDirectory() as directory:
             CREATE TABLE fact_scopes(fact_key TEXT, status TEXT, installation_architecture TEXT,
                 server_version TEXT, conflict_at TEXT, deprecated_at TEXT, verified_at TEXT, last_seen_at TEXT);
             CREATE TABLE confirmations(fact_key TEXT,job_id TEXT,case_id TEXT,installation_architecture TEXT,
-                server_version TEXT,deployment_partial INTEGER,created_at TEXT);
+                server_version TEXT,deployment_partial INTEGER,created_at TEXT,
+                stand_identity_json TEXT,verification_json TEXT,source_observation_ids_json TEXT);
         ''')
         for key, status, version, conflict in (
             ('good', 'verified', '1.0', None), ('candidate', 'candidate', '1.0', None),
@@ -27,7 +28,7 @@ with TemporaryDirectory() as directory:
             connection.execute('INSERT INTO facts VALUES(?,?,?)', (key, 'ui_api_binding', json.dumps(data)))
             connection.execute('INSERT INTO fact_scopes VALUES(?,?,?,?,?,?,?,?)',
                                (key, status, 'ansible', version, conflict, None, 'now', 'now'))
-            connection.execute('INSERT INTO confirmations VALUES(?,?,?,?,?,?,?)',
+            connection.execute('INSERT INTO confirmations(fact_key,job_id,case_id,installation_architecture,server_version,deployment_partial,created_at) VALUES(?,?,?,?,?,?,?)',
                                (key, 'job-fixture', 'case-fixture', 'ansible', version, 0, 'now'))
     before = hashlib.sha256(path.read_bytes()).hexdigest()
     result = retrieve_product_knowledge('Name filter', identity, db_path=path)
@@ -41,6 +42,30 @@ with TemporaryDirectory() as directory:
     for unavailable in ({}, dict(identity, deployment_partial=True), dict(identity, status='unknown')):
         assert retrieve_product_knowledge('Name', unavailable, db_path=path)['status'] == 'unavailable'
     assert hashlib.sha256(path.read_bytes()).hexdigest() == before
+    current = dict(identity, frontend_status='ok', frontend_version='2.21.0')
+    result = retrieve_product_knowledge('Name filter', current, db_path=path)
+    assert result['results'] == [] and result['frontend_recheck_needed_count'] == 1
+    assert result['scope_excludes_frontend_version'] is False
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == before
+    flags = {key: True for key in ('runtime_ui_action_observed', 'runtime_api_exchange_observed', 'backend_request_correlated')}
+    with sqlite3.connect(path) as connection:
+        connection.execute('UPDATE confirmations SET stand_identity_json=?,verification_json=?,source_observation_ids_json=? WHERE fact_key=?',
+                           (json.dumps(current), json.dumps(flags), json.dumps(['ui','api','backend']), 'good'))
+    before = hashlib.sha256(path.read_bytes()).hexdigest()
+    result = retrieve_product_knowledge('Name filter', current, db_path=path)
+    assert [item['fact_key'] for item in result['results']] == ['good']
+    assert result['results'][0]['scope']['frontend_version'] == '2.21.0'
+    assert retrieve_product_knowledge('Name', dict(current, frontend_version='2.22.0'), db_path=path)['results'] == []
+    for invalid in (dict(current, frontend_status='unknown'), dict(current, frontend_version='latest')):
+        assert retrieve_product_knowledge('Name', invalid, db_path=path)['status'] == 'unavailable'
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == before
+    for weak_flags, refs in (({}, ['ui','api','backend']), (flags, ['same','same','same']), (flags, [{'bad':'ref'}])):
+        with sqlite3.connect(path) as connection:
+            connection.execute('UPDATE confirmations SET verification_json=?,source_observation_ids_json=? WHERE fact_key=?',
+                               (json.dumps(weak_flags),json.dumps(refs),'good'))
+        before = hashlib.sha256(path.read_bytes()).hexdigest()
+        assert retrieve_product_knowledge('Name', current, db_path=path)['results'] == []
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == before
     absent = Path(directory) / 'absent.db'
     assert retrieve_product_knowledge('Name', identity, db_path=absent)['status'] == 'unavailable'
     assert not absent.exists()
