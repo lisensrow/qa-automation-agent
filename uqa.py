@@ -422,6 +422,62 @@ def completed_readonly_contract_checks(job, case_id):
         return None
 
 
+def incomplete_search_phase_message(job, case_id):
+    """One advisory about an unattempted locked phase; never execute or authorize it."""
+    if (not isinstance(job, dict) or job.get("job_type") != "regression"
+            or job.get("status") != "running"):
+        return None
+    case = next((c for c in job.get("test_cases", []) if c.get("case_id") == case_id), {})
+    req = case.get("requirement") or {}
+    if not isinstance(req, dict):
+        return None
+    contracts = req.get("check_contracts")
+    planned = _normalize_planned_checks(case.get("planned_checks"))
+    if (case.get("status") != "running" or req.get("locked") is not True
+            or req.get("type") != "frontend_contracts" or req.get("action_profile") != "write_ui_state"
+            or not planned or not isinstance(contracts, dict)
+            or set(contracts) != {p["check_id"] for p in planned}):
+        return None
+    if any(not isinstance(c, dict) for c in contracts.values()):
+        return None
+    if (any(c.get("tool") not in {"browser_inspect_semantic", "browser_inspect_table_semantic"}
+            or c.get("phase") not in {"filtered", "restored"} for c in contracts.values())
+            or {c.get("phase") for c in contracts.values()} != {"filtered", "restored"}):
+        return None
+    if any(not isinstance(c.get(k), str) for c in contracts.values()
+           for k in ("subject_binding", "value_binding")):
+        return None
+    if len({(c.get("subject_binding"), c.get("value_binding")) for c in contracts.values()}) != 1:
+        return None
+    from frontend_check_contracts import evaluate_contract, validate_contracts
+    try:
+        validate_contracts(contracts)
+        stand = get_stand(job.get("stand")) or {}
+        if not stand.get("web_url"):
+            return None
+        missing = []
+        for p in planned:
+            computed, error = evaluate_contract(case, req, dict(p, status="blocked"), stand["web_url"])
+            if contracts[p["check_id"]]["phase"] == "filtered":
+                if error or computed.get("status") != "passed":
+                    return None
+            elif error == "frontend_contract_search_action_missing":
+                missing.append(p["check_id"])
+            elif error or computed.get("status") not in {"passed", "failed"}:
+                return None
+        if not missing:
+            return None
+        return {"role": "user", "content": (
+            "[UQA CORE: LOCKED PHASE NOT ATTEMPTED]\n"
+            "Core verified the filtered phase, but these planned restored-phase checks have no action evidence: "
+            + json.dumps(missing) + ". Continue the user-authorized restoration and its observations "
+            "before finalizing. Do not replace the target, bypass policy, retry a denied action, "
+            "or claim PASS without evidence. If restoration is prohibited or unavailable, return BLOCKED."
+        )}
+    except (ValueError, TypeError, KeyError, AttributeError):
+        return None
+
+
 def prepared_contract_check_templates(job, case_id):
     """Only a complete, locked read-only contract may own final check formatting."""
     case = next((c for c in job.get("test_cases", []) if c.get("case_id") == case_id), {})
@@ -13835,6 +13891,7 @@ def run_turn(
                              managed_agent_job.get("test_cases", []) if case.get("case_id") == case_id), {})
     required_observation_attempted = False
     structured_repair_attempts = 0
+    search_phase_reminded = False
     telemetry_ci_name = _agent_telemetry_ci_name_from_request(
         managed_agent_request_text
     )
@@ -13974,6 +14031,12 @@ def run_turn(
         messages.append(assistant_message)
 
         if not tool_calls:
+            if job_id and case_id and not search_phase_reminded and not blocked_mutation_calls:
+                phase_message = incomplete_search_phase_message(get_job(job_id), case_id)
+                if phase_message:
+                    search_phase_reminded = True
+                    messages.append(phase_message)
+                    continue
             if required_observation and not required_observation_attempted:
                 messages.append({"role": "user", "content": (
                     "[UQA CORE: REQUIRED READ-ONLY OBSERVATION]\n"

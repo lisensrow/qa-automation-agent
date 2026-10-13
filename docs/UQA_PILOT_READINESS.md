@@ -38,9 +38,15 @@ PASS — только проверенный критерий. FAIL — факт
 
 ## Ограничения перед эксплуатацией
 
+v152i: одно напоминание о не предпринятой locked restoration после доказанного filtered PASS; это не автоматическая очистка и не разрешение действия. Py_compile и runner 196/196 прошли. Job `20261013-175549-91179c32` BLOCKED/repeated_unchanged_observation до срабатывания новой подсказки; live улучшение пока не доказано. Предыдущий фильтр операторски очищен, пустое значение наблюдено; исходный verdict не переписан.
+
+Оба filter recheck восстановлены операторски; value='' подтверждён отдельным новым наблюдением, исходные BLOCKED не изменены. Task-list diagnostic `20261013-180009-523513c0` открыл UI-маршрут, но task_list_observed=false и HTTP неизвестен: GET readiness не доказана, backend blocker не закрыт. Ни одна задача не запускалась и не изменялась.
+
 Последний read-only повтор: Agent `20261013-173812-b02eaed6` PASS 3/3 с memory runtime_confirmed; telemetry `20261013-173858-51407952` PASS 5/5; plugin audit `20261013-173923-adfd2c15` PASS 3/3. Команды не выполнялись. Monitoring age 57153 с/fresh=false (~15,9 ч), audit age 86890,8 с/fresh=false (~24,1 ч): readiness не восстановлена, несмотря на online статусы и PASS reporting-критериев.
 
 v152h verifier блокирует модельные PASS/FAIL по непригодному ui_contract_audit даже при правильных evidence links. Валидный audit лишь допускается как факт; произвольные semantic criteria этим не вычисляются автоматически. Backup v152h сохранён, профильная негативная проверка прошла.
+
+Финальная проверка v152h: py_compile и 195/195 smoke PASS. Filter Job `20261013-174540-27f5dc99`: PASS заполнения/строк, BLOCKED очистки/восстановления, общий BLOCKED. Memory status ok, fact_reconfirmation not_performed; только подключение памяти не доказывает её runtime подтверждение. Модель преждевременно закончила сценарий; операторское clearing необходимо для возврата UI и не превращает исходный Job в PASS.
 
 Группа v152e/v152f: повтор отсутствующей semantic-кнопки блокируется на неизменившейся странице до повторного исполнения. Изолированные проверки охватывают повтор аргументов в другом порядке, omitted exact=true и изменение состояния страницы. Для validation/labels/dialog observers добавлены persistent scalar audits без значений полей; это подготовка достоверных доказательств, не готовый form acceptance.
 

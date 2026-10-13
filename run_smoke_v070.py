@@ -221,6 +221,7 @@ SMOKES = [
     "smoke_navigation_task_scope.py",
     "smoke_missing_semantic_click.py",
     "smoke_form_audit_observation.py",
+    "smoke_incomplete_search_phase.py",
 ]
 
 
