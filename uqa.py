@@ -14253,26 +14253,16 @@ def run_turn(
                                     and server_version
                                 ):
                                     try:
-                                        promotion = (
-                                            promote_candidate_scope_if_eligible(
-                                                fact_key=(
-                                                    candidate[
-                                                        "fact_key"
-                                                    ]
-                                                ),
-                                                fact_type=(
-                                                    candidate.get(
-                                                        "fact_type"
-                                                    )
-                                                ),
-                                                installation_architecture=(
-                                                    architecture
-                                                ),
-                                                server_version=(
-                                                    server_version
-                                                ),
+                                        if candidate.get("fact_type") == "ui_navigation":
+                                            from navigation_knowledge_validator import promote_navigation_scope
+                                            promotion = promote_navigation_scope(candidate["fact_key"], identity)
+                                        else:
+                                            promotion = promote_candidate_scope_if_eligible(
+                                                fact_key=candidate["fact_key"],
+                                                fact_type=candidate.get("fact_type"),
+                                                installation_architecture=architecture,
+                                                server_version=server_version,
                                             )
-                                        )
 
                                         console.print(
                                             f"[dim]"

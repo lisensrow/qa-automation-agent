@@ -3,9 +3,9 @@ import json
 import re
 import sqlite3
 from pathlib import Path
+from knowledge_fact_contracts import FIELDS, sanitize_memory_fact, confirmation_matches_frontend
 
 DB_PATH = Path('/opt/uqa/product_knowledge/product_knowledge.db')
-FIELDS = ('ui_path', 'ui_field', 'ui_action', 'api_method', 'api_endpoint', 'query_parameter')
 
 
 def retrieve_product_knowledge(query, identity, limit=3, db_path=None):
@@ -41,22 +41,15 @@ def retrieve_product_knowledge(query, identity, limit=3, db_path=None):
             ranked = []
             frontend_recheck = 0
             for row in rows[:200]:
-                if row['fact_type'] != 'ui_api_binding':
+                kind = row['fact_type']
+                if kind not in FIELDS or (kind == 'ui_navigation' and not frontend_required):
                     continue  # No unvalidated arbitrary fact payloads in a prompt.
                 data = json.loads(row['data_json'])
                 if not isinstance(data, dict):
                     continue
-                safe = {}
-                for field in FIELDS:
-                    value = data.get(field)
-                    if not isinstance(value, str) or not 0 < len(value) <= 256:
-                        continue
-                    if (re.search(r'password|passwd|secret|token|authorization|cookie|bearer', value, re.I)
-                            or '://' in value or '?' in value or '@' in value
-                            or re.search(r'[\x00-\x1f]', value)):
-                        continue
-                    safe[field] = value
-                terms = set(re.findall(r'[\w-]{2,}', ' '.join(safe.values()).casefold()))
+                safe = sanitize_memory_fact(kind,data)
+                terms = set(re.findall(r'[\w-]{2,}', ' '.join(
+                    ' '.join(v) if isinstance(v,list) else v for v in safe.values()).casefold()))
                 score = len(tokens & terms)
                 if not score:
                     continue
@@ -68,19 +61,9 @@ def retrieve_product_knowledge(query, identity, limit=3, db_path=None):
                     ORDER BY created_at DESC LIMIT 12
                 ''', (row['fact_key'], architecture.strip().lower(), version.strip())).fetchall()
                 if frontend_required:
-                    compatible = []
-                    for source in sources:
-                        try:
-                            passport = json.loads(source['stand_identity_json'] or '{}')
-                            flags = json.loads(source['verification_json'] or '{}')
-                            refs = json.loads(source['source_observation_ids_json'] or '[]')
-                            strong = all(flags.get(k) is True for k in (
-                                'runtime_ui_action_observed','runtime_api_exchange_observed','backend_request_correlated'))
-                            if (passport.get('frontend_status') == 'ok' and passport.get('frontend_version') == frontend
-                                    and strong and isinstance(refs, list) and len(set(refs)) >= 3):
-                                compatible.append(source)
-                        except (ValueError, TypeError, AttributeError):
-                            continue
+                    compatible = [source for source in sources if confirmation_matches_frontend(source,kind,identity)]
+                    if kind == 'ui_navigation' and len({s['job_id'] for s in compatible if s['job_id']}) < 2:
+                        compatible = []
                     if not compatible:
                         frontend_recheck += 1
                     sources = compatible

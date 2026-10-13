@@ -44,6 +44,7 @@ def prepare_memory_context(job, case_id, detector, loader, saver, retriever=None
         'identity_checked_at': identity['checked_at'],
         'evidence_for_pass': False,
         'binding_reconfirmation': 'not_performed',
+        'fact_reconfirmation': 'not_performed',
         'frontend_recheck_needed_count': payload.get('frontend_recheck_needed_count',0),
     }
     saver(latest)
@@ -59,17 +60,20 @@ def record_memory_reconfirmation(job_id, case_id, candidate, loader, saver):
     flags = candidate.get('verification') or {}
     if case.get('status') != 'passed' or key not in (context.get('fact_keys') or []):
         return False
-    if not all(flags.get(k) is True for k in (
-            'runtime_ui_action_observed','runtime_api_exchange_observed','backend_request_correlated')):
+    from knowledge_fact_contracts import RUNTIME_FLAGS
+    kind = candidate.get('fact_type','ui_api_binding')
+    if kind not in RUNTIME_FLAGS or not all(flags.get(k) is True for k in RUNTIME_FLAGS[kind]):
         return False
     refs = candidate.get('source_observation_ids') or []
     linked = [o for o in case.get('observations', []) if o.get('observation_id') in refs]
-    if not {'ui_state','api_exchange','backend_request'} <= {o.get('type') for o in linked}:
+    types = {'ui_tab_navigation'} if kind == 'ui_navigation' else {'ui_state','api_exchange','backend_request'}
+    if not types <= {o.get('type') for o in linked}:
         return False
     keys = context.setdefault('reconfirmed_fact_keys', [])
     if key not in keys:
         keys.append(key)
-    context.update(binding_reconfirmation='runtime_confirmed', evidence_for_pass=False,
+    context.update(fact_reconfirmation='runtime_confirmed', evidence_for_pass=False,
                    confirmation_job_id=job_id, confirmation_case_id=case_id)
+    context['navigation_reconfirmation' if kind == 'ui_navigation' else 'binding_reconfirmation']='runtime_confirmed'
     saver(job)
     return True

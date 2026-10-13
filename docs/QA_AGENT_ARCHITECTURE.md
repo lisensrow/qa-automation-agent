@@ -6,6 +6,7 @@
 
 - Понимает QA-запрос на естественном языке и превращает его в проверяемый план.
 - Может явно загрузить проверенные UI/API-факты из продуктовой памяти в контекст модели; для frontend-aware режима требует отдельного runtime confirmation текущих architecture/backend/frontend. Память — подсказка для нового прогона, не доказательство PASS и не обучение весов LLM.
+- Накапливает знания о точной навигации «строка таблицы → карточка → именованные вкладки» отдельно от UI/API bindings. После двух разных успешных Jobs текущего frontend может подставить этот факт модели и заново подтвердить его наблюдениями Core; имя/ID конкретной машины в общий навигационный факт не попадают.
 - Отличает одиночный последовательный сценарий от набора независимых test case.
 - Материализует готовый сценарий продуктового корпуса в один persistent regression Job и запускает этот же Job командой `/run-job JOB_ID` без повторного LLM-планирования. Повторная материализация того же активного сценария, стенда, bindings и набора checks возвращает существующий Job вместо создания дубликата.
 - Fail-closed отделяет `ready` продуктовые сценарии от `candidate` и `blocked_external`; каждый candidate обязан хранить явную проверяемую причину, что именно ещё мешает реальному прогону.
@@ -440,6 +441,16 @@ Read-only retrieval требует exact architecture/backend/frontend и отд
 Кандидат сохраняется существующим Job Store/Product Knowledge pipeline. Это НЕ verified знание: прежний API-binding validator не поддерживает новый тип, reader его не выдаёт модели. Требуется отдельный type-specific validator повторных подтверждений текущего frontend; API/backend proof rules нельзя переносить на client-side навигацию механически. Реальный Job `20261013-135531-1e0f5404` PASSED 3/3, выполнил только open и exact-row/Agent-tab navigation, сохранил ui_navigation candidate при frontend 2.21.0. Изолированные negative tests, py_compile и полный runner 187/187 прошли.
 
 ## Безопасность
+
+### v151f: type-specific verification и reuse навигации
+
+Закрытый реестр knowledge types задаёт отдельные безопасные поля и runtime proof flags для ui_api_binding и ui_navigation. Navigation validator читает DB только в read-only режиме; promotion через существующий scoped store возможна при двух различных Jobs, одинаковых architecture/backend/frontend, полном navigation proof и traceable observation IDs. Candidate/conflicted/deprecated/unknown scopes, partial deployment, mutable frontend и неполные подтверждения не проходят. Scan ограничен; незавершённый большой scan не даёт promotion. Смена frontend не наследует совместимость от backend-only verified scope.
+
+Reader выдаёт навигационную подсказку только frontend-aware запросу и только при двух совместимых подтверждениях этого frontend. API runtime flags не подходят для navigation proof и наоборот. В prompt попадают исключительно разрешённые поля; произвольные новые fact types безопасно пропускаются. DB не мигрирует от lookup. memory_context отдельно различает fact_reconfirmation, navigation_reconfirmation и binding_reconfirmation: успех навигации не называется API-binding recheck.
+
+Реальные Jobs: `20261013-140444-33c3d169` PASSED 3/3, добавил второе navigation confirmation и выполнил scoped promotion. `20261013-140525-c1f4a22e` загрузил один navigation fact в контекст qwen3:14b, заново выполнил open/exact-row/Agent-tab, прошёл 3/3 и сохранил третье confirmation; fact_reconfirmation/navigation_reconfirmation=runtime_confirmed, binding_reconfirmation=not_performed. Подтверждено наличие памяти в контексте и её новый runtime recheck, но не причинное улучшение модели или обучение весов. Реального обновления продукта не выполнялось; несовместимые версии проверены изолированно. py_compile и полный runner 188/188 прошли, дополнительно проверены unknown types, sensitive payload и запрет подмены navigation flags API flags.
+
+Следующая группа: устойчивость свободных ручных заданий и полнота завершающих observations; затем таблицы/формы, owned resources и cleanup, телеметрия/плагины/задачи/VNC/reports и пилот. Поддержаны пока два knowledge types, а не все функции продукта. Документальные знания остаются в отдельном FTS5 index; retrieval product facts использует ограниченный version-scoped scan, не заявляется как неограниченный семантический индекс.
 
 - Секреты не печатаются в отчётах и не передаются LLM.
 - Saved credentials использует только доверенный runtime.
