@@ -17,6 +17,8 @@ spec = build_job_spec(document, "uc-front-009", "uconnect", {"exact_ci_name": "t
 assert spec["external_id"] == "uc-front-009" and spec["job_type"] == "regression"
 assert spec["case"]["requirement"]["bindings"] == {"exact_ci_name": "test-linux"}
 assert spec["case"]["requirement"]["stand"] == "uconnect"
+assert spec["case"]["requirement"]["locked"] is True
+assert spec["case"]["requirement"]["type"] == "frontend_contracts"
 assert spec["case"]["planned_checks"] == get_case(document, "uc-front-009")["checks"]
 assert "test-linux" in spec["request"]
 captured = {}

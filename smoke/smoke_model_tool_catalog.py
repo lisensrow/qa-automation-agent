@@ -9,6 +9,8 @@ assert 'без role/container' in click['description']
 assert click['parameters']['required'] == ['name']
 assert uqa.classify_tool_action('browser_click_semantic', {'name': 'plus'}) == 'write'
 base = uqa.model_tool_catalog()
+assert 'browser_get_network_detail' in {t['function']['name'] for t in base}
+assert uqa.classify_tool_action('browser_get_network_detail',{})=='observe'
 assert len(json.dumps(base, ensure_ascii=False)) < len(original) / 3
 available = {t["function"]["name"] for t in uqa.TOOLS}
 enum = base[0]["function"]["parameters"]["properties"]["names"]["items"]["enum"]

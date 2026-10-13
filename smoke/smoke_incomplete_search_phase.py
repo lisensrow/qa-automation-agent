@@ -20,6 +20,8 @@ with patch.object(uqa,'get_stand',return_value={'web_url':'https://fixture.test'
     before=deepcopy(job)
     message=uqa.incomplete_search_phase_message(job,'case')
     assert 'planned-002' in message['content'] and message['role']=='user'
+    assert '"field": "Search", "text": ""' in message['content']
+    assert 'this message authorizes nothing' in message['content']
     assert job==before
     partial=deepcopy(job)
     partial_case=partial['test_cases'][0]
@@ -55,11 +57,20 @@ with patch.object(uqa,'get_stand',return_value={'web_url':'https://fixture.test'
         assert uqa.incomplete_search_phase_message(other,'case') is None
     other=deepcopy(job);other['test_cases'][0]['requirement']['action_profile']='read_only'
     assert uqa.incomplete_search_phase_message(other,'case') is None
+    other=deepcopy(job);other['test_cases'][0]['requirement']['bindings']['field']=''
+    assert uqa.incomplete_search_phase_message(other,'case') is None
     for error in ('frontend_contract_search_action_unconfirmed','frontend_contract_search_evidence_unusable'):
         with patch.object(contracts,'evaluate_contract',return_value=({'status':'blocked'},error)):
             assert uqa.incomplete_search_phase_message(job,'case') is None
     with patch.object(contracts,'evaluate_contract',return_value=({'status':'passed'},None)):
         assert uqa.incomplete_search_phase_message(job,'case') is None
+        assert len(uqa.completed_readonly_contract_checks(job,'case'))==2
+        unsupported=deepcopy(job)
+        unsupported['test_cases'][0]['requirement']['action_profile']='write_resource'
+        assert uqa.completed_readonly_contract_checks(unsupported,'case') is None
+    assert uqa.completed_readonly_contract_checks(job,'case') is None
+    with patch.object(contracts,'evaluate_contract',return_value=({'status':'blocked'},'frontend_contract_table_snapshot_incomplete')):
+        assert uqa.completed_readonly_contract_checks(job,'case') is None
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import job_store

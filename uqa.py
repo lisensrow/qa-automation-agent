@@ -289,6 +289,7 @@ MODEL_BASE_TOOL_NAMES = {
     "browser_open_page", "browser_get_state", "browser_inspect_semantic",
     "browser_click_semantic", "browser_fill_semantic",
     "browser_inspect_table_semantic", "browser_inspect_table_row",
+    "browser_get_network_detail",
     "knowledge_search",
 }
 MODEL_CATALOG_TOOL_NAME = "tool_catalog_select"
@@ -389,7 +390,7 @@ def prepared_observation_contract(job, case_id):
 
 
 def completed_readonly_contract_checks(job, case_id):
-    """Finish only when every locked check is decided by persisted facts."""
+    """Format completed read-only or bound filter facts; execute no action."""
     if (not isinstance(job, dict) or job.get("job_type") != "regression"
             or job.get("status") != "running"):
         return None
@@ -399,7 +400,7 @@ def completed_readonly_contract_checks(job, case_id):
     requirement = case.get("requirement") or {}
     if (requirement.get("locked") is not True
             or requirement.get("type") != "frontend_contracts"
-            or requirement.get("action_profile") != "read_only"):
+            or requirement.get("action_profile") not in {"read_only", "write_ui_state"}):
         return None
     planned = _normalize_planned_checks(case.get("planned_checks"))
     contracts = requirement.get("check_contracts")
@@ -408,6 +409,16 @@ def completed_readonly_contract_checks(job, case_id):
     from frontend_check_contracts import evaluate_contract, validate_contracts
     try:
         validate_contracts(contracts)
+        if requirement.get("action_profile") == "write_ui_state":
+            if (any(c.get("tool") not in {"browser_inspect_semantic", "browser_inspect_table_semantic"}
+                    or c.get("phase") not in {"filtered", "restored"} for c in contracts.values())
+                    or {c.get("phase") for c in contracts.values()} != {"filtered", "restored"}):
+                return None
+            if any(not isinstance(c.get(k), str) for c in contracts.values()
+                   for k in ("subject_binding", "value_binding")):
+                return None
+            if len({(c["subject_binding"], c["value_binding"]) for c in contracts.values()}) != 1:
+                return None
         stand = get_stand(job.get("stand")) or {}
         if not stand.get("web_url"):
             return None
@@ -482,12 +493,21 @@ def incomplete_search_phase_message(job, case_id):
             )}
         if missing_reads or not missing:
             return None
+        bindings = req.get("bindings") or {}
+        field_key = next(iter(contracts.values()))["subject_binding"]
+        field = bindings.get(field_key) if isinstance(bindings, dict) else None
+        if not isinstance(field, str) or not field.strip():
+            return None
+        restore_call = {"name": "browser_fill_semantic", "arguments": {"field": field, "text": ""}}
         return {"role": "user", "content": (
             "[UQA CORE: LOCKED PHASE NOT ATTEMPTED]\n"
             "Core verified the filtered phase, but these planned restored-phase checks have no action evidence: "
             + json.dumps(missing) + ". Continue the user-authorized restoration and its observations "
             "before finalizing. Do not replace the target, bypass policy, retry a denied action, "
-            "or claim PASS without evidence. If restoration is prohibited or unavailable, return BLOCKED."
+            "or claim PASS without evidence. If restoration is prohibited or unavailable, return BLOCKED. "
+            "The unattempted restoration from the original bound contract is exactly this call, "
+            "still subject to normal policy (this message authorizes nothing):\n"
+            + json.dumps(restore_call, ensure_ascii=False)
         )}
     except (ValueError, TypeError, KeyError, AttributeError):
         return None
@@ -5160,6 +5180,87 @@ def ensure_ollama_ready(force=False):
         release_llm_gate(llm_lock)
 
 
+def ollama_reply_is_actionable(data):
+    """Thinking or token counters alone are not an agent response."""
+    if not isinstance(data, dict) or not isinstance(data.get("message"), dict):
+        return False
+    message = data["message"]
+    content = message.get("content")
+    calls = message.get("tool_calls")
+    return ((isinstance(content, str) and bool(content.strip()))
+            or (isinstance(calls, list) and bool(calls)))
+
+
+def decode_ollama_recovery(content, tools):
+    """Only an explicit envelope for a currently declared tool can cross transport."""
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate_key")
+            result[key] = value
+        return result
+    try:
+        def reject_constant(value):
+            raise ValueError("nonfinite_number")
+        envelope = json.loads(content, object_pairs_hook=unique_pairs, parse_constant=reject_constant)
+        if not isinstance(envelope, dict) or set(envelope) != {"kind", "name", "arguments", "content"}:
+            raise ValueError("envelope_fields")
+        if not isinstance(envelope["content"], str) or not isinstance(envelope["arguments"], dict):
+            raise ValueError("envelope_types")
+        if envelope["kind"] == "answer":
+            if envelope["name"] != "" or envelope["arguments"] or not envelope["content"].strip():
+                raise ValueError("answer_invalid")
+            message = {"role": "assistant", "content": envelope["content"]}
+        elif envelope["kind"] == "tool_call":
+            declared = {t["function"]["name"] for t in tools}
+            if not isinstance(envelope["name"], str) or envelope["name"] not in declared:
+                raise ValueError("tool_not_declared")
+            message = {"role": "assistant", "content": envelope["content"], "tool_calls": [{"function": {
+                "name": envelope["name"], "arguments": envelope["arguments"]}}]}
+        else:
+            raise ValueError("kind_invalid")
+        return {"message": message, "uqa_transport_recovery": True}
+    except (ValueError, TypeError, KeyError):
+        raise RuntimeError("ollama_recovery_invalid: response rejected without action") from None
+
+
+def recover_ollama_transport(model_messages, tools):
+    """One model-only retry; decoded calls still use ordinary runtime policy."""
+    global LLM_CALL_COUNTER
+    names = [t["function"]["name"] for t in tools]
+    schema = {"type": "object", "properties": {
+        "kind": {"type": "string", "enum": ["answer", "tool_call"]},
+        "name": {"type": "string", "enum": [""] + names},
+        "arguments": {"type": "object"}, "content": {"type": "string"}},
+        "required": ["kind", "name", "arguments", "content"], "additionalProperties": False}
+    messages = list(model_messages) + [{"role": "user", "content": (
+        "[UQA MODEL TRANSPORT RECOVERY]\nThe previous parsed reply was empty. Return only a JSON object "
+        "with kind, name, arguments, content. For one call use kind=tool_call and an exact declared name. "
+        "For an answer use kind=answer, empty name/arguments and non-empty content. "
+        "If a specialized tool is not declared, use tool_catalog_select first. Continue the original task. "
+        "No action has been performed by this retry; it grants no permission and normal policy still applies. "
+        "Do not repeat denied or already executed actions. Declared schemas:\n"
+        + json.dumps(tools, ensure_ascii=False))}]
+    LLM_CALL_COUNTER += 1
+    lock = None
+    try:
+        lock, _ = acquire_llm_gate(LLM_CALL_COUNTER)
+        with httpx.Client(timeout=httpx.Timeout(600.0, connect=10.0)) as client:
+            response = client.post(f"{OLLAMA_URL}/api/chat", json={
+                "model": MODEL, "messages": messages, "format": schema, "stream": False,
+                "think": UQA_THINK, "keep_alive": "30m",
+                "options": {"num_ctx": UQA_NUM_CTX, "num_predict": 2048}})
+        if response.is_error:
+            raise RuntimeError(f"ollama_recovery_http_error:{response.status_code}")
+        data = response.json()
+        recovered = decode_ollama_recovery((data.get("message") or {}).get("content"), tools)
+        console.print("[dim]LLM transport recovery: decoded; no action executed[/dim]")
+        return recovered
+    finally:
+        release_llm_gate(lock)
+
+
 def ask_ollama(
     messages,
     tools=TOOLS,
@@ -5402,6 +5503,10 @@ def ask_ollama(
         f"[/dim]"
     )
 
+    if not ollama_reply_is_actionable(data):
+        if tools:
+            return recover_ollama_transport(model_messages, tools)
+        raise RuntimeError("ollama_non_actionable_reply: no content or tool calls; generated output may be unparsed")
     return data
 
 
@@ -12739,6 +12844,11 @@ def _prepared_regression_case(job_id):
 
     requirement = dict(requirement)
     requirement["stand"] = stand
+    if requirement.get("locked") is True and requirement.get("type") == "frontend_contracts":
+        from frontend_check_contracts import validate_contracts
+        validate_contracts(requirement.get("check_contracts"))
+        if set(requirement["check_contracts"]) != {p["check_id"] for p in _normalize_planned_checks(planned_checks)}:
+            raise ValueError("prepared_contract_result_coverage_invalid")
 
     spec = {
         "title": case.get("title") or "Prepared regression case",
@@ -12772,7 +12882,11 @@ def run_prepared_regression_job(job_id):
     if stand_context:
         safe_request += stand_context
 
-    prepare_locked_requirements([spec])
+    # Prepared, validated contracts are authoritative; natural-language compilation
+    # must not discard them. This exception is confined to the prepared-job path.
+    if not (spec["requirement"].get("locked") is True
+            and spec["requirement"].get("type") == "frontend_contracts"):
+        prepare_locked_requirements([spec])
     set_job_status(job_id, "running")
     update_test_case(job_id, case_id, status="running")
 

@@ -1,4 +1,7 @@
 import copy
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import job_store
 
 import uqa
 import tools.browser as browser
@@ -73,6 +76,9 @@ def fake_run_turn(messages, **kwargs):
     store["test_cases"][0]["status"] = "passed"
 
 
+test_directory=TemporaryDirectory(prefix='uqa-prepared-regression-')
+saved_jobs_dir=job_store.JOBS_DIR
+job_store.JOBS_DIR=Path(test_directory.name)
 try:
     uqa.get_job = fake_get_job
     uqa.get_stand = lambda stand: {
@@ -105,7 +111,33 @@ try:
     }
     assert captured["plan"][0]["checks"] == ["freshness is explicit"]
     assert "test-linux" in captured["messages"][1]["content"]
+    from run_uconnect_manual_frontend_benchmark import build_job_spec, load_and_validate_manifest
+    spec=build_job_spec(load_and_validate_manifest(),'uc-front-003','uconnect',{
+        'filter_column':'Name','filter_field':'Search by name','filter_value':'test-linux'})
+    store=prepared_job()
+    store['request']=spec['request']
+    store['test_cases'][0].update(copy.deepcopy(spec['case']))
+    original_req=copy.deepcopy(store['test_cases'][0]['requirement'])
+    def reject_recompile(plan):
+        raise AssertionError('Prepared contract discarded by natural-language compiler')
+    uqa.prepare_locked_requirements=reject_recompile
+    uqa.run_prepared_regression_job('job-prepared')
+    assert store['test_cases'][0]['requirement']==original_req
+    prompt=captured['messages'][1]['content']
+    assert '"type": "frontend_contracts"' in prompt and '"locked": true' in prompt
+    assert '"phase": "restored"' in prompt
+    broken=copy.deepcopy(store)
+    broken['status']='created';broken['test_cases'][0]['status']='pending'
+    del broken['test_cases'][0]['requirement']['check_contracts']['planned-004']
+    uqa.get_job=lambda job_id:copy.deepcopy(broken)
+    try:
+        uqa._prepared_regression_case('job-prepared')
+        raise AssertionError('Incomplete declared contract accepted')
+    except ValueError as exc:
+        assert 'coverage_invalid' in str(exc)
 finally:
+    job_store.JOBS_DIR=saved_jobs_dir
+    test_directory.cleanup()
     uqa.get_job = saved["get_job"]
     uqa.get_stand = saved["get_stand"]
     uqa._lock_regression_plan_stand = saved["lock"]

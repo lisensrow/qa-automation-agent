@@ -160,6 +160,11 @@ def build_job_spec(document, case_id, stand, bindings=None):
     }
     if "check_contracts" in case:
         from copy import deepcopy
+        from frontend_check_contracts import validate_contracts
+        validate_contracts(case["check_contracts"])
+        if set(case["check_contracts"]) != {f"planned-{i:03d}" for i in range(1,len(case["checks"])+1)}:
+            raise ValueError("frontend_contract_plan_coverage_invalid")
+        requirement.update(type="frontend_contracts", version=1, locked=True)
         requirement["check_contracts"] = deepcopy(case["check_contracts"])
     if "required_observation" in case:
         from copy import deepcopy

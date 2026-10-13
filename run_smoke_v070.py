@@ -177,6 +177,7 @@ SMOKES = [
     "smoke_repeated_unchanged_observation.py",
     "smoke_read_only_agent_plugin_route.py",
     "smoke_ollama_readiness.py",
+    "smoke_ollama_non_actionable.py",
     "smoke_agent_check_binding.py",
     "smoke_agent_observability.py",
     "smoke_agent_plugins.py",
