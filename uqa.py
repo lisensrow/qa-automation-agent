@@ -3401,6 +3401,17 @@ def add_managed_navigation_preflight_advisory(
     job_id,
     case_id,
 ):
+    # Creation preflight must not be inferred from lists of prohibited actions.
+    # The persistent user's task, not internal reminders, is authoritative.
+    if job_id and action_policy == "confirm_mutations":
+        try:
+            task = str((get_job(job_id) or {}).get("request") or "")
+        except Exception:
+            task = ""
+        if task and _request_is_read_only([
+            {"role": "user", "content": task},
+        ]):
+            return result
     if (
         not isinstance(result, dict)
         or not str(name or "").startswith("browser_")
@@ -8725,6 +8736,57 @@ def _regression_shared_context(text: str):
     return "\n".join(result).strip()
 
 
+def _case_action_instructions(original_request, requirement):
+    """Scope model instructions without changing execution permissions."""
+    readonly = (
+        isinstance(requirement, dict)
+        and requirement.get("action_profile") == "read_only"
+    ) or _request_is_read_only([
+        {"role": "user", "content": original_request},
+    ])
+    if readonly:
+        return (
+            "Режим действий UQA Core: MANAGED_ACTIONS, текущая задача read-only. "
+            "Используй OBSERVE и только не изменяющие данные INTERACT. "
+            "Не открывай создание, редактирование или удаление объектов. "
+            "Не заполняй поля и не запускай задачи. Открывай карточку или вкладку "
+            "только если это нужно для указанной проверки. Если критерии уже "
+            "подтверждены фактическими evidence, заверши UQA_CHECKS_JSON; "
+            "не выполняй дополнительные действия. Если evidence недостаточно, "
+            "собери недостающие наблюдения либо верни BLOCKED. "
+            "Запрет Core не обходи. Классификацию и разрешение действий "
+            "по-прежнему выполняет существующая policy Core.\n\n"
+        )
+    return (
+        "До первого WRITE выполни navigation preflight: открой точный раздел "
+        "целевого ресурса через OBSERVE/INTERACT. Не выбирай Add/Create для "
+        "другого типа сущности; если точный маршрут неясен, сначала используй "
+        "knowledge_search.\n"
+        "Режим действий UQA Core: MANAGED_ACTIONS. "
+        "Выполняй необходимые действия для текущего test case. "
+        "UQA Core самостоятельно классифицирует tool-вызовы. "
+        "Некоторые изменяющие или разрушительные действия могут "
+        "потребовать подтверждения пользователя. "
+        "Если Core заблокировал действие — не пытайся обходить "
+        "ограничение другим способом. "
+        "Учитывай явно заданные пользователем ограничения "
+        "на изменение данных. "
+        "Каждый фактически созданный test resource сразу регистрируй "
+        "через resource_register; ledger не является evidence.\n\n"
+    )
+
+
+def _policy_denied_mutation(result):
+    return (
+        isinstance(result, dict)
+        and result.get("status") == "blocked_by_policy"
+        and result.get("executed") is False
+        and result.get("action_policy_status") in {
+            "blocked", "blocked_by_request_policy",
+        }
+    )
+
+
 def _build_regression_case_prompt(
     original_request: str,
     safe_request: str,
@@ -8794,21 +8856,7 @@ def _build_regression_case_prompt(
         "Не выполняй и не оценивай соседние cases.\n"
         "В UQA_CHECKS_JSON включай проверки ТОЛЬКО "
         "текущего test case.\n"
-        "До первого WRITE выполни navigation preflight: открой точный раздел "
-        "целевого ресурса через OBSERVE/INTERACT. Не выбирай Add/Create для "
-        "другого типа сущности; если точный маршрут неясен, сначала используй "
-        "knowledge_search.\n"
-        "Режим действий UQA Core: MANAGED_ACTIONS. "
-        "Выполняй необходимые действия для текущего test case. "
-        "UQA Core самостоятельно классифицирует tool-вызовы. "
-        "Некоторые изменяющие или разрушительные действия могут "
-        "потребовать подтверждения пользователя. "
-        "Если Core заблокировал действие — не пытайся обходить "
-        "ограничение другим способом. "
-        "Учитывай явно заданные пользователем ограничения "
-        "на изменение данных. "
-        "Каждый фактически созданный test resource сразу регистрируй "
-        "через resource_register; ledger не является evidence.\n\n"
+        f"{_case_action_instructions(original_request, requirement)}"
         f"Название: {case_spec['title']}\n"
         f"Задача: {case_spec['task']}\n"
         f"Ожидаемый результат: {expected}\n\n"
@@ -15167,8 +15215,7 @@ def run_turn(
 
             if (
                 mutation_call_key is not None
-                and result.get("status") == "blocked_by_policy"
-                and result.get("action_policy_status") == "blocked"
+                and _policy_denied_mutation(result)
             ):
                 blocked_mutation_calls.add(mutation_call_key)
                 messages.append(

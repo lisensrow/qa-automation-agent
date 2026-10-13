@@ -22,6 +22,7 @@ NAMES = {
     "_parse_regression_plan",
     "_regression_shared_context",
     "_build_regression_case_prompt",
+    "_case_action_instructions",
 }
 BODY = [
     node
