@@ -388,6 +388,40 @@ def prepared_observation_contract(job, case_id):
     return {"tool": name, "arguments": arguments}
 
 
+def completed_readonly_contract_checks(job, case_id):
+    """Finish only when every locked check is decided by persisted facts."""
+    if (not isinstance(job, dict) or job.get("job_type") != "regression"
+            or job.get("status") != "running"):
+        return None
+    case = next((c for c in job.get("test_cases", []) if c.get("case_id") == case_id), {})
+    if case.get("status") != "running":
+        return None
+    requirement = case.get("requirement") or {}
+    if (requirement.get("locked") is not True
+            or requirement.get("type") != "frontend_contracts"
+            or requirement.get("action_profile") != "read_only"):
+        return None
+    planned = _normalize_planned_checks(case.get("planned_checks"))
+    contracts = requirement.get("check_contracts")
+    if not planned or not isinstance(contracts, dict) or set(contracts) != {p["check_id"] for p in planned}:
+        return None
+    from frontend_check_contracts import evaluate_contract, validate_contracts
+    try:
+        validate_contracts(contracts)
+        stand = get_stand(job.get("stand")) or {}
+        if not stand.get("web_url"):
+            return None
+        results = []
+        for check in planned:
+            evaluated, error = evaluate_contract(case, requirement, dict(check, status="blocked"), stand.get("web_url"))
+            if error or evaluated.get("status") not in {"passed", "failed"}:
+                return None
+            results.append(evaluated)
+        return results
+    except (ValueError, TypeError, KeyError):
+        return None
+
+
 def prepared_contract_check_templates(job, case_id):
     """Only a complete, locked read-only contract may own final check formatting."""
     case = next((c for c in job.get("test_cases", []) if c.get("case_id") == case_id), {})
@@ -8663,6 +8697,26 @@ def extract_explicit_regression_cases(
     return items
 
 
+def _bind_source_row_criterion(request, plan):
+    """Keep an explicit user criterion distinct from planner paraphrases."""
+    if len(plan) != 1 or len(_normalize_planned_checks(plan[0].get("checks"))) != 1:
+        return plan
+    if not _request_is_read_only([{"role": "user", "content": str(request or "")} ]):
+        return plan
+    declarations = re.findall(
+        r'(?:Expected result|Ожидаемый результат):\s*'
+        r'((?:Exactly one visible table row matches|Ровно одна видимая строка таблицы с именем)'
+        r'\s+["«][^"»\r\n]{1,128}["»]\.)(?=\s|$)',
+        str(request or ""), re.IGNORECASE,
+    )
+    if len(declarations) == 1:
+        plan[0]["source_row_criterion"] = declarations[0]
+        plan[0]["source_row_read_only"] = True
+    elif len(declarations) > 1:
+        plan[0]["source_row_criterion_ambiguous"] = True
+    return plan
+
+
 def plan_regression_cases(
     request: str,
 ):
@@ -8671,10 +8725,9 @@ def plan_regression_cases(
     )
 
     if explicit:
-        return _coalesce_declared_single_workflow(
-            request,
-            explicit,
-        )
+        return _bind_source_row_criterion(request, _coalesce_declared_single_workflow(
+            request, explicit,
+        ))
     planner_messages = [
         {
             "role": "system",
@@ -8710,10 +8763,9 @@ def plan_regression_cases(
         plan,
     )
 
-    return _coalesce_declared_single_workflow(
-        request,
-        plan,
-    )
+    return _bind_source_row_criterion(request, _coalesce_declared_single_workflow(
+        request, plan,
+    ))
 
 
 def _regression_shared_context(text: str):
@@ -8747,6 +8799,9 @@ def _case_action_instructions(original_request, requirement):
     if readonly:
         return (
             "Режим действий UQA Core: MANAGED_ACTIONS, текущая задача read-only. "
+            "Перед первой инспекцией открой сохранённый URL стенда из контекста "
+            "через browser_open_page и проверь, что целевая поверхность видима. "
+            "Не считай страницу, оставшуюся от предыдущего case, исходным состоянием. "
             "Используй OBSERVE и только не изменяющие данные INTERACT. "
             "Не открывай создание, редактирование или удаление объектов. "
             "Не заполняй поля и не запускай задачи. Открывай карточку или вкладку "
@@ -9587,11 +9642,43 @@ def compile_locked_ui_requirement(
     ):
         return None
 
+    if spec.get("source_row_criterion_ambiguous") is True:
+        return None
+
     candidates = [
+        spec.get("source_row_criterion"),
         spec.get("expected"),
         spec.get("title"),
         spec.get("task"),
     ]
+
+    # A deliberately narrow, product-independent visible-row criterion.
+    # Do not reduce compound checks or fuzzy subjects to a count assertion.
+    planned = _normalize_planned_checks(spec.get("checks"))
+    if len(planned) == 1 and (
+        spec.get("source_row_read_only") is True
+        or _request_is_read_only([{"role": "user", "content": str(spec.get("task") or "")}])
+    ):
+        for candidate in candidates:
+            match = re.fullmatch(
+                r'(?:Exactly one visible table row matches|'
+                r'Ровно одна видимая строка таблицы с именем)\s+'
+                r'["«]([^"»\r\n]{1,128})["»]\s*[.]?',
+                str(candidate or "").strip(), re.IGNORECASE,
+            )
+            if not match or match.group(1) != match.group(1).strip():
+                continue
+            return {
+                "type": "frontend_contracts", "version": 1,
+                "compiler": "core_visible_row_v1", "locked": True,
+                "action_profile": "read_only",
+                "bindings": {"exact_row_name": match.group(1)},
+                "check_contracts": {planned[0]["check_id"]: {
+                    "tool": "browser_inspect_table_row",
+                    "subject_binding": "exact_row_name",
+                    "assertions": [{"field": "row_match_count", "operator": "eq", "expected": 1}],
+                }},
+            }
 
     state_pattern = (
         r"(?P<subject>.+?)"
@@ -13743,7 +13830,12 @@ def run_turn(
     for _ in range(MAX_TOOL_STEPS):
         try:
             required_names = {required_observation["tool"]} if required_observation else set()
-            if required_observation_attempted and contract_check_templates is not None:
+            completed_checks = completed_readonly_contract_checks(get_job(job_id), case_id) if job_id and case_id else None
+            if completed_checks is not None:
+                # No further action is needed: the normal verifier rechecks these facts.
+                data = {"message": {"content": UQA_CHECKS_START + json.dumps(
+                    {"checks": completed_checks}, ensure_ascii=False) + UQA_CHECKS_END}}
+            elif required_observation_attempted and contract_check_templates is not None:
                 # No LLM JSON/prose is needed once the one declared observer ran.
                 # Templates are initially BLOCKED; the normal verifier alone judges persisted facts.
                 data = {"message": {"content": UQA_CHECKS_START + json.dumps(
