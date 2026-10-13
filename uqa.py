@@ -1755,7 +1755,7 @@ def _semantic_action_is_mutating(name):
     return any(
         re.search(pattern, value)
         for pattern in patterns
-    )
+    ) or classify_tool_action("browser_click_semantic", {"name":name}) in {"write", "destructive"}
 
 
 
@@ -4126,6 +4126,18 @@ def execute_tool_with_policy(
         except Exception:
             authoritative_task_text = None
 
+    # User restrictions take priority over internal continuation/preflight state.
+    blocked = tool_policy_check(
+        name, arguments,
+        [{"role":"user", "content":authoritative_task_text}] if authoritative_task_text else messages,
+        force_read_only=force_read_only,
+    )
+    if blocked is not None:
+        blocked = dict(blocked)
+        blocked["action_class"] = action_class
+        blocked["action_policy_status"] = "blocked_by_request_policy"
+        return blocked
+
     if name == "browser_inspect_agent_task_result_semantic":
         expected_text = arguments.get("expected_text")
         expected_error_code = arguments.get("expected_error_code")
@@ -4432,26 +4444,6 @@ def execute_tool_with_policy(
                 "field/value selection from the regression task is complete."
             ),
         }
-
-    # Preserve explicit user restrictions.
-    # If the request itself says not to modify anything,
-    # the existing protection still wins.
-    blocked = tool_policy_check(
-        name,
-        arguments,
-        messages,
-        force_read_only=force_read_only,
-    )
-
-    if blocked is not None:
-        blocked = dict(blocked)
-        blocked["action_class"] = (
-            action_class
-        )
-        blocked["action_policy_status"] = (
-            "blocked_by_request_policy"
-        )
-        return blocked
 
     blocked = managed_navigation_preflight_check(
         name,

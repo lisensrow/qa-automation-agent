@@ -214,6 +214,7 @@ SMOKES = [
     "smoke_candidate_runtime_trace.py",
     "smoke_navigation_knowledge.py",
     "smoke_navigation_memory.py",
+    "smoke_persistent_readonly_policy.py",
 ]
 
 
