@@ -762,7 +762,8 @@ SYSTEM_PROMPT = """
 - Не придумывай фактическое значение assertion: actual и satisfied вычисляет UQA Core из observation.
 - Для semantic UI-check окончательный status passed/failed определяет UQA Core по assertions, а не текстовый вывод модели.
 - Если текущий case содержит [UQA CORE: LOCKED REQUIREMENT] не null, этот requirement является авторитетным и был зафиксирован ДО runtime.
-- Для такого case скопируй subject и assertions из LOCKED REQUIREMENT без изменений.
+- Если type=ui_semantic, скопируй subject и assertions из LOCKED REQUIREMENT без изменений.
+- Если requirement содержит check_contracts, выполни указанные наблюдения для точного объекта из bindings и верни каждый planned check с его точным check_id. Core самостоятельно привяжет evidence/observations и вычислит assertions из сохранённого контракта; модель не может изменить expected или факты. Не придумывай ссылки. Если необходимые наблюдения не получены, используй BLOCKED.
 - Не заменяй field, operator или expected на основании увиденного runtime результата.
 - Даже если ты передашь другие subject/assertions, UQA Core проигнорирует их и проверит сохранённый locked requirement.
 - В regression case, если LOCKED REQUIREMENT равен null и PASS/FAIL должен основываться на browser_inspect_semantic или browser_inspect_table_row, не создавай собственный machine requirement вместо Core: используй BLOCKED. UQA Core также принудительно заблокирует такой verdict как requirement_not_machine_locked.
@@ -6343,6 +6344,21 @@ def verify_structured_check_evidence(
     errors = []
 
     for check in verified:
+        if (job_type == "regression" and locked_requirement
+                and isinstance(locked_requirement.get("check_contracts"), dict)
+                and check.get("check_id") in locked_requirement["check_contracts"]
+                and check.get("status") in {"passed", "failed"}):
+            from frontend_check_contracts import evaluate_contract
+            stand_record = get_stand(job.get("stand")) or {}
+            evaluated, contract_error = evaluate_contract(
+                case, locked_requirement, check, stand_record.get("web_url"))
+            original_status = check.get("status")
+            check.clear()
+            check.update(evaluated)
+            if contract_error:
+                errors.append({"check_id": check.get("check_id"), "title": check.get("title"),
+                               "original_status": original_status, "issues": [contract_error]})
+            continue
         status = str(
             check.get("status")
             or ""

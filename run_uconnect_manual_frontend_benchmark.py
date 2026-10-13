@@ -45,6 +45,13 @@ def load_and_validate_manifest():
                 raise ValueError(f"{case['case_id']}:policy_required")
             if not case.get("cleanup_contract"):
                 raise ValueError(f"{case['case_id']}:cleanup_contract_required")
+        if "check_contracts" in case:
+            from frontend_check_contracts import validate_contracts
+            validate_contracts(case["check_contracts"])
+            if set(case["check_contracts"]) != {
+                f"planned-{index:03d}" for index in range(1, len(case["checks"]) + 1)
+            }:
+                raise ValueError("frontend_contract_plan_coverage_invalid")
         if case["execution_status"] == "blocked_external" and not case.get(
             "blocker"
         ):
@@ -151,6 +158,9 @@ def build_job_spec(document, case_id, stand, bindings=None):
         "policy_required": case.get("policy_required") is True,
         "cleanup_contract": case.get("cleanup_contract"),
     }
+    if "check_contracts" in case:
+        from copy import deepcopy
+        requirement["check_contracts"] = deepcopy(case["check_contracts"])
     return {
         "request": request,
         "stand": stand,

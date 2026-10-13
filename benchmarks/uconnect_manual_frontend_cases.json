@@ -11,7 +11,12 @@
       "action_profile": "read_only",
       "execution_status": "ready",
       "prerequisites": ["saved_stand", "exact_ci_name"],
-      "checks": ["exact row is unique", "details surface belongs to the same CI", "browser remains on the saved stand origin"]
+      "checks": ["exact row is unique", "details surface belongs to the same CI", "browser remains on the saved stand origin"],
+      "check_contracts": {
+        "planned-001": {"tool": "browser_inspect_table_row", "subject_binding": "exact_ci_name", "assertions": [{"field": "row_match_count", "operator": "eq", "expected": 1}]},
+        "planned-002": {"tool": "browser_open_exact_table_row_details_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "details_identity_passed", "operator": "eq", "expected": true}, {"field": "row_opened", "operator": "eq", "expected": true}]},
+        "planned-003": {"tool": "browser_open_exact_table_row_details_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "url", "operator": "same_origin"}]}
+      }
     },
     {
       "case_id": "uc-front-002",

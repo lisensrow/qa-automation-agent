@@ -240,6 +240,7 @@ def _browser_state_observation(
 def _browser_semantic_observation(
     arguments,
     result,
+    tool_name=None,
 ):
     element = (
         result.get("element")
@@ -254,6 +255,8 @@ def _browser_semantic_observation(
         "type": "ui_element",
         "source": "browser_semantic",
         "data": {
+            "tool": tool_name,
+            "row_match_count": result.get("row_match_count"),
             "subject": (
                 result.get(
                     "semantic_name"
@@ -583,6 +586,18 @@ def extract_observations(
             },
         }]
 
+    if tool_name == "browser_open_exact_table_row_details_semantic":
+        return [{"type": "ui_details_identity", "source": "browser", "data": {
+            "tool": tool_name,
+            "subject": result.get("name") or arguments.get("name"),
+            "row_match_count": result.get("row_match_count"),
+            "row_opened": result.get("row_opened"),
+            "details_identity_passed": result.get("details_identity_passed"),
+            "details_identity_status": result.get("details_identity_status"),
+            "session_id": result.get("session_id"),
+            **_url_data(result.get("current_url")),
+        }}]
+
     if tool_name in {
         "browser_inspect_semantic",
         "browser_inspect_table_row",
@@ -593,6 +608,7 @@ def extract_observations(
             _browser_semantic_observation(
                 arguments,
                 result,
+                tool_name=tool_name,
             )
         ]
 
