@@ -429,6 +429,12 @@ Read-only retrieval требует exact architecture/backend/frontend и отд
 
 ## Безопасность
 
+### v151d: валидный runtime trace до создания API candidate
+
+Генератор новых UI/API кандидатов отклоняет пустой method/path/status, неверный тип query/status, отсутствующие execution/request IDs, несовпадающую browser session и request, не принадлежащий закрытому network window выполненного UI action. UI/API должны иметь ровно одно usable case-local evidence. Backend proof должен быть usable, принадлежать тому же saved stand и содержать целочисленный match_count. Существующие исторические факты/Jobs не удаляются и не переписываются; для новых кандидатов legacy fallback без modern trace больше не считается достаточным.
+
+Изолированные negative fixtures прошли. Read-only replay реальных case observations с отключённым upsert подтвердил: `20261013-134034-a234b69c` даёт один корректный candidate; `20261013-134157-0b5f34bd` с пустым API-detail не даёт кандидатов. Это проверка действительных сохранённых наблюдений, а не новый реальный прогон или новый PASS. Полный runner проверяется отдельно.
+
 - Секреты не печатаются в отчётах и не передаются LLM.
 - Saved credentials использует только доверенный runtime.
 - Неизвестное действие блокируется.

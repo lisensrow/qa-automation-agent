@@ -531,6 +531,11 @@ def generate_candidate_facts_for_case(
         []
     )
 
+    def usable(observation):
+        linked = [e for e in case.get("evidence", [])
+                  if observation.get("observation_id") in (e.get("observation_ids") or [])]
+        return len(linked) == 1 and linked[0].get("usable_for_verdict") is True
+
     documentation = [
         obs
         for obs in observations
@@ -543,6 +548,9 @@ def generate_candidate_facts_for_case(
         for obs in observations
         if obs.get("type")
         == "backend_request"
+        and usable(obs)
+        and (obs.get("data") or {}).get("stand") == job.get("stand")
+        and type((obs.get("data") or {}).get("match_count")) is int
     ]
 
     created = []
@@ -572,6 +580,18 @@ def generate_candidate_facts_for_case(
             "query"
         ) or {}
 
+        # Error-shaped network detail results must not become product facts.
+        # Historical persisted facts remain unchanged; new candidates require
+        # a complete modern action-bound runtime trace.
+        if (not usable(api_obs) or method not in {"GET","POST","PUT","PATCH","DELETE","HEAD","OPTIONS"}
+                or not isinstance(api_path, str) or not api_path.startswith("/")
+                or len(api_path) > 2048 or any(ord(c) < 32 for c in api_path)
+                or not isinstance(query, dict)
+                or type(api.get("http_status")) is not int or not 100 <= api["http_status"] <= 599
+                or not isinstance(api.get("action_execution_id"), str) or not api["action_execution_id"]
+                or not isinstance(api.get("request_id"), str) or not api["request_id"]):
+            continue
+
         ui_obs = _find_previous_ui_action(
             observations,
             api_index,
@@ -584,6 +604,14 @@ def generate_candidate_facts_for_case(
             "data",
             {}
         )
+
+        matches = [n for n in (ui.get("network_requests") or []) if isinstance(n, dict)
+                   and n.get("request_id") == api["request_id"]
+                   and n.get("action_execution_id") == api["action_execution_id"]]
+        if (not usable(ui_obs) or ui.get("network_window_closed") is not True or len(matches) != 1
+                or matches[0].get("method") != method or urlsplit(str(matches[0].get("url") or "")).path != api_path
+                or api.get("session_id") != ui.get("session_id")):
+            continue
 
         ui_input = ui.get(
             "input"

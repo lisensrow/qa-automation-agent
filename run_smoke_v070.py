@@ -16,6 +16,7 @@ PRODUCTION_FILES = [
     ROOT / "observation_extractor.py",
     ROOT / "memory_identity.py",
     ROOT / "diagnostic_scope.py",
+    ROOT / "candidate_facts.py",
     ROOT / "prepared_memory.py",
     ROOT / "product_knowledge_retrieval.py",
     ROOT / "tools" / "registry.py",
@@ -207,6 +208,7 @@ SMOKES = [
     "smoke_memory_identity.py",
     "smoke_diagnostic_scope.py",
     "smoke_contract_format_recovery.py",
+    "smoke_candidate_runtime_trace.py",
 ]
 
 
