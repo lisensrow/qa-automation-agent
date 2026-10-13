@@ -4742,7 +4742,7 @@ def banner():
             f"Ollama: {OLLAMA_URL}\n"
             f"Tools: {len(tool_names)} available\n\n"
             f"/clear  /status  /blockers  /jobs  /queue  /job JOB_ID\n"
-            f"/run-job JOB_ID  /cleanup JOB_ID  /exit",
+            f"/run-next  /run-job JOB_ID  /cleanup JOB_ID  /exit",
             title="U-Connect QA Agent",
         )
     )
@@ -12200,6 +12200,26 @@ def _print_prepared_job_queue():
     return items
 
 
+def _next_prepared_job_id(jobs=None):
+    candidates = []
+    for job in list_jobs(None) if jobs is None else jobs:
+        item = _prepared_queue_overview(job)
+        if item is None:
+            continue
+        if item["status"] != "created" or item["case_status"] != "pending":
+            continue
+        created_at = str(job.get("created_at") or "").strip()
+        job_id = str(item.get("job_id") or "").strip()
+        if not created_at or not job_id:
+            continue
+        candidates.append((created_at, job_id))
+
+    if not candidates:
+        return None
+    candidates.sort()
+    return candidates[0][1]
+
+
 def _print_job_overview(job_id):
     job = get_job(job_id)
     if job is None:
@@ -15145,6 +15165,25 @@ def main():
 
         if user_input == "/queue":
             _print_prepared_job_queue()
+            continue
+
+        if user_input == "/run-next":
+            next_job_id = _next_prepared_job_id()
+            if next_job_id is None:
+                console.print(
+                    "[yellow]No created/pending prepared QA Jobs.[/yellow]"
+                )
+                continue
+            try:
+                _prepared_regression_case(next_job_id)
+                ensure_ollama_ready()
+                run_prepared_regression_job(next_job_id)
+            except Exception as exc:
+                console.print(
+                    "[red]Prepared Job error:[/red] "
+                    f"{type(exc).__name__}: "
+                    f"{str(exc)[:500]}"
+                )
             continue
 
         overview_job_id = _parse_job_command(

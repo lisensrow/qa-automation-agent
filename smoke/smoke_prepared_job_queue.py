@@ -7,6 +7,7 @@ prepared = {
     "status": "created",
     "stand": "lab",
     "external_id": "case-source-safe",
+    "created_at": "2026-10-13T00:00:00+00:00",
     "updated_at": "2026-10-13T00:00:00+00:00",
     "request": "SECRET REQUEST",
     "resources": [{"name": "SECRET RESOURCE"}],
@@ -56,6 +57,21 @@ for invalid in (
     {**prepared, "test_cases": []},
 ):
     assert uqa._prepared_queue_overview(invalid) is None
+
+newer = {
+    **prepared,
+    "job_id": "job-queue-newer",
+    "created_at": "2026-10-13T01:00:00+00:00",
+}
+running = {
+    **prepared,
+    "job_id": "job-queue-running",
+    "status": "running",
+    "created_at": "2026-10-12T23:00:00+00:00",
+    "test_cases": [{**prepared["test_cases"][0], "status": "running"}],
+}
+assert uqa._next_prepared_job_id([newer, running, prepared]) == "job-queue-safe"
+assert uqa._next_prepared_job_id([running]) is None
 
 saved_list_jobs = uqa.list_jobs
 try:

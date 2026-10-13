@@ -22,10 +22,13 @@ existing_job = {
     "job_type": "regression",
     "external_id": "uc-front-009",
     "stand": "lab",
+    "request": spec["request"],
     "test_cases": [
         {
             "case_id": "case-existing",
             "status": "pending",
+            "title": spec["case"]["title"],
+            "expected": spec["case"]["expected"],
             "requirement": deepcopy(spec["case"]["requirement"]),
             "planned_checks": list(spec["case"]["planned_checks"]),
         }
@@ -66,6 +69,12 @@ assert calls == {"create": 0, "add": 0}
 for mutation in (
     lambda job: job.update(status="passed"),
     lambda job: job.update(stand="other"),
+    lambda job: job.update(request="changed task"),
+    lambda job: job.update(job_id=""),
+    lambda job: job["test_cases"][0].update(status="passed"),
+    lambda job: job["test_cases"][0].update(case_id=""),
+    lambda job: job["test_cases"][0].update(title="changed title"),
+    lambda job: job["test_cases"][0].update(expected="changed expectation"),
     lambda job: job["test_cases"][0]["requirement"]["bindings"].update(
         exact_ci_name="different-ci"
     ),
@@ -74,5 +83,24 @@ for mutation in (
     candidate = deepcopy(existing_job)
     mutation(candidate)
     assert find_existing_prepared_job(spec, [candidate]) is None
+
+for key, value in (
+    ("action_profile", "write_resource"),
+    ("policy_required", True),
+    ("cleanup_contract", "changed cleanup"),
+    ("manifest_schema_version", 2),
+    ("source_case_id", "changed source"),
+    ("prerequisites", ["changed prerequisite"]),
+    ("execution_status", "candidate"),
+):
+    candidate = deepcopy(existing_job)
+    candidate["test_cases"][0]["requirement"][key] = value
+    assert find_existing_prepared_job(spec, [candidate]) is None, key
+
+assert find_existing_prepared_job(spec, [None, [], {"job_id": "bad"}]) is None
+running = deepcopy(existing_job)
+running["status"] = "running"
+running["test_cases"][0]["status"] = "running"
+assert find_existing_prepared_job(spec, [running])["reused"] is True
 
 print("prepared Job deduplication smoke: PASS")

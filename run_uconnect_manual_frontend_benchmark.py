@@ -169,6 +169,8 @@ def find_existing_prepared_job(spec, jobs):
     expected_case = spec["case"]
     expected_requirement = expected_case["requirement"]
     for job in jobs or []:
+        if not isinstance(job, dict) or not job.get("job_id"):
+            continue
         if job.get("status") not in ACTIVE_PREPARED_JOB_STATUSES:
             continue
         if job.get("job_type") != spec["job_type"]:
@@ -177,19 +179,23 @@ def find_existing_prepared_job(spec, jobs):
             continue
         if job.get("stand") != spec["stand"]:
             continue
+        if job.get("request") != spec["request"]:
+            continue
 
         cases = job.get("test_cases") or []
-        if len(cases) != 1:
+        if not isinstance(cases, list) or len(cases) != 1:
             continue
         case = cases[0]
-        requirement = case.get("requirement") or {}
-        if requirement.get("source") != expected_requirement.get("source"):
+        if not isinstance(case, dict) or not case.get("case_id"):
             continue
-        if requirement.get("execution_status") != "ready":
+        if case.get("status") not in {"pending", "running"}:
             continue
-        if requirement.get("bindings") != expected_requirement.get("bindings"):
+        # Reuse only the same execution contract, including safety boundaries.
+        # A matching source ID and bindings alone do not identify the same task.
+        if case.get("requirement") != expected_requirement:
             continue
-        if case.get("planned_checks") != expected_case.get("planned_checks"):
+        if any(case.get(key) != expected_case.get(key)
+               for key in ("title", "expected", "planned_checks")):
             continue
 
         return {
