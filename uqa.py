@@ -3539,7 +3539,7 @@ def add_managed_navigation_preflight_advisory(
             navigation_state_key,
             None,
         )
-        return result
+        return {**result, "navigation_preflight_status": "completed"}
 
     advisory = managed_navigation_preflight_check(
         "browser_click_semantic",
@@ -8875,6 +8875,10 @@ def _case_action_instructions(original_request, requirement):
         "целевого ресурса через OBSERVE/INTERACT. Не выбирай Add/Create для "
         "другого типа сущности; если точный маршрут неясен, сначала используй "
         "knowledge_search.\n"
+        "Если результат сообщает navigation_preflight_status=completed, "
+        "маршрут уже подтверждён Core: не объявляй его невыполненным и "
+        "не повторяй навигацию без новой необходимости. Этот статус не "
+        "разрешает WRITE, не подтверждает критерии и не отменяет policy.\n"
         "После навигации и перед WRITE вызови browser_probe_capabilities. "
         "Если Core требует compatibility preflight, выполни этот OBSERVE "
         "вместо повторения заблокированной мутации.\n"

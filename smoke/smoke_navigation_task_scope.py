@@ -19,6 +19,19 @@ messages = [{'role': 'user', 'content': 'Open CatalogX and inspect its Add form.
                 'http_status': 200, 'current_url': 'https://fixture.test/catalogx', 'executed': True}}]
 assert uqa._open_page_proves_named_route(messages)
 assert uqa._managed_navigation_ready(messages)
+from unittest.mock import patch
+with patch.object(uqa, 'get_job', return_value={'request': 'Open Add in CatalogX.'}):
+    result = uqa.add_managed_navigation_preflight_advisory(
+        'browser_open_page', messages[-1]['content'], messages[:1],
+        'confirm_mutations', 'fixture-job', 'fixture-case')
+    assert result['navigation_preflight_status'] == 'completed'
+    assert 'action_policy_status' not in result
+    assert result['http_status'] == 200
+with patch.object(uqa, 'get_job', return_value={'request': 'Read-only; do not create objects.'}):
+    result = uqa.add_managed_navigation_preflight_advisory(
+        'browser_open_page', messages[-1]['content'], messages[:1],
+        'confirm_mutations', 'fixture-job', 'fixture-case')
+    assert 'navigation_preflight_status' not in result
 for change in ({'http_status': 404}, {'executed': False}, {'current_url': 'https://fixture.test/'},
                {'current_url': 'https://fixture.test/home'}, {'current_url': 'https://fixture.test/other'}):
     from copy import deepcopy
