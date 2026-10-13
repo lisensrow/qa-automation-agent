@@ -219,6 +219,8 @@ SMOKES = [
     "smoke_explicit_row_requirement.py",
     "smoke_compatibility_preflight_progress.py",
     "smoke_navigation_task_scope.py",
+    "smoke_missing_semantic_click.py",
+    "smoke_form_audit_observation.py",
 ]
 
 

@@ -520,6 +520,52 @@ def extract_observations(
     if not isinstance(result, dict):
         return []
 
+    form_audits = {
+        "browser_inspect_form_validation_semantic": ("validation_audit", {
+            "visible_control_count": int, "invalid_control_count": int,
+            "validation_passed": bool, "truncated": bool,
+        }),
+        "browser_inspect_field_label_contract_semantic": ("field_label_audit", {
+            "field_count": int, "unlabeled_count": int, "broken_description_count": int,
+            "field_label_contract_passed": bool, "truncated": bool,
+        }),
+        "browser_inspect_dialog_contract_semantic": ("dialog_contract_audit", {
+            "dialog_count": int, "failure_count": int,
+            "dialog_contract_passed": bool, "truncated": bool,
+        }),
+    }
+    if tool_name in form_audits:
+        audit_key, fields = form_audits[tool_name]
+        raw = result.get(audit_key)
+        audit = raw if isinstance(raw, dict) else {}
+        safe = {key: value if type(value) is expected and
+                (expected is not int or value >= 0) else None
+                for key, expected in fields.items() for value in [audit.get(key)]}
+        usable = (not result.get("error") and result.get("executed") is not False
+                  and result.get("mutation_executed") is False
+                  and all(value is not None for value in safe.values())
+                  and safe.get("truncated") is False)
+        if usable and audit_key == "validation_audit":
+            usable = (safe["invalid_control_count"] <= safe["visible_control_count"]
+                      and safe["validation_passed"] == (safe["invalid_control_count"] == 0))
+        elif usable and audit_key == "field_label_audit":
+            usable = (safe["unlabeled_count"] <= safe["field_count"]
+                      and safe["field_label_contract_passed"] ==
+                      (safe["unlabeled_count"] == 0 and safe["broken_description_count"] == 0))
+        elif usable and audit_key == "dialog_contract_audit":
+            usable = (safe["failure_count"] <= safe["dialog_count"]
+                      and safe["dialog_contract_passed"] == (safe["failure_count"] == 0))
+        return [{"type": "ui_contract_audit", "source": "browser", "data": {
+            "tool": tool_name, "audit_kind": audit_key, "audit": safe,
+            "scope_kind": "requested_named_form" if arguments.get("form") else "page",
+            "observation_result": "observed" if usable else "blocked",
+            "mutation_executed": result.get("mutation_executed") if
+                type(result.get("mutation_executed")) is bool else None,
+            "session_id": result.get("session_id"),
+            "action_execution_id": result.get("action_execution_id"),
+            **_url_data(result.get("current_url")),
+        }}]
+
     if tool_name == "knowledge_search":
         return [
             _documentation_observation(

@@ -645,6 +645,12 @@ SYSTEM_PROMPT = """
   с тем же точным name, exact=true и role="row"; container не нужен.
   Не угадывай роли button/link и не используй заголовок колонки как container.
 - Для нажатия известного элемента используй browser_click_semantic.
+  Передавай наблюдённое имя/текст, а не название желаемого действия.
+  container означает фактический owner tr/[role=row], li или [role=treeitem],
+  не заголовок страницы/раздела/таблицы. Без наблюдённого owner опусти container.
+  Для уникальной безымянной icon-кнопки используй ранее наблюдённый точный
+  icon_hint без role/container, только если назначение подтверждено контекстом;
+  инструмент заново проверит уникальность, а Core применит обычную policy.
 - Для ввода текста используй browser_fill_semantic и смысловое имя поля.
 - Для native date/time/datetime-local/month/week используй
   browser_set_temporal_semantic с canonical HTML value. Не вводи локализованную
@@ -13785,6 +13791,7 @@ def run_turn(
     action_policy="legacy",
 ):
     failed_semantic_inspections = {}
+    failed_semantic_clicks = {}
     completed_core_observations = {}
     repeated_completed_observations = set()
     completed_snapshot_observations = {}
@@ -14649,6 +14656,20 @@ def run_turn(
             )
             semantic_inspection_key = None
             repeated_semantic_inspection = False
+            semantic_click_key = None
+            repeated_semantic_click = False
+            if name == "browser_click_semantic":
+                semantic_click_key = json.dumps({
+                    "name": arguments.get("name"),
+                    "exact": arguments.get("exact", True),
+                    "role": arguments.get("role") or None,
+                    "container": arguments.get("container") or None,
+                }, ensure_ascii=False, sort_keys=True)
+                repeated_semantic_click = (
+                    last_browser_fingerprint is not None
+                    and semantic_click_key in failed_semantic_clicks
+                    and failed_semantic_clicks[semantic_click_key] == last_browser_fingerprint
+                )
             core_observation_key = (
                 _core_observation_call_key(name, arguments)
             )
@@ -14736,6 +14757,14 @@ def run_turn(
                             "UQA Core stopped an identical read-only "
                             "snapshot observation on an unchanged page."
                         ),
+                    }
+                elif repeated_semantic_click:
+                    result = {
+                        "error": "repeated_missing_semantic_click_blocked",
+                        "status": "blocked", "executed": False,
+                        "action_class": action_class,
+                        "action_policy_status": "blocked",
+                        "reason": "The same semantic click target was not found on this unchanged page.",
                     }
                 elif repeated_semantic_inspection:
                     result = {
@@ -15341,6 +15370,13 @@ def run_turn(
                 compact_completed_history(messages)
                 return
 
+            if repeated_semantic_click:
+                if job_id and case_id:
+                    finalize_case_blocked(job_id, case_id, "repeated_missing_semantic_click",
+                                          "The agent repeated a missing click target without a changed browser state.")
+                compact_completed_history(messages)
+                return
+
             if repeated_semantic_inspection:
                 if job_id and case_id:
                     finalize_case_blocked(
@@ -15410,6 +15446,20 @@ def run_turn(
                         ),
                     }
                 )
+
+            if (semantic_click_key is not None
+                    and result.get("error") == "semantic_element_not_found"
+                    and result.get("executed") is not True
+                    and last_browser_fingerprint is not None):
+                failed_semantic_clicks[semantic_click_key] = last_browser_fingerprint
+                messages.append({"role": "user", "content": (
+                    "[UQA CORE: CLICK TARGET NOT FOUND]\n"
+                    "Do not repeat this exact click on an unchanged page. "
+                    "Use OBSERVE to inspect actual visible targets or consult knowledge. "
+                    "Do not guess another role, container or icon. A different target requires "
+                    "observed identity and the same normal action-policy approval. "
+                    "If the requested target cannot be established, return BLOCKED."
+                )})
 
             if (
                 semantic_inspection_key is not None

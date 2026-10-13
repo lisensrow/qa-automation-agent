@@ -2,6 +2,12 @@ import json
 import uqa
 
 original = json.dumps(uqa.TOOLS, ensure_ascii=False)
+click = next(t['function'] for t in uqa.TOOLS if t['function']['name'] == 'browser_click_semantic')
+assert {'row', 'treeitem', 'combobox'} <= set(click['parameters']['properties']['role']['enum'])
+assert 'tr/[role=row]' in click['parameters']['properties']['container']['description']
+assert 'без role/container' in click['description']
+assert click['parameters']['required'] == ['name']
+assert uqa.classify_tool_action('browser_click_semantic', {'name': 'plus'}) == 'write'
 base = uqa.model_tool_catalog()
 assert len(json.dumps(base, ensure_ascii=False)) < len(original) / 3
 available = {t["function"]["name"] for t in uqa.TOOLS}
