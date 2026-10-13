@@ -58,7 +58,9 @@ def summarize_plugin_audit(ci, audit, plugin_name=None, expected_version=None,
         reason = None
     return {
         "ci_name": ci.get("name"),
+        "ci_id": ci.get("id"),
         "agent_id": agent_id,
+        "audit_agent_id": audit.get("agent_id"),
         "last_audit_at": audit.get("last_audit_at"),
         "audit_age_seconds": age,
         "audit_fresh": fresh,

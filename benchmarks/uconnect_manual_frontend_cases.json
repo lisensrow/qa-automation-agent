@@ -104,6 +104,12 @@
       "case_id": "uc-front-009",
       "category": "agent_ui",
       "title": "Read exact agent telemetry",
+      "check_contracts": {
+        "planned-001": {"tool": "browser_inspect_agent_telemetry_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "ci_id", "operator": "nonempty"}]},
+        "planned-002": {"tool": "browser_inspect_agent_telemetry_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "statuses", "operator": "statuses_reported"}]},
+        "planned-003": {"tool": "browser_inspect_agent_telemetry_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "monitoring_at", "operator": "timestamp_reported"}, {"field": "monitoring_age_seconds", "operator": "age_reported"}]},
+        "planned-004": {"tool": "browser_inspect_agent_telemetry_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "monitoring_ci_id", "operator": "nonempty"}]}
+      },
       "required_observation": {"tool": "browser_inspect_agent_telemetry_semantic", "arguments": {"ci_name": {"binding": "exact_ci_name"}}},
       "task": "Open Agent for one exact CI and verify UI, CI, agent, and monitoring status with freshness evidence.",
       "action_profile": "read_only",
@@ -115,6 +121,11 @@
       "case_id": "uc-front-010",
       "category": "agent_ui",
       "title": "Audit installed agent plugins",
+      "check_contracts": {
+        "planned-001": {"tool": "browser_inspect_agent_plugins_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "ci_id", "operator": "nonempty"}, {"field": "plugin_present", "operator": "eq", "expected": true}]},
+        "planned-002": {"tool": "browser_inspect_agent_plugins_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "plugin_version", "operator": "nonempty"}]},
+        "planned-003": {"tool": "browser_inspect_agent_plugins_semantic", "subject_binding": "exact_ci_name", "assertions": [{"field": "last_audit_at", "operator": "timestamp_reported"}, {"field": "audit_age_seconds", "operator": "age_reported"}]}
+      },
       "required_observation": {"tool": "browser_inspect_agent_plugins_semantic", "arguments": {"ci_name": {"binding": "exact_ci_name"}, "plugin_name": {"binding": "plugin_name"}}},
       "task": "For one exact CI, inspect the observed plugin list and verify one requested plugin name, version, and freshness.",
       "action_profile": "read_only",

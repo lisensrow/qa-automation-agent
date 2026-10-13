@@ -367,6 +367,27 @@ def prepared_observation_contract(job, case_id):
     return {"tool": name, "arguments": arguments}
 
 
+def prepared_contract_check_templates(job, case_id):
+    """Only a complete, locked read-only contract may own final check formatting."""
+    case = next((c for c in job.get("test_cases", []) if c.get("case_id") == case_id), {})
+    requirement = case.get("requirement") or {}
+    contracts = requirement.get("check_contracts")
+    if not contracts or not requirement.get("required_observation"):
+        return None
+    observer = prepared_observation_contract(job, case_id)
+    if job.get("job_type") != "regression" or requirement.get("execution_status") != "ready":
+        raise ValueError("prepared_contract_result_profile_invalid")
+    from frontend_check_contracts import validate_contracts
+    validate_contracts(contracts)
+    planned = _normalize_planned_checks(case.get("planned_checks"))
+    if not planned or set(contracts) != {check["check_id"] for check in planned}:
+        raise ValueError("prepared_contract_result_coverage_invalid")
+    if any(contract["tool"] != observer["tool"] for contract in contracts.values()):
+        raise ValueError("prepared_contract_result_observer_mismatch")
+    return [dict(check, status="blocked", actual=None, evidence=[], observations=[], assertions=[],
+                 reason="Core contract evaluation required") for check in planned]
+
+
 OLLAMA_URL = os.getenv(
     "OLLAMA_URL",
     "http://192.168.50.51:11434"
@@ -6381,7 +6402,7 @@ def verify_structured_check_evidence(
         if (job_type == "regression" and locked_requirement
                 and isinstance(locked_requirement.get("check_contracts"), dict)
                 and check.get("check_id") in locked_requirement["check_contracts"]
-                and check.get("status") in {"passed", "failed"}):
+                and check.get("status") in {"passed", "failed", "blocked"}):
             from frontend_check_contracts import evaluate_contract
             stand_record = get_stand(job.get("stand")) or {}
             evaluated, contract_error = evaluate_contract(
@@ -12356,6 +12377,7 @@ def _prepared_regression_case(job_id):
 
     case = cases[0]
     prepared_observation_contract(job, case.get("case_id"))
+    prepared_contract_check_templates(job, case.get("case_id"))
     if case.get("status") != "pending":
         raise ValueError("prepared_case_not_pending")
 
@@ -13521,6 +13543,9 @@ def run_turn(
         managed_agent_request_text
     )
     required_observation = prepared_observation_contract(managed_agent_job, case_id)
+    contract_check_templates = prepared_contract_check_templates(managed_agent_job, case_id)
+    case_requirement = next((case.get("requirement") or {} for case in
+                             managed_agent_job.get("test_cases", []) if case.get("case_id") == case_id), {})
     required_observation_attempted = False
     structured_repair_attempts = 0
     telemetry_ci_name = _agent_telemetry_ci_name_from_request(
@@ -13603,7 +13628,13 @@ def run_turn(
     for _ in range(MAX_TOOL_STEPS):
         try:
             required_names = {required_observation["tool"]} if required_observation else set()
-            data = ask_ollama(messages, tools=model_tool_catalog(selected_model_tools | required_names))
+            if required_observation_attempted and contract_check_templates is not None:
+                # No LLM JSON/prose is needed once the one declared observer ran.
+                # Templates are initially BLOCKED; the normal verifier alone judges persisted facts.
+                data = {"message": {"content": UQA_CHECKS_START + json.dumps(
+                    {"checks": contract_check_templates}, ensure_ascii=False) + UQA_CHECKS_END}}
+            else:
+                data = ask_ollama(messages, tools=model_tool_catalog(selected_model_tools | required_names))
         except Exception as exc:
             if job_id and case_id:
                 finalize_case_blocked(
@@ -14020,6 +14051,12 @@ def run_turn(
                         console.print(
                             Markdown(stored_result)
                         )
+
+                    if required_observation and (case_requirement or {}).get("check_contracts"):
+                        # Preserve partial PASS/FAIL/BLOCKED facts even if another check is blocked.
+                        from frontend_check_contracts import render_contract_check_summary
+                        stored_result = render_contract_check_summary(structured_checks)
+                        console.print(Markdown(stored_result))
 
                 if not case_status:
                     case_status = "blocked"

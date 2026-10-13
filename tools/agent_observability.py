@@ -56,6 +56,8 @@ def summarize_agent_observation(
         "ci_name": ci_name,
         "ci_id": ci_id,
         "agent_id": agent_id,
+        "observed_agent_id": agent.get("id"),
+        "monitoring_ci_id": monitoring.get("uid"),
         "agent_version": agent.get("version"),
         "os_name": os_info.get("name"),
         "os_version": os_info.get("version"),
