@@ -22,6 +22,12 @@
       "case_id": "uc-front-002",
       "category": "navigation",
       "title": "Navigate configuration item tabs",
+      "required_observation": {"tool": "browser_verify_exact_table_row_tabs_semantic", "arguments": {"name": {"binding": "exact_ci_name"}, "tabs": {"binding": "requested_tab_names", "format": "json_string_list"}}},
+      "check_contracts": {
+        "planned-001": {"tool": "browser_verify_exact_table_row_tabs_semantic", "subject_binding": "exact_ci_name", "tabs_binding": "requested_tab_names", "assertions": [{"field": "tab_selection", "operator": "eq", "expected": true}]},
+        "planned-002": {"tool": "browser_verify_exact_table_row_tabs_semantic", "subject_binding": "exact_ci_name", "tabs_binding": "requested_tab_names", "assertions": [{"field": "panels_visible", "operator": "eq", "expected": true}]},
+        "planned-003": {"tool": "browser_verify_exact_table_row_tabs_semantic", "subject_binding": "exact_ci_name", "tabs_binding": "requested_tab_names", "assertions": [{"field": "details_identity_preserved", "operator": "eq", "expected": true}]}
+      },
       "task": "For one exact CMDB item, open each requested visible tab and verify that the selected tab and panel agree.",
       "action_profile": "read_only",
       "execution_status": "ready",

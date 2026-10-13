@@ -9462,6 +9462,26 @@ class BrowserSession:
             result["error"] = "details_identity_not_confirmed"
         return result
 
+    def _tab_details_identity_snapshot(self, name):
+        """Read exact visible detail anchors without changing the selected surface."""
+        return self.page.evaluate("""wanted => {
+            const clean = value => String(value || '').replace(/\\s+/g, ' ').trim();
+            const visible = el => {
+                const style = getComputedStyle(el);
+                return !el.hidden && style.display !== 'none' && style.visibility !== 'hidden'
+                    && el.getClientRects().length > 0;
+            };
+            const anchors = Array.from(document.querySelectorAll(
+                'h1,h2,h3,h4,h5,h6,[role="heading"],[aria-current="page"]'))
+                .filter(el => visible(el) && !el.closest('tr,[role="row"]')
+                    && clean(el.innerText || el.textContent) === wanted);
+            const exact = Array.from(document.querySelectorAll('body *'))
+                .filter(el => !el.children.length && visible(el)
+                    && clean(el.innerText || el.textContent) === wanted);
+            return {anchor_match_count: anchors.length, exact_visible_count: exact.length,
+                    outside_row_match_count: exact.filter(el => !el.closest('tr,[role="row"]')).length};
+        }""", " ".join(str(name or "").split()))
+
     def verify_exact_table_row_tabs_semantic(
         self, name: str, tabs: list, tablist: str = None,
     ):
@@ -9487,7 +9507,20 @@ class BrowserSession:
                 "observation_result": "BLOCKED",
             }
 
-        details = self.open_exact_table_row_details_semantic(name)
+        initial_identity = self._tab_details_identity_snapshot(name)
+        if (initial_identity.get("anchor_match_count", 0) > 0
+                or (initial_identity.get("exact_visible_count", 0) >= 2
+                    and initial_identity.get("outside_row_match_count", 0) > 0)):
+            # A prior model step may already have opened details. Clicking the
+            # row again can close a toggle surface, so verify and reuse it.
+            row = self.inspect_table_row(name, exact=True)
+            details = {"name": name, "row_match_count": row.get("row_match_count"),
+                       "details_identity_passed": row.get("row_match_count") == 1 and not row.get("error"),
+                       "details_already_visible": True}
+            if row.get("error") or row.get("row_match_count") != 1:
+                details["error"] = row.get("error") or "table_row_not_unique"
+        else:
+            details = self.open_exact_table_row_details_semantic(name)
         if details.get("error") or not details.get("details_identity_passed"):
             result = dict(details)
             result.update({
@@ -9500,6 +9533,12 @@ class BrowserSession:
             })
             return result
 
+        identity_baseline = self._tab_details_identity_snapshot(name)
+        if not (identity_baseline.get("anchor_match_count", 0) > 0
+                or (identity_baseline.get("exact_visible_count", 0) >= 2
+                    and identity_baseline.get("outside_row_match_count", 0) > 0)):
+            return {"error": "tab_details_identity_baseline_missing", "executed": True,
+                    "mutation_executed": False, "observation_result": "BLOCKED"}
         allowed_origin = urlsplit(str(self.page.url or ""))
         verified = []
         for tab_name in requested_tabs:
@@ -9557,7 +9596,15 @@ class BrowserSession:
                     "current_url": current_url,
                 }
 
-            contract = self.inspect_tabs_contract_semantic(tablist, exact=True)
+            contract = self.inspect_tabs_contract_semantic(tablist, exact=True, _target_tab_name=tab_name)
+            identity_after = self._tab_details_identity_snapshot(name)
+            identity_preserved = bool(
+                (identity_baseline.get("anchor_match_count", 0) > 0
+                 and identity_after.get("anchor_match_count", 0) > 0)
+                or (identity_baseline.get("exact_visible_count", 0) >= 2
+                    and identity_baseline.get("outside_row_match_count", 0) > 0
+                    and identity_after.get("exact_visible_count", 0) >= 2
+                    and identity_after.get("outside_row_match_count", 0) > 0))
             audit = contract.get("tabs_audit") or {}
             selected = [item for item in audit.get("tabs", []) if item.get("selected")]
             selected_name = (
@@ -9572,6 +9619,7 @@ class BrowserSession:
                 and bool(selected[0].get("controls"))
                 and selected[0].get("panel_exists") is True
                 and selected[0].get("panel_visible") is True
+                and identity_preserved
             )
             verification = {
                 "tab": tab_name,
@@ -9593,6 +9641,10 @@ class BrowserSession:
                     else False
                 ),
                 "tabs_contract_passed": bool(audit.get("tabs_contract_passed")),
+                "tabs_contract_error": contract.get("error"),
+                "tablist_match_count": contract.get("matches"),
+                "details_identity_preserved": identity_preserved,
+                "details_identity": identity_after,
                 "passed": tab_passed,
             }
             verified.append(verification)
@@ -9621,6 +9673,7 @@ class BrowserSession:
             "details_identity_passed": True,
             "requested_tabs": requested_tabs,
             "tabs_verified": verified,
+            "details_identity_preserved": all(item["details_identity_preserved"] for item in verified),
             "verified_tab_count": len(verified),
             "tabs_workflow_passed": True,
             "observation_result": "PASS",
@@ -12375,18 +12428,31 @@ class BrowserSession:
             result["error"] = "edit_persistence_contract_failed"
         return self._finish_action_execution(result)
 
-    def inspect_tabs_contract_semantic(self, tablist=None, exact=True):
+    def inspect_tabs_contract_semantic(self, tablist=None, exact=True, _target_tab_name=None):
         """Audit one ARIA tablist and its controlled tabpanels."""
         self._ensure_started(); self._reset_diagnostics()
         lists = self.page.get_by_role("tablist", name=tablist, exact=exact) if tablist else self.page.get_by_role("tablist")
         visible = [lists.nth(i) for i in range(min(lists.count(), 50)) if lists.nth(i).is_visible()]
+        if _target_tab_name is not None:
+            # Scope by semantic membership, not page-wide order or product CSS.
+            visible = [root for root in visible if root.evaluate("""(root, wanted) => {
+                const clean = value => String(value || '').replace(/\\s+/g, ' ').trim();
+                return Array.from(root.querySelectorAll('[role="tab"]')).some(el => {
+                    const style = getComputedStyle(el);
+                    return el.closest('[role="tablist"]') === root && !el.hidden
+                        && style.display !== 'none' && style.visibility !== 'hidden'
+                        && el.getClientRects().length > 0
+                        && clean(el.getAttribute('aria-label') || el.innerText) === clean(wanted);
+                });
+            }""", _target_tab_name)]
         if len(visible) != 1:
             return {"error": "tablist_not_unique", "matches": len(visible), "executed": False}
         audit = visible[0].evaluate("""root => {
           const shown = el => { const r=el.getBoundingClientRect(),s=getComputedStyle(el); return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'; };
-          const tabs=Array.from(root.querySelectorAll('[role="tab"]')).slice(0,100).map(el=>{const id=el.getAttribute('aria-controls')||''; const panel=id?document.getElementById(id):null; return {label:String(el.getAttribute('aria-label')||el.innerText||'').trim().slice(0,160),selected:el.getAttribute('aria-selected')==='true',controls:id,panel_exists:Boolean(panel),panel_visible:Boolean(panel&&shown(panel))};});
+          const owned=Array.from(root.querySelectorAll('[role="tab"]')).filter(el=>el.closest('[role="tablist"]')===root);
+          const tabs=owned.slice(0,100).map(el=>{const id=el.getAttribute('aria-controls')||''; const panel=id?document.getElementById(id):null; return {label:String(el.getAttribute('aria-label')||el.innerText||'').trim().slice(0,160),selected:el.getAttribute('aria-selected')==='true',controls:id,panel_exists:Boolean(panel),panel_visible:Boolean(panel&&shown(panel))};});
           const selected=tabs.filter(x=>x.selected); const broken=tabs.filter(x=>!x.controls||!x.panel_exists);
-          return {tab_count:tabs.length,selected_count:selected.length,tabs,broken_reference_count:broken.length,tabs_contract_passed:tabs.length>0&&selected.length===1&&selected[0].panel_visible&&broken.length===0,truncated:root.querySelectorAll('[role="tab"]').length>100};
+          return {tab_count:tabs.length,selected_count:selected.length,tabs,broken_reference_count:broken.length,tabs_contract_passed:tabs.length>0&&selected.length===1&&selected[0].panel_visible&&broken.length===0,truncated:owned.length>100};
         }""")
         result=self._capture_state("inspect-tabs-contract"); result.update({"tablist":tablist,"tabs_audit":audit,"mutation_executed":False}); return result
 

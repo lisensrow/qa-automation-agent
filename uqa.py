@@ -353,16 +353,36 @@ def prepared_observation_contract(job, case_id):
         raise ValueError("prepared_observation_arguments_invalid")
     arguments = {}
     for key, mapping in mappings.items():
-        if not isinstance(mapping, dict) or set(mapping) != {"binding"}:
+        if not isinstance(mapping, dict) or set(mapping) not in ({"binding"}, {"binding", "format"}):
             raise ValueError("prepared_observation_binding_invalid")
         binding = mapping["binding"]
         if not isinstance(binding, str):
             raise ValueError("prepared_observation_binding_invalid")
         value = (requirement.get("bindings") or {}).get(binding)
+        if (properties[key].get("type") == "array" and properties[key].get("items", {}).get("type") == "string"
+                and mapping.get("format") == "json_string_list"):
+            try:
+                parsed = json.loads(value)
+            except (ValueError, TypeError):
+                raise ValueError("prepared_observation_list_binding_invalid")
+            if (not isinstance(parsed, list) or not 1 <= len(parsed) <= 20
+                    or any(not isinstance(item, str) or not item.strip() for item in parsed)
+                    or len({" ".join(item.split()).casefold() for item in parsed}) != len(parsed)):
+                raise ValueError("prepared_observation_list_binding_invalid")
+            arguments[key] = [" ".join(item.split()) for item in parsed]
+            continue
+        if "format" in mapping:
+            raise ValueError("prepared_observation_binding_format_invalid")
         if properties[key].get("type") != "string" or not isinstance(value, str) or not value.strip():
             raise ValueError("prepared_observation_binding_missing")
         arguments[key] = value
-    if classify_tool_action(name, arguments) != "observe":
+    if name == "browser_verify_exact_table_row_tabs_semantic":
+        if any(classify_tool_action("browser_click_semantic", {"name": tab, "role": "tab"})
+               not in {"observe", "interact"} for tab in arguments.get("tabs", [])):
+            raise ValueError("prepared_observation_tab_name_not_read_only")
+    action_class = classify_tool_action(name, arguments)
+    if action_class != "observe" and not (
+            name == "browser_verify_exact_table_row_tabs_semantic" and action_class == "interact"):
         raise ValueError("prepared_observation_not_read_only")
     return {"tool": name, "arguments": arguments}
 

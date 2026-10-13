@@ -192,6 +192,9 @@ SMOKES = [
     "smoke_agent_fact_contracts.py",
     "smoke_prepared_contract_result.py",
     "smoke_agent_metric_contract.py",
+    "smoke_tab_navigation_contract.py",
+    "smoke_tablist_semantic_scope.py",
+    "smoke_tab_navigation_dom.py",
 ]
 
 

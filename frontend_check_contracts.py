@@ -15,6 +15,8 @@ TOOL_FIELDS = {
     "browser_inspect_agent_plugins_semantic": (
         "agent_plugin_audit", {"ci_id", "plugin_present", "plugin_version", "last_audit_at",
                                "audit_age_seconds", "audit_fresh"}),
+    "browser_verify_exact_table_row_tabs_semantic": (
+        "ui_tab_navigation", {"tab_selection", "panels_visible", "details_identity_preserved"}),
 }
 
 REPORT_OPERATORS = {"ci_id": "nonempty", "monitoring_ci_id": "nonempty", "plugin_version": "nonempty",
@@ -42,6 +44,8 @@ def validate_contracts(contracts):
         tool = contract.get("tool")
         if tool not in TOOL_FIELDS or not isinstance(contract.get("subject_binding"), str):
             raise ValueError("frontend_contract_tool_or_subject_invalid")
+        if tool == "browser_verify_exact_table_row_tabs_semantic" and not isinstance(contract.get("tabs_binding"), str):
+            raise ValueError("frontend_contract_tabs_binding_required")
         assertions = contract.get("assertions")
         if not isinstance(assertions, list) or not assertions:
             raise ValueError("frontend_contract_assertions_required")
@@ -135,6 +139,42 @@ def normalized_origin(url):
     return (parsed.scheme, parsed.hostname.lower(), port)
 
 
+def tab_fact(data, field, contract, bindings):
+    expected = json.loads(bindings.get(contract["tabs_binding"]) or "null")
+    if (not isinstance(expected, list) or not 1 <= len(expected) <= 20
+            or any(not isinstance(item, str) or not item.strip() for item in expected)):
+        raise ValueError("frontend_contract_requested_tabs_invalid")
+    normalize = lambda value: " ".join(value.split()).casefold()
+    expected = [normalize(item) for item in expected]
+    if len(set(expected)) != len(expected):
+        raise ValueError("frontend_contract_requested_tabs_invalid")
+    requested = data.get("requested_tabs")
+    verified = data.get("tabs_verified")
+    if (not isinstance(requested, list) or any(not isinstance(item, str) for item in requested)
+            or [normalize(item) for item in requested] != expected
+            or not isinstance(verified, list) or len(verified) != len(expected)):
+        raise ValueError("frontend_contract_tabs_coverage_mismatch")
+    values = []
+    for wanted, item in zip(expected, verified):
+        if not isinstance(item, dict) or not isinstance(item.get("tab"), str) or normalize(item["tab"]) != wanted:
+            raise ValueError("frontend_contract_tab_subject_mismatch")
+        if field == "tab_selection":
+            if type(item.get("selected_count")) is not int or not isinstance(item.get("selected_tab"), str):
+                raise ValueError("frontend_contract_tab_selection_missing")
+            values.append(item["selected_count"] == 1 and normalize(item["selected_tab"]) == wanted)
+        elif field == "panels_visible":
+            if any(type(item.get(key)) is not bool for key in ("panel_exists", "panel_visible")):
+                raise ValueError("frontend_contract_panel_fact_missing")
+            if not isinstance(item.get("controls"), str) or not item["controls"].strip():
+                raise ValueError("frontend_contract_panel_control_missing")
+            values.append(item["panel_exists"] and item["panel_visible"])
+        else:
+            if type(item.get("details_identity_preserved")) is not bool or data.get("details_identity_passed") is not True:
+                raise ValueError("frontend_contract_details_identity_missing")
+            values.append(item["details_identity_preserved"])
+    return all(values)
+
+
 def evaluate_contract(case, requirement, check, saved_url):
     """Rebuild references and assertions from Core records, never model claims."""
     output = deepcopy(check)
@@ -167,7 +207,8 @@ def evaluate_contract(case, requirement, check, saved_url):
         observation, linked = candidates[-1]
         data = observation["data"]
         is_agent = observation_type in {"agent_telemetry", "agent_plugin_audit"}
-        if is_agent and normalized_origin(data.get("url")) != normalized_origin(saved_url):
+        is_tabs = observation_type == "ui_tab_navigation"
+        if (is_agent or is_tabs) and normalized_origin(data.get("url")) != normalized_origin(saved_url):
             raise ValueError("agent_contract_stand_origin_mismatch")
         if data.get("ci_name" if is_agent else "subject") != subject:
             raise ValueError("frontend_contract_subject_mismatch")
@@ -179,7 +220,12 @@ def evaluate_contract(case, requirement, check, saved_url):
         computed = []
         for assertion in contract["assertions"]:
             field = assertion["field"]
-            actual = agent_fact(data, field, requirement.get("bindings") or {}) if is_agent else data.get(field)
+            if is_agent:
+                actual = agent_fact(data, field, requirement.get("bindings") or {})
+            elif is_tabs:
+                actual = tab_fact(data, field, contract, requirement.get("bindings") or {})
+            else:
+                actual = data.get(field)
             if assertion["operator"] == "same_origin":
                 expected = normalized_origin(saved_url)
                 actual = normalized_origin(actual)

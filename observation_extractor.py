@@ -588,6 +588,17 @@ def extract_observations(
             },
         }]
 
+    if tool_name == "browser_verify_exact_table_row_tabs_semantic":
+        return [{"type": "ui_tab_navigation", "source": "browser", "data": {
+            "tool": tool_name, "subject": result.get("name") or arguments.get("name"),
+            "requested_tabs": result.get("requested_tabs"), "tabs_verified": result.get("tabs_verified"),
+            "details_identity_passed": result.get("details_identity_passed"),
+            "details_identity_preserved": result.get("details_identity_preserved"),
+            "failed_stage": result.get("failed_stage"), "failed_tab": result.get("failed_tab"),
+            "observation_result": result.get("observation_result"),
+            **_url_data(result.get("current_url")),
+        }}]
+
     if tool_name == "browser_open_exact_table_row_details_semantic":
         return [{"type": "ui_details_identity", "source": "browser", "data": {
             "tool": tool_name,
