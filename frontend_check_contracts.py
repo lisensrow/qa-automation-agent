@@ -16,7 +16,8 @@ TOOL_FIELDS = {
         "agent_plugin_audit", {"ci_id", "plugin_present", "plugin_version", "last_audit_at",
                                "audit_age_seconds", "audit_fresh"}),
     "browser_verify_exact_table_row_tabs_semantic": (
-        "ui_tab_navigation", {"tab_selection", "panels_visible", "details_identity_preserved"}),
+        "ui_tab_navigation", {"tab_selection", "panels_visible", "details_identity_preserved",
+                              "known_renderer_errors_absent"}),
 }
 
 REPORT_OPERATORS = {"ci_id": "nonempty", "monitoring_ci_id": "nonempty", "plugin_version": "nonempty",
@@ -168,6 +169,16 @@ def tab_fact(data, field, contract, bindings):
             if not isinstance(item.get("controls"), str) or not item["controls"].strip():
                 raise ValueError("frontend_contract_panel_control_missing")
             values.append(item["panel_exists"] and item["panel_visible"])
+        elif field == "known_renderer_errors_absent":
+            markers = item.get("panel_renderer_error_markers")
+            if (item.get("panel_renderer_audit_observed") is not True or not isinstance(markers, list)
+                    or any(marker not in {"infinite_extent", "javascript_type_error",
+                                           "javascript_reference_error", "javascript_syntax_error"}
+                           for marker in markers)):
+                raise ValueError("frontend_contract_renderer_audit_missing_or_invalid")
+            if not markers and item.get("panel_renderer_scan_complete") is not True:
+                raise ValueError("frontend_contract_renderer_scan_incomplete")
+            values.append(not markers)
         else:
             if type(item.get("details_identity_preserved")) is not bool or data.get("details_identity_passed") is not True:
                 raise ValueError("frontend_contract_details_identity_missing")
@@ -242,6 +253,9 @@ def evaluate_contract(case, requirement, check, saved_url):
                              "expected": expected, "actual": actual, "satisfied": satisfied,
                              "observation_id": observation["observation_id"]})
         actual_facts = {a["field"]: a["actual"] for a in computed}
+        if is_tabs and any(a["field"] == "known_renderer_errors_absent" for a in computed):
+            actual_facts["renderer_errors_by_tab"] = {
+                item["tab"]: item["panel_renderer_error_markers"] for item in data["tabs_verified"]}
         if is_agent:
             actual_facts["freshness"] = {key: data.get(key) for key in (
                 "monitoring_at", "monitoring_age_seconds", "monitoring_fresh",

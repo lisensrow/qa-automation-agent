@@ -55,3 +55,38 @@ finally:
     for key, value in saved.items():
         setattr(uqa, key, value)
 print("prepared Core-owned contract results: PASS (no live actions)")
+
+# A locked tab observer must be reachable without manual row toggles, and
+# the route reminder must still leave execution to the normal policy path.
+spec = build_job_spec(load_and_validate_manifest(), "uc-front-017", "lab",
+                     {"exact_ci_name": "fixture-ci", "requested_tab_names": '["Monitoring"]'})
+case = dict(spec["case"], case_id="case-1", observations=[], evidence=[])
+templates = uqa.prepared_contract_check_templates({"job_type": "regression", "test_cases": [case]}, "case-1")
+calls = []
+tool = "browser_verify_exact_table_row_tabs_semantic"
+locked = {"name": "fixture-ci", "tabs": ["Monitoring"]}
+
+def ask_tabs(messages, tools):
+    calls.append("inference")
+    hints = [m for m in messages if "LOCKED TAB OBSERVATION ROUTE" in str(m.get("content"))]
+    assert len(hints) == calls.count("inference")
+    assert "fixture-ci" in hints[-1]["content"] and "Monitoring" in hints[-1]["content"]
+    name = "browser_open_page" if calls.count("inference") == 1 else tool
+    args = {"url": "https://fixture.invalid"} if name == "browser_open_page" else {"name": "wrong", "tabs": ["Wrong"]}
+    return {"message": {"tool_calls": [{"function": {"name": name, "arguments": args}}]}}
+
+def execute_tabs(name, arguments, messages, **kwargs):
+    calls.append((name, arguments, kwargs.get("action_policy")))
+    return {} if name == "browser_open_page" else {"error": "fixture_observation_unavailable"}
+
+try:
+    uqa.prepared_observation_contract = lambda *args: {"tool": tool, "arguments": locked}
+    uqa.prepared_contract_check_templates = lambda *args: templates
+    uqa.ask_ollama, uqa.execute_tool_with_policy = ask_tabs, execute_tabs
+    uqa.run_turn([], action_policy="confirm_mutations")
+    assert calls.count("inference") == 2
+    assert calls[-1] == (tool, locked, "confirm_mutations")
+finally:
+    for key, value in saved.items():
+        setattr(uqa, key, value)
+print("locked tabs route reminders: PASS (policy retained, fixtures only)")

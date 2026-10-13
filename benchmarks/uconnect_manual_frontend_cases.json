@@ -198,6 +198,22 @@
       "checks": ["accessibility categories are reported separately", "frontend health is explicit", "network URLs are redacted", "response bodies and stack traces are not exposed"]
     },
     {
+      "case_id": "uc-front-017",
+      "category": "agent_ui",
+      "title": "Audit exact detail panel renderer messages",
+      "task": "Open one exact CI and the explicitly requested detail tabs. Verify identity, selected controlled panels, and absence of allowlisted visible technical renderer error markers. This does not prove graph data, freshness, or absence of every possible error.",
+      "action_profile": "read_only",
+      "execution_status": "ready",
+      "prerequisites": ["saved_stand", "exact_ci_name", "requested_tab_names"],
+      "required_observation": {"tool": "browser_verify_exact_table_row_tabs_semantic", "arguments": {"name": {"binding": "exact_ci_name"}, "tabs": {"binding": "requested_tab_names", "format": "json_string_list"}}},
+      "checks": ["exact CI identity remains visible", "each requested tab and its controlled panel agree", "no allowlisted technical renderer error markers are visible"],
+      "check_contracts": {
+        "planned-001": {"tool": "browser_verify_exact_table_row_tabs_semantic", "subject_binding": "exact_ci_name", "tabs_binding": "requested_tab_names", "assertions": [{"field": "details_identity_preserved", "operator": "eq", "expected": true}]},
+        "planned-002": {"tool": "browser_verify_exact_table_row_tabs_semantic", "subject_binding": "exact_ci_name", "tabs_binding": "requested_tab_names", "assertions": [{"field": "tab_selection", "operator": "eq", "expected": true}, {"field": "panels_visible", "operator": "eq", "expected": true}]},
+        "planned-003": {"tool": "browser_verify_exact_table_row_tabs_semantic", "subject_binding": "exact_ci_name", "tabs_binding": "requested_tab_names", "assertions": [{"field": "known_renderer_errors_absent", "operator": "eq", "expected": true}]}
+      }
+    },
+    {
       "case_id": "uc-front-016",
       "category": "files_notifications",
       "title": "Verify a generated report download",

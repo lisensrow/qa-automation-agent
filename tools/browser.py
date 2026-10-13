@@ -9482,6 +9482,72 @@ class BrowserSession:
                     outside_row_match_count: exact.filter(el => !el.closest('tr,[role="row"]')).length};
         }""", " ".join(str(name or "").split()))
 
+    def _panel_renderer_message_audit(self, panel_id):
+        """Report allowlisted visible technical markers, never raw panel text."""
+        script = """panelId => {
+            const visible = el => {
+                if (!el) return false;
+                const style = getComputedStyle(el);
+                return !el.hidden && style.display !== 'none' && style.visibility !== 'hidden'
+                    && el.getClientRects().length > 0;
+            };
+            const root = panelId === null ? document.body : document.getElementById(panelId);
+            if (!visible(root)) return {observed: false, complete: false, markers: []};
+            // innerText includes direct text in mixed-content containers and
+            // excludes display:none descendants. Leaf-only scans miss errors
+            // whose container also contains a line break or an icon.
+            const panelText = String(root.innerText || '');
+            const limit = 65536;
+            const patterns = [
+                ['infinite_extent', /\\binfinite\\s+extent\\b/i],
+                ['javascript_type_error', /\\bUncaught(?:\\s*\\(in promise\\))?\\s+TypeError\\b|Cannot read properties of (?:undefined|null)/i],
+                ['javascript_reference_error', /\\bUncaught(?:\\s*\\(in promise\\))?\\s+ReferenceError\\b/i],
+                ['javascript_syntax_error', /\\bUncaught(?:\\s*\\(in promise\\))?\\s+SyntaxError\\b/i],
+            ];
+            const markers = new Set();
+            const complete = panelText.length <= limit;
+            for (const [name, pattern] of patterns) if (pattern.test(panelText.slice(0, limit))) markers.add(name);
+            return {observed: true, complete, markers: Array.from(markers).sort()};
+        }"""
+        budget = [8]
+
+        def scan(context, root_id, depth):
+            audit = context.evaluate(script, root_id)
+            if not audit.get("observed"):
+                return audit
+            root = context.locator("body") if root_id is None else context.locator(
+                "[id=" + json.dumps(root_id) + "]")
+            frames = root.locator("iframe")
+            markers = set(audit["markers"])
+            # Do not assume an empty iframe shell means the chart is healthy.
+            # Only read visible frames owned by this panel, with bounded nesting.
+            for index in range(min(frames.count(), 32)):
+                try:
+                    locator = frames.nth(index)
+                    if not locator.is_visible():
+                        continue
+                    if depth >= 2 or budget[0] <= 0:
+                        audit["complete"] = False
+                        continue
+                    budget[0] -= 1
+                    handle = locator.element_handle()
+                    frame = handle.content_frame() if handle else None
+                    if frame is None:
+                        audit["complete"] = False
+                        continue
+                    frame.wait_for_load_state("domcontentloaded", timeout=2000)
+                    nested = scan(frame, None, depth + 1)
+                    audit["complete"] &= bool(nested.get("observed") and nested.get("complete"))
+                    markers.update(nested.get("markers") or [])
+                except Exception:
+                    audit["complete"] = False
+            if frames.count() > 32:
+                audit["complete"] = False
+            audit["markers"] = sorted(markers)
+            return audit
+
+        return scan(self.page, panel_id, 0)
+
     def verify_exact_table_row_tabs_semantic(
         self, name: str, tabs: list, tablist: str = None,
     ):
@@ -9647,6 +9713,12 @@ class BrowserSession:
                 "details_identity": identity_after,
                 "passed": tab_passed,
             }
+            panel_audit = self._panel_renderer_message_audit(verification["controls"])
+            verification.update(
+                panel_renderer_audit_observed=panel_audit.get("observed") is True,
+                panel_renderer_scan_complete=panel_audit.get("complete") is True,
+                panel_renderer_error_markers=panel_audit.get("markers"),
+            )
             verified.append(verification)
             if not tab_passed:
                 return {

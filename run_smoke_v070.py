@@ -195,6 +195,8 @@ SMOKES = [
     "smoke_tab_navigation_contract.py",
     "smoke_tablist_semantic_scope.py",
     "smoke_tab_navigation_dom.py",
+    "smoke_panel_renderer_contract.py",
+    "smoke_panel_renderer_dom.py",
 ]
 
 

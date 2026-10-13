@@ -13533,6 +13533,22 @@ def _read_only_agent_telemetry_followup(tool_name, arguments, result, ci_name):
     return None
 
 
+def _prepared_tabs_route_message(required_observation):
+    return {
+        "role": "user",
+        "content": (
+            "[UQA CORE: LOCKED TAB OBSERVATION ROUTE]\n"
+            "Open the saved stand entry URL if it is not open. Then call "
+            "browser_verify_exact_table_row_tabs_semantic with the locked arguments: "
+            + json.dumps(required_observation["arguments"], ensure_ascii=False)
+            + ". This composite opens or reuses the exact row details and verifies "
+            "the requested tabs itself. Do not manually toggle the row, inspect "
+            "pagination, or call telemetry/plugin inspectors for this tab contract. "
+            "Use normal action policy; no mutation or Refresh is requested."
+        ),
+    }
+
+
 def run_turn(
     messages,
     job_id=None,
@@ -13571,7 +13587,9 @@ def run_turn(
     telemetry_ci_name = _agent_telemetry_ci_name_from_request(
         managed_agent_request_text
     )
-    telemetry_route_message = _read_only_agent_telemetry_route_message(
+    composite_tabs_required = bool(required_observation and required_observation["tool"] ==
+                                   "browser_verify_exact_table_row_tabs_semantic")
+    telemetry_route_message = None if composite_tabs_required else _read_only_agent_telemetry_route_message(
         managed_agent_request_text,
         telemetry_ci_name,
     )
@@ -13600,11 +13618,13 @@ def run_turn(
             telemetry_ci_name,
             plugin_target,
         )
-        if not telemetry_route_message
+        if not telemetry_route_message and not composite_tabs_required
         else None
     )
     if plugin_route_message:
         messages.append(plugin_route_message)
+    if composite_tabs_required:
+        messages.append(_prepared_tabs_route_message(required_observation))
     managed_agent_fixture_id = _managed_agent_fixture_from_request(
         managed_agent_request_text
     )
@@ -14762,6 +14782,9 @@ def run_turn(
                 )
                 if telemetry_followup:
                     messages.append(telemetry_followup)
+
+            if composite_tabs_required and name == "browser_open_page" and not result.get("error"):
+                messages.append(_prepared_tabs_route_message(required_observation))
 
             if plugin_route_message:
                 plugin_followup = _read_only_agent_plugin_followup(
