@@ -427,13 +427,19 @@ Read-only retrieval требует exact architecture/backend/frontend и отд
 
 Проверки: runner 185/185 и py_compile, negative no-execution scope tests, bounded format retries без инструментов. Реальный Job `20261013-134034-a234b69c` PASSED 4/4 и сохранил полноценное UI/API/backend confirmation текущего frontend 2.21.0. `20261013-134157-0b5f34bd` PASSED 4/4 и загрузил один совместимый факт в контекст, но повторная API-detail попытка использовала неправильный request ID: backend matched, API-detail пустой. runtime_confirmed не выставлен, новое слабое confirmation не принимается как frontend-compatible. В DB выявлен отдельный слабый candidate с пустым endpoint; он не verified и не возвращается reader. Следующая обязательная правка — входная проверка API candidate generator. Неполные Jobs/confirmation не удаляются и не переименовываются в успешные memory rechecks.
 
-## Безопасность
-
-### v151d: валидный runtime trace до создания API candidate
+## v151d: валидный runtime trace до создания API candidate
 
 Генератор новых UI/API кандидатов отклоняет пустой method/path/status, неверный тип query/status, отсутствующие execution/request IDs, несовпадающую browser session и request, не принадлежащий закрытому network window выполненного UI action. UI/API должны иметь ровно одно usable case-local evidence. Backend proof должен быть usable, принадлежать тому же saved stand и содержать целочисленный match_count. Существующие исторические факты/Jobs не удаляются и не переписываются; для новых кандидатов legacy fallback без modern trace больше не считается достаточным.
 
-Изолированные negative fixtures прошли. Read-only replay реальных case observations с отключённым upsert подтвердил: `20261013-134034-a234b69c` даёт один корректный candidate; `20261013-134157-0b5f34bd` с пустым API-detail не даёт кандидатов. Это проверка действительных сохранённых наблюдений, а не новый реальный прогон или новый PASS. Полный runner проверяется отдельно.
+Изолированные negative fixtures прошли. Read-only replay реальных case observations с отключённым upsert подтвердил: `20261013-134034-a234b69c` даёт один корректный candidate; `20261013-134157-0b5f34bd` с пустым API-detail не даёт кандидатов. Это проверка действительных сохранённых наблюдений, а не новый реальный прогон или новый PASS. Полный runner 186/186, py_compile успешен.
+
+## v151e: первый новый fact type — UI navigation candidate
+
+После passed case Core может создать ui_navigation candidate из exact-row/named-tabs observation, повторно вычислив все locked contracts. Обязательны tab_selection, panels_visible и details_identity_preserved, одно case-local observation, usable evidence, тот же origin и свежая frontend-aware identity с memory_context timestamp. Данные содержат начальный configured UI path, tool, semantic action и список tabs — без имени/ID конкретной КЕ и без URL карточки. Неполное, неоднозначное, stale или failed наблюдение не создаёт candidate.
+
+Кандидат сохраняется существующим Job Store/Product Knowledge pipeline. Это НЕ verified знание: прежний API-binding validator не поддерживает новый тип, reader его не выдаёт модели. Требуется отдельный type-specific validator повторных подтверждений текущего frontend; API/backend proof rules нельзя переносить на client-side навигацию механически. Реальный Job `20261013-135531-1e0f5404` PASSED 3/3, выполнил только open и exact-row/Agent-tab navigation, сохранил ui_navigation candidate при frontend 2.21.0. Изолированные negative tests, py_compile и полный runner 187/187 прошли.
+
+## Безопасность
 
 - Секреты не печатаются в отчётах и не передаются LLM.
 - Saved credentials использует только доверенный runtime.

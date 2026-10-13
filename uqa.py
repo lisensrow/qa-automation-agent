@@ -14169,6 +14169,17 @@ def run_turn(
                                 )
                             )
 
+                            from navigation_knowledge import derive_navigation_candidates
+                            from job_store import upsert_candidate_fact
+                            navigation_job = get_job(job_id) or {}
+                            if (navigation_job.get("stand_identity") or {}).get("frontend_status") == "ok":
+                                navigation_stand = get_stand(navigation_job.get("stand")) or {}
+                                for navigation in derive_navigation_candidates(
+                                        navigation_job, case_id, navigation_stand.get("web_url")):
+                                    candidates.append(upsert_candidate_fact(
+                                        job_id=job_id, case_id=case_id,
+                                        **{key:value for key,value in navigation.items() if key != "usage"}))
+
                             console.print(
                                 f"[dim]Candidate facts: "
                                 f"{len(candidates)}[/dim]"
