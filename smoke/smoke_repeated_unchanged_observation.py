@@ -25,7 +25,7 @@ unchanged_turns = iter([
     }}]}},
 ])
 executed_unchanged = []
-uqa.ask_ollama = lambda messages: next(unchanged_turns)
+uqa.ask_ollama = lambda messages, **kwargs: next(unchanged_turns)
 
 
 def fake_unchanged(name, arguments, messages, **kwargs):
@@ -59,7 +59,7 @@ changed_turns = iter([
     {"message": {"content": "Observed"}},
 ])
 executed_changed = []
-uqa.ask_ollama = lambda messages: next(changed_turns)
+uqa.ask_ollama = lambda messages, **kwargs: next(changed_turns)
 
 
 def fake_changed(name, arguments, messages, **kwargs):

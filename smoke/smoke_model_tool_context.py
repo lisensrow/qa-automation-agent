@@ -389,7 +389,7 @@ semantic_turns = iter([
     },
 ])
 executed_semantic_calls = []
-uqa.ask_ollama = lambda messages: next(semantic_turns)
+uqa.ask_ollama = lambda messages, **kwargs: next(semantic_turns)
 
 
 def fake_execute_tool(name, arguments, messages, **kwargs):
@@ -422,7 +422,7 @@ changed_page_turns = iter([
     {"message": {"content": "Observed"}},
 ])
 executed_after_navigation = []
-uqa.ask_ollama = lambda messages: next(changed_page_turns)
+uqa.ask_ollama = lambda messages, **kwargs: next(changed_page_turns)
 
 
 def fake_changed_page(name, arguments, messages, **kwargs):
@@ -483,7 +483,7 @@ mutation_turns = iter([
     },
 ])
 executed_mutation_calls = []
-uqa.ask_ollama = lambda messages: next(mutation_turns)
+uqa.ask_ollama = lambda messages, **kwargs: next(mutation_turns)
 
 
 def fake_blocked_mutation(name, arguments, messages, **kwargs):

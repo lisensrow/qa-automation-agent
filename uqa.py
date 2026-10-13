@@ -283,6 +283,55 @@ TOOLS = [
     *CORE_RESOURCE_TOOLS,
 ]
 
+# Model-facing discovery only; execution and action-policy remain unchanged.
+MODEL_BASE_TOOL_NAMES = {
+    "browser_open_page", "browser_get_state", "browser_inspect_semantic",
+    "browser_click_semantic", "browser_fill_semantic",
+    "browser_inspect_table_semantic", "browser_inspect_table_row",
+    "knowledge_search",
+}
+MODEL_CATALOG_TOOL_NAME = "tool_catalog_select"
+
+
+def model_tool_catalog(selected_names=()):
+    available = {item["function"]["name"] for item in TOOLS}
+    selected = set(selected_names)
+    if not selected <= available:
+        raise ValueError("model_catalog_unknown_tool")
+    discovery = {
+        "type": "function",
+        "function": {
+            "name": MODEL_CATALOG_TOOL_NAME,
+            "description": (
+                "Load up to 12 tools for the next turn. This only changes the "
+                "model catalog; it performs no browser/server action. Choose "
+                "exact names from the enum. All tools remain policy-controlled. "
+                "The selected set replaces the previous set; basic tools stay."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "names": {"type": "array", "minItems": 1, "maxItems": 12,
+                          "items": {"type": "string", "enum": sorted(available)}}
+            }, "required": ["names"], "additionalProperties": False},
+        },
+    }
+    return [discovery, *[
+        item for item in TOOLS
+        if item["function"]["name"] in MODEL_BASE_TOOL_NAMES | selected
+    ]]
+
+
+def select_model_tools(arguments):
+    if not isinstance(arguments, dict) or set(arguments) != {"names"}:
+        raise ValueError("model_catalog_arguments_invalid")
+    names = arguments["names"]
+    if (not isinstance(names, list) or not 1 <= len(names) <= 12
+            or any(not isinstance(name, str) or not name for name in names)):
+        raise ValueError("model_catalog_names_invalid")
+    if len(set(names)) != len(names):
+        raise ValueError("model_catalog_names_duplicate")
+    model_tool_catalog(names)  # Validate against trusted registry, atomically.
+    return set(names)
+
 
 OLLAMA_URL = os.getenv(
     "OLLAMA_URL",
@@ -13490,9 +13539,17 @@ def run_turn(
             _managed_agent_next_step_message(initial_managed_call)
         )
 
+    selected_model_tools = set()
+    messages.append({"role": "user", "content": (
+        "[UQA CORE: PROGRESSIVE TOOL CATALOG]\n"
+        "Only basic tools are initially loaded. If a specialized tool is needed, "
+        "use tool_catalog_select with exact names from its enum, then call the "
+        "loaded tool on the next turn. Loading tools performs no action and "
+        "does not prove any check. Do not repeat an unchanged observation."
+    )})
     for _ in range(MAX_TOOL_STEPS):
         try:
-            data = ask_ollama(messages)
+            data = ask_ollama(messages, tools=model_tool_catalog(selected_model_tools))
         except Exception as exc:
             if job_id and case_id:
                 finalize_case_blocked(
@@ -14173,6 +14230,21 @@ def run_turn(
                     arguments = json.loads(arguments)
                 except json.JSONDecodeError:
                     arguments = {}
+
+            if name == MODEL_CATALOG_TOOL_NAME:
+                try:
+                    selected_model_tools = select_model_tools(arguments)
+                    catalog_result = {"status": "loaded",
+                                      "selected_tools": sorted(selected_model_tools),
+                                      "execution_performed": False,
+                                      "usable_for_verdict": False}
+                except ValueError:
+                    catalog_result = {"error": "model_catalog_selection_invalid",
+                                      "execution_performed": False,
+                                      "usable_for_verdict": False}
+                messages.append({"role": "tool", "tool_name": name,
+                                 "content": json.dumps(catalog_result)})
+                continue
 
             action_class = classify_tool_action(
                 name,
