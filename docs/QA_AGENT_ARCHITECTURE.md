@@ -5,6 +5,7 @@
 ## Что умеет агент
 
 - Понимает QA-запрос на естественном языке и превращает его в проверяемый план.
+- Может явно загрузить проверенные UI/API-факты из продуктовой памяти в контекст модели; для frontend-aware режима требует отдельного runtime confirmation текущих architecture/backend/frontend. Память — подсказка для нового прогона, не доказательство PASS и не обучение весов LLM.
 - Отличает одиночный последовательный сценарий от набора независимых test case.
 - Материализует готовый сценарий продуктового корпуса в один persistent regression Job и запускает этот же Job командой `/run-job JOB_ID` без повторного LLM-планирования. Повторная материализация того же активного сценария, стенда, bindings и набора checks возвращает существующий Job вместо создания дубликата.
 - Fail-closed отделяет `ready` продуктовые сценарии от `candidate` и `blocked_external`; каждый candidate обязан хранить явную проверяемую причину, что именно ещё мешает реальному прогону.
@@ -410,9 +411,7 @@ Memory preloading opt-in теперь допускает write_ui_state толь
 
 Следующий этап version compatibility: read-only inventory стенда обнаружил backend image tag 4.9.0 и frontend image tag 2.21.0. Это версии контейнерных image tags, не доказательство immutable frontend asset digest. Старые confirmations не содержат frontend compatibility; backend-only matching не выдаётся за проверку после frontend update.
 
-## Безопасность
-
-### v151b: совместимость memory hints с frontend
+## v151b: совместимость memory hints с frontend
 
 Prepared Jobs с memory_query дополнительно читают inventory контейнеров и сохраняют frontend image tag в свежей identity. Несколько разных frontend tags, mutable/неизвестный tag или ошибка inventory означают unknown, а не выбор первого контейнера. Это не проверка immutable image digest или загруженных browser assets: повторное использование того же tag с другим содержимым пока не обнаруживается.
 
@@ -421,6 +420,14 @@ Read-only retrieval требует exact architecture/backend/frontend и отд
 Проверки: полный runner 183/183, включая отрицательные version/ambiguity/proof tests, hash неизменности read-only DB и py_compile. Реальный Job `20261013-132407-cc4a06e8` BLOCKED: structured result отсутствовал. `20261013-132730-bab3844c` BLOCKED: bare JSON и чтение поля до, а не после очистки. `20261013-133035-1be79141` PASSED по четырём UI-contracts, однако backend correlation не подтверждена: модель указала неверный stand. Его восьмое confirmation содержит только UI/API flags и не разрешило frontend-aware reuse. `20261013-133206-b3e8c2bb` BLOCKED; память также не загрузила слабое confirmation. Сквозной успешный frontend-aware recheck пока НЕ доказан; это не подменяется PASS UI-сценария.
 
 Очередь этапов скорректирована по этим прогонам: перед расширением fact types устранить общие ошибки выбора stand для diagnostics и bounded structured-result recovery. Затем вернуться к новым видам памяти, таблицам/формам, lifecycle и агентным сценариям. STEP/AUTO и v069 policy остаются неизменными. Jobs, DB и секреты сохраняются на сервере, не включаются в новые commits.
+
+## v151c: scope диагностики и восстановление формата
+
+Три read-only SSH diagnostics проходят привязку к persistent Job/case stand. Пропущенный stand берётся из Job; явно чужой stand или противоречивая requirement scope блокируются до выполнения. Привязка не выдаёт разрешений на WRITE/DESTRUCTIVE/SYSTEM и не меняет v069 классификацию. Для всех prepared cases с locked check contracts, а не только single required observation, допускаются максимум две просьбы исправить UQA_CHECKS_JSON. Отсутствующее доказательство остаётся BLOCKED; текст модели не превращается автоматически в PASS.
+
+Проверки: runner 185/185 и py_compile, negative no-execution scope tests, bounded format retries без инструментов. Реальный Job `20261013-134034-a234b69c` PASSED 4/4 и сохранил полноценное UI/API/backend confirmation текущего frontend 2.21.0. `20261013-134157-0b5f34bd` PASSED 4/4 и загрузил один совместимый факт в контекст, но повторная API-detail попытка использовала неправильный request ID: backend matched, API-detail пустой. runtime_confirmed не выставлен, новое слабое confirmation не принимается как frontend-compatible. В DB выявлен отдельный слабый candidate с пустым endpoint; он не verified и не возвращается reader. Следующая обязательная правка — входная проверка API candidate generator. Неполные Jobs/confirmation не удаляются и не переименовываются в успешные memory rechecks.
+
+## Безопасность
 
 - Секреты не печатаются в отчётах и не передаются LLM.
 - Saved credentials использует только доверенный runtime.

@@ -4103,6 +4103,17 @@ def execute_tool_with_policy(
 
     authoritative_task_text = None
 
+    if action_policy == "confirm_mutations" and job_id and case_id:
+        from diagnostic_scope import DIAGNOSTIC_TOOLS, scope_diagnostic_arguments
+        if name in DIAGNOSTIC_TOOLS:
+            diagnostic_job = get_job(job_id) or {}
+            arguments, scope_error = scope_diagnostic_arguments(name, arguments, diagnostic_job, case_id)
+            if scope_error:
+                return {"error":scope_error, "status":"blocked_by_policy", "executed":False,
+                        "action_class":action_class, "action_policy_status":"blocked_by_diagnostic_scope",
+                        "required_stand":diagnostic_job.get("stand"),
+                        "reason":"Read-only diagnostics must use the exact persistent Job stand."}
+
     if (
         action_policy == "confirm_mutations"
         and job_id
@@ -13742,7 +13753,7 @@ def run_turn(
                     "The case is incomplete. Follow the exact read-only route and obtain this observation "
                     "before finalizing:\n" + json.dumps(required_observation))})
                 continue
-            if required_observation and structured_repair_attempts < 2:
+            if (required_observation or contract_check_templates) and structured_repair_attempts < 2:
                 proposed_checks, _, format_error = extract_structured_checks(content)
                 if format_error or proposed_checks is None:
                     structured_repair_attempts += 1
