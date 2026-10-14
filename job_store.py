@@ -2,6 +2,7 @@ import json
 import getpass
 import os
 import uuid
+import tempfile
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -345,30 +346,27 @@ def _atomic_write(path: Path, data: dict):
         parents=True,
         exist_ok=True,
     )
-    tmp = path.with_suffix(
-        path.suffix + ".tmp"
-    )
-
-    tmp.write_text(
-        json.dumps(
-            data,
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
-
-    os.chmod(
-        tmp,
-        0o660,
-    )
-
-    tmp.replace(path)
-
-    os.chmod(
-        path,
-        0o660,
-    )
+    # A shared '<job>.json.tmp' collides across writers. Each complete
+    # snapshot gets a private, unique temporary file on the same filesystem.
+    fd, filename = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    tmp = Path(filename)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            json.dump(data, stream, ensure_ascii=False, indent=2)
+            stream.flush()
+            os.chmod(tmp, 0o660)  # Preserve the existing final access policy.
+            os.fsync(stream.fileno())
+        tmp.replace(path)
+        # Linux needs the rename itself synced, not only the file contents.
+        # Windows does not expose directory fsync through this API.
+        if os.name == "posix":
+            directory_fd = os.open(path.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def _load_product_blocker_store():
