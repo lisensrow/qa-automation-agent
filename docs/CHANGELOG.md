@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v185 — аудит навигационной гипотезы, без выпуска auth-изменения
+
+- Первичное ev-5df0fd40953b показало, что исходный адрес сменил _managed_initial_browser_open_url до вызова browser adapter: inferred_deep_link_normalized_to_origin. Это существующая origin-generic защита, не доказанная потеря deep URL при certificate auth. Ранее указанная auth-гипотеза снята.
+- Экспериментальный goto-after-login и его smoke не выпущены: browser.py/run_smoke_v070.py возвращены к be5bb3b, диагностический smoke сохранён в /tmp/v185-auth-hypothesis-smoke.py. Jobs/evidence и журналы не удалялись. После возврата повторяется stable suite; не считать гипотезный 223-run новой production-приёмкой.
+- Model Job20261014-231617-60b0f47e/tc-7c63a3aa восстановил plus без выдуманной роли, прошёл список процедур и Add. Затем пропустил Add procedure, искал Logical в меню и остановлен повторной неуспешной инспекцией. BLOCKED, resources0/operations0; полноценный автономный editor/palette не принят.
+- Следующий ограниченный технический шаг: проверяемые переходы menu→new editor и constrained recovery observations, затем workspace/block/edge/save contract и locked owned lifecycle. Не ослаблять initial-open/action-policy/journal ради формального PASS.
+- Возвращённая стабильная production-версия повторно прошла 222/222 (/tmp/v185-final-stable-smoke.log); browser/runner diff отсутствует. Операторский источник с исправлением ошибочной гипотезы переиндексирован отдельно: consistent snapshot before-v185-audit, integrity/recall PASS, 1148 остальных chunks неизменны.
+
 ## v184 — реальные категории и палитра нового редактора процедур
 
 - Operator case tc-7ec67b72 Job20261014-225056-18044f6f прочитал дерево категорий и палитры штатными semantic tools. UC Agent/Logical/Variables выбираются как treeitem INTERACT/auto_allowed; selected меняется, expanded=null. Это selection, не выдуманное expand-состояние.

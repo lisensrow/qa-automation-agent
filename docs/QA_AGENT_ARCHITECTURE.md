@@ -1,5 +1,9 @@
 # Архитектура QA-агента UQA
 
+## Навигационная граница и аудит v185
+
+Первое угаданное открытие deep link намеренно нормализуется Core к origin; exact user-provided URL либо повтор после browser state обрабатываются иначе. Это источник requested/effective URL различия в текущих model trials, не подтверждённый auth defect. Эксперимент auth восстановления не выпущен; прежние STEP/AUTO/v069/initial-open guards сохранены. Модель смогла дойти до menu Add, но пропустила переход Add procedure→New procedure; повторная инспекция остановлена. Следующий контракт должен различать раскрытое меню и готовый editor, не подменять это снятием защиты или большим числом fixtures.
+
 ## Palette inspection процедур v184
 
 Существующие browser_inspect_tree_semantic и browser_click_semantic различают три treeitem категории нового editor. Native selected-state подтверждает выбор UC Agent/Logical/Variables; expanded=null не подменяется true. SVG label команды uniquely inspectable, но не является button/input. Операторский опыт записан отдельным case и доступен по reviewed experience query, сохранив 1148 других индексных chunks. Это не новый графовый адаптер и не способность сохранять/исполнять процедуру. Model entry/palette trial оценивается отдельно; production code после suite222/222 не менялся.

@@ -40,4 +40,12 @@ ev-ef9a50468138: Logical показывает «Если / То» и predicate �
 
 ## Что пока не доказано
 
+### Аудит первоначального открытия: нормализация Core, не доказанный auth bug
+
+Job20261014-231617-60b0f47e/case tc-7c63a3aa, ev-5df0fd40953b: model_requested_url=/automation/procedures, но native requested_url=https://uc.lab.local. managed_initial_open.reason=inferred_deep_link_normalized_to_origin. Существующий Core намеренно открывает сначала origin, если пользователь не передал точный deep URL и browser state ещё не создан. Это защита от угаданных UI/API ссылок, её нельзя обходить по старому рецепту.
+
+Предыдущая гипотеза о потере адреса в certificate login не объясняет этот прогон. Экспериментальная auth-правка не выпущена, исходный код восстановлен. Не записывать это как баг/фикс UC и не советовать обновление продукта.
+
+Модель после восстановления навигации прошла plus → Automation & policies → Procedures → List of procedures и Add, но не выбрала Add procedure. Затем искала Logical в меню, не в новом редакторе, и была остановлена repeated semantic inspection. Это BLOCKED, resources0/operations0. Наличие Add procedure в меню ещё не означает, что открыт редактор: проверять свежий New procedure и дерево категорий перед их использованием.
+
 Автономное создание политики, выбор целевой коллекции, сохранённые условия, действие на выделенной КЕ, расписание, отрицательный oracle и построение/запуск процедур не приняты. Для изменений нужны точный owned scope, immutable operation/oracle и свежий контроль фактического результата. Обычный ACK, enabled кнопка и сохранённый рецепт этого не заменяют.
