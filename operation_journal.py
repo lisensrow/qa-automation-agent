@@ -114,7 +114,7 @@ def inspect_operation(job_id, case_id, workflow_id, stage_id, resource_key, argu
         return _readiness(_load(path, job_id), case_id, workflow_id, stage_id, resource_key, _fingerprint(arguments))
 
 
-def begin_operation(job_id, case_id, workflow_id, stage_id, resource_key, tool, arguments):
+def begin_operation(job_id, case_id, workflow_id, stage_id, resource_key, tool, arguments, verification_contract=None):
     import job_store
     _context(job_id, case_id)
     workflow_id, stage_id, resource_key, tool = map(_token, (workflow_id, stage_id, resource_key, tool))
@@ -129,6 +129,7 @@ def begin_operation(job_id, case_id, workflow_id, stage_id, resource_key, tool, 
         operation = {'operation_id': 'op-' + uuid.uuid4().hex, 'case_id': case_id,
                      'workflow_id': workflow_id, 'stage_id': stage_id, 'resource_key': resource_key,
                      'tool': tool, 'arguments_fingerprint': fingerprint, 'status': 'sending',
+                     'verification_fingerprint': _fingerprint(verification_contract) if verification_contract is not None else None,
                      'created_at': job_store._now(), 'updated_at': job_store._now(), 'receipt': None}
         data['operations'].append(operation)
         job_store._atomic_write(path, data)  # Must finish BEFORE callback/send.
@@ -163,6 +164,32 @@ def list_operations(job_id):
         raise ValueError('operation Job missing')
     with _locked(job_id) as path:
         return _load(path, job_id)['operations']
+
+
+def reconcile_operation(job_id, operation_id, evidence_id):
+    import job_store
+    from operation_recovery import evaluate_recovery
+    with _locked(job_id) as path:
+        data = _load(path, job_id)
+        operation = next(o for o in data['operations'] if o['operation_id'] == operation_id)
+        job = _context(job_id, operation['case_id'])
+        case = next(c for c in job['test_cases'] if c['case_id'] == operation['case_id'])
+        requirement = case.get('requirement') or {}
+        stage = requirement.get('operation_stage') or {}
+        contract = stage.get('verification')
+        if (requirement.get('locked') is not True or operation.get('verification_fingerprint') is None
+                or _fingerprint(contract) != operation['verification_fingerprint']
+                or any(stage.get(k) != operation[k] for k in ('workflow_id', 'stage_id', 'resource_key', 'tool'))
+                or _fingerprint(stage.get('arguments')) != operation['arguments_fingerprint']):
+            return {'verified': False, 'reason': 'recovery_contract_missing_or_changed', 'resend_authorized': False}
+        proof = evaluate_recovery(job, operation, evidence_id, contract)
+        if proof['verified']:
+            operation['status'] = 'verified'
+            operation['verification'] = proof
+            operation['updated_at'] = job_store._now()
+            job_store._atomic_write(path, data)
+        return {**proof, 'operation_id': operation_id, 'operation_status': operation['status'],
+                'bookkeeping_only': True, 'product_evidence': False}
 
 
 def execute_journaled(context, callback):

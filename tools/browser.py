@@ -6,7 +6,7 @@ import mimetypes
 import os
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -783,6 +783,12 @@ class BrowserSession:
         request = response.request
 
         if request.resource_type in ("fetch", "xhr"):
+            received_at = datetime.now(timezone.utc).isoformat()
+            try:
+                started = request.timing.get("startTime")
+                request_started_at = datetime.fromtimestamp(started / 1000, timezone.utc).isoformat() if type(started) in (int, float) and started > 0 else None
+            except (AttributeError, TypeError, ValueError, OverflowError):
+                request_started_at = None
             self.network_counter += 1
 
             request_id = f"n{self.network_counter}"
@@ -790,6 +796,8 @@ class BrowserSession:
             self.network_events.append(
                 {
                     "request_id": request_id,
+                    "received_at": received_at,
+                    "request_started_at": request_started_at,
                     "session_id": self.session_id,
                     "action_execution_id": (
                         self.active_action_execution_id
@@ -806,6 +814,8 @@ class BrowserSession:
             self.network_details[request_id] = {
                 "request": request,
                 "response": response,
+                "received_at": received_at,
+                "request_started_at": request_started_at,
                 "session_id": self.session_id,
                 "action_execution_id": (
                     self.active_action_execution_id
@@ -1877,6 +1887,8 @@ class BrowserSession:
 
         return {
             "request_id": request_id,
+            "received_at": item.get("received_at"),
+            "request_started_at": item.get("request_started_at"),
             "session_id": item.get(
                 "session_id"
             ),
@@ -1885,6 +1897,10 @@ class BrowserSession:
             ),
             "method": request.method,
             "url": safe_url,
+            "response_origin": (
+                f"{urlsplit(response.url).scheme}://{urlsplit(response.url).hostname}"
+                + (f":{urlsplit(response.url).port}" if urlsplit(response.url).port else "")
+            ),
             "resource_type": request.resource_type,
             "status": response.status,
             "request_headers": request_headers,

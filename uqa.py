@@ -279,6 +279,12 @@ CORE_RESOURCE_TOOLS = [
 ]
 
 # Core-only tools receive job_id/case_id from trusted runtime context.
+CORE_RESOURCE_TOOLS += [
+    {"type":"function","function":{"name":"operation_list","description":"Read durable operation states of the current Job; not product evidence.",
+        "parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"operation_reconcile","description":"Check a pending operation against fresh native GET evidence and its immutable locked oracle. Never resends or grants WRITE.",
+        "parameters":{"type":"object","properties":{"operation_id":{"type":"string"},"evidence_id":{"type":"string"}},"required":["operation_id","evidence_id"]}}},
+]
 TOOLS = [
     *TOOLS,
     *CORE_RESOURCE_TOOLS,
@@ -2125,6 +2131,8 @@ def classify_tool_action(
         "browser_inspect_managed_agent_task_result_semantic",
         "resource_list",
         "resource_assert_edit_scope",
+        "operation_list",
+        "operation_reconcile",
         "table_selection_list",
     }
 
@@ -4172,6 +4180,14 @@ def execute_resource_tool(
         }
 
     try:
+        if name == "operation_list":
+            from operation_journal import list_operations
+            return {"status":"ok","executed":False,"bookkeeping_only":True,"product_evidence":False,
+                    "operations":list_operations(job_id)}
+        if name == "operation_reconcile":
+            from operation_journal import reconcile_operation
+            return reconcile_operation(job_id, arguments.get("operation_id"), arguments.get("evidence_id"))
+
         if name == "stage_test_artifact":
             return stage_test_artifact(
                 job_id,
@@ -4440,7 +4456,7 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
         if stage.get("tool") == name and stage.get("arguments") == arguments:
             return {"job_id": job_id, "case_id": case_id, "workflow_id": stage["workflow_id"],
                     "stage_id": stage["stage_id"], "resource_key": stage["resource_key"],
-                    "tool": name, "arguments": arguments}
+                    "tool": name, "arguments": arguments, "verification_contract": stage.get("verification")}
         if commit:
             raise ValueError("operation stage does not match commit")
     if not commit:
@@ -4897,7 +4913,7 @@ def execute_tool_with_policy(
             operation_context = _mutation_operation_context(name, arguments, action_class, job_id, case_id)
             if operation_context:
                 from operation_journal import inspect_operation
-                readiness = inspect_operation(**{k: v for k, v in operation_context.items() if k != "tool"})
+                readiness = inspect_operation(**{k: v for k, v in operation_context.items() if k not in {"tool", "verification_contract"}})
                 if not readiness["allowed"]:
                     return {"error": readiness["reason"], "status": "blocked_by_policy", "executed": False,
                             "action_class": action_class, "action_policy_status": "blocked_by_operation_journal",
@@ -5003,6 +5019,8 @@ def execute_tool_with_policy(
             ignored_external_id = proposed_external_id
 
     if name in {
+        "operation_list",
+        "operation_reconcile",
         "resource_register",
         "resource_update",
         "resource_list",
@@ -5909,6 +5927,8 @@ def record_tool_observations(
         return []
 
     if tool_name in {
+        "operation_list",
+        "operation_reconcile",
         "resource_register",
         "resource_update",
         "resource_list",
@@ -6127,6 +6147,8 @@ def record_tool_evidence(
         return None
 
     if tool_name in {
+        "operation_list",
+        "operation_reconcile",
         "resource_register",
         "resource_update",
         "resource_list",
