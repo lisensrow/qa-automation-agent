@@ -570,8 +570,8 @@ def incomplete_search_phase_message(job, case_id):
         return None
 
 
-def locked_contract_observer_tools(job, case_id):
-    """Expose declared observation schemas, not actions or permission grants."""
+def locked_contract_schema_tools(job, case_id):
+    """Expose validated declared read/navigation schemas; execute or authorize nothing."""
     if not isinstance(job, dict) or job.get("job_type") != "regression":
         return set()
     case = next((c for c in job.get("test_cases", []) if c.get("case_id") == case_id), {})
@@ -586,9 +586,15 @@ def locked_contract_observer_tools(job, case_id):
     try:
         validate_contracts(contracts)
         return {c["tool"] for c in contracts.values()
-                if classify_tool_action(c["tool"], {}) == "observe"}
+                if classify_tool_action(c["tool"], {}) in {"observe", "interact"}}
     except (ValueError, TypeError, KeyError):
         return set()
+
+
+def locked_contract_observer_tools(job, case_id):
+    """Compatibility helper: only declared OBSERVE schemas, never navigation."""
+    return {name for name in locked_contract_schema_tools(job, case_id)
+            if classify_tool_action(name, {}) == "observe"}
 
 
 def locked_form_support_tools(job, case_id):
@@ -14224,12 +14230,13 @@ def run_turn(
         )
 
     selected_model_tools = {required_observation["tool"]} if required_observation else set()
-    selected_model_tools |= locked_contract_observer_tools(managed_agent_job, case_id)
+    contract_schema_tools = locked_contract_schema_tools(managed_agent_job, case_id)
+    selected_model_tools |= contract_schema_tools
     form_support_tools = locked_form_support_tools(managed_agent_job, case_id)
     messages.append({"role": "user", "content": (
         "[UQA CORE: PROGRESSIVE TOOL CATALOG]\n"
         "Only basic tools are initially loaded. If a specialized tool is needed, "
-        "Validated locked-contract observation and declared form-close schemas may also be preloaded; this executes nothing and grants no permission. "
+        "Validated locked-contract read/navigation and declared form-close schemas may also be preloaded; this executes nothing and grants no permission. "
         "use tool_catalog_select with exact names from its enum, then call the "
         "loaded tool on the next turn. Loading tools performs no action and "
         "does not prove any check. Do not repeat an unchanged observation."
@@ -14244,7 +14251,8 @@ def run_turn(
                     if len(search_phase_reminders) < 2:
                         search_phase_reminders.add(phase_message["content"])
                         messages.append(phase_message)
-            required_names = ({required_observation["tool"]} if required_observation else set()) | form_support_tools
+            required_names = (({required_observation["tool"]} if required_observation else set())
+                              | form_support_tools | contract_schema_tools)
             completed_checks = completed_readonly_contract_checks(get_job(job_id), case_id) if job_id and case_id else None
             if pending_compatibility_probe:
                 pending_compatibility_probe = False

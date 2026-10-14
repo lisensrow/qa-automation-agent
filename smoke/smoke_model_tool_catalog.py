@@ -76,3 +76,39 @@ finally:
     uqa.ask_ollama = saved_ask
     uqa.execute_tool_with_policy = saved_execute
 print("progressive model tool catalog smoke: PASS")
+
+from copy import deepcopy
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+import job_store
+target='browser_open_exact_table_row_details_semantic'
+req={'type':'frontend_contracts','locked':True,'action_profile':'read_only',
+     'bindings':{'subject':'fixture'},'check_contracts':{
+         'planned-001':{'tool':target,'subject_binding':'subject',
+             'assertions':[{'field':'details_identity_passed','operator':'eq','expected':True}]}}}
+with TemporaryDirectory(prefix='uqa-declared-schema-') as directory, \
+        patch.object(job_store,'JOBS_DIR',Path(directory)), \
+        patch.object(uqa,'get_stand',return_value={'web_url':'https://fixture.test/'}):
+    job=job_store.create_job('Inspect fixture only.',stand='fixture',job_type='regression')
+    case=job_store.add_test_case(job['job_id'],title='Declared navigation',requirement=req,planned_checks=['Identity'])
+    job_store.set_job_status(job['job_id'],'running');job_store.update_test_case(job['job_id'],case['case_id'],status='running')
+    current=job_store.get_job(job['job_id'])
+    assert uqa.locked_contract_schema_tools(current,case['case_id'])=={target}
+    assert not uqa.locked_contract_observer_tools(current,case['case_id'])
+    bad=deepcopy(current);bad['test_cases'][0]['requirement']['locked']=False
+    assert not uqa.locked_contract_schema_tools(bad,case['case_id'])
+    calls=[]
+    def declared_ask(messages,tools):
+        calls.append(True)
+        assert target in {t['function']['name'] for t in tools}
+        if len(calls)==1:
+            return {'message':{'tool_calls':[{'function':{'name':'tool_catalog_select',
+                    'arguments':{'names':['knowledge_search']}}}]}}
+        assert len(calls)==2
+        return {'message':{'content':uqa.UQA_CHECKS_START+json.dumps({'checks':[
+            {'check_id':'planned-001','title':'Identity','status':'blocked','evidence':[]}]})+uqa.UQA_CHECKS_END}}
+    with patch.object(uqa,'ask_ollama',declared_ask), patch.object(uqa,'execute_tool_with_policy',reject_execute):
+        uqa.run_turn([],job_id=job['job_id'],case_id=case['case_id'],action_policy='confirm_mutations')
+    assert len(calls)==2 and job_store.get_job(job['job_id'])['status']=='blocked'
+print('declared schema persistence: PASS (catalog replacement, no execution/permission or inferred verdict)')
