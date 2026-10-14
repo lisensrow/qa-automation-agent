@@ -721,6 +721,12 @@ def save_job(job: dict):
     return deepcopy(job)
 
 
+def get_operation_journal(job_id: str):
+    """Read authoritative intents; separate from overwriteable Job snapshots."""
+    from operation_journal import list_operations
+    return list_operations(job_id)
+
+
 def record_compatibility_snapshot(
     job_id: str,
     case_id: str,

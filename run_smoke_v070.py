@@ -12,6 +12,7 @@ SMOKE_DIR = ROOT / "smoke"
 PRODUCTION_FILES = [
     ROOT / "uqa.py",
     ROOT / "job_store.py",
+    ROOT / "operation_journal.py",
     ROOT / "frontend_check_contracts.py",
     ROOT / "form_lifecycle_contracts.py",
     ROOT / "observation_extractor.py",
@@ -43,6 +44,7 @@ SMOKES = [
     "smoke_cleanup_expected_identifier.py",
     "smoke_resource_identity_update.py",
     "smoke_job_atomic_snapshot.py",
+    "smoke_operation_journal.py",
     "smoke_form_controls.py",
     "smoke_advanced_form_controls.py",
     "smoke_temporal_controls.py",

@@ -4411,6 +4411,45 @@ def _tool_history_observed_identifier(messages, candidate, expected_name=None):
     return False
 
 
+def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
+    """Stage identity does not grant permission; policy still evaluates first."""
+    if not job_id or not case_id or action_class not in {"write", "destructive"}:
+        return None
+    direct = {"browser_edit_owned_resource_roundtrip_semantic", "browser_delete_json_resource",
+              "browser_archive_json_resource", "browser_create_managed_agent_task_semantic",
+              "browser_disable_agent_task_semantic"}
+    verb = str(arguments.get("name") or "").strip().casefold().split(" ")[0]
+    commit = name in direct or (name == "browser_click_semantic" and verb in {
+        "save", "create", "submit", "apply", "delete", "archive", "remove", "disable", "confirm",
+        "сохранить", "создать", "удалить", "применить", "подтвердить"})
+    job = get_job(job_id)
+    if not job:
+        if commit:
+            raise ValueError("operation Job missing")
+        return None
+    case = next((c for c in job.get("test_cases", []) if c.get("case_id") == case_id), None)
+    if not case:
+        if commit:
+            raise ValueError("operation case missing")
+        return None
+    requirement = case.get("requirement") or {}
+    stage = requirement.get("operation_stage")
+    if stage is not None:
+        if requirement.get("locked") is not True or not isinstance(stage, dict) or stage.get("version") != 1:
+            raise ValueError("invalid operation stage")
+        if stage.get("tool") == name and stage.get("arguments") == arguments:
+            return {"job_id": job_id, "case_id": case_id, "workflow_id": stage["workflow_id"],
+                    "stage_id": stage["stage_id"], "resource_key": stage["resource_key"],
+                    "tool": name, "arguments": arguments}
+        if commit:
+            raise ValueError("operation stage does not match commit")
+    if not commit:
+        return None  # Pure input/UI opening remains under existing policy.
+    # Conservative legacy binding: never infer a new stage from another Save.
+    return {"job_id": job_id, "case_id": case_id, "workflow_id": "case-" + case_id,
+            "stage_id": "legacy-" + name, "resource_key": "unbound", "tool": name, "arguments": arguments}
+
+
 def execute_tool_with_policy(
     name,
     arguments,
@@ -4852,6 +4891,22 @@ def execute_tool_with_policy(
                 ),
             }
 
+    operation_context = None
+    if action_policy == "confirm_mutations":
+        try:
+            operation_context = _mutation_operation_context(name, arguments, action_class, job_id, case_id)
+            if operation_context:
+                from operation_journal import inspect_operation
+                readiness = inspect_operation(**{k: v for k, v in operation_context.items() if k != "tool"})
+                if not readiness["allowed"]:
+                    return {"error": readiness["reason"], "status": "blocked_by_policy", "executed": False,
+                            "action_class": action_class, "action_policy_status": "blocked_by_operation_journal",
+                            **readiness}
+        except Exception as exc:
+            return {"error": "operation_journal_preflight_failed", "status": "blocked_by_policy", "executed": False,
+                    "action_class": action_class, "action_policy_status": "blocked_by_operation_journal",
+                    "reason": type(exc).__name__}
+
     decision = (
         managed_action_policy_decision(
             name,
@@ -4956,17 +5011,16 @@ def execute_tool_with_policy(
         "browser_upload_staged_artifact_semantic",
         "browser_edit_owned_resource_roundtrip_semantic",
     }:
-        result = execute_resource_tool(
-            name,
-            resource_arguments,
-            job_id,
-            case_id,
-        )
+        invoke = lambda: execute_resource_tool(name, resource_arguments, job_id, case_id)
     else:
-        result = execute_tool(
-            name,
-            effective_arguments,
-        )
+        invoke = lambda: execute_tool(name, effective_arguments)
+    if operation_context:
+        from operation_journal import execute_journaled
+        result = execute_journaled(operation_context, invoke)
+        if isinstance(result, dict) and result.get("action_policy_status") == "blocked_by_operation_journal":
+            return {**result, "action_class": action_class}
+    else:
+        result = invoke()
 
     if (
         name == "browser_create_managed_agent_task_semantic"
