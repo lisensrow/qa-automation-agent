@@ -2,6 +2,16 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v177 — контекст политик и процедур и удержание исходной задачи
+
+- Официальное руководство: шесть candidate declarations по типам/условиям политик и шаблонам/целям/составу на запуске/минимуму блоков процедур. Hash/revision recheck и exact replay dedup, без runtime applicability/semantic promotion.
+- Первый live collection Job 20261014-195333-0cff9442 завершился BLOCKED: модель уходила в общий Add/Administration; ресурсов 0, unresolved operations 0. Это не подтверждённая способность создавать коллекции.
+- Найден общий дефект: внутренние recovery сообщения user-role могли вытеснять исходную задачу навигации. Core фиксирует исходную цель на время turn; старый binding удаляется перед следующим turn. Tool payload не может стать authority. STEP/AUTO и policy не изменены.
+- Профильная проверка удержания task authority PASS; полный runner и повторный live collection прогон проверяются отдельно.
+- Предварительный runner 219/219 PASS. Последующее подключение коротких reviewed doc queries до managed turn и generic collections/procedures/CMDB vocabulary прошло профильные проверки/py_compile; финальный полный runner запущен отдельно. Отрицательные ограничения не являются поисковыми целями.
+- Повторный Job 20261014-195822-3416e089 также BLOCKED: сохранён target, но отсутствует достаточное document grounding навигации. Новый прогон после grounding: 20261014-200343-6a9974e4; не заявлен PASS до результата.
+- Финальная установленная версия: runner 219/219 PASS (/tmp/v177-final2-full-smoke.log). Jobs 20261014-200343-6a9974e4 и 20261014-201221-d9aca32c также BLOCKED по navigation/click ambiguity, созданных ресурсов нет. Следующий этап — источник опыта/known-route navigation и свежая инспекция; никаких заявлений об автономной готовности коллекций.
+
 ## v176 — ограниченное подключение declared knowledge
 
 - knowledge_search дополнен отдельным source-rechecked declared_product_context; прежний version-scoped verified retrieval не изменён.

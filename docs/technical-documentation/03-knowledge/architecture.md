@@ -10,6 +10,8 @@
 
 Новые записи v1 не попадают автоматически в существующий verified retrieval/FTS. Candidate не равен verified; unknown scope не означает совместимость с latest. Никакой новый model tool, automatic exporter или promotion не подключён.
 
+v176–v177 подключают отдельный declared_product_context к существующему knowledge_search: восемь reviewed правил из официального руководства по коллекциям, политикам и процедурам. Source bytes/hash перепроверяются, конфликты исключаются; произвольная prose не переносится. Runtime applicability остаётся непроверенной, evidence_for_pass=false. Короткое documentary grounding перед managed turn помогает выбирать раздел; оно не предоставляет WRITE. Live model-context проверка прошла, но первые автономные collection прогоны BLOCKED по навигации, поэтому полный UI-регресс не объявлен готовым.
+
 ## Рост
 
 Повторное событие с тем же ID/payload не добавляется. Новый run с тем же утверждением добавляет историю/подтверждение, но не копию variant. При том же document hash повтор не увеличивает число независимых источников. Runtime confirmations группируются по Job, а не числу evidence внутри одного прогона.

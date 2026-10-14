@@ -10,6 +10,9 @@
 
 ## Уже существует
 
+- v176–v177 подключают ограниченный source-rechecked declaration context к knowledge_search и короткое documentary grounding до managed turn. Восемь reviewed правил: состав коллекций, политики, процедуры. Candidate не становится verified, source hash перепроверяется, память не разрешает действия и не заменяет runtime evidence. Live model-context probe понимает два правила коллекций и запрет ложного PASS, но это не UI-регресс.
+- Ночные live collection прогоны пока BLOCKED по навигации; операторские десять коллекций нельзя приписывать автономной модели. Исправлены потеря исходной task authority и использование отрицательных ограничений как поисковых целей. Политики/процедуры после документального grounding ещё требуют живой приёмки. Это опыт разработки UQA, не developer-confirmed bug U-Connect.
+
 - Документный индекс SQLite FTS5: knowledge/source → knowledge/index/knowledge.db → knowledge_search. Markdown-рецепты могут читаться локальной LLM вместе с руководствами. Это лексический поиск с ограниченными результатами, не embeddings и не гарантия полноты.
 - Отдельный product knowledge store хранит scoped candidate/verified facts и confirmations. Retrieval ограничивает версии и типы фактов; сейчас поддержаны ui_api_binding и ui_navigation. Произвольный рецепт не следует проталкивать в эти типы или искусственно помечать verified.
 - Runtime Jobs, observations, evidence, resource ledger и operation journal сохраняют первичную историю. Они не являются публичным корпусом и не экспортируются целиком.

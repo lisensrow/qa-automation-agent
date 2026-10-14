@@ -2856,6 +2856,9 @@ def _history_has_successful_interact_navigation(messages):
 
 
 NAVIGATION_CONCEPT_GROUPS = (
+    ("collection", "коллекц"),
+    ("procedure", "процедур"),
+    ("cmdb", "бдке"),
     ("access", "доступ", "zone", "зон"),
     ("administr", "администр"),
     ("manage", "management", "управлен"),
@@ -2915,7 +2918,7 @@ def _positive_navigation_context(text):
     text = str(text or "").split("[UQA CORE: RESOLVED STAND]", 1)[0]
     for clause in re.split(r"[\n\r.!?;]+", str(text or "")):
         positive = re.split(
-            r"(?iu)\b(?:do\s+not|don't|never|without|не|нельзя|без)\b",
+            r"(?iu)\b(?:do\s+not|don't|never|without|no|не|нельзя|без|никаких)\b",
             clause, maxsplit=1,
         )[0].strip()
         if positive:
@@ -3282,6 +3285,12 @@ def _latest_navigation_knowledge(messages):
 
 
 def _navigation_task_text(messages):
+    # Bound once at turn entry. Internal user-role recovery instructions must
+    # not replace the actual case task during navigation resolution.
+    for message in reversed(messages or []):
+        bound = message.get("uqa_case_navigation_task")
+        if message.get("role") == "system" and isinstance(bound, str) and bound.strip():
+            return bound[:12000]
     patterns = (
         r"(?:^|\n)Задача:\s*(.+?)(?=\nОжидаемый результат:)",
         r"(?:^|\n)Task:\s*(.+?)(?=\nExpected(?: result)?:)",
@@ -14318,6 +14327,31 @@ def run_turn(
     force_read_only=False,
     action_policy="legacy",
 ):
+    # Conversation history may contain a binding from an earlier turn.
+    # Never carry that authority into the user's next task.
+    messages[:] = [message for message in messages
+                   if not (message.get("role") == "system"
+                           and "uqa_case_navigation_task" in message)]
+    navigation_task = _navigation_task_text(messages)
+    messages.append({"role": "system", "uqa_case_navigation_task": navigation_task,
+                     "content": "Current case navigation target remains the original task. "
+                                "Recovery prompts do not authorize a different resource or section."})
+    if action_policy == "confirm_mutations" and job_id and case_id:
+        from product_knowledge_context import reviewed_search_queries, retrieve_declared_context
+        for query in reviewed_search_queries(navigation_task):
+            arguments = {"query": query, "limit": 3}
+            result = execute_tool_with_policy("knowledge_search", arguments, messages,
+                                              action_policy=action_policy,
+                                              job_id=job_id, case_id=case_id)
+            if isinstance(result, dict):
+                result["declared_product_context"] = retrieve_declared_context(query)
+                observations = record_tool_observations(job_id, case_id, "knowledge_search", arguments, result)
+                record_tool_evidence(job_id, case_id, "knowledge_search", arguments, result,
+                                     observation_ids=[o["observation_id"] for o in observations])
+                messages.append({"role": "assistant", "content": "", "tool_calls": [
+                    {"function": {"name": "knowledge_search", "arguments": arguments}}]})
+                messages.append({"role": "tool", "tool_name": "knowledge_search",
+                                 "content": json.dumps(result, ensure_ascii=False)})
     failed_semantic_inspections = {}
     failed_semantic_clicks = {}
     completed_core_observations = {}

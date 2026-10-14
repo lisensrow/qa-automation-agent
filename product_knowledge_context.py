@@ -19,10 +19,37 @@ POLICY = SourcePolicy('u-connect', Path('/opt/uqa/knowledge/source'), (GUIDE,),
 CONCEPTS = {
     'collections.membership': {
         'terms': ('коллекц', 'collection'),
+        'search_query': 'коллекции создание',
         'claims': {'composition_formula': 'automatic_plus_manual_minus_exclusions',
                    'clear_on_update_semantics': 'recompute_not_accumulate'},
     },
+    'policies.configuration': {
+        'terms': ('политик', 'policy', 'policies'),
+        'search_query': 'политики создание',
+        'claims': {'supported_types': ['agent_configuration', 'agent_task_update', 'agent_plugin_management'],
+                   'condition_logic': 'same_as_collection_conditions'},
+    },
+    'procedures.execution': {
+        'terms': ('процедур', 'procedure'),
+        'search_query': 'процедуры создание',
+        'claims': {'definition_kind': 'template_not_execution_instance',
+                   'target_kind': 'collection',
+                   'target_membership_time': 'snapshot_at_launch',
+                   'minimum_blocks': 2},
+    },
 }
+
+
+def reviewed_search_queries(task):
+    """Bounded product vocabulary; does not authorize an action or route."""
+    if not isinstance(task, str):
+        return []
+    # Restrictions are not requests to explore those product surfaces.
+    import re
+    positive = ' '.join(re.split(r'(?iu)\b(?:не|без|никаких|нельзя|never|without|do not|no)\b', clause, 1)[0]
+                        for clause in re.split(r'[.!?;\n]+', task[:12000])).casefold()
+    return [spec['search_query'] for spec in CONCEPTS.values()
+            if any(term in positive for term in spec['terms'])][:3]
 
 
 def retrieve_declared_context(query, db_path=None, *, policy=POLICY, concepts=None):
