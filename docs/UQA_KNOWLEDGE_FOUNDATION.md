@@ -29,6 +29,12 @@
 
 Сейчас reviewed записи представлены Markdown-источниками с явными метаданными и разделами; эта полная машиночитаемая схема и её валидатор ещё не внедрены. Не выдавать документный FTS за version-gated verified facts. Рецепт надо перепроверять на текущем стенде даже при выдаче поиска.
 
+v175 реализует первый ограниченный atomic candidate формат в product_knowledge_records.py: contract/observed_fact/limitation/test_experience, scoped variants, source manifests, event/source dedup и explicit conflict. Остальная полная схема, recipe/code validators и promotion остаются далее. read_history позволяет оператору просмотреть версии/ОС и источники, но ещё не подключён к автоматическому LLM recall. Существующие verified facts/retrieval не заменены.
+
+Уточнение цели: сохранять историю функций по конкретным ОС, ядру, плагину и компонентам сервера/фронта, а не только последнюю инструкцию. Разные release scopes не перезаписывают друг друга. Баг/объявленная fix version требуют developer_confirmation и issue_id; наблюдённый симптом и предположение модели этого не заменяют. Заявленный фикс и его runtime верификация раздельны. Совет обновиться пока не включён и должен опираться на конкретные affected/fix versions, ОС, авторитетный источник и состояние проверки, а не похожую фразу из поиска.
+
+Официальные руководства остаются отдельными источниками с hashes/revisions/applicability, проектные документы UQA не подменяют спецификацию UC. source integrity не доказывает semantic entailment. Автоматический watcher редакций и byte-snapshot importer ещё не внедрены; уже имеющиеся руководства сохраняются. Документационный пакет для обмена — technical-documentation/README.md.
+
 Для происхождения данных ориентир — W3C PROV: сущность знания, действие проверки и ответственный исполнитель, связи источников и производных записей. Это проектное направление, не утверждение о реализованной PROV-совместимости. [W3C PROV overview](https://www.w3.org/TR/prov-overview/).
 
 Для корреляции операций, retrieval и проверок ориентир — OpenTelemetry. Нужно фиксировать версию используемой convention и отличать стабильные общие схемы от развивающихся GenAI схем; интеграция OTel пока планируется. [OpenTelemetry specification status](https://opentelemetry.io/docs/specs/status/), [semantic conventions](https://opentelemetry.io/docs/specs/semconv/).
@@ -46,7 +52,7 @@
 
 ## Этапы масштабирования, ещё не реализованные
 
-1. Typed experience schema и validator, separate trust/secret gates, idempotent content-hash ingestion; versioned migrations и повторяемое восстановление.
+1. Расширение ограниченной v175 atomic schema до recipe/code types, semantic validators/promotion и специализированного OS/core/plugin source proof; развитие trust/secret gates и миграций.
 2. Безопасный post-run exporter всех итогов, включая отрицательные, с outbox/retry без потери и без повторного выполнения бизнес-действий.
 3. Разделение canonical records, неизменяемых доказательств и заменяемых поисковых индексов. Опыт можно переиндексировать без перезапуска тестов.
 4. Hybrid retrieval только после измерения качества текущего FTS; оценка полноты, version filtering, конфликтов и false-pass на фиксированном наборе. Embeddings не вводить вместо контрактов.

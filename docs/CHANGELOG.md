@@ -2,6 +2,17 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v175 — формат знаний, источник, дедупликация и технический пакет
+
+- Добавлен candidate-only atomic record v1, trusted source registry checks и additive knowledge_v1_* tables без изменения legacy facts/scopes/confirmations.
+- Идемпотентные event IDs, semantic-key/value variants, bounded supports и явные conflicts; повторные runs не копируют знания.
+- Официальные документы проверяются по hash/revision/applicability; native runtime источники — по exact case/evidence/observations и identity. Source integrity не является semantic promotion.
+- Read-only история scope/OS/core/plugin/document versions и representative source refs; автоматически не выдаёт upgrade advice.
+- Issue classification/declared fix требуют approved developer confirmation/issue ID. Fixture не становится продуктовым фактом; реальный фикс UC здесь не тестировался.
+- Подготовлен self-contained technical-documentation пакет из 15 Markdown файлов, с обзором для руководителей, архитектурой, безопасностью, памятью, качеством и эксплуатацией. Основные architecture/foundation docs актуализированы.
+- В профильном isolated тесте проверены 10000 повторов, provenance/developer gates, release/document history, rollback и legacy preservation. Нет новых model tools, automatic exporter, verified promotion или изменения STEP/AUTO/v069 policy.
+- Установленная версия: py_compile и полный runner 217/217 PASS. Consistent production DB backup/integrity и fingerprints подтвердили неизменность legacy таблиц; два кандидата из официального руководства приняты с hash/revision, exact replay дедуплицирован. Новая схема не публикует candidate cards как verified знания.
+
 ## v172–v174 — контролируемые коллекции, целостные доказательства и общая память
 
 - Дополнительное проектирование до внедрения: UQA_PRODUCT_KNOWLEDGE_DESIGN разделяет историю, канонические продуктовые знания и индексы; определяет дедупликацию, версии, code bindings, права и критерии приёмки. Это предложение, не реализованная capability и не новый продуктовый факт.
