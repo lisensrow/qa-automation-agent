@@ -8912,6 +8912,7 @@ class BrowserSession:
         exact_name: str,
         mutation_method: str = "DELETE",
         operation_suffix: str = None,
+        expected_identifier: str = None,
     ):
         """Delete one exact JSON collection member using its observed endpoint."""
         self._ensure_started()
@@ -8920,6 +8921,7 @@ class BrowserSession:
         wanted = str(exact_name or "").strip()
         method = str(mutation_method or "").strip().upper()
         suffix = str(operation_suffix or "").strip()
+        expected_id = str(expected_identifier or "").strip()
 
         if not endpoint.startswith("/") or endpoint.startswith("//"):
             return {
@@ -8957,7 +8959,7 @@ class BrowserSession:
         self._begin_action_execution()
 
         script = """
-        async ({collectionUrl, exactName, mutationMethod, operationSuffix}) => {
+        async ({collectionUrl, exactName, mutationMethod, operationSuffix, expectedIdentifier}) => {
             const findMatches = (payload) => {
                 const matches = [];
                 const queue = [payload];
@@ -9027,6 +9029,11 @@ class BrowserSession:
                 };
             }
             const identifier = before.identifiers[0];
+            if (expectedIdentifier && identifier.value !== expectedIdentifier) {
+                return {phase: 'preflight', preflight_status: before.status,
+                    preflight_reason: 'identifier_mismatch', exact_match_count: 1,
+                    mutation_executed: false};
+            }
             const archiveOperation =
                 mutationMethod === 'POST' && operationSuffix === 'archive';
             if (archiveOperation && isArchived(before.matches[0])) {
@@ -9093,6 +9100,7 @@ class BrowserSession:
                     "exactName": wanted,
                     "mutationMethod": method,
                     "operationSuffix": suffix,
+                    "expectedIdentifier": expected_id,
                 },
             )
         except Exception as exc:
@@ -9103,6 +9111,11 @@ class BrowserSession:
                 "executed": False,
                 "reason": type(exc).__name__,
             }
+
+        if raw.get("preflight_reason") == "identifier_mismatch":
+            self.active_action_execution_id = None
+            return {"error": "json_resource_identifier_mismatch", "status": "error",
+                    "executed": False, "mutation_executed": False, **raw}
 
         if raw.get("phase") == "preflight" and raw.get("exact_match_count") == 1:
             self.active_action_execution_id = None
@@ -9142,12 +9155,14 @@ class BrowserSession:
         self,
         collection_endpoint: str,
         exact_name: str,
+        expected_identifier: str = None,
     ):
         return self.delete_json_resource(
             collection_endpoint,
             exact_name,
             mutation_method="POST",
             operation_suffix="archive",
+            expected_identifier=expected_identifier,
         )
 
     def fill(self, element_id: str, text: str):
@@ -13739,20 +13754,24 @@ def disable_agent_task_semantic(ci_name: str, task_id: str) -> dict:
 def delete_json_resource(
     collection_endpoint: str,
     exact_name: str,
+    expected_identifier: str = None,
 ) -> dict:
     return _session.delete_json_resource(
         collection_endpoint,
         exact_name,
+        expected_identifier=expected_identifier,
     )
 
 
 def archive_json_resource(
     collection_endpoint: str,
     exact_name: str,
+    expected_identifier: str = None,
 ) -> dict:
     return _session.archive_json_resource(
         collection_endpoint,
         exact_name,
+        expected_identifier=expected_identifier,
     )
 
 

@@ -503,7 +503,8 @@ TOOLS = [
                     "exact_name": {
                         "type": "string",
                         "description": "Точное имя одного ledger resource."
-                    }
+                    },
+                    "expected_identifier": {"type":"string", "description":"Observed ledger ID; mismatch blocks mutation."}
                 },
                 "required": ["collection_endpoint", "exact_name"]
             }
@@ -525,7 +526,8 @@ TOOLS = [
                 "type": "object",
                 "properties": {
                     "collection_endpoint": {"type": "string"},
-                    "exact_name": {"type": "string"}
+                    "exact_name": {"type": "string"},
+                    "expected_identifier": {"type":"string", "description":"Observed ledger ID; mismatch blocks mutation."}
                 },
                 "required": ["collection_endpoint", "exact_name"]
             }
@@ -2293,12 +2295,16 @@ def execute_tool(name: str, arguments: dict):
         return delete_json_resource(
             arguments["collection_endpoint"],
             arguments["exact_name"],
+            **({"expected_identifier": arguments["expected_identifier"]}
+               if arguments.get("expected_identifier") is not None else {}),
         )
 
     if name == "browser_archive_json_resource":
         return archive_json_resource(
             arguments["collection_endpoint"],
             arguments["exact_name"],
+            **({"expected_identifier": arguments["expected_identifier"]}
+               if arguments.get("expected_identifier") is not None else {}),
         )
 
     if name == "browser_inspect_semantic":

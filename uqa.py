@@ -11330,6 +11330,9 @@ def _cleanup_exact_rest_target(job, resource):
         "collection_endpoint": endpoint,
         "exact_name": name,
     }
+    external_id = str(resource.get("external_id") or "").strip()
+    if external_id:
+        arguments["expected_identifier"] = external_id
 
     if method == "POST" and suffix == "archive":
         return {
