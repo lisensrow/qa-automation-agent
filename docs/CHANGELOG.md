@@ -2,6 +2,15 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v176 — ограниченное подключение declared knowledge
+
+- knowledge_search дополнен отдельным source-rechecked declared_product_context; прежний version-scoped verified retrieval не изменён.
+- Allowlisted concept/predicate/value, только candidate declared_spec без конфликта. Raw prose, bugs и upgrade advice не передаются. Изменённый source hash исключает подсказку.
+- Два reviewed правила состава коллекций доступны с unknown runtime applicability, без semantic promotion и бизнес-PASS.
+- Установленный py_compile и полный runner 218/218 PASS. Live model-context и автономная UI-приёмка — отдельные проверки, ещё не объявлены завершёнными.
+- STEP/AUTO и v069 policy сохранены. Последовательный ночной план сохранён в UQA_OVERNIGHT_ACCEPTANCE.md.
+- Live qwen3:14b context probe PASS: два правила извлечены верно, no_false_pass/recheck true. Длительность 23.12 s; не UI regression и не обучение весов. System prompt явно разделяет declared context и runtime evidence.
+
 ## v175 — формат знаний, источник, дедупликация и технический пакет
 
 - Добавлен candidate-only atomic record v1, trusted source registry checks и additive knowledge_v1_* tables без изменения legacy facts/scopes/confirmations.

@@ -30,12 +30,14 @@ PRODUCTION_FILES = [
     ROOT / "knowledge_fact_contracts.py",
     ROOT / "knowledge_index.py",
     ROOT / "product_knowledge_records.py",
+    ROOT / "product_knowledge_context.py",
     ROOT / "prepared_memory.py",
     ROOT / "product_knowledge_retrieval.py",
     ROOT / "tools" / "registry.py",
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_product_knowledge_context.py",
     "smoke_v069c_v070c.py",
     "smoke_ui_assertion_library.py",
     "smoke_navigation_guard.py",
