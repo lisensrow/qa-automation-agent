@@ -15610,6 +15610,13 @@ def run_turn(
                 result["declared_product_context"] = retrieve_declared_context(
                     arguments.get("query"))
 
+            if (name in {"browser_fill_semantic", "browser_select_semantic"}
+                    and isinstance(result, dict)
+                    and "not found" in str(result.get("error") or "").casefold()):
+                from product_knowledge_context import retrieve_control_location_hint
+                result["control_location_hint"] = retrieve_control_location_hint(
+                    managed_agent_request_text, arguments.get("field"))
+
             tool_observations = (
                 record_tool_observations(
                     job_id,

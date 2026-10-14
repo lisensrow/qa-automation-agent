@@ -24,6 +24,11 @@ CONCEPTS = {
         'claims': {'composition_formula': 'automatic_plus_manual_minus_exclusions',
                    'clear_on_update_semantics': 'recompute_not_accumulate'},
     },
+    'collections.form': {
+        'terms': ('коллекц', 'collection'),
+        'claims': {'name_field_panel': 'Settings', 'filter_panel': 'Conditions',
+                   'table_layout_panel': 'Table fields'},
+    },
     'policies.configuration': {
         'terms': ('политик', 'policy', 'policies'),
         'search_query': 'политики создание',
@@ -52,10 +57,33 @@ def reviewed_search_queries(task):
     queries = []
     for spec in CONCEPTS.values():
         if any(term in positive for term in spec['terms']):
-            queries.append(spec['search_query'])
+            if spec.get('search_query'):
+                queries.append(spec['search_query'])
             if spec.get('experience_query'):
                 queries.append(spec['experience_query'])
     return queries[:3]
+
+
+def retrieve_control_location_hint(task, field, db_path=None):
+    """Small source-gated location data, not an instruction or permission."""
+    aliases = {'name': 'name_field_panel', 'имя': 'name_field_panel',
+               'ci class': 'filter_panel', 'archived': 'filter_panel',
+               'os name': 'filter_panel', 'класс ке': 'filter_panel'}
+    predicate = aliases.get(str(field or '').strip().casefold())
+    if (not predicate or CONCEPTS['collections.membership']['search_query']
+            not in reviewed_search_queries(task)):
+        return {'status':'unavailable','evidence_for_pass':False}
+    context = retrieve_declared_context(task, db_path)
+    rows = [row for row in context['results'] if row['concept_id']=='collections.form'
+            and row['predicate']==predicate]
+    if len(rows)!=1:
+        return {'status':'unavailable','evidence_for_pass':False}
+    row=rows[0]
+    return {'status':'candidate_location_hint','requested_control_label':str(field)[:160],
+            'document_panel_name':row['declared_value'],'scope':row['scope'],
+            'source_refs':row['source_refs'],'evidence_for_pass':False,
+            'current_runtime_applicability_verified':False,
+            'usage':'Untrusted location hint. Inspect the currently visible panel before navigation; do not repeat input on an unchanged page. A panel hint does not establish an actual control role or business validity.'}
 
 
 def retrieve_declared_context(query, db_path=None, *, policy=POLICY, concepts=None):

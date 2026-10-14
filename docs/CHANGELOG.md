@@ -2,6 +2,13 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v180 — короткие source-gated подсказки расположения контролов
+
+- В атомарную память добавлены три reviewed guide declarations collections.form: name_field_panel, filter_panel, table_layout_panel. Candidate-only, explicit doc revision/hash, replay dedup; consistent DB backup и неизменность legacy rows проверены.
+- При field-not-found в fill/select Core возвращает bounded control_location_hint из проверенного источника вместо переноса произвольной prose. Это данные о предполагаемой панели, не executable instruction, не permission, не role guarantee и не evidence PASS. Запрет на коллекции в task не становится collection hint.
+- Domain aliases остаются в knowledge adapter, без U-Connect-specific if/else в Core; новые model tools не добавлены. STEP/AUTO, v069 и journal без изменений.
+- Установленный py_compile, профиль и runner221/221 PASS (/tmp/v180-full-smoke.log). Live model trial начат отдельно; не считать его завершённым full collection workflow.
+
 ## v179 — не терять entry proof при открытии нового редактора
 
 - В свежей operator-assisted инспекции Core сам выставлял устаревший parent navigation candidate после подтверждённого Add collection и блокировал Settings. Case tc-7ffa5738 сохранён BLOCKED, Save не нажимался.

@@ -1,6 +1,12 @@
 # Архитектура QA-агента UQA
 
+## Контекст конкретного контрола v180
+
+При отсутствии поля fill/select возвращает короткую source-gated candidate подсказку панели для соответствующего business context. Сейчас reviewed декларации имени/фильтра/layout коллекции извлечены из официального руководства. Field location не подтверждает фактическую роль контрола, совместимость frontend, permission или PASS; перед действием нужны текущая UI-инспекция и прежняя policy. Отрицательные ограничения task исключают подсказки чужого контекста. Atomic DB backup/legacy preservation и runner221/221 проверены; реальная работа полного workflow ещё не принята.
+
 ## Навигация нового редактора v179
+
+Fresh live operator probe подтвердил, что новая форма больше не блокируется устаревшим parent candidate: четыре дополнительные вкладки доступны. Наблюдённая карта Name/launch/group/clear находится в Settings; условия используют поиск атрибутов, Table fields — отдельный layout. Карта опыта выделена в устойчивый индексированный раздел; запрос не зашит на v179. Native required=false и видимость Save не означают бизнес-валидность; пустое имя оставило Save disabled. Эти наблюдения ещё не доказывают autonomous create/filters/membership.
 
 Core учитывает подтверждённый переход из явно указанного раздела в новый несохранённый редактор ниже того же маршрута. Требуются native click receipt, прежняя сессия/origin и new/add/create segment; guessed/deep URL, saved ID editor и отказ/unknown/destructive исключаются. Такой переход завершает только navigation preflight: не заменяет action-policy, владение, immutable oracle или runtime verdict. Исправление предотвращает возврат к parent route при выборе вкладки нового editor. Профиль PASS; живая перепроверка вкладок продолжается.
 
