@@ -11811,6 +11811,12 @@ class BrowserSession:
                   index,
                   tag: el.tagName.toLowerCase(),
                   type: String(el.type || '').slice(0, 40),
+                  in_viewport: el.getBoundingClientRect().right > 0
+                    && el.getBoundingClientRect().bottom > 0
+                    && el.getBoundingClientRect().left < innerWidth
+                    && el.getBoundingClientRect().top < innerHeight,
+                  aria_hidden: Boolean(el.closest('[aria-hidden="true"]')),
+                  inert: Boolean(el.closest('[inert]')),
                   label_hint: String((el.labels && el.labels[0] && el.labels[0].innerText)
                     || el.getAttribute('aria-label') || el.getAttribute('placeholder')
                     || el.getAttribute('name') || '').trim().slice(0, 200),

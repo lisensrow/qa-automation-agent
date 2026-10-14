@@ -573,6 +573,12 @@ def extract_observations(
                               "native_disabled", "native_read_only", "native_will_validate")} for row in raw_states]
         extra = {"control_states_reported": states_reported, "control_states": states} if audit_key == "validation_audit" else {}
         if states_reported:
+            geometry_reported = all(all(type(row.get(k)) is bool for k in ("in_viewport", "aria_hidden", "inert"))
+                                    for row in raw_states)
+            extra["control_geometry_reported"] = geometry_reported
+            if geometry_reported:
+                for safe_row, raw_row in zip(states, raw_states):
+                    safe_row.update({k: raw_row[k] for k in ("in_viewport", "aria_hidden", "inert")})
             extra["control_state_summary"] = {
                 "native_required_count": sum(row["native_required"] for row in states),
                 "native_disabled_count": sum(row["native_disabled"] for row in states),

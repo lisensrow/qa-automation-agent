@@ -410,14 +410,18 @@ def completed_readonly_contract_checks(job, case_id):
     try:
         validate_contracts(contracts)
         if requirement.get("action_profile") == "write_ui_state":
-            if (any(c.get("tool") not in {"browser_inspect_semantic", "browser_inspect_table_semantic"}
+            form_contract = (all(c.get("tool") == "browser_inspect_form_validation_semantic" for c in contracts.values())
+                             and {c.get("phase") for c in contracts.values()} == {"opened", "restored"})
+            if not form_contract and (any(c.get("tool") not in {"browser_inspect_semantic", "browser_inspect_table_semantic"}
                     or c.get("phase") not in {"filtered", "restored"} for c in contracts.values())
                     or {c.get("phase") for c in contracts.values()} != {"filtered", "restored"}):
                 return None
-            if any(not isinstance(c.get(k), str) for c in contracts.values()
-                   for k in ("subject_binding", "value_binding")):
+            binding_keys = ("subject_binding", "close_key_binding") if form_contract else ("subject_binding", "value_binding")
+            if any(not isinstance(c.get(k), str) for c in contracts.values() for k in binding_keys):
                 return None
-            if len({(c["subject_binding"], c["value_binding"]) for c in contracts.values()}) != 1:
+            if len({tuple(c[k] for k in binding_keys) for c in contracts.values()}) != 1:
+                return None
+            if form_contract and len({c.get("opening_sequence_binding") for c in contracts.values()}) != 1:
                 return None
         stand = get_stand(job.get("stand")) or {}
         if not stand.get("web_url"):
@@ -430,6 +434,59 @@ def completed_readonly_contract_checks(job, case_id):
             results.append(evaluated)
         return results
     except (ValueError, TypeError, KeyError):
+        return None
+
+
+def pending_form_baseline(job, case_id):
+    from form_lifecycle_contracts import needs_form_baseline
+    if (not isinstance(job, dict) or job.get("job_type") != "regression"
+            or not isinstance(job.get("stand"), str) or not job["stand"].strip()):
+        return False
+    try:
+        stand = get_stand(job["stand"]) or {}
+        return needs_form_baseline(job, case_id, stand.get("web_url"))
+    except (ValueError, TypeError, KeyError, AttributeError):
+        return False
+
+
+def incomplete_form_phase_message(job, case_id):
+    """Advisory only after proven opening; no close execution or policy grant."""
+    from frontend_check_contracts import evaluate_contract, validate_contracts
+    try:
+        if not isinstance(job, dict) or job.get("job_type") != "regression" or job.get("status") != "running":
+            return None
+        case = next(c for c in job.get("test_cases", []) if c.get("case_id") == case_id)
+        req = case.get("requirement") or {}; contracts = req.get("check_contracts")
+        planned = _normalize_planned_checks(case.get("planned_checks"))
+        if (case.get("status") != "running" or req.get("locked") is not True
+                or req.get("type") != "frontend_contracts" or req.get("action_profile") != "write_ui_state"
+                or not planned or not isinstance(contracts, dict)
+                or set(contracts) != {p["check_id"] for p in planned}):
+            return None
+        validate_contracts(contracts)
+        if (any(c["tool"] != "browser_inspect_form_validation_semantic" for c in contracts.values())
+                or {c["phase"] for c in contracts.values()} != {"opened", "restored"}
+                or len({(c["subject_binding"], c["close_key_binding"], c.get("opening_sequence_binding")) for c in contracts.values()}) != 1):
+            return None
+        stand = get_stand(job.get("stand")) or {}; missing = set()
+        for p in planned:
+            check, error = evaluate_contract(case, req, dict(p, status="blocked"), stand.get("web_url"))
+            if contracts[p["check_id"]]["phase"] == "opened":
+                if error or check.get("status") != "passed":
+                    return None
+            elif error in {"form_contract_close_action_missing", "form_contract_closed_read_missing"}:
+                missing.add(error)
+            elif error or check.get("status") not in {"passed", "failed"}:
+                return None
+        if not missing:
+            return None
+        return {"role":"user", "content": "[UQA CORE: LOCKED FORM RESTORATION MISSING]\n"
+                "The declared opened phase is proven. Stop repeating that unchanged read. "
+                "Complete the declared Escape close through normal policy, then read "
+                "browser_inspect_form_validation_semantic with {} to verify restoration. "
+                "If close already executed, only the missing read is needed. Do not fill, submit or save. "
+                "This advisory executes nothing and authorizes nothing. Missing proof: " + json.dumps(sorted(missing))}
+    except (ValueError, TypeError, KeyError, StopIteration):
         return None
 
 
@@ -532,6 +589,19 @@ def locked_contract_observer_tools(job, case_id):
                 if classify_tool_action(c["tool"], {}) == "observe"}
     except (ValueError, TypeError, KeyError):
         return set()
+
+
+def locked_form_support_tools(job, case_id):
+    """Expose the declared closing schema; never execute or authorize a close."""
+    if locked_contract_observer_tools(job, case_id) != {"browser_inspect_form_validation_semantic"}:
+        return set()
+    case = next(c for c in job["test_cases"] if c.get("case_id") == case_id)
+    req = case["requirement"]; contracts = req["check_contracts"]
+    if (req.get("action_profile") != "write_ui_state"
+            or {c["phase"] for c in contracts.values()} != {"opened", "restored"}
+            or any((req.get("bindings") or {}).get(c["close_key_binding"]) != "Escape" for c in contracts.values())):
+        return set()
+    return {"browser_press_key_semantic"}
 
 
 def prepared_contract_check_templates(job, case_id):
@@ -14155,10 +14225,11 @@ def run_turn(
 
     selected_model_tools = {required_observation["tool"]} if required_observation else set()
     selected_model_tools |= locked_contract_observer_tools(managed_agent_job, case_id)
+    form_support_tools = locked_form_support_tools(managed_agent_job, case_id)
     messages.append({"role": "user", "content": (
         "[UQA CORE: PROGRESSIVE TOOL CATALOG]\n"
         "Only basic tools are initially loaded. If a specialized tool is needed, "
-        "Validated locked-contract observation schemas may also be preloaded; this executes nothing. "
+        "Validated locked-contract observation and declared form-close schemas may also be preloaded; this executes nothing and grants no permission. "
         "use tool_catalog_select with exact names from its enum, then call the "
         "loaded tool on the next turn. Loading tools performs no action and "
         "does not prove any check. Do not repeat an unchanged observation."
@@ -14166,12 +14237,14 @@ def run_turn(
     for _ in range(MAX_TOOL_STEPS):
         try:
             if job_id and case_id and not blocked_mutation_calls:
-                phase_message = incomplete_search_phase_message(get_job(job_id), case_id)
+                current_job = get_job(job_id)
+                phase_message = (incomplete_search_phase_message(current_job, case_id)
+                                 or incomplete_form_phase_message(current_job, case_id))
                 if phase_message and phase_message["content"] not in search_phase_reminders:
                     if len(search_phase_reminders) < 2:
                         search_phase_reminders.add(phase_message["content"])
                         messages.append(phase_message)
-            required_names = {required_observation["tool"]} if required_observation else set()
+            required_names = ({required_observation["tool"]} if required_observation else set()) | form_support_tools
             completed_checks = completed_readonly_contract_checks(get_job(job_id), case_id) if job_id and case_id else None
             if pending_compatibility_probe:
                 pending_compatibility_probe = False
@@ -14179,6 +14252,10 @@ def run_turn(
                 data = {"message": {"content": "", "tool_calls": [{"function": {
                     "name": "browser_probe_capabilities", "arguments": {},
                 }}]}}
+            elif job_id and case_id and pending_form_baseline(get_job(job_id), case_id):
+                # The baseline is a declared OBSERVE, never a mutation or permission grant.
+                data = {"message": {"content": "", "tool_calls": [{"function": {
+                    "name": "browser_inspect_form_validation_semantic", "arguments": {}}}]}}
             elif completed_checks is not None:
                 # No further action is needed: the normal verifier rechecks these facts.
                 data = {"message": {"content": UQA_CHECKS_START + json.dumps(

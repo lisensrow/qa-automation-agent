@@ -6,6 +6,8 @@ import json
 from urllib.parse import urlsplit
 
 TOOL_FIELDS = {
+    "browser_inspect_form_validation_semantic": ("ui_contract_audit", {"form_controls_opened", "native_states_reported",
+        "form_controls_restored", "no_input_submit_execution"}),
     "browser_inspect_semantic": ("ui_element", {"value_matches_binding", "value_empty"}),
     "browser_inspect_table_semantic": ("ui_element", {"rows_match_binding", "rows_restored"}),
     "browser_inspect_table_row": ("ui_element", {"row_match_count"}),
@@ -47,6 +49,11 @@ def validate_contracts(contracts):
         tool = contract.get("tool")
         if tool not in TOOL_FIELDS or not isinstance(contract.get("subject_binding"), str):
             raise ValueError("frontend_contract_tool_or_subject_invalid")
+        if tool == "browser_inspect_form_validation_semantic" and (
+                contract.get("phase") not in {"opened", "restored"}
+                or not isinstance(contract.get("close_key_binding"), str)
+                or ("opening_sequence_binding" in contract and not isinstance(contract["opening_sequence_binding"], str))):
+            raise ValueError("frontend_contract_form_phase_required")
         if tool == "browser_verify_exact_table_row_tabs_semantic" and not isinstance(contract.get("tabs_binding"), str):
             raise ValueError("frontend_contract_tabs_binding_required")
         if tool in {"browser_inspect_semantic", "browser_inspect_table_semantic"} and (
@@ -61,6 +68,12 @@ def validate_contracts(contracts):
         for assertion in assertions:
             if not isinstance(assertion, dict) or assertion.get("field") not in TOOL_FIELDS[tool][1]:
                 raise ValueError("frontend_contract_field_invalid")
+            if tool == "browser_inspect_form_validation_semantic":
+                phase_fields = ({"form_controls_opened", "native_states_reported"}
+                                if contract["phase"] == "opened" else
+                                {"form_controls_restored", "no_input_submit_execution"})
+                if assertion["field"] not in phase_fields:
+                    raise ValueError("frontend_contract_form_field_phase_invalid")
             operator = assertion.get("operator")
             if operator not in {"eq", "same_origin"} and REPORT_OPERATORS.get(assertion["field"]) != operator:
                 raise ValueError("frontend_contract_operator_invalid")
@@ -288,8 +301,12 @@ def evaluate_contract(case, requirement, check, saved_url):
         if not isinstance(subject, str) or not subject.strip():
             raise ValueError("frontend_contract_subject_missing")
         tool = contract["tool"]
-        if tool in {"browser_inspect_semantic", "browser_inspect_table_semantic"}:
-            observation, facts, refs, obs_refs = search_phase_fact(case, requirement, contract, subject, saved_url)
+        if tool in {"browser_inspect_semantic", "browser_inspect_table_semantic", "browser_inspect_form_validation_semantic"}:
+            if tool == "browser_inspect_form_validation_semantic":
+                from form_lifecycle_contracts import form_lifecycle_fact
+                observation, facts, refs, obs_refs = form_lifecycle_fact(case, requirement, contract, subject, saved_url)
+            else:
+                observation, facts, refs, obs_refs = search_phase_fact(case, requirement, contract, subject, saved_url)
             assertions = [{"field": a["field"], "operator": a["operator"], "expected": a["expected"],
                            "actual": facts[a["field"]], "satisfied": type(facts[a["field"]]) is type(a["expected"]) and facts[a["field"]] == a["expected"],
                            "observation_id": observation["observation_id"]} for a in contract["assertions"]]
