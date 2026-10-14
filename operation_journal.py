@@ -64,7 +64,7 @@ def _load(path, job_id):
         raise ValueError('invalid operation journal')
     seen = set()
     for operation in data['operations']:
-        if (not isinstance(operation, dict) or operation.get('status') not in UNRESOLVED | {'verified'}
+        if (not isinstance(operation, dict) or operation.get('status') not in UNRESOLVED | {'verified', 'not_sent'}
                 or not re.fullmatch(r'[0-9a-f]{64}', str(operation.get('arguments_fingerprint') or ''))
                 or operation.get('operation_id') in seen):
             raise ValueError('invalid operation record')
@@ -89,14 +89,16 @@ def _fingerprint(arguments):
 
 
 def _match(data, case_id, workflow_id, stage_id, resource_key):
-    return next((o for o in data['operations'] if o['case_id'] == case_id
+    return next((o for o in reversed(data['operations']) if o['case_id'] == case_id
                  and o['workflow_id'] == workflow_id and o['stage_id'] == stage_id
                  and o['resource_key'] == resource_key), None)
 
 
-def _readiness(data, case_id, workflow_id, stage_id, resource_key, fingerprint):
+def _readiness(data, case_id, workflow_id, stage_id, resource_key, fingerprint, tool=None, verification_contract=None):
     old = _match(data, case_id, workflow_id, stage_id, resource_key)
-    if old:
+    if old and (old['status'] != 'not_sent' or old['arguments_fingerprint'] != fingerprint
+                or old['tool'] != tool
+                or old.get('verification_fingerprint') != (_fingerprint(verification_contract) if verification_contract is not None else None)):
         reason = 'operation_arguments_changed' if old['arguments_fingerprint'] != fingerprint else 'operation_replay_blocked'
         return {'allowed': False, 'reason': reason, 'operation_id': old['operation_id'], 'operation_status': old['status']}
     # Changing the tool, stage or workflow must not bypass an unresolved send.
@@ -107,11 +109,11 @@ def _readiness(data, case_id, workflow_id, stage_id, resource_key, fingerprint):
     return {'allowed': True}
 
 
-def inspect_operation(job_id, case_id, workflow_id, stage_id, resource_key, arguments):
+def inspect_operation(job_id, case_id, workflow_id, stage_id, resource_key, arguments, tool=None, verification_contract=None):
     _context(job_id, case_id)
     workflow_id, stage_id, resource_key = map(_token, (workflow_id, stage_id, resource_key))
     with _locked(job_id) as path:
-        return _readiness(_load(path, job_id), case_id, workflow_id, stage_id, resource_key, _fingerprint(arguments))
+        return _readiness(_load(path, job_id), case_id, workflow_id, stage_id, resource_key, _fingerprint(arguments), tool, verification_contract)
 
 
 def begin_operation(job_id, case_id, workflow_id, stage_id, resource_key, tool, arguments, verification_contract=None):
@@ -121,7 +123,7 @@ def begin_operation(job_id, case_id, workflow_id, stage_id, resource_key, tool, 
     fingerprint = _fingerprint(arguments)
     with _locked(job_id) as path:
         data = _load(path, job_id)
-        ready = _readiness(data, case_id, workflow_id, stage_id, resource_key, fingerprint)
+        ready = _readiness(data, case_id, workflow_id, stage_id, resource_key, fingerprint, tool, verification_contract)
         if not ready['allowed']:
             return ready
         if len(data['operations']) >= 10000:
@@ -144,15 +146,21 @@ def record_receipt(job_id, operation_id, result=None, error_type=None):
         if operation['status'] != 'sending':
             raise ValueError('operation not sending')
         valid_result = isinstance(result, dict)
+        from native_dispatch import DisabledBeforeDispatch
+        not_sent = (type(result) is DisabledBeforeDispatch and not error_type
+                    and operation['tool'] == 'browser_click_semantic'
+                    and result.get('error') == 'element_disabled'
+                    and result.get('click_status') == 'not_executed')
         result = result if valid_result else {}
         acknowledged = (valid_result and not error_type and not result.get('error')
                         and result.get('executed') is not False and (
                             result.get('executed') is True or result.get('mutation_executed') is True
                             or result.get('click_status') == 'executed' or result.get('status') == 'ok'))
-        operation['status'] = 'awaiting_verification' if acknowledged else 'uncertain'
+        operation['status'] = 'not_sent' if not_sent else ('awaiting_verification' if acknowledged else 'uncertain')
         # An ACK or click is NOT a verified product postcondition or PASS.
         operation['receipt'] = {'acknowledged': bool(acknowledged),
-                                'error_type': str(error_type or '')[:80] or None}
+                                'error_type': str(error_type or '')[:80] or None,
+                                'native_pre_dispatch_refusal': bool(not_sent)}
         operation['updated_at'] = job_store._now()
         job_store._atomic_write(path, data)
         return {'operation_id': operation_id, 'operation_status': operation['status']}
@@ -172,6 +180,10 @@ def reconcile_operation(job_id, operation_id, evidence_id):
     with _locked(job_id) as path:
         data = _load(path, job_id)
         operation = next(o for o in data['operations'] if o['operation_id'] == operation_id)
+        if operation['status'] == 'not_sent':
+            return {'verified': False, 'reason': 'operation_was_not_sent',
+                    'operation_id': operation_id, 'operation_status': 'not_sent',
+                    'resend_authorized': False, 'bookkeeping_only': True, 'product_evidence': False}
         if operation['status'] == 'verified':
             # A later same-name object must not replace the accepted identity.
             proof = operation.get('verification') or {}

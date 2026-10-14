@@ -2020,6 +2020,10 @@ def classify_tool_action(
         else {}
     )
 
+    if name == "browser_table_cell_control_semantic":
+        action = arguments.get("action", "inspect")
+        return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
+
     observe_tools = {
         "knowledge_search",
         "ssh_docker_ps",
@@ -2417,6 +2421,10 @@ def tool_policy_check(
 
     if not read_only:
         return None
+
+    if name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe":
+        return {"error":"tool_policy_blocked","status":"blocked_by_policy","tool":name,"executed":False,
+                "policy":"strict_read_only" if force_read_only else "read_only_request"}
 
     # Regression v1 strict mode:
     # никакие semantic clicks не исполняются.
@@ -4931,7 +4939,7 @@ def execute_tool_with_policy(
             operation_context = _mutation_operation_context(name, arguments, action_class, job_id, case_id)
             if operation_context:
                 from operation_journal import inspect_operation
-                readiness = inspect_operation(**{k: v for k, v in operation_context.items() if k not in {"tool", "verification_contract"}})
+                readiness = inspect_operation(**operation_context)
                 if not readiness["allowed"]:
                     return {"error": readiness["reason"], "status": "blocked_by_policy", "executed": False,
                             "action_class": action_class, "action_policy_status": "blocked_by_operation_journal",

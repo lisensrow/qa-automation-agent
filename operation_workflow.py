@@ -141,7 +141,7 @@ def attach_resource(job_id,case_id,resource_id):
     import job_store
     with journal._locked(job_id) as path:
         data=journal._load(path,job_id);workflow=data['workflows'][case_id];plan=workflow['plan']
-        creation=next(o for o in data['operations'] if o['case_id']==case_id and o['workflow_id']==plan['workflow_id'] and o['stage_id']=='create')
+        creation=next(o for o in reversed(data['operations']) if o['case_id']==case_id and o['workflow_id']==plan['workflow_id'] and o['stage_id']=='create')
         resource=job_store.get_test_resource(job_id,resource_id)
         if (creation['status']!='verified' or not resource or resource.get('created_by_case')!=case_id
                 or resource.get('type')!=plan['resource_type'] or resource.get('name')!=plan['resource_name']

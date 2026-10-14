@@ -2159,6 +2159,12 @@ TOOLS = [
 ]
 
 
+TOOLS.append({"type":"function","function":{"name":"browser_table_cell_control_semantic",
+    "description":"Inspect/fill/select one control by an exact row label and exact column header in a native table or bounded labeled div grid. Ambiguous rows/columns refuse. fill/select are WRITE; never submits the form.",
+    "parameters":{"type":"object","properties":{"row":{"type":"string"},"column":{"type":"string"},
+        "action":{"type":"string","enum":["inspect","fill","select"]},"value":{"type":"string"},"table":{"type":"string"}},
+        "required":["row","column"]}}})
+
 # These mutation tools remain executable by the trusted runtime, but are not
 # advertised to the normal QA agent.  UQA exposes them only to Cleanup Manager
 # after it has resolved one exact resource from the persistent ledger.
@@ -2181,6 +2187,10 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_table_cell_control_semantic":
+        from tools.browser import _session
+        from tools.table_cell_controls import operate
+        return operate(_session, **arguments)
     if name == "knowledge_search":
         return knowledge_search(
             query=arguments["query"],

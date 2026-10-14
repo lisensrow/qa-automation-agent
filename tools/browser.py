@@ -13371,7 +13371,8 @@ class BrowserSession:
             result["semantic_strategy"] = strategy
             result["click_status"] = "not_executed"
 
-            return result
+            from native_dispatch import DisabledBeforeDispatch
+            return DisabledBeforeDispatch(result)
 
         self._begin_action_execution()
 
