@@ -40,6 +40,12 @@ ev-ef9a50468138: Logical показывает «Если / То» и predicate �
 
 ## Что пока не доказано
 
+### Повторяемая ошибка перехода из меню в редактор (модель, не баг UC)
+
+15 октября, live_local_model qwen3:14b: Job20261014-233520-79fd039b/tc-dee5b4ec, ev-dd50a19a6941 наблюдает одно enabled Add procedure/menuitem. Модель пропустила пункт и искала категории до открытия редактора; BLOCKED. Дополнительная диагностическая подсказка в Job20261014-234619-f946db24/tc-cb5743c9 также не помогла: ev-1b9e97a97a75 Add menu, ev-ad70abd9591e Logical/treeitem missing, ev-aa89e4ccbae4 повтор Logical/menuitem blocked. Оба прогона resources0/operations[], без Save/Run. Второй эксперимент снят, production restored к195e9f6.
+
+Это повтор того же ограничения автоматизации, не новый факт о дефекте продукта. Не менять роль искомой категории на menuitem из-за открытого меню: это разные поверхности. Проверять фактический переход Add procedure → New procedure перед чтением категорий. Наличие меню, enabled пункта и диагностической подсказки не доказывает переход; нужны свежие UI receipts. Полный graph workflow всё ещё не принят.
+
 ### Аудит первоначального открытия: нормализация Core, не доказанный auth bug
 
 Job20261014-231617-60b0f47e/case tc-7c63a3aa, ev-5df0fd40953b: model_requested_url=/automation/procedures, но native requested_url=https://uc.lab.local. managed_initial_open.reason=inferred_deep_link_normalized_to_origin. Существующий Core намеренно открывает сначала origin, если пользователь не передал точный deep URL и browser state ещё не создан. Это защита от угаданных UI/API ссылок, её нельзя обходить по старому рецепту.
