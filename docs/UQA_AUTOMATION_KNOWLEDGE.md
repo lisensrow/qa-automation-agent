@@ -26,7 +26,17 @@ Job20261014-225056-18044f6f, case tc-da96d52d, live_operator_assisted. plus → 
 
 Add (button) открывает Add procedure (menuitem): ev-f6b2cc7ab3ec и ev-1759c7a4c102. ev-5c98be533d99: menuitem открывает New procedure, сохраняя /automation/procedures. Это несохранённый новый редактор, не сохранённый шаблон и не выполненная задача.
 
-ev-aba658c304cd и ev-8497956c0604: категории Logical, Variables, UC Agent имеют role treeitem; UC Agent uniquely inspected. Zoom controls имеют role button внутри SVG. Обычный form census ev-eee2824b10d2 обнаружил только Search procedures, а не поля блока/имя процедуры. Не придумывать обычную textbox форму или обходиться нажатием координат: нужен проверенный контракт блочного редактора, блоков, связей, параметров и сохранённого графа. Категории не раскрывались, блоки не добавлялись, имя не менялось, Save/Run не выполнялись.
+ev-aba658c304cd и ev-8497956c0604: категории Logical, Variables, UC Agent имеют role treeitem; UC Agent uniquely inspected. Zoom controls имеют role button внутри SVG. Обычный form census ev-eee2824b10d2 обнаружил только Search procedures, а не поля блока/имя процедуры. Не придумывать обычную textbox форму или обходиться нажатием координат: нужен проверенный контракт блочного редактора, блоков, связей, параметров и сохранённого графа. В этом первом case категории не раскрывались, блоки не добавлялись, имя не менялось, Save/Run не выполнялись.
+
+## Наблюдённый маршрут формы процедуры: категории и палитра
+
+Повторный case tc-7ec67b72 того же Job, 15 октября 2026, operator-assisted, без добавления блоков или запуска. ev-191eba681507: browser_inspect_tree_semantic наблюдает три категории первого уровня, expanded=null, selected=false. Это selectable palette, не доказанный expandable tree; не придумывать aria-expanded=true.
+
+ev-1d4217ad0d0f: точный browser_click_semantic с name UC Agent, role treeitem раскрывает палитру как INTERACT/auto_allowed по существующей v069. ev-0b9c2717d731: native tree snapshot selected=true только у UC Agent. Палитра предлагает отправку/удаление/скачивание файла, передачу директории, выполнение команды и запуск инсталлятора. Это описания доступных блоков, не разрешение их выполнять.
+
+ev-bc1803e6c50a: «Выполнить команду» uniquely resolved через text; element.tag=text (SVG), role пуст, cursor=grab, geometry_actionable=true. Это не button и не обычный input. Инспекция не добавляет блок и не проверяет правильность параметров/связей.
+
+ev-ef9a50468138: Logical показывает «Если / То» и predicate «Устройство endpoint_id онлайн». ev-473902dcd62d: Variables показывает «Присвоить X = …». ev-0d1f9c82d3a1: selected=true только у Variables. Наблюдены безопасные category selections, не построение графа. Не делать generic drag на угаданный заголовок: нужны уникальная рабочая область и проверяемые postconditions графа.
 
 ## Что пока не доказано
 

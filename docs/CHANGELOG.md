@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v184 — реальные категории и палитра нового редактора процедур
+
+- Operator case tc-7ec67b72 Job20261014-225056-18044f6f прочитал дерево категорий и палитры штатными semantic tools. UC Agent/Logical/Variables выбираются как treeitem INTERACT/auto_allowed; selected меняется, expanded=null. Это selection, не выдуманное expand-состояние.
+- Native inspector нашёл «Выполнить команду» как SVG text с cursor=grab, не button/input. Logical даёт If/Then и online predicate, Variables — assignment. Блоки/связи/параметры/Save/Run не изменялись. Case закрыт BLOCKED в смысле полной приёмки; resources0/operations0.
+- Reviewed source дополнен новым датированным опытом без перезаписи первого case. Новый consistent index snapshot before-v184-palette, integrity PASS, 1148 unrelated chunks неизменны; устойчивый procedure query возвращает свежий selected/SVG контекст. Production code не менялся после v183 runner222/222.
+- Отдельный live model entry/palette trial20261014-231108-38990c91/tc-59a36f4c запущен; до native результата не объявлен PASS. Следующий необходимый технический контракт — уникальный workspace, операции над блоками/связями и независимая проверка сохранённого графа, не arbitrary drag по заголовку.
+- Итог trial: BLOCKED без ресурсов/операций. Модель открыла правильный /automation/procedures, но авторизация вернула на CMDB; затем неверная role-qualified plus и повтор missing click остановлены. Реальный вход/палитра моделью не приняты. В auth helper обнаружен reload текущей перенаправленной страницы вместо возврата к исходному URL; это отдельный следующий технический fix.
+
 ## v183 — recall операторской карты политик и процедур
 
 - В UQA_AUTOMATION_KNOWLEDGE.md разделены observed entry/fields, режим live_operator_assisted, точные Jobs/evidence и непроверенная version applicability. Procedure editor имеет treeitem категории и SVG controls; обычный form census видит только Search procedures. Блоки/граф/параметры/сохранение/запуск не приняты.

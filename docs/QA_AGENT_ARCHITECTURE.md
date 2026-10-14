@@ -1,5 +1,9 @@
 # Архитектура QA-агента UQA
 
+## Palette inspection процедур v184
+
+Существующие browser_inspect_tree_semantic и browser_click_semantic различают три treeitem категории нового editor. Native selected-state подтверждает выбор UC Agent/Logical/Variables; expanded=null не подменяется true. SVG label команды uniquely inspectable, но не является button/input. Операторский опыт записан отдельным case и доступен по reviewed experience query, сохранив 1148 других индексных chunks. Это не новый графовый адаптер и не способность сохранять/исполнять процедуру. Model entry/palette trial оценивается отдельно; production code после suite222/222 не менялся.
+
 ## Проверяемый опыт политик и процедур v183
 
 Официальные source-rechecked declarations и операторский FTS опыт остаются разными слоями. Новый reviewed источник описывает фактические маршруты, модальную policy form и procedure block editor с первичными evidence IDs и execution_mode; version applicability неизвестна. Индексация одного источника сохранила 1148 других chunks, consistent snapshot/integrity проверены. Adapter делает короткий recall для соответствующей положительной задачи; отсутствие либо неверный ответ не даёт право угадывать действие.
