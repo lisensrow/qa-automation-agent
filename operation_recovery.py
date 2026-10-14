@@ -94,6 +94,7 @@ def evaluate_recovery(job, operation, evidence_id, contract):
                     or str(resource.get('external_id')) != str(selector[id_key])):
                 raise ValueError('owned identifier mismatch')
             identifier = str(selector[id_key])
+            identifier_scalar = selector[id_key]
         else:
             if len(new) != 1 or type(new[0].get(id_key)) not in (str, int) or not str(new[0][id_key]).strip():
                 raise ValueError('exact current member not proved')
@@ -117,8 +118,10 @@ def evaluate_recovery(job, operation, evidence_id, contract):
             elif old:
                 raise ValueError('creation baseline was not absent')
             identifier = str(new[0][id_key])
+            identifier_scalar = new[0][id_key]
         return {'verified': True, 'evidence_id': evidence_id, 'baseline_evidence_id': contract['baseline_evidence_id'],
                 'identifier_value': identifier, 'postcondition_verified': True,
+                'identifier_scalar': identifier_scalar,
                 'resend_authorized': False, 'causal_execution_proven': False}
     except (ValueError, TypeError, KeyError, StopIteration, AttributeError):
         # Missing/negative/stale evidence NEVER releases a pending send to retry.

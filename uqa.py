@@ -280,6 +280,9 @@ CORE_RESOURCE_TOOLS = [
 
 # Core-only tools receive job_id/case_id from trusted runtime context.
 CORE_RESOURCE_TOOLS += [
+    {"type":"function","function":{"name":"operation_workflow_state","description":"Read current immutable owned workflow stage; not product evidence.","parameters":{"type":"object","properties":{}}}},
+    {"type":"function","function":{"name":"operation_attach_resource","description":"Bind a verified created resource to the current workflow. Ledger only; grants no mutation permission.","parameters":{"type":"object","properties":{"resource_id":{"type":"string"}},"required":["resource_id"]}}},
+    {"type":"function","function":{"name":"operation_advance","description":"Advance one stage only after verified evidence and owned ledger binding. Does not perform actions or mark PASS.","parameters":{"type":"object","properties":{"operation_id":{"type":"string"}},"required":["operation_id"]}}},
     {"type":"function","function":{"name":"operation_list","description":"Read durable operation states of the current Job; not product evidence.",
         "parameters":{"type":"object","properties":{}}}},
     {"type":"function","function":{"name":"operation_reconcile","description":"Check a pending operation against fresh native GET evidence and its immutable locked oracle. Never resends or grants WRITE.",
@@ -2133,6 +2136,9 @@ def classify_tool_action(
         "resource_assert_edit_scope",
         "operation_list",
         "operation_reconcile",
+        "operation_workflow_state",
+        "operation_attach_resource",
+        "operation_advance",
         "table_selection_list",
     }
 
@@ -4180,6 +4186,15 @@ def execute_resource_tool(
         }
 
     try:
+        if name in {"operation_workflow_state", "operation_attach_resource", "operation_advance"}:
+            from operation_workflow import workflow_state, attach_resource, advance_workflow
+            if not case_id:
+                raise ValueError("workflow case missing")
+            if name == "operation_workflow_state":
+                return workflow_state(job_id, case_id)
+            if name == "operation_attach_resource":
+                return attach_resource(job_id, case_id, arguments.get("resource_id"))
+            return advance_workflow(job_id, case_id, arguments.get("operation_id"))
         if name == "operation_list":
             from operation_journal import list_operations
             return {"status":"ok","executed":False,"bookkeeping_only":True,"product_evidence":False,
@@ -4449,7 +4464,10 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
             raise ValueError("operation case missing")
         return None
     requirement = case.get("requirement") or {}
-    stage = requirement.get("operation_stage")
+    from operation_workflow import initialize_workflow, current_stage
+    if requirement.get("type") == "owned_resource_workflow":
+        initialize_workflow(job_id, case_id)
+    stage = current_stage(job_id, case_id) or requirement.get("operation_stage")
     if stage is not None:
         if requirement.get("locked") is not True or not isinstance(stage, dict) or stage.get("version") != 1:
             raise ValueError("invalid operation stage")
@@ -5019,6 +5037,9 @@ def execute_tool_with_policy(
             ignored_external_id = proposed_external_id
 
     if name in {
+        "operation_workflow_state",
+        "operation_attach_resource",
+        "operation_advance",
         "operation_list",
         "operation_reconcile",
         "resource_register",
@@ -5927,6 +5948,9 @@ def record_tool_observations(
         return []
 
     if tool_name in {
+        "operation_workflow_state",
+        "operation_attach_resource",
+        "operation_advance",
         "operation_list",
         "operation_reconcile",
         "resource_register",
@@ -6147,6 +6171,9 @@ def record_tool_evidence(
         return None
 
     if tool_name in {
+        "operation_workflow_state",
+        "operation_attach_resource",
+        "operation_advance",
         "operation_list",
         "operation_reconcile",
         "resource_register",
@@ -6973,6 +7000,15 @@ def verify_structured_check_evidence(
             check.get("status")
             or ""
         ).lower()
+
+        if (status in {"passed", "failed"} and isinstance(locked_requirement, dict)
+                and locked_requirement.get("type") == "owned_resource_workflow"):
+            check["original_status"] = status
+            check["status"] = "blocked"
+            check["reason"] = "UQA CORE: owned_workflow_business_acceptance_pending"
+            errors.append({"check_id": check.get("check_id"), "title": check.get("title"),
+                           "original_status": status, "issues": ["owned_workflow_business_acceptance_pending"]})
+            continue
 
         if (status in {"passed", "failed"} and isinstance(locked_requirement, dict)
                 and locked_requirement.get("action_profile") == "write_ui_state"

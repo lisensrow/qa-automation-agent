@@ -175,7 +175,8 @@ def reconcile_operation(job_id, operation_id, evidence_id):
         job = _context(job_id, operation['case_id'])
         case = next(c for c in job['test_cases'] if c['case_id'] == operation['case_id'])
         requirement = case.get('requirement') or {}
-        stage = requirement.get('operation_stage') or {}
+        from operation_workflow import active_stage
+        stage = active_stage(data, operation['case_id']) or requirement.get('operation_stage') or {}
         contract = stage.get('verification')
         if (requirement.get('locked') is not True or operation.get('verification_fingerprint') is None
                 or _fingerprint(contract) != operation['verification_fingerprint']
