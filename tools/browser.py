@@ -1548,6 +1548,26 @@ class BrowserSession:
             == "true"
         )
 
+    def _active_menu_context(self):
+        """Observe one menu's current vocabulary; never click or grant permission."""
+        from ui_popup_context import normalize_menu_context
+        try:
+            raw=self.page.evaluate("""()=>{
+                const visible=e=>{const s=getComputedStyle(e);return !e.closest('[inert]')&&s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)>0&&e.getClientRects().length>0;};
+                const all=Array.from(document.querySelectorAll('[role="menu"]'));
+                const menus=all.slice(0,100).filter(visible);
+                const root=menus.length===1?menus[0]:null;
+                const nodes=root?Array.from(root.querySelectorAll('[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]')).filter(e=>e.closest('[role="menu"]')===root&&visible(e)):[];
+                return {status:'observed',menu_count:menus.length,item_count:nodes.length,
+                    truncated:all.length>100||menus.length>8||nodes.length>20,
+                    items:nodes.slice(0,20).map(e=>({role:e.getAttribute('role'),
+                        name:String(e.getAttribute('aria-label')||e.innerText||e.textContent||'').trim().replace(/\\s+/g,' '),
+                        disabled:e.matches(':disabled')||Boolean(e.closest('[aria-disabled="true" i]'))}))};
+            }""")
+            return normalize_menu_context(raw)
+        except Exception:
+            return None
+
     def _capture_state(self, action: str):
         self.action_counter += 1
 
@@ -1656,6 +1676,7 @@ class BrowserSession:
             "unique_unnamed_icon_hints": unique_unnamed_icon_hints,
             "navigation_labels": navigation_labels[:50],
             "interactive_elements": interactive_elements,
+            "active_menu_context": self._active_menu_context(),
             "screenshot": str(screenshot_path),
             "console_errors": self.console_errors[-20:],
             "page_errors": self.page_errors[-20:],

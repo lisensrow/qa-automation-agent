@@ -2,6 +2,12 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v186 — bounded active-menu context, без автоматического клика
+
+- Добавлен ui_popup_context.py: нормализация native меню, изоляция текущего turn, сброс устаревшего состояния и ограниченный словарь browser_click_semantic. BrowserSession наблюдает меню без dispatch; компрессия сохраняет проверенные поля. Никаких продуктовых названий/маршрутов в Core.
+- Новый профиль проверяет native Chromium меню, disabled/hidden/multiple/truncated/duplicate/secret случаи и production run_turn с изолированными моделью/исполнителем. Автоклика и разрешений не добавлено; все инструменты и v069 сохранены. Финальный установленный suite223/223 PASS (/tmp/v186-final-full-smoke.log). Shareable Markdown package15/15 прошёл проверку ссылок и очевидных private markers.
+- Реальный model Job20261014-233520-79fd039b / tc-dee5b4ec BLOCKED. Native Add menu ev-dd50a19a6941 корректно наблюдало Add procedure, но модель преждевременно инспектировала Logical/Variables/UC Agent (ev-776b67947e31, ev-bde84324d025, ev-763fbdd620dc). Ресурсов0, operations[]. Это не автономная приёмка процедур. Следующий этап — восстановление состояния после такой ошибки, не идентичный retry.
+
 ## v185 — аудит навигационной гипотезы, без выпуска auth-изменения
 
 - Первичное ev-5df0fd40953b показало, что исходный адрес сменил _managed_initial_browser_open_url до вызова browser adapter: inferred_deep_link_normalized_to_origin. Это существующая origin-generic защита, не доказанная потеря deep URL при certificate auth. Ранее указанная auth-гипотеза снята.

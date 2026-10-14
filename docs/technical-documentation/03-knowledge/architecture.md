@@ -14,6 +14,8 @@ v176–v177 подключают отдельный declared_product_context к 
 
 ## Рост
 
+v186: native активное меню — кратковременный UI-контекст, не новый продуктовый факт и не самостоятельный источник verified knowledge. Названия/роли/disabled-state bounded и проверяются; состояние прошлого turn не применяется. Предложенный click vocabulary не выполняет действие, не меняет policy и не доказывает готовность редактора. Live model увидела Add procedure, но пропустила переход; Job20261014-233520-79fd039b BLOCKED без ресурсов/операций. Это отрицательный опыт текущего исполнения, не подтверждённый баг UC и не основание рекомендовать обновление продукта.
+
 v183: reviewed policy/procedure field maps находятся через indexed experience queries, отдельно от source-rechecked official declarations. Индекс обновлён одним источником с consistent snapshot, 1148 остальных chunks неизменны. Operator-only provenance и unknown runtime applicability не дают business PASS. Procedure SVG/treeitem редактор требует отдельного block/edge/save contract; обычный form census недостаточен. Context-only local model probe обнаружил неточные labels/role, хотя safety limits удержаны; полноценный автономный workflow не объявлен готовым.
 
 v181–v182 сохраняют bounded location hints при history compaction и различают native отказ до клика от uncertain send. Только in-process marker может дать not_sent, не JSON; retry сохраняет policy и exact binding. Installed runner222/222PASS. Операторская форма политики подтверждает лишь текущую карту полей; не автономное создание. Отдельные старые uncertain/unbound launcher операции сохраняются для аудита, не переписываются задним числом. Runtime версия frontend здесь не подтверждена.

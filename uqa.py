@@ -6661,6 +6661,12 @@ def _historical_browser_result_summary(tool_name, content):
         location = compact_control_location_hint(parsed["control_location_hint"])
         if location:
             summary["control_location_hint"] = location
+    if "active_menu_context" in parsed:
+        from ui_popup_context import normalize_menu_context
+        summary["active_menu_context"] = normalize_menu_context(parsed['active_menu_context'])
+        session = parsed.get('session_id')
+        if isinstance(session,str) and re.fullmatch(r'[A-Za-z0-9_-]{1,128}',session):
+            summary['session_id'] = session
     summary["model_history_compacted"] = True
     return summary
 
@@ -14395,6 +14401,7 @@ def run_turn(
     messages[:] = [message for message in messages
                    if not (message.get("role") == "system"
                            and "uqa_case_navigation_task" in message)]
+    popup_context_start = len(messages)
     navigation_task = _navigation_task_text(messages)
     messages.append({"role": "system", "uqa_case_navigation_task": navigation_task,
                      "content": "Current case navigation target remains the original task. "
@@ -14565,7 +14572,11 @@ def run_turn(
                 data = {"message": {"content": UQA_CHECKS_START + json.dumps(
                     {"checks": contract_check_templates}, ensure_ascii=False) + UQA_CHECKS_END}}
             else:
-                data = ask_ollama(messages, tools=model_tool_catalog(selected_model_tools | required_names))
+                catalog = model_tool_catalog(selected_model_tools | required_names)
+                if action_policy == 'confirm_mutations':
+                    from ui_popup_context import menu_tool_catalog
+                    catalog = menu_tool_catalog(catalog, messages[popup_context_start:])
+                data = ask_ollama(messages, tools=catalog)
         except Exception as exc:
             if job_id and case_id:
                 finalize_case_blocked(
