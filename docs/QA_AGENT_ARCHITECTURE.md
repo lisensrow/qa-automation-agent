@@ -2,6 +2,8 @@
 
 Статус документа: живое описание текущей архитектуры. Обновляется вместе с изменениями UQA.
 
+Аудит 14 октября 2026: описанные successful сценарии не означают готовность всего frontend или завершение 12-stage цели. Два свежих read-only demo Jobs подготовлены в состоянии created/pending без старых evidence/verdict; их запуск описан в UQA_PILOT_READINESS.md. Live owned-resource lifecycle/recovery и обратная связь реального отдела ещё отсутствуют. Демонстрационный пакет — самостоятельный подготовленный материал, не состоявшаяся пилотная приёмка.
+
 ## Что умеет агент
 
 - Загружает индексированный факт о навигации Agent с проверкой текущих architecture/backend/frontend и подтверждает его новым UI-наблюдением. Три реальных Jobs PASS 3/3, loaded_fact_count=1, navigation/fact_reconfirmation=runtime_confirmed, evidence_for_pass=false. UI/API binding этим прогоном не подтверждался; веса модели не обучались.

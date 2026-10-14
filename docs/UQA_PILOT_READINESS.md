@@ -117,3 +117,11 @@ Momentary readiness: обе UI/CI/agent online, fresh samples age 37.3/31.1 се
 Не покрыто этой группой: вся совокупность frontend-функций, paging/sort/drag-drop, edit/save, мастера Next/Back, произвольная новая фича, полноценный backend regression, task execution/results и Jira. Реальный resource create/change/cleanup ожидает отдельного разрешения на один owned fixture. Live crash/recovery не проверялся; прошли только isolated ledger process recovery и mocked cleanup tests. Pilot и management demo не объявляются завершёнными до участия отдела/руководства.
 
 Финальный технический контроль: py_compile, профильные negative tests и полный runner 201/201 PASS. Изменения сохраняют STEP/AUTO и v069 action-policy; резервные копии сделаны до установки. Jobs, credentials, runtime artifacts и knowledge databases остаются на диске, не входят в commit. Разрешение на owned fixture запрошено отдельно; до ответа real mutations не выполняются.
+
+### Свежие Jobs для утреннего показа
+
+Подготовлены, но не запускались: Ubuntu exact карточка — 20261014-003656-0c45b6f4; Windows вкладка Agent — 20261014-003656-f2629931. В обоих created/pending, read_only и locked frontend contract на три проверки; observations/evidence/resources пока отсутствуют. Они не наследуют PASS предыдущих Jobs.
+
+В консоли UQA сначала выполнить `/run-job 20261014-003656-0c45b6f4`, затем `/run-job 20261014-003656-f2629931`. Ожидаемый проверяемый результат — три вычисленных checks на каждый Job, только по свежим пригодным evidence. При offline, неизвестной форме ответа, отсутствующей карточке или другой неполноте доказательств не обещаем PASS. Карточка/Agent tab сами по себе не доказывают свежесть телеметрии: её нужно наблюдать отдельно.
+
+Если демонстрационный Job запрашивает неожиданный WRITE/DESTRUCTIVE, отклонить его штатной policy и сохранить BLOCKED; подготовка этих Jobs не разрешает заполнение, сохранение, команды или изменения расписаний. До живого запуска проверять текущую доступность UQA/Ollama и стенда, не перезапускать сервисы ради демонстрации без безопасного окна. Для повторного показа создавать новый prepared Job, не переписывать уже завершённый.
