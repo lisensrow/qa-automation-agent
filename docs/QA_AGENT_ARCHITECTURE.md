@@ -18,6 +18,8 @@
 
 ## Что умеет агент
 
+- После v164 повторил через штатный runtime два read-only сценария: Ubuntu exact карточка (20261014-065710-f71c4654) и Windows Agent (20261014-065710-b701b82e), оба PASS 3/3, без scope harness, ручной навигации, WRITE-подтверждений и ресурсов. Для показа подготовлены новые pending Jobs; команды — в UQA_PILOT_READINESS.md. Это не полное покрытие frontend или свежести телеметрии.
+
 - Штатный runtime, без дополнительного экспериментального scope harness, выполнил demo Jobs exact карточки Ubuntu и Agent Windows: 20261014-003656-0c45b6f4 / 20261014-003656-f2629931 PASS 3/3, без операторской навигации и WRITE подтверждений, resources=0. Это ограниченное подтверждение обычного пути исполнения, не всех frontend-функций.
 
 - Загружает индексированный факт о навигации Agent с проверкой текущих architecture/backend/frontend и подтверждает его новым UI-наблюдением. Три реальных Jobs PASS 3/3, loaded_fact_count=1, navigation/fact_reconfirmation=runtime_confirmed, evidence_for_pass=false. UI/API binding этим прогоном не подтверждался; веса модели не обучались.
