@@ -1,5 +1,11 @@
 # Архитектура QA-агента UQA
 
+## Проверяемый опыт политик и процедур v183
+
+Официальные source-rechecked declarations и операторский FTS опыт остаются разными слоями. Новый reviewed источник описывает фактические маршруты, модальную policy form и procedure block editor с первичными evidence IDs и execution_mode; version applicability неизвестна. Индексация одного источника сохранила 1148 других chunks, consistent snapshot/integrity проверены. Adapter делает короткий recall для соответствующей положительной задачи; отсутствие либо неверный ответ не даёт право угадывать действие.
+
+Native operator probes закрыты без final Create/Save/Run. Treeitem категории и SVG controls не равны обычным полям; нужны block/edge/parameter/save contracts и реальные postconditions. Runner222/222 — технический, не продуктовый результат. Context-only модель правильно удержала safety limits, но exact labels/role ответила неточно; автономная UI приёмка остаётся открытой.
+
 ## Отказ до native dispatch v182
 
 При неразрешённом target click adapter возвращает внутренний MissingBeforeDispatch до начала выполнения. Journal отличает его от обычного JSON и от неизвестного результата отправки: только точный native класс с false/not_executed признаками даёт not_sent. Same-context повтор всё равно проходит прежнюю policy, а ACK никогда не становится business PASS. Старые uncertain записи не переклассифицируются автоматически. Профиль Playwright/py_compile PASS; полного автономного создания политики это не доказывает.

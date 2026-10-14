@@ -7,7 +7,9 @@ from product_knowledge_records import DocumentSource, SourcePolicy, initialize_s
 from product_knowledge_context import retrieve_declared_context, reviewed_search_queries
 
 assert reviewed_search_queries('Создай коллекцию; не запускай политики или процедуры.') == ['коллекции создание','наблюдённый маршрут поля коллекции']
-assert reviewed_search_queries('Как создать процедуру?') == ['процедуры создание']
+assert reviewed_search_queries('Как создать процедуру?') == ['процедуры создание','наблюдённый маршрут формы процедуры']
+assert reviewed_search_queries('Открой политику; без процедур.') == ['политики создание','наблюдённый маршрут формы политики']
+assert reviewed_search_queries('Не создавай политики или процедуры.') == []
 assert reviewed_search_queries('Создай коллекцию. Никаких политик или процедур.') == ['коллекции создание','наблюдённый маршрут поля коллекции']
 assert reviewed_search_queries(None) == []
 

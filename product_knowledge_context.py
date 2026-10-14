@@ -32,12 +32,14 @@ CONCEPTS = {
     'policies.configuration': {
         'terms': ('политик', 'policy', 'policies'),
         'search_query': 'политики создание',
+        'experience_query': 'наблюдённый маршрут формы политики',
         'claims': {'supported_types': ['agent_configuration', 'agent_task_update', 'agent_plugin_management'],
                    'condition_logic': 'same_as_collection_conditions'},
     },
     'procedures.execution': {
         'terms': ('процедур', 'procedure'),
         'search_query': 'процедуры создание',
+        'experience_query': 'наблюдённый маршрут формы процедуры',
         'claims': {'definition_kind': 'template_not_execution_instance',
                    'target_kind': 'collection',
                    'target_membership_time': 'snapshot_at_launch',

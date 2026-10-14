@@ -2,6 +2,15 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v183 — recall операторской карты политик и процедур
+
+- В UQA_AUTOMATION_KNOWLEDGE.md разделены observed entry/fields, режим live_operator_assisted, точные Jobs/evidence и непроверенная version applicability. Procedure editor имеет treeitem категории и SVG controls; обычный form census видит только Search procedures. Блоки/граф/параметры/сохранение/запуск не приняты.
+- Один reviewed источник добавлен в FTS транзакционно с consistent private backup document-index.before-v183-automation.db; integrity_check PASS, 1148 остальных chunks неизменны. knowledge_search нашёл устойчивые policy/procedure queries. Это недоверенный опыт, не новые verified atomic facts.
+- Product adapter добавляет bounded experience_query к соответствующим documentary queries. Ограничения задачи, лимит трёх запросов, STEP/AUTO/v069 и journal сохранены; Core не содержит продуктового рецепта.
+- Установленный профиль/py_compile и полный runner222/222 PASS (/tmp/v183-full-smoke.log). Live qwen3:14b context-only проба 23.2s без tools/мутаций: четыре safety/limit checks прошли, три exact label/role checks не прошли. Не выдавать это за автономную способность или полный PASS; think-on повтор проверяется отдельно.
+- Think-on повтор 41.65s также не прошёл три exact label/role checks; те же четыре ограничения удержаны. Production think default не менялся. Повтор не исправляет первоначальный FAIL и не является UI-приёмкой.
+- Диагностический think-off повтор 20.63s вернул правильные literals внутри поясняющих предложений (111/126/77 символов), а не требуемые короткие значения. Значит в этом повторе recall/понимание различия launcher и commit есть, но строгий output contract не выдержан. Критерии не смягчались; exact checks остаются FAIL. Это не доказательство неисправности поиска и не агентская UI capability.
+
 ## v182 — native отказ поиска до отправки клика
 
 - Policy discovery Job 20261014-223727-54995264 выявил возврат первого открытия после авторизации на CMDB вместо запрошенного списка. Отсутствующий Create policy вернул semantic_element_not_found (ev-72a3c06f3ad5), но прежний журнал поставил uncertain. Последующий правильный клик заблокирован; op-790cbc35c2964334be40def661353cbf сохранена без ретроактивного переписывания.
