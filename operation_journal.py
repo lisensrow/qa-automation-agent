@@ -64,13 +64,25 @@ def _load(path, job_id):
         raise ValueError('invalid operation journal')
     seen = set()
     for operation in data['operations']:
-        if (not isinstance(operation, dict) or operation.get('status') not in UNRESOLVED | {'verified', 'not_sent'}
+        if (not isinstance(operation, dict) or operation.get('status') not in UNRESOLVED | {'verified', 'not_sent', 'rejected', 'canceled'}
                 or not re.fullmatch(r'[0-9a-f]{64}', str(operation.get('arguments_fingerprint') or ''))
                 or operation.get('operation_id') in seen):
             raise ValueError('invalid operation record')
         for key in ('operation_id', 'case_id', 'workflow_id', 'stage_id', 'resource_key', 'tool'):
             _token(operation.get(key))
         seen.add(operation['operation_id'])
+        if operation['status'] == 'rejected':
+            review = operation.get('operator_resolution') or {}
+            if (review.get('kind') != 'server_rejection_before_command' or review.get('http_status') != 400
+                    or not re.fullmatch(r'[0-9a-f]{64}', str(review.get('adapter_source_sha256') or ''))):
+                raise ValueError('rejected operation requires audited native rejection review')
+        if operation['status'] == 'canceled':
+            review = operation.get('operator_resolution') or {}
+            if (review.get('kind') != 'explicit_operator_cancellation'
+                    or review.get('previous_status') not in UNRESOLVED
+                    or not isinstance(review.get('authority'),str) or not review['authority']
+                    or not isinstance(review.get('reason'),str) or not review['reason']):
+                raise ValueError('canceled operation requires explicit operator review')
     return data
 
 
@@ -180,9 +192,9 @@ def reconcile_operation(job_id, operation_id, evidence_id):
     with _locked(job_id) as path:
         data = _load(path, job_id)
         operation = next(o for o in data['operations'] if o['operation_id'] == operation_id)
-        if operation['status'] == 'not_sent':
-            return {'verified': False, 'reason': 'operation_was_not_sent',
-                    'operation_id': operation_id, 'operation_status': 'not_sent',
+        if operation['status'] in {'not_sent', 'rejected', 'canceled'}:
+            return {'verified': False, 'reason': 'operation_was_'+operation['status'],
+                    'operation_id': operation_id, 'operation_status': operation['status'],
                     'resend_authorized': False, 'bookkeeping_only': True, 'product_evidence': False}
         if operation['status'] == 'verified':
             # A later same-name object must not replace the accepted identity.

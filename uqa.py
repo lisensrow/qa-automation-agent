@@ -6256,11 +6256,18 @@ def record_tool_evidence(
     # Job history хранится на диске,
     # но всё равно не раздуваем её бесконечно
     # одним огромным response/log.
-    if len(value) > 6000:
-        value = (
-            value[:6000]
-            + "...<truncated>"
-        )
+    evidence_over_budget = len(value.encode("utf-8")) > 262144
+    if evidence_over_budget:
+        import hashlib
+        value = json.dumps({
+            "tool": tool_name,
+            "arguments": {},
+            "result": {
+                "evidence_truncated": True,
+                "original_payload_bytes": len(value.encode("utf-8")),
+                "original_payload_sha256": hashlib.sha256(value.encode("utf-8")).hexdigest(),
+            },
+        }, ensure_ascii=False)
 
     eligibility = (
         classify_tool_evidence(
@@ -6296,6 +6303,13 @@ def record_tool_evidence(
                 else "task_result_metadata_only"
             )
         )
+
+    if evidence_over_budget:
+        eligibility["usable_for_pass"] = False
+        eligibility["reason"] = "evidence_payload_over_budget"
+    if isinstance(result,dict) and result.get("response_body_truncated") is True:
+        eligibility["usable_for_pass"] = False
+        eligibility["reason"] = "native_response_body_truncated"
 
     return add_evidence(
         job_id,

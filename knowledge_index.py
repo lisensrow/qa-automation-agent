@@ -741,6 +741,38 @@ def build_index():
             print(" -", item)
 
 
+def index_document(path: Path):
+    """Atomically replace one curated source, without rebuilding other sources.
+
+    Knowledge is untrusted reference text, never a runtime verdict or permission.
+    Call only for reviewed, secret-free sources inside SOURCE_DIR.
+    """
+    root = SOURCE_DIR.resolve(strict=True)
+    path = Path(path).resolve(strict=True)
+    relative = path.relative_to(root).as_posix()
+    if not path.is_file() or path.suffix.lower() not in {'.docx', '.pdf', '.xlsx', '.md', '.txt'}:
+        raise ValueError('supported knowledge source file required')
+    blocks = read_document(path)
+    chunks = make_chunks(blocks)
+    if not chunks:
+        raise ValueError('empty knowledge source rejected; existing index preserved')
+    con = _connect()
+    try:
+        with con:
+            con.execute('DELETE FROM chunks WHERE source=?', (relative,))
+            con.executemany(
+                'INSERT INTO chunks(source,chunk_no,heading,content) VALUES(?,?,?,?)',
+                [(relative, i, c['heading'], c['content']) for i, c in enumerate(chunks, 1)],
+            )
+            documents, total = con.execute('SELECT COUNT(DISTINCT source), COUNT(*) FROM chunks').fetchone()
+            con.executemany('INSERT OR REPLACE INTO metadata(key,value) VALUES(?,?)',
+                            [('indexed_at', _now()), ('documents', str(documents)), ('chunks', str(total))])
+        return {'source': relative, 'chunks': len(chunks), 'documents': documents,
+                'chunks_total': total, 'evidence_for_pass': False}
+    finally:
+        con.close()
+
+
 def _make_fts_query(query: str):
     tokens = re.findall(
         r"[A-Za-zА-Яа-яЁё0-9_.-]+",
@@ -839,6 +871,9 @@ if __name__ == "__main__":
 
     sub.add_parser("build")
 
+    index_parser = sub.add_parser('index-document')
+    index_parser.add_argument('path', type=Path)
+
     search_parser = sub.add_parser(
         "search"
     )
@@ -857,6 +892,9 @@ if __name__ == "__main__":
 
     if args.command == "build":
         build_index()
+
+    elif args.command == 'index-document':
+        print(index_document(args.path))
 
     elif args.command == "search":
         results = search(

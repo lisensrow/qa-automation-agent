@@ -45,6 +45,7 @@ with TemporaryDirectory(prefix='uqa-not-sent-') as directory, patch.object(job_s
     assert [o['status'] for o in journal.list_operations(ctx['job_id'])]==['not_sent','awaiting_verification']
     assert not journal.inspect_operation(**ctx)['allowed']
     for untrusted in (dict(refusal),json.loads(json.dumps(refusal)),{'executed':False},
+                      {'http_status':400,'executed':False,'error':'HTTP rejected'},
                       {'error':'click_failed','click_status':'not_executed'}):
         c=fixture()
         assert journal.execute_journaled(c,lambda:untrusted)['operation_status']=='uncertain'
@@ -70,4 +71,32 @@ with TemporaryDirectory(prefix='uqa-not-sent-') as directory, patch.object(job_s
         assert second['operation_status']=='awaiting_verification' and len(decisions)==2
         third=uqa.execute_tool_with_policy('browser_click_semantic',args,[],job_id=c['job_id'],case_id=c['case_id'],action_policy='confirm_mutations')
         assert third['action_policy_status']=='blocked_by_operation_journal' and len(decisions)==2
+    # Rejected is an operator-audited terminal failure, never auto-created from HTTP status.
+    c=fixture();claim=journal.begin_operation(**c)
+    with journal._locked(c['job_id']) as path:
+        data=journal._load(path,c['job_id']);op=data['operations'][0]
+        op['status']='rejected'
+        job_store._atomic_write(path,data)
+        try:journal._load(path,c['job_id'])
+        except ValueError:pass
+        else:raise AssertionError('unreviewed rejection must fail closed')
+        op['operator_resolution']={'kind':'server_rejection_before_command','http_status':400,'adapter_source_sha256':'a'*64}
+        job_store._atomic_write(path,data)
+    assert not journal.inspect_operation(**c)['allowed']
+    assert journal.begin_operation(**dict(c,stage_id='correct-prerequisite'))['allowed']
+    assert journal.reconcile_operation(c['job_id'],claim['operation_id'],'fixture')['reason']=='operation_was_rejected'
+    c=fixture();claim=journal.begin_operation(**c)
+    with journal._locked(c['job_id']) as path:
+        data=journal._load(path,c['job_id']);op=data['operations'][0]
+        op['status']='canceled'
+        job_store._atomic_write(path,data)
+        try:journal._load(path,c['job_id'])
+        except ValueError:pass
+        else:raise AssertionError('unreviewed cancellation must fail closed')
+        op['operator_resolution']={'kind':'explicit_operator_cancellation','previous_status':'sending',
+                                  'authority':'Isolated human-authority fixture','reason':'Isolated diagnostic cancellation'}
+        job_store._atomic_write(path,data)
+    assert not journal.inspect_operation(**c)['allowed']
+    assert journal.reconcile_operation(c['job_id'],claim['operation_id'],'fixture')['reason']=='operation_was_canceled'
+    assert journal.begin_operation(**dict(c,stage_id='explicit-new-workflow'))['allowed']
 print('PASS native no dispatch: actual disabled control, no click, retained attempts, same-context retry, JSON/error/timeout fail closed')

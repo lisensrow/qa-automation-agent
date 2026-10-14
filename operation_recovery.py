@@ -26,7 +26,7 @@ def _read(case, evidence_id, contract, before=None, after=None):
         raise ValueError('wrong evidence tool')
     result = envelope['result']
     status = result.get('status')
-    if (result.get('error') or result.get('method') != 'GET' or type(status) is not int
+    if (result.get('error') or result.get('response_body_truncated') is True or result.get('method') != 'GET' or type(status) is not int
             or not 200 <= status < 300 or not result.get('session_id') or not result.get('request_id')
             or envelope.get('arguments', {}).get('request_id') != result['request_id']):
         raise ValueError('invalid read receipt')

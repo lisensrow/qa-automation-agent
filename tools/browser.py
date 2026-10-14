@@ -1792,7 +1792,7 @@ class BrowserSession:
 
         def safe_body(raw, limit=8000):
             if not raw:
-                return None
+                return None, False
 
             try:
                 import json
@@ -1808,12 +1808,12 @@ class BrowserSession:
                 result = raw
 
             if len(result) > limit:
-                result = (
-                    result[:limit]
-                    + "\n...<truncated>"
-                )
+                import hashlib
+                return json.dumps({"_body_truncated": True,
+                    "original_characters": len(result),
+                    "redacted_body_sha256": hashlib.sha256(result.encode('utf-8')).hexdigest()}), True
 
-            return result
+            return result, False
 
         # Не отдаём модели Cookie/Authorization headers.
         allowed_request_headers = (
@@ -1885,6 +1885,8 @@ class BrowserSession:
                 "Body not read: non-text content type"
             )
 
+        safe_request_body, request_body_truncated = safe_body(request_body)
+        safe_response_body, response_body_truncated = safe_body(response_body, limit=65536)
         return {
             "request_id": request_id,
             "received_at": item.get("received_at"),
@@ -1904,9 +1906,11 @@ class BrowserSession:
             "resource_type": request.resource_type,
             "status": response.status,
             "request_headers": request_headers,
-            "request_body": safe_body(request_body),
+            "request_body": safe_request_body,
+            "request_body_truncated": request_body_truncated,
             "response_headers": response_headers,
-            "response_body": safe_body(response_body),
+            "response_body": safe_response_body,
+            "response_body_truncated": response_body_truncated,
             "response_body_note": response_body_note,
         }
 
