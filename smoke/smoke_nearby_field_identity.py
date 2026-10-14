@@ -31,6 +31,20 @@ try:
     assert len(s._visible_nearby_labeled_field_matches('Name', True)) == 1
     s.page.set_content('<div hidden><div>Name</div><input></div><div><div>Name</div><input></div>')
     assert len(s._visible_nearby_labeled_field_matches('Name', True)) == 1
+    # Unnamed icon fallback must not escape the explicitly bound owner.
+    s.page.set_content('''<ul><li>Owned<button onclick="this.dataset.clicked='yes'"><i class="pi pi-cog"></i></button></li>
+      <li>Existing<button onclick="this.dataset.clicked='yes'"><i class="pi pi-cog"></i></button></li></ul>''')
+    result = s.click_semantic('cog', exact=True, container='Owned')
+    assert not result.get('error'), result.get('error')
+    assert s.page.locator('li').nth(0).locator('button').get_attribute('data-clicked') == 'yes'
+    assert s.page.locator('li').nth(1).locator('button').get_attribute('data-clicked') is None
+    result = s.click_semantic('cog', exact=True, container='Missing')
+    assert result.get('error')
+    assert s.page.locator('li').nth(1).locator('button').get_attribute('data-clicked') is None
+    s.page.set_content('<ul><li><div>Owned</div><span>Open</span></li><li><div>Existing</div><span>Open</span></li></ul>')
+    result = s.click_semantic('Open', exact=True, container='Owned')
+    assert not result.get('error'), result.get('error')
+    assert s.click_semantic('Open', exact=True, container='Missing').get('error')
     print('PASS nearby field identity: table checkbox, untouched sibling, real ambiguity, nested/hidden labels')
 finally:
     s.close()

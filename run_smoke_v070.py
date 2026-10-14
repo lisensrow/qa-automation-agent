@@ -39,6 +39,7 @@ SMOKES = [
     "smoke_exact_table_row_tabs.py",
     "smoke_browser_field_matching.py",
     "smoke_nearby_field_identity.py",
+    "smoke_network_response_identifier.py",
     "smoke_form_controls.py",
     "smoke_advanced_form_controls.py",
     "smoke_temporal_controls.py",

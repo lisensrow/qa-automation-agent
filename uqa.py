@@ -4348,7 +4348,9 @@ def _tool_history_observed_identifier(messages, candidate):
         "identifier_value",
     }
 
-    def contains_identifier(value):
+    def contains_identifier(value, depth=0):
+        if depth > 16:
+            return False
         if isinstance(value, dict):
             for key, item in value.items():
                 if (
@@ -4357,11 +4359,21 @@ def _tool_history_observed_identifier(messages, candidate):
                 ):
                     return True
 
-                if contains_identifier(item):
+                # Network detail returns a redacted JSON body as text. Decode
+                # only that response field; arbitrary text/request bodies do
+                # not constitute observed identifiers.
+                if key == "response_body" and isinstance(item, str) and len(item) <= 65536:
+                    try:
+                        parsed = json.loads(item)
+                    except (ValueError, RecursionError):
+                        parsed = None
+                    if isinstance(parsed, (dict, list)) and contains_identifier(parsed, depth + 1):
+                        return True
+                if contains_identifier(item, depth + 1):
                     return True
 
         elif isinstance(value, list):
-            return any(contains_identifier(item) for item in value)
+            return any(contains_identifier(item, depth + 1) for item in value)
 
         return False
 

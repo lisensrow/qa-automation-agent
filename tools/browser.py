@@ -13266,6 +13266,9 @@ class BrowserSession:
                 [] if inspected_role_fallback
                 else self._visible_icon_matches(name)
             )
+            if container:
+                icon_matches = [candidate for candidate in icon_matches
+                                if matches_container(candidate)]
 
             if len(icon_matches) == 1:
                 target = icon_matches[0]
@@ -13294,7 +13297,7 @@ class BrowserSession:
                     candidate = locator.nth(i)
 
                     try:
-                        if candidate.is_visible():
+                        if candidate.is_visible() and (inspected_role_fallback or matches_container(candidate)):
                             visible.append(candidate)
                     except Exception:
                         continue
