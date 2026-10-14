@@ -120,8 +120,18 @@ Momentary readiness: обе UI/CI/agent online, fresh samples age 37.3/31.1 се
 
 ### Свежие Jobs для утреннего показа
 
-Подготовлены, но не запускались: Ubuntu exact карточка — 20261014-003656-0c45b6f4; Windows вкладка Agent — 20261014-003656-f2629931. В обоих created/pending, read_only и locked frontend contract на три проверки; observations/evidence/resources пока отсутствуют. Они не наследуют PASS предыдущих Jobs.
+Jobs 20261014-003656-0c45b6f4 (Ubuntu exact карточка) и 20261014-003656-f2629931 (Windows Agent) теперь завершены: оба PASS 3/3 через обычный run_prepared_regression_job, без экспериментального scope harness, ручной навигации и подтверждений WRITE. В каждом resources=0, появились собственные свежие evidence. Не пытаться запускать их как pending и не переписывать завершённый результат.
 
-В консоли UQA сначала выполнить `/run-job 20261014-003656-0c45b6f4`, затем `/run-job 20261014-003656-f2629931`. Ожидаемый проверяемый результат — три вычисленных checks на каждый Job, только по свежим пригодным evidence. При offline, неизвестной форме ответа, отсутствующей карточке или другой неполноте доказательств не обещаем PASS. Карточка/Agent tab сами по себе не доказывают свежесть телеметрии: её нужно наблюдать отдельно.
+Для следующего показа штатный corpus CLI создал новые Jobs: Ubuntu exact карточка — 20261014-065710-f71c4654; Windows Agent — 20261014-065710-b701b82e. Они created/pending с read_only locked контрактом на три проверки и без observations/evidence/resources. Подготовка не исполняет стендовых действий и не наследует прошлый PASS.
+
+В консоли UQA сначала выполнить `/run-job 20261014-065710-f71c4654`, затем `/run-job 20261014-065710-b701b82e`. Ожидаемый проверяемый результат — три вычисленных checks на каждый Job, только по свежим пригодным evidence. При offline, неизвестной форме ответа, отсутствующей карточке или другой неполноте доказательств не обещаем PASS. Карточка/Agent tab сами по себе не доказывают свежесть телеметрии: её нужно наблюдать отдельно.
+
+Оператор может создать следующую свежую пару штатной командой генератора на UQA-сервере. Использовать выданный новый job_id, а не ID завершённого результата:
+
+```bash
+cd /opt/uqa
+.venv/bin/python run_uconnect_manual_frontend_benchmark.py --case-id uc-front-001 --stand lab --bind exact_ci_name=home-server-UC-ubuntu22 --create-job
+.venv/bin/python run_uconnect_manual_frontend_benchmark.py --case-id uc-front-002 --stand lab --bind exact_ci_name=home-server-UC-windows10 --bind 'requested_tab_names=["Agent"]' --create-job
+```
 
 Если демонстрационный Job запрашивает неожиданный WRITE/DESTRUCTIVE, отклонить его штатной policy и сохранить BLOCKED; подготовка этих Jobs не разрешает заполнение, сохранение, команды или изменения расписаний. До живого запуска проверять текущую доступность UQA/Ollama и стенда, не перезапускать сервисы ради демонстрации без безопасного окна. Для повторного показа создавать новый prepared Job, не переписывать уже завершённый.
