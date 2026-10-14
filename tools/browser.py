@@ -1296,11 +1296,27 @@ class BrowserSession:
         matching_labels = []
         seen = set()
         editable_selector = (
-            'input:not([type="hidden"]), textarea, select, '
+            'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])'
+            ':not([type="button"]):not([type="submit"]):not([type="reset"])'
+            ':not([type="image"]):not([type="file"]):not([type="range"])'
+            ':not([type="color"]), textarea, select, '
             '[contenteditable="true"], [role="textbox"], '
             '[role="searchbox"], [role="combobox"], '
             '[role="spinbutton"]'
         )
+
+        def control_key(control):
+            # Identity, not serialized HTML: identical unnamed sibling inputs
+            # must remain distinct so a genuinely ambiguous WRITE is blocked.
+            return control.evaluate("""e => {
+                const path = [];
+                for (let n = e; n; n = n.parentElement) {
+                    let index = 0;
+                    for (let p = n.previousElementSibling; p; p = p.previousElementSibling) index++;
+                    path.push(index);
+                }
+                return path.reverse().join('/');
+            }""")
 
         try:
             count = min(labels.count(), 1500)
@@ -1353,13 +1369,7 @@ class BrowserSession:
 
                     if len(visible_controls) == 1:
                         control = visible_controls[0]
-                        key = (
-                            control.get_attribute("data-uqa-id")
-                            or control.get_attribute("id")
-                            or control.evaluate(
-                                "e => e.tagName + ':' + e.outerHTML"
-                            )[:500]
-                        )
+                        key = control_key(control)
 
                         if key not in seen:
                             seen.add(key)
@@ -1443,13 +1453,7 @@ class BrowserSession:
                     continue
 
                 control = candidates[0][1]
-                key = (
-                    control.get_attribute("data-uqa-id")
-                    or control.get_attribute("id")
-                    or control.evaluate(
-                        "e => e.tagName + ':' + e.outerHTML"
-                    )[:500]
-                )
+                key = control_key(control)
 
                 if key not in seen:
                     seen.add(key)
