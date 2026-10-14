@@ -20,7 +20,7 @@ CONCEPTS = {
     'collections.membership': {
         'terms': ('коллекц', 'collection'),
         'search_query': 'коллекции создание',
-        'experience_query': 'коллекция Manual Table fields',
+        'experience_query': 'наблюдённый маршрут поля коллекции',
         'claims': {'composition_formula': 'automatic_plus_manual_minus_exclusions',
                    'clear_on_update_semantics': 'recompute_not_accumulate'},
     },

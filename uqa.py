@@ -2992,11 +2992,69 @@ def _open_page_proves_named_route(messages):
 def _managed_navigation_ready(messages):
     if _open_page_proves_named_route(messages):
         return True
+    if _confirmed_new_editor_below_named_route(messages):
+        return True
     if not _history_has_successful_interact_navigation(messages):
         return False
 
     target_match = _latest_state_matches_navigation_target(messages)
     return True if target_match is None else target_match
+
+
+def _confirmed_new_editor_below_named_route(messages):
+    """Keep entry proof across an approved UI transition into an unsaved editor.
+
+    Does not grant WRITE, ownership, commit permission, or a business verdict.
+    Only same-session native history below an explicitly named entry qualifies.
+    """
+    from urllib.parse import urlsplit
+    state = _latest_browser_state_for_navigation(messages) or {}
+    try:
+        current = urlsplit(str(state.get("current_url") or ""))
+        session = state.get("session_id")
+        if not session or current.scheme not in {"http", "https"} or not current.hostname:
+            return False
+        task = _positive_navigation_context(_navigation_task_text(messages))
+        for index in range(len(messages or [])-1, -1, -1):
+            message = messages[index]
+            if message.get("role") != "tool" or message.get("tool_name") != "browser_open_page":
+                continue
+            raw = message.get("content")
+            entry = json.loads(raw) if isinstance(raw, str) else raw
+            if (not isinstance(entry, dict) or entry.get("error") or entry.get("executed") is False
+                    or entry.get("http_status") not in {200, 204, 304}
+                    or entry.get("session_id") != session):
+                return False
+            opened = urlsplit(str(entry.get("current_url") or entry.get("final_url") or ""))
+            base = opened.path.rstrip("/")
+            leaf = base.rsplit("/",1)[-1].casefold()
+            if (not re.fullmatch(r"[a-z][a-z_-]{2,63}",leaf)
+                    or leaf in {"all","home","index","app","login","add","new","edit","view","details"}
+                    or not re.search(r"(?<!\w)"+re.escape(leaf)+r"(?!\w)",task)
+                    or (opened.scheme,opened.netloc)!=(current.scheme,current.netloc)
+                    or not current.path.startswith(base+"/")):
+                return False
+            relative = current.path[len(base)+1:].split("/")
+            if not set(relative) & {"new","add","create"} or any(p in {".",".."} or "%" in p for p in relative):
+                return False
+            for transition in reversed(messages[index+1:]):
+                if transition.get("role") != "tool" or transition.get("tool_name") != "browser_click_semantic":
+                    continue
+                raw = transition.get("content")
+                click = json.loads(raw) if isinstance(raw,str) else raw
+                if not isinstance(click,dict):
+                    continue
+                target = urlsplit(str(click.get("current_url") or ""))
+                if (click.get("session_id")==session and not click.get("error")
+                        and click.get("executed") is not False and click.get("click_status")=="executed"
+                        and click.get("action_class") in {"write","interact"}
+                        and click.get("action_policy_status") in {"confirmed","auto_allowed"}
+                        and (target.scheme,target.netloc,target.path)==(current.scheme,current.netloc,current.path)):
+                    return True
+            return False
+    except (ValueError,TypeError,AttributeError):
+        return False
+    return False
 
 
 def _successful_clicked_semantic_names(messages):

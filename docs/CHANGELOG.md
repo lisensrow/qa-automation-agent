@@ -2,6 +2,17 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v179 — не терять entry proof при открытии нового редактора
+
+- В свежей operator-assisted инспекции Core сам выставлял устаревший parent navigation candidate после подтверждённого Add collection и блокировал Settings. Case tc-7ffa5738 сохранён BLOCKED, Save не нажимался.
+- Generic same-session/same-origin proof теперь сохраняет навигационный контекст только при native подтверждённом клике в unsaved new/add/create descendant явно указанного раздела. Гадание URL, другой origin/session, сохранённый ID editor, ошибочный/неподтверждённый/destructive click не подходят.
+- Это completion навигации, не владение ресурсом, не разрешение WRITE/commit и не бизнес-PASS. STEP/AUTO, v069 и journal/replay barriers не менялись.
+- Установленный py_compile и профильный smoke PASS; полный runner и fresh live tab transition ещё проверяются.
+- Fresh operator case tc-00adb3fd подтвердил Settings → config, Conditions → conditions, Table fields → view и Policies → policies без устаревшего parent candidate. Name — текстовая подпись/nearby input, не подтверждённый textbox accessible name; native required=false не доказывает business required. Пустой Name оставляет Save disabled, кнопка только инспектировалась.
+- Первоначальный full runner выявил отсутствующую новую зависимость в AST-изолированном smoke_navigation_guard; whitelist обновлён без ослабления assertions. Следующий runner 220/220 PASS; финальный stable rerun после смены experience query проверяется отдельно.
+- Старый запрос опыта ранжировал старый фрагмент и не находил свежую v179 карту. Выделен устойчивый раздел «Наблюдённый маршрут и поля коллекции», query без номера версии; поиск подтвердил два fresh фрагмента. Согласованные snapshots индекса сохранены до каждого обновления, остальные 1136 chunks неизменны. Полная автономная коллекция ещё не подтверждена.
+- Финальная стабильная установленная версия: py_compile и runner 220/220 PASS (/tmp/v179-stable-full-smoke.log). Ошибка проверки no-Save в operator receipt helper исправлена: read-only инспекция Save не является кликом. Field/tab case PASSED только по location/entry; прежний BLOCKED case и overall campaign BLOCKED сохранены.
+
 ## v178 — свежий маршрут коллекций и recall опыта
 
 - Guided-section model Job 20261014-202207-d0073163 BLOCKED: CMDB был придуман как container кнопки, повтор same missing click остановлен. Этот прогон не является самостоятельной навигацией или созданием.

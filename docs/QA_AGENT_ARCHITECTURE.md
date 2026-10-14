@@ -1,5 +1,9 @@
 # Архитектура QA-агента UQA
 
+## Навигация нового редактора v179
+
+Core учитывает подтверждённый переход из явно указанного раздела в новый несохранённый редактор ниже того же маршрута. Требуются native click receipt, прежняя сессия/origin и new/add/create segment; guessed/deep URL, saved ID editor и отказ/unknown/destructive исключаются. Такой переход завершает только navigation preflight: не заменяет action-policy, владение, immutable oracle или runtime verdict. Исправление предотвращает возврат к parent route при выборе вкладки нового editor. Профиль PASS; живая перепроверка вкладок продолжается.
+
 ## Проверенный вход в коллекции v178
 
 Свежая operator-assisted инспекция подтвердила Add(button, без выдуманного container) → Add collection(menuitem) → новое несохранённое окно с пятью вкладками. Это entry-only PASS, не создание коллекции. Guided model проба с указанием CMDB остановилась на неверном container; без подсказанного маршрута навигация ещё не принята. Обновлённый reviewed рецепт сохраняет конкретные evidence IDs и предупреждение section ≠ container. Перед managed collection turn запрашивается и руководство, и indexed операторский опыт; они недоверенные hints, не runtime verdict или разрешение WRITE.
