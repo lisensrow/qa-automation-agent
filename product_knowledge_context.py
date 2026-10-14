@@ -20,6 +20,7 @@ CONCEPTS = {
     'collections.membership': {
         'terms': ('коллекц', 'collection'),
         'search_query': 'коллекции создание',
+        'experience_query': 'коллекция Manual Table fields',
         'claims': {'composition_formula': 'automatic_plus_manual_minus_exclusions',
                    'clear_on_update_semantics': 'recompute_not_accumulate'},
     },
@@ -48,8 +49,13 @@ def reviewed_search_queries(task):
     import re
     positive = ' '.join(re.split(r'(?iu)\b(?:не|без|никаких|нельзя|never|without|do not|no)\b', clause, 1)[0]
                         for clause in re.split(r'[.!?;\n]+', task[:12000])).casefold()
-    return [spec['search_query'] for spec in CONCEPTS.values()
-            if any(term in positive for term in spec['terms'])][:3]
+    queries = []
+    for spec in CONCEPTS.values():
+        if any(term in positive for term in spec['terms']):
+            queries.append(spec['search_query'])
+            if spec.get('experience_query'):
+                queries.append(spec['experience_query'])
+    return queries[:3]
 
 
 def retrieve_declared_context(query, db_path=None, *, policy=POLICY, concepts=None):

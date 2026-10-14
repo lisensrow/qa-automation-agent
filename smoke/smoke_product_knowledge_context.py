@@ -6,9 +6,9 @@ from tempfile import TemporaryDirectory
 from product_knowledge_records import DocumentSource, SourcePolicy, initialize_schema, ingest_record
 from product_knowledge_context import retrieve_declared_context, reviewed_search_queries
 
-assert reviewed_search_queries('Создай коллекцию; не запускай политики или процедуры.') == ['коллекции создание']
+assert reviewed_search_queries('Создай коллекцию; не запускай политики или процедуры.') == ['коллекции создание','коллекция Manual Table fields']
 assert reviewed_search_queries('Как создать процедуру?') == ['процедуры создание']
-assert reviewed_search_queries('Создай коллекцию. Никаких политик или процедур.') == ['коллекции создание']
+assert reviewed_search_queries('Создай коллекцию. Никаких политик или процедур.') == ['коллекции создание','коллекция Manual Table fields']
 assert reviewed_search_queries(None) == []
 
 with TemporaryDirectory() as temp:

@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v178 — свежий маршрут коллекций и recall опыта
+
+- Guided-section model Job 20261014-202207-d0073163 BLOCKED: CMDB был придуман как container кнопки, повтор same missing click остановлен. Этот прогон не является самостоятельной навигацией или созданием.
+- Operator-assisted entry Job 20261014-202554-5f8da88c: уникальный Add (button) без container → Add collection (menuitem) → /cmdb/collections/new/settings/composition. Пять вкладок наблюдены, Save не нажимался. Подтверждает только вход в новую несохранённую форму.
+- Необъявленный browser_inspect_form_semantic корректно заблокирован как unknown; это ошибочное имя в диагностическом helper, не баг UC. Для отдельной native form inventory существует browser_inspect_form_validation_semantic, он здесь ещё не проверен.
+- В reviewed рецепт добавлены fresh evidence IDs, объяснение section ≠ container и ограничения совместимости; коллекционный bootstrap запрашивает также indexed операторский опыт, не только руководство. Evidence_for_pass=false, STEP/AUTO и v069 без изменений.
+- Установленный recall: профиль и полный runner 219/219 PASS (/tmp/v178-full-smoke.log). Повторная guided model проба 20261014-203126-d02151ff открыла новое окно правильными Add/button и Add collection/menuitem без выдуманного container, затем BLOCKED: Name отсутствует на Composition, модель не перешла на Settings и повторила неподходящий snapshot. Save не выполнялся, созданных ресурсов нет. Подтверждено использование опыта для entry, не самостоятельная навигация/создание.
+
 ## v177 — контекст политик и процедур и удержание исходной задачи
 
 - Официальное руководство: шесть candidate declarations по типам/условиям политик и шаблонам/целям/составу на запуске/минимуму блоков процедур. Hash/revision recheck и exact replay dedup, без runtime applicability/semantic promotion.
