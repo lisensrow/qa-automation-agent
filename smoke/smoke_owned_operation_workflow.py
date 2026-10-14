@@ -87,6 +87,10 @@ with TemporaryDirectory(prefix='uqa-owned-workflow-') as root, patch.object(job_
     assert job_store.get_test_resource(jid,resource['resource_id'])['status']=='active'
     checks,errors=uqa.verify_structured_check_evidence(jid,cid,[{'check_id':'fixture-check','title':'Lifecycle','status':'passed','evidence_ids':[]}])
     assert checks[0]['status']=='blocked' and errors
+    # A stale legacy requirement cannot remove the journal-backed acceptance barrier.
+    job=job_store.get_job(jid);job['test_cases'][0]['requirement']={'locked':True,'type':'generic'};job_store.save_job(job)
+    checks,errors=uqa.verify_structured_check_evidence(jid,cid,[{'check_id':'fixture-check','title':'Lifecycle','status':'passed','evidence_ids':[]}])
+    assert checks[0]['status']=='blocked' and 'owned_workflow_business_acceptance_pending' in checks[0]['reason']
     for name in ('operation_workflow_state','operation_attach_resource','operation_advance'):
         assert uqa.classify_tool_action(name,{})=='observe'
 print('PASS owned operation workflow: one case, three durable stages, typed immutable ID, proof-gated transitions, no product PASS or permission grant')

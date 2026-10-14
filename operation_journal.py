@@ -172,6 +172,15 @@ def reconcile_operation(job_id, operation_id, evidence_id):
     with _locked(job_id) as path:
         data = _load(path, job_id)
         operation = next(o for o in data['operations'] if o['operation_id'] == operation_id)
+        if operation['status'] == 'verified':
+            # A later same-name object must not replace the accepted identity.
+            proof = operation.get('verification') or {}
+            if proof.get('evidence_id') != evidence_id:
+                return {'verified': False, 'reason': 'operation_verification_immutable',
+                        'operation_id': operation_id, 'operation_status': 'verified',
+                        'resend_authorized': False, 'bookkeeping_only': True, 'product_evidence': False}
+            return {**proof, 'operation_id': operation_id, 'operation_status': 'verified',
+                    'resend_authorized': False, 'bookkeeping_only': True, 'product_evidence': False}
         job = _context(job_id, operation['case_id'])
         case = next(c for c in job['test_cases'] if c['case_id'] == operation['case_id'])
         requirement = case.get('requirement') or {}

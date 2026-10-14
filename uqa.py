@@ -6980,7 +6980,23 @@ def verify_structured_check_evidence(
 
     errors = []
 
+    from operation_workflow import has_workflow
+    try:
+        owned_workflow_pending = has_workflow(job_id, case_id)
+    except (ValueError, OSError, TypeError):
+        owned_workflow_pending = True  # Corrupt journal cannot supply acceptance.
+    owned_workflow_pending = owned_workflow_pending or (
+        isinstance(locked_requirement, dict) and locked_requirement.get("type") == "owned_resource_workflow")
+
     for check in verified:
+        if owned_workflow_pending and str(check.get("status") or "").lower() in {"passed", "failed"}:
+            status = check["status"]
+            check["original_status"] = status
+            check["status"] = "blocked"
+            check["reason"] = "UQA CORE: owned_workflow_business_acceptance_pending"
+            errors.append({"check_id": check.get("check_id"), "title": check.get("title"),
+                           "original_status": status, "issues": ["owned_workflow_business_acceptance_pending"]})
+            continue
         if (job_type == "regression" and locked_requirement
                 and isinstance(locked_requirement.get("check_contracts"), dict)
                 and check.get("check_id") in locked_requirement["check_contracts"]
@@ -7000,15 +7016,6 @@ def verify_structured_check_evidence(
             check.get("status")
             or ""
         ).lower()
-
-        if (status in {"passed", "failed"} and isinstance(locked_requirement, dict)
-                and locked_requirement.get("type") == "owned_resource_workflow"):
-            check["original_status"] = status
-            check["status"] = "blocked"
-            check["reason"] = "UQA CORE: owned_workflow_business_acceptance_pending"
-            errors.append({"check_id": check.get("check_id"), "title": check.get("title"),
-                           "original_status": status, "issues": ["owned_workflow_business_acceptance_pending"]})
-            continue
 
         if (status in {"passed", "failed"} and isinstance(locked_requirement, dict)
                 and locked_requirement.get("action_profile") == "write_ui_state"

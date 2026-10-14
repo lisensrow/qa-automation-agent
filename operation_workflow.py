@@ -129,6 +129,14 @@ def workflow_state(job_id,case_id):
                 'bookkeeping_only':True,'product_evidence':False}
 
 
+def has_workflow(job_id,case_id):
+    import job_store
+    path=job_store.JOBS_DIR/'operations'/(journal._token(job_id)+'.json')
+    if not path.exists():return False
+    with journal._locked(job_id) as path:
+        return case_id in journal._load(path,job_id).get('workflows',{})
+
+
 def attach_resource(job_id,case_id,resource_id):
     import job_store
     with journal._locked(job_id) as path:

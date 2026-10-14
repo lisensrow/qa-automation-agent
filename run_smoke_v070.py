@@ -49,6 +49,7 @@ SMOKES = [
     "smoke_operation_journal.py",
     "smoke_operation_recovery.py",
     "smoke_owned_operation_workflow.py",
+    "smoke_operation_proof_immutability.py",
     "smoke_form_controls.py",
     "smoke_advanced_form_controls.py",
     "smoke_temporal_controls.py",
