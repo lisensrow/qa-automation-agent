@@ -13290,12 +13290,17 @@ class BrowserSession:
 
         else:
             if requested_role and not inspected_role_fallback:
-                return {
+                from native_dispatch import MissingBeforeDispatch
+                return MissingBeforeDispatch({
                     "error": "semantic_element_not_found",
                     "name": name,
                     "role": requested_role,
                     "container": container,
-                }
+                    "click_status": "not_executed",
+                    "executed": False,
+                    "mutation_executed": False,
+                    "refusal_reason": "target_not_resolved",
+                })
 
             icon_matches = (
                 [] if inspected_role_fallback
@@ -13338,13 +13343,18 @@ class BrowserSession:
                         continue
 
                 if not visible:
-                    return {
+                    from native_dispatch import MissingBeforeDispatch
+                    return MissingBeforeDispatch({
                         "error": (
                             f'Visible semantic element '
                             f'not found: {name}'
                         ),
                         "name": name,
-                    }
+                        "click_status": "not_executed",
+                        "executed": False,
+                        "mutation_executed": False,
+                        "refusal_reason": "target_not_resolved",
+                    })
 
                 if len(visible) > 1:
                     return {

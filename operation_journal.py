@@ -158,10 +158,16 @@ def record_receipt(job_id, operation_id, result=None, error_type=None):
         if operation['status'] != 'sending':
             raise ValueError('operation not sending')
         valid_result = isinstance(result, dict)
-        from native_dispatch import DisabledBeforeDispatch
-        not_sent = (type(result) is DisabledBeforeDispatch and not error_type
+        from native_dispatch import DisabledBeforeDispatch, MissingBeforeDispatch
+        native_disabled = (type(result) is DisabledBeforeDispatch
+                           and result.get('error') == 'element_disabled')
+        native_missing = (type(result) is MissingBeforeDispatch
+                          and bool(result.get('error'))
+                          and result.get('refusal_reason') == 'target_not_resolved'
+                          and result.get('executed') is False
+                          and result.get('mutation_executed') is False)
+        not_sent = ((native_disabled or native_missing) and not error_type
                     and operation['tool'] == 'browser_click_semantic'
-                    and result.get('error') == 'element_disabled'
                     and result.get('click_status') == 'not_executed')
         result = result if valid_result else {}
         acknowledged = (valid_result and not error_type and not result.get('error')

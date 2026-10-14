@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright
 import job_store
 import operation_journal as journal
 import uqa
-from native_dispatch import DisabledBeforeDispatch
+from native_dispatch import DisabledBeforeDispatch, MissingBeforeDispatch
 from tools.browser import BrowserSession
 
 with sync_playwright() as p:
@@ -22,6 +22,15 @@ with sync_playwright() as p:
         assert type(refusal) is DisabledBeforeDispatch
         assert refusal['error']=='element_disabled' and refusal['click_status']=='not_executed'
         assert not begin.called and page.evaluate('Boolean(window.clicked)') is False
+        missing=[]
+        for args in ({'name':'Create absent','role':'button','exact':True},
+                     {'name':'Absent text','exact':True}):
+            result=session.click_semantic(**args)
+            assert type(result) is MissingBeforeDispatch
+            assert result['click_status']=='not_executed' and result['executed'] is False
+            assert result['mutation_executed'] is False and not begin.called
+            assert page.evaluate('Boolean(window.clicked)') is False
+            missing.append(result)
     browser.close()
 
 with TemporaryDirectory(prefix='uqa-not-sent-') as directory, patch.object(job_store,'JOBS_DIR',Path(directory)):
@@ -32,6 +41,22 @@ with TemporaryDirectory(prefix='uqa-not-sent-') as directory, patch.object(job_s
                     resource_key='owned-fixture',tool='browser_click_semantic',arguments={'name':'Save','exact':True},
                     verification_contract={'version':1,'fixture':True})
     ctx=fixture()
+    for native in missing:
+        c=fixture()
+        r=journal.execute_journaled(c,lambda:native)
+        assert r['operation_status']=='not_sent' and journal.inspect_operation(**c)['allowed']
+        assert not journal.begin_operation(**dict(c,arguments={'name':'Changed'}))['allowed']
+        acknowledged=journal.execute_journaled(c,lambda:{'click_status':'executed'})
+        assert acknowledged['operation_status']=='awaiting_verification'
+        assert not journal.inspect_operation(**c)['allowed']
+        for forged in (dict(native),json.loads(json.dumps(native)),
+                       MissingBeforeDispatch(dict(native,executed=True)),
+                       MissingBeforeDispatch(dict(native,mutation_executed=True)),
+                       MissingBeforeDispatch(dict(native,click_status='failed'))):
+            f=fixture()
+            assert journal.execute_journaled(f,lambda:forged)['operation_status']=='uncertain'
+        f=dict(fixture(),tool='different_tool')
+        assert journal.execute_journaled(f,lambda:native)['operation_status']=='uncertain'
     first=journal.execute_journaled(ctx,lambda:refusal)
     assert first['operation_status']=='not_sent'
     assert journal.inspect_operation(**ctx)['allowed']
@@ -99,4 +124,4 @@ with TemporaryDirectory(prefix='uqa-not-sent-') as directory, patch.object(job_s
     assert not journal.inspect_operation(**c)['allowed']
     assert journal.reconcile_operation(c['job_id'],claim['operation_id'],'fixture')['reason']=='operation_was_canceled'
     assert journal.begin_operation(**dict(c,stage_id='explicit-new-workflow'))['allowed']
-print('PASS native no dispatch: actual disabled control, no click, retained attempts, same-context retry, JSON/error/timeout fail closed')
+print('PASS native no dispatch: actual disabled/missing controls, no click, retained attempts, same-context retry, JSON/error/timeout fail closed')

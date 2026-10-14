@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v182 — native отказ поиска до отправки клика
+
+- Policy discovery Job 20261014-223727-54995264 выявил возврат первого открытия после авторизации на CMDB вместо запрошенного списка. Отсутствующий Create policy вернул semantic_element_not_found (ev-72a3c06f3ad5), но прежний журнал поставил uncertain. Последующий правильный клик заблокирован; op-790cbc35c2964334be40def661353cbf сохранена без ретроактивного переписывания.
+- Browser adapter теперь выдаёт in-process MissingBeforeDispatch только из двух веток неразрешённого target, до _begin_action_execution. Это означает отсутствие отправки данного клика, не глобальное отсутствие контрола.
+- Journal принимает not_sent только для точного native класса, browser_click_semantic и непротиворечивых false/not_executed flags. JSON/dict копии, другой tool, противоречивые flags, таймауты и ошибки после начала клика остаются uncertain. Попытки сохраняются; retry требует той же привязки и новой обычной action-policy проверки.
+- Профильный настоящий локальный Playwright smoke и py_compile PASS; полный runner проверяется отдельно. Это техническая исправность, не создание/применение политики. STEP/AUTO, v069, locked oracle и barriers сохранены.
+- Итог установленного runner: 222/222 PASS (/tmp/v182-full-smoke.log). Новый operator Job20261014-224740-b4304cbc открыл модальную Create policy и Conditions, без окончательного Create/Save/Apply. Три action types и общий конструктор условий наблюдены; native required=0 и enabled Create при пустом имени не бизнес-PASS. Launcher имеет legacy unbound awaiting_verification — требуется отдельный typed distinction открытия формы и commit, не снятие journal.
+
 ## v181 — сохранять ограниченную подсказку панели при сжатии истории
 
 - После следующей инспекции field location исчезал из model history. compact_control_location_hint сохраняет только ограниченные label/panel/source refs и два явных false-флага. Произвольные инструкции, команды, признаки разрешения и неподтверждённые источники отбрасываются.

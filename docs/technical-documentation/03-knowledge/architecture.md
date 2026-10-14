@@ -14,6 +14,8 @@ v176–v177 подключают отдельный declared_product_context к 
 
 ## Рост
 
+v181–v182 сохраняют bounded location hints при history compaction и различают native отказ до клика от uncertain send. Только in-process marker может дать not_sent, не JSON; retry сохраняет policy и exact binding. Installed runner222/222PASS. Операторская форма политики подтверждает лишь текущую карту полей; не автономное создание. Отдельные старые uncertain/unbound launcher операции сохраняются для аудита, не переписываются задним числом. Runtime версия frontend здесь не подтверждена.
+
 v179–v180: наблюдённая карта коллекционного editor выделена в отдельный устойчивый раздел и находится по semantic query без номера релиза. Три дополнительные candidate declarations дают bounded control-location hint при ошибке поиска поля; источник повторно проверяется по hash, unknown applicability не становится permission или PASS. Generic new-editor navigation сохраняет только same-session/origin native entry proof, не authority на данные. Full runner221/221 проверяет технический слой; это не число принятых реальных тест-кейсов UC.
 
 Повторное событие с тем же ID/payload не добавляется. Новый run с тем же утверждением добавляет историю/подтверждение, но не копию variant. При том же document hash повтор не увеличивает число независимых источников. Runtime confirmations группируются по Job, а не числу evidence внутри одного прогона.

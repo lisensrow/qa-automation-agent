@@ -1,5 +1,11 @@
 # Архитектура QA-агента UQA
 
+## Отказ до native dispatch v182
+
+При неразрешённом target click adapter возвращает внутренний MissingBeforeDispatch до начала выполнения. Journal отличает его от обычного JSON и от неизвестного результата отправки: только точный native класс с false/not_executed признаками даёт not_sent. Same-context повтор всё равно проходит прежнюю policy, а ACK никогда не становится business PASS. Старые uncertain записи не переклассифицируются автоматически. Профиль Playwright/py_compile PASS; полного автономного создания политики это не доказывает.
+
+Полный установленный runner 222/222 PASS. Политическая форма наблюдена live_operator_assisted: Action/Conditions, три типа, общая логика конструктора. Форма закрыта без сохранения; active Create при пустом имени не доказывает допустимость payload. Conservative legacy journal пока принимает launcher Create policy за unbound commit; это известная открытая граница, а не permission обойти журнал.
+
 ## Удержание подсказки в истории v181
 
 Компрессия старых browser results сохраняет короткие данные о предполагаемой панели и проверенном документном источнике. Сохраняются только ограниченные label/panel/source refs, evidence_for_pass=false и current_runtime_applicability_verified=false. Prose/commands/permission не переносятся. Это не подтверждение существования контрола и не разрешение мутации. Установленный runner 222/222 PASS; live think-on проба заблокирована раньше на выдуманном container, поэтому автономная польза retention ещё не доказана. Создание коллекций, политик и процедур остаётся отдельной открытой приёмкой.
