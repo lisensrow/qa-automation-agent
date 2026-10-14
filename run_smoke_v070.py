@@ -37,6 +37,7 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_control_hint_history.py",
     "smoke_control_location_hint.py",
     "smoke_new_editor_navigation.py",
     "smoke_navigation_task_authority.py",

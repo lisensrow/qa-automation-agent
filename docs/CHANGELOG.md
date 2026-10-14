@@ -2,6 +2,13 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v181 — сохранять ограниченную подсказку панели при сжатии истории
+
+- После следующей инспекции field location исчезал из model history. compact_control_location_hint сохраняет только ограниченные label/panel/source refs и два явных false-флага. Произвольные инструкции, команды, признаки разрешения и неподтверждённые источники отбрасываются.
+- Установленный полный runner 222/222 PASS (/tmp/v181-full-smoke.log), git diff --check без ошибок. Fixtures не означают автономную продуктовую приёмку.
+- Live qwen3:14b с think=on: Job 20261014-222857-ce099e2c, case tc-dc3d6a7b BLOCKED. Модель снова выдумала container CMDB и повторила отсутствующий Add, хотя уникальный Add без container был инспектирован. До проверки retention на новой форме не дошла. Save не отправлялся, resources=0, operations=[].
+- STEP/AUTO, v069, journal и запрет на слепой повтор сохранены. Полные collections/policies/procedures пока не приняты; дальше — независимая безопасная инспекция форм, а не выдача smoke за способность модели.
+
 ## v180 — короткие source-gated подсказки расположения контролов
 
 - В атомарную память добавлены три reviewed guide declarations collections.form: name_field_panel, filter_panel, table_layout_panel. Candidate-only, explicit doc revision/hash, replay dedup; consistent DB backup и неизменность legacy rows проверены.

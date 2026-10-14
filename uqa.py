@@ -6656,6 +6656,11 @@ def _historical_browser_result_summary(tool_name, content):
                             and ((name.endswith("_count") and type(value) is int and value >= 0)
                                  or (not name.endswith("_count") and type(value) is bool))}
     summary["tool"] = tool_name
+    if "control_location_hint" in parsed:
+        from product_knowledge_context import compact_control_location_hint
+        location = compact_control_location_hint(parsed["control_location_hint"])
+        if location:
+            summary["control_location_hint"] = location
     summary["model_history_compacted"] = True
     return summary
 
