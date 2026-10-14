@@ -4334,7 +4334,7 @@ def execute_resource_tool(
         }
 
 
-def _tool_history_observed_identifier(messages, candidate):
+def _tool_history_observed_identifier(messages, candidate, expected_name=None):
     wanted = str(candidate or "").strip()
 
     if not wanted:
@@ -4355,7 +4355,13 @@ def _tool_history_observed_identifier(messages, candidate):
             for key, item in value.items():
                 if (
                     str(key).strip().casefold() in identifier_keys
+                    and not isinstance(item, bool)
                     and str(item or "").strip() == wanted
+                    and (expected_name is None or any(
+                        isinstance(value.get(label), str)
+                        and value[label].strip() == expected_name
+                        for label in ("name", "semantic_name")
+                    ))
                 ):
                     return True
 
@@ -4369,6 +4375,8 @@ def _tool_history_observed_identifier(messages, candidate):
                         parsed = None
                     if isinstance(parsed, (dict, list)) and contains_identifier(parsed, depth + 1):
                         return True
+                if expected_name is not None and key in {"request_body", "arguments", "input"}:
+                    continue
                 if contains_identifier(item, depth + 1):
                     return True
 
@@ -4380,6 +4388,8 @@ def _tool_history_observed_identifier(messages, candidate):
     for message in reversed(messages or []):
         if message.get("role") != "tool":
             continue
+        if expected_name is not None and not str(message.get("tool_name") or "").startswith("browser_"):
+            continue
 
         content = message.get("content")
 
@@ -4389,6 +4399,12 @@ def _tool_history_observed_identifier(messages, candidate):
             except json.JSONDecodeError:
                 continue
 
+        if expected_name is not None and isinstance(content, dict):
+            status = content.get("status")
+            if content.get("error") or content.get("executed") is False or (
+                isinstance(status, (int, float)) and not 200 <= status < 300
+            ):
+                continue
         if contains_identifier(content):
             return True
 
@@ -4895,6 +4911,25 @@ def execute_tool_with_policy(
 
     resource_arguments = arguments
     ignored_external_id = None
+
+    if name == "resource_update" and job_id and arguments.get("external_id") is not None:
+        try:
+            existing = get_test_resource(job_id, arguments.get("resource_id"))
+        except FileNotFoundError:
+            existing = None  # Preserve the ordinary resource-context error path.
+        if existing is not None:
+            known_id = str(existing.get("external_id") or "").strip()
+            proposed_id = str(arguments.get("external_id") or "").strip()
+            reason = None
+            if known_id and proposed_id != known_id:
+                reason = "resource_identifier_immutable"
+            elif not known_id and (not proposed_id or not existing.get("name") or not
+                    _tool_history_observed_identifier(messages, proposed_id, expected_name=existing["name"])):
+                reason = "resource_identifier_not_observed_for_exact_resource"
+            if reason:
+                return {"error": reason, "status": "blocked_by_policy", "executed": False,
+                        "action_class": action_class, "action_policy_status": "blocked_by_resource_identity",
+                        "reason": "Ledger identity cannot be replaced; first binding requires a successful browser observation of the exact named resource."}
 
     if name == "resource_register":
         proposed_external_id = str(

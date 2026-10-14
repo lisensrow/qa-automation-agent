@@ -41,6 +41,7 @@ SMOKES = [
     "smoke_nearby_field_identity.py",
     "smoke_network_response_identifier.py",
     "smoke_cleanup_expected_identifier.py",
+    "smoke_resource_identity_update.py",
     "smoke_form_controls.py",
     "smoke_advanced_form_controls.py",
     "smoke_temporal_controls.py",
