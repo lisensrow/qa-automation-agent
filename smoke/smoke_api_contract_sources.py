@@ -32,6 +32,13 @@ with tempfile.TemporaryDirectory() as temp:
         assert read(source_id='../../private')['reason']=='registered_contract_source_invalid'
         assert read(source_id='other')['reason']=='registered_contract_source_not_unique'
         assert read(source_id='other')['available_source_ids']==['fixture-source']
+        second={**entry,'source_id':'fixture-source-v2'};save([entry,second])
+        assert read()['reason']=='registered_contract_source_not_unique'
+        assert read(source_id='fixture-source')['contract_observation_status']=='observed'
+        assert read(source_id='fixture-source-v2')['source_id']=='fixture-source-v2'
+        foreign={**second,'source_id':'foreign-source','stand':'other'};save([entry,foreign])
+        assert read(source_id='foreign-source')['contract_observation_status']=='unavailable'
+        assert read(source_id='foreign-source')['available_source_ids']==['fixture-source']
         bad=copy.deepcopy(entry);bad['projection_sha256']='0'*64;save([bad])
         assert read()['reason']=='registered_contract_evidence_hash_mismatch'
         bad=copy.deepcopy(entry);bad['stand']='other';save([bad])
@@ -59,11 +66,20 @@ assert classify_tool_action('api_inspect_contract_page',{})=='observe'
 assert any(t['function']['name']=='api_inspect_contract_page' for t in model_tool_catalog({'api_inspect_contract_page'}))
 from tools.registry import execute_tool,TOOLS
 schema=next(t['function']['parameters'] for t in TOOLS if t['function']['name']=='api_inspect_contract_page')
-assert 'source_id' not in schema['properties']
-assert execute_tool('api_inspect_contract_page',{'source_id':'fixture-source'})['reason']=='contract_tool_arguments_invalid'
+assert 'source_id' in schema['properties']
+import tools.registry as registry
+with patch.object(registry,'inspect_registered_contract_page',return_value={'contract_observation_status':'fixture'}) as lookup:
+    assert execute_tool('api_inspect_contract_page',{'stand':'fixture','method':'GET','path':'/items/{uid}','source_id':'fixture-source'})['contract_observation_status']=='fixture'
+    lookup.assert_called_once_with('fixture','GET','/items/{uid}',(),source_id='fixture-source')
+assert execute_tool('api_inspect_contract_page',{'source_file':'/private'})['reason']=='contract_tool_arguments_invalid'
+locked=copy.deepcopy(bound);locked['test_cases'][0]['requirement']['api_contract_source_id']='fixture-source-v2'
+assert scope_diagnostic_arguments('api_inspect_contract_page',{},locked,'active')[0]['source_id']=='fixture-source-v2'
+assert scope_diagnostic_arguments('api_inspect_contract_page',{'source_id':'fixture-source'},locked,'active')[1]=='diagnostic_source_mismatch'
+locked['test_cases'][0]['requirement']['api_contract_source_id']=False
+assert scope_diagnostic_arguments('api_inspect_contract_page',{},locked,'active')[1]=='diagnostic_source_binding_invalid'
 import uqa
 with patch.object(uqa,'add_evidence',side_effect=lambda *a,**kw:kw):
     proof=uqa.record_tool_evidence('fixture-job','fixture-case','api_inspect_contract_page',{},r)
     assert proof['usable_for_pass'] is False and proof['usable_for_verdict'] is False
     assert proof['eligibility_reason']=='historical_contract_page_not_runtime_business_evidence'
-print('registered API sources PASS: stand/provenance/pins, no paths/model-supplied source authority/HTTP/PASS')
+print('registered API sources PASS: explicit registered revision/caller lock, stand/provenance/pins, no model file/pin/evidence authority or HTTP/PASS')

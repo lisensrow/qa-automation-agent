@@ -60,6 +60,17 @@ with sync_playwright() as p:
     result=add_tree_row(session,**bad)
     assert result['tree_row_status']=='partial' and result['error']=='tree_row_cell_not_verified'
     assert page.locator('input').input_value()=='' and page.evaluate('saved')==0
+    page.set_content(HTML.replace('<td>Attribute A</td>','<td>Category.Attribute A</td>'))
+    qualified={**args,'row_label':'Category.Attribute A'}
+    result=add_tree_row(session,**qualified)
+    assert result.get('tree_row_status')=='applied',result.get('error')
+    assert result['cell_row']=='Category.Attribute A'
+    assert page.locator('input').input_value()=='*test*'
+    assert add_tree_row(session,**qualified)['error']=='tree_row_label_already_present'
+    assert not validate(**{**qualified,'row_label':' '})
+    page.set_content(HTML.replace('<td>Attribute A</td>','<td>Category.Attribute A</td>'))
+    assert add_tree_row(session,**{**args,'row_label':'Other.Attribute A'})['tree_row_status']=='partial'
+    assert page.locator('input').input_value()=='' and page.evaluate('saved')==0
     browser.close()
 
 name='browser_add_tree_row_semantic'

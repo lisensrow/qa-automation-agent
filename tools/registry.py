@@ -178,9 +178,10 @@ from ssh_worker import (
 
 TOOLS = [
     {"type":"function","function":{"name":"api_inspect_contract_page",
-        "description":"Read-only: одна страница исторического API-контракта зарегистрированного источника текущего стенда. Пустая reference_chain читает operation, затем передавай цепочку только раскрытых direct_schema_references. Не выполняет HTTP, не знает enum values/полную валидацию, не доказывает свежесть, permission или PASS. Pins/пути файлов/источник evidence задаёт оператор, не модель.",
+        "description":"Read-only: одна страница исторического API-контракта зарегистрированного источника текущего стенда. При нескольких редакциях выбери source_id только из available_source_ids; не смешивай редакции и не считай выбранную текущей автоматически. Пустая reference_chain читает operation, затем передавай цепочку только раскрытых direct_schema_references. Не выполняет HTTP, не знает enum values/полную валидацию, не доказывает свежесть, permission или PASS. Pins/пути файлов/исходное evidence задаёт оператор, не модель.",
         "parameters":{"type":"object","additionalProperties":False,"properties":{
             "stand":{"type":"string"},"method":{"type":"string"},"path":{"type":"string"},
+            "source_id":{"type":"string","description":"Exact registered source ID for this stand, as returned in available_source_ids. Not a file path, digest, URL or permission; caller-locked source cannot be changed."},
             "reference_chain":{"type":"array","maxItems":8,"items":{"type":"string"}}},"required":["method","path"]}}},
     {
         "type": "function",
@@ -2211,7 +2212,8 @@ TOOLS.append({'type':'function','function':{'name':'browser_inspect_labeled_grid
 TOOLS.append({'type':'function','function':{'name':'browser_add_tree_row_semantic',
     'description':'Add ONE new condition row: expand exact tree parents, drag exact leaf to an observed logical target, set exact column controls. Use for condition builders instead of clicking leaves/And. Never saves. Refuses an existing row, changed session/URL, ambiguity or partial failure; do not retry automatically. Read parents/columns/choices from memory and current UI.',
     'parameters':{'type':'object','additionalProperties':False,'properties':{
-        'source':{'type':'string','description':'Exact visible LEAF/ATTRIBUTE label to drag and resulting ROW label. NOT the tree name, category, header, backend key or a path. Example: source="Attribute A".'},
+        'source':{'type':'string','description':'Exact visible LEAF/ATTRIBUTE label to drag. NOT the tree name, category, header, backend key or a path. Example: source="Attribute A".'},
+        'row_label':{'type':'string','description':'Optional separately observed exact resulting row label when different from the tree leaf. Must come from reviewed profile/current UI, never guessed; defaults to source.'},
         'target':{'type':'string','description':'Exact visible logical GROUP drop-target label, not a tree or column. For example the currently observed And group.'},
         'parents':{'type':'array','maxItems':5,'items':{'type':'string'},'description':'Ordered visible CATEGORY labels to expand first. Categories belong HERE, never in source. Empty if the leaf is already visible.'},
         'cells':{'type':'array','minItems':1,'maxItems':4,'items':{'type':'object','additionalProperties':False,
@@ -2253,11 +2255,11 @@ def execute_tool(name: str, arguments: dict):
         from tools.tree_row_controls import add_tree_row
         return add_tree_row(_session, **arguments)
     if name == "api_inspect_contract_page":
-        if set(arguments)-{'stand','method','path','reference_chain'}:
+        if set(arguments)-{'stand','method','path','reference_chain','source_id'}:
             from api_contract_projection import FLAGS
             return {'contract_observation_status':'unavailable','reason':'contract_tool_arguments_invalid',**FLAGS}
         return inspect_registered_contract_page(arguments.get("stand"), arguments.get("method"), arguments.get("path"),
-            arguments.get("reference_chain", ()))
+            arguments.get("reference_chain", ()),source_id=arguments.get('source_id'))
     if name == "browser_table_cell_control_semantic":
         from tools.browser import _session
         from tools.table_cell_controls import operate

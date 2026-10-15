@@ -1,4 +1,14 @@
-# Разработка и проверка UQA до утра
+# План приёмки UQA: дневное продолжение
+
+Финал268/269:241/241 smoke PASS,8SHA неизменны,20MD PASS; normal prepared Windows и отдельный explicit *Ubuntu* PASSED только шесть ячеек unsaved draft. Короткий Ubuntu BLOCKED сохранён. Дальнейший приоритет — корректный immutable Save/AST/member контракт, затем политики/процедуры; не подменять это повторной приёмкой тех же ячеек.
+
+Текущий checkpoint v263–v265: прежняя ночная automation PAUSED; дневное продолжение разрешено отдельно. UC доступен, службы уже работали — вручную не запускались. Windows normal prepared PASS только6ячеек несохранённого фильтра после source/row_label fix; Ubuntu короткий запрос BLOCKED/model value mismatch. Full263241/241PASS; mapping/index/revision history сохранены. Нельзя считать этот этап полной готовностью коллекций/политик/процедур.
+
+Дополнение v268–v269: model tool может явно выбрать зарегистрированный source_id, caller source lock и stand не обходятся. Native procedure root выбран из post-update редакции, но обе request-chain проверки ещё не завершены. Индекс/derived candidate обновлены с snapshots/integrity/dedup/1196 other chunks unchanged. Финальный268 smoke проверять отдельно от intermediate263; старые отказы не переписывать.
+
+Следующие проверки: отдельный явный Ubuntu wildcard case; model lookup новой редакции API политик/процедур без бизнес-действий; затем immutable saved collection/AST/member stage и source-bound lifecycle политики, отдельные workspace/graph/run критерии процедуры. Старые uncertain/awaiting-verification операции не освобождать. Не повторять снятую гипотезу пустой колонки и одинаковые ReAct-прогоны.
+
+Ночной план ниже сохранён как история; его время остановки не отменяет последующие дневные указания пользователя.
 
 До 09:00 Europe/Moscow 15 октября 2026. Пользователь разрешил тестовые действия в локальной лабе без повторных вопросов. STEP/AUTO и v069 policy сохраняются. Существующие рабочие объекты не менять; новые owned объекты маркировать uqa-test и регистрировать точный ID. Не выполнять разрушительные команды ОС. Проверка — часть разработки, а не остановка между этапами.
 

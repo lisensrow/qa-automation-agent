@@ -34,10 +34,10 @@ def validate_profile(profile):
     fields=profile['fields']
     if not isinstance(fields, dict) or not 1 <= len(fields) <= 32:
         raise ValueError('condition_profile_fields_invalid')
-    sources=[]
+    sources=[];row_labels=[]
     for field,spec in fields.items():
         _text(field)
-        if not isinstance(spec, dict) or set(spec) != {'source','parents','value_column','value_action',
+        if not isinstance(spec, dict) or set(spec)-{'row_label'} != {'source','parents','value_column','value_action',
                                                      'operator_column','operators','default_operator'}:
             raise ValueError('condition_profile_field_shape')
         for key in ('source','value_column','operator_column','default_operator'):
@@ -55,8 +55,10 @@ def validate_profile(profile):
             raise ValueError('condition_profile_operators_invalid')
         for logical,visible in operators.items():_text(logical);_text(visible)
         sources.append(spec['source'])
+        row_labels.append(_text(spec['row_label']) if 'row_label' in spec else spec['source'])
     if len(set(sources))!=len(sources):
         raise ValueError('condition_profile_duplicate_source')
+    if len(set(row_labels))!=len(row_labels):raise ValueError('condition_profile_duplicate_row_label')
     return deepcopy(profile)
 
 
@@ -96,6 +98,7 @@ def compile_condition_plan(plan, profile, expected, expected_profile_sha256):
         cells.append({'column':spec['value_column'],'action':spec['value_action'],'value':row['value']})
         steps.append({'tool':'browser_add_tree_row_semantic','arguments':{
             'source':spec['source'],'target':profile['target'],'parents':deepcopy(spec['parents']),'cells':cells}})
+        if 'row_label' in spec:steps[-1]['arguments']['row_label']=spec['row_label']
     return {'status':'compiled_plan_only','profile_sha256':fingerprint(profile),'plan_sha256':fingerprint(actual),
             'logical_plan':actual,'ui_steps':steps,**FLAGS}
 

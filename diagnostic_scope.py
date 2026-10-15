@@ -18,4 +18,11 @@ def scope_diagnostic_arguments(name, arguments, job, case_id):
     if requested is not None and (not isinstance(requested,str) or requested.strip()!=stand):
         return arguments, 'diagnostic_stand_mismatch'
     arguments['stand']=stand
+    if name=='api_inspect_contract_page' and 'api_contract_source_id' in requirement:
+        locked=requirement['api_contract_source_id']
+        if not isinstance(locked,str) or not locked or len(locked)>159:
+            return arguments,'diagnostic_source_binding_invalid'
+        if 'source_id' in arguments and arguments['source_id']!=locked:
+            return arguments,'diagnostic_source_mismatch'
+        arguments['source_id']=locked
     return arguments, None

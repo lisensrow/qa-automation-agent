@@ -2,6 +2,28 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v268–v269 — модельный выбор зарегистрированной редакции с caller lock
+
+Финальный268: py_compile/241 smoke PASS (/tmp/v268-full-smoke.log),8 code SHA неизменны (/tmp/v268-release-code.sha256),20 technical Markdown PASS. Явный Ubuntu wildcard case266 Job20261015-121941-cdea5748 / tc-6924fceb PASSED5Y0N/noTimeout/0resops через normal prepared entry. Это конкретное задание с заданным *Ubuntu*, не исправление короткого промпта и не полный Save/AST/member PASS. Оба прежних model failures сохранены.
+
+Обнаружена граница старого model tool: reader поддерживал source_id, но registry не принимал его. После сохранения двух редакций это делало model lookup невозможным при not_unique. Добавлен optional source_id только для зарегистрированных источников того же stand; файловые пути, pins, evidence IDs и произвольные extras не принимаются. diagnostic_scope поддерживает явный caller api_contract_source_id: подстановка отсутствующего и отказ при замене. Stand/provenance/hash/origin gates, historical flags, запрет HTTP и business-PASS не меняются.
+
+Новые fixtures проверяют две редакции, явный выбор, чужой stand, file argument, приоритет caller source lock и передачу ID в reader. Native Job20261015-121146-fb7855bc до изменения BLOCKED: два not_unique. Job20261015-121605-0a199f0f после изменения самостоятельно выбрал post-update source для procedure operation root; policy lookup остался not_unique и request reference pages не прочитаны. Это частичный технический результат, не полноценная API/automation приёмка. Никаких browser calls/resources/operations и изменения защиты.
+
+UQA_SWAGGER_KNOWLEDGE актуализирована: старое ограничение v206 помечено историческим, новые правила выбора редакции и scope отделены от current-runtime truth. Один derived uqa/document_review candidate v269, обе DB сохранены до работы, integrity/replay dedup/recall PASS,1196 других chunks не изменены. Предыдущие source records/Jobs/история сохраняются; migration/promotion не выполнялись.
+
+## v256–v265 — восстановление доступности, точные подписи строк и редакции API
+
+После нового разрешения пользователя проверены службы UC: uauth/ucontrol уже active, Ansible завершён, backend healthy/restart0; запуск служб и изменение конфигурации не потребовались. Новый диагностический Job20261015-113107-94da8872 подтвердил certificate login200/session check200 без повторного пароля.
+
+Prepared Windows113143-d1e4e4be и113514-19902eeb остановились на третьей строке. Эксперимент257/259 с пустой колонкой не объяснил отказ и полностью удалён из production. Приватный снимок нового draft Job20261015-115935-c4d595a0 показал источник OS name и подпись строки Endpoint.OS name. Это изменение наблюдаемого UI, не developer-confirmed баг/фикс.
+
+Добавлен optional caller-owned row_label в generic tree-row action и чистый compiler. Source выбирает лист, row_label — только exact resulting row и проверки duplicate/cells/readback. Смена подписи, лишний model UI key, одинаковые подписи, неизвестный/частичный target не принимаются. UC flat profile v2 хранит mapping отдельно от Core; source_current перепроверяет старый источник полей и отдельную новую reviewed mapping note. Новый Windows normal prepared Job20261015-120441-c3e0953d PASSED5Y0N/noTimeout/0resources/operations, native6cell ev-964400e91f3f. Короткий Ubuntu120849-55cf79ef BLOCKED до condition writes: модель выбрала правильные поля/оператор, но bare Ubuntu не совпал с заранее ожидаемым *Ubuntu*. Oracle не подгонялся, повтор того же Job запрещён. Full263241/241 smoke PASS; готовности Save/AST/member/любого промпта нет.
+
+После обновления raw OpenAPI292242e76b9e8c40208e39d9841ffbc0cefcba96bc7ab688a67f53895f33acbb:426paths/681ops/839schemas. Новая проекция сохранена в Job20261015-120022-69c9d724 / tc-390bb2ac / ev-4d24d6b6f8bf и зарегистрирована отдельным source_id lab-installed-contract-20261015-v260-post-update. Старая регистрация не изменена, manifest сохранён до обновления, explicit lookup обеих редакций PASS. Unqualified source теперь BLOCKED/not_unique по прежнему механизму. Fresh raw request roots по-прежнему CreatePolicyPayload и CreateProcedureRequestPayload; defaults is_active/active=true. Это не создание/запуск политики или процедуры и не полное покрытие681операции.
+
+Mapping note дополнительно сохранена в прежней глубокой памяти как один uqa/hypothesis/test_experience/document_review candidate v265, не canonical product fact. Обе DB скопированы до индексирования; replay dedup/integrity/recall PASS,1204 прежних chunks неизменны. Старые uncertain/awaiting-verification операции и STEP/AUTO/v069 не менялись.
+
 ## v249–v255 — обычный runtime ограниченной фазы условий и независимый readback
 
 Добавлены condition_draft_profiles, condition_draft_runtime и OBSERVE browser_inspect_labeled_grid_values_semantic. Ожидаемый план/шесть hashes, source/profile/preparation pins фиксируются до модели. Однократное durable состояние запрещает повтор частичной попытки. Entry берётся только из настроенного стенда; каждый UI-шаг проходит прежние policy и compatibility checks. Поддержано только существующее Core-предложение saved-auth на том же origin, без автоматического включения reuse credentials. В verifier добавлены независимые cell hashes и freshness относительно последующего WRITE. Prepared regression сохраняет и проверяет явный requirement вместо его замены текстовым компилятором.

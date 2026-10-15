@@ -41,4 +41,14 @@ restricted_variants=response_schema(restricted)['properties']['conditions']['ite
 assert restricted_variants[0]['properties']['operator']['enum']==['equal']
 assert restricted_variants[1]['properties']['operator']['enum']==['equal','pattern']
 assert fingerprint(profile)==pin and plan['conditions'][0]['value']=='No'
+qualified=deepcopy(profile);qualified['fields']['other']['row_label']='Category.Attribute B'
+compiled=compile_condition_plan(plan,qualified,plan,fingerprint(qualified))
+assert compiled['ui_steps'][1]['arguments']['source']=='Attribute B'
+assert compiled['ui_steps'][1]['arguments']['row_label']=='Category.Attribute B'
+assert 'row_label' not in compiled['ui_steps'][0]['arguments']
+bad=deepcopy(qualified);bad['fields']['attribute']['row_label']='Category.Attribute B'
+denied(plan,p=bad,sha=fingerprint(bad))
+bad=deepcopy(qualified);bad['fields']['other']['row_label']=' '
+denied(plan,p=bad,sha=fingerprint(bad))
+denied({**plan,'conditions':[dict(plan['conditions'][0],row_label='invented')]})
 print('PASS condition plan: caller pin/expected, closed logical schema, no model UI arguments, duplicates/logic/value/profile denials; not an executor')

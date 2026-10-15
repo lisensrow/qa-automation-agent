@@ -5,22 +5,26 @@ import json
 from pathlib import Path
 from condition_plan import compile_condition_plan, fingerprint
 
-PROFILE_ID='uc.collections.flat.v1'
+PROFILE_ID='uc.collections.flat.v2'
 SOURCE=Path('/opt/uqa/knowledge/source/UQA-experience/UQA_COLLECTIONS_KNOWLEDGE.md')
 SOURCE_SHA='41fb09e9a813f56f086b7eb494ef60e2d7ef41acbe8ddc415f5adb008d0d2cac'
+ROW_SOURCE=SOURCE.with_name('UQA_CONDITION_ROW_LABELS_KNOWLEDGE.md')
+ROW_SOURCE_SHA='8e03a8d735ec620ad8d9dd65adda7524746733be2f5968512fe4b8ea4a837043'
 
 
 def profile():
     base={'parents':['Common'],'value_column':'Value','value_action':'select','operator_column':'Operator',
           'operators':{'Equal':'Equal'},'default_operator':'Equal'}
-    return {'version':1,'profile_id':PROFILE_ID,'logic':'AND','target':'And','source_sha256':SOURCE_SHA,
+    return {'version':1,'profile_id':PROFILE_ID,'logic':'AND','target':'And',
+        'source_sha256':fingerprint({'field_source':SOURCE_SHA,'row_caption_source':ROW_SOURCE_SHA}),
         'fields':{'Archived':{**base,'source':'Archived'},'CI class':{**base,'source':'CI class'},
-                  'OS name':{**base,'source':'OS name','parents':['Endpoint'],'value_action':'fill',
+                  'OS name':{**base,'source':'OS name','row_label':'Endpoint.OS name','parents':['Endpoint'],'value_action':'fill',
                              'operators':{'Equal':'Equal','Wildcard':'Wildcard'}}}}
 
 
 def source_current():
-    try:return hashlib.sha256(SOURCE.read_bytes()).hexdigest()==SOURCE_SHA
+    try:return (hashlib.sha256(SOURCE.read_bytes()).hexdigest()==SOURCE_SHA
+                and hashlib.sha256(ROW_SOURCE.read_bytes()).hexdigest()==ROW_SOURCE_SHA)
     except OSError:return False
 
 
@@ -31,7 +35,7 @@ def expectation_cells(expected):
         spec=p['fields'][row['field']]
         for column,value in ((spec['operator_column'],spec['operators'][row['operator']]),
                              (spec['value_column'],row['value'])):
-            cells.append({'row':spec['source'],'column':column,'value_sha256':hashlib.sha256(value.encode()).hexdigest()})
+            cells.append({'row':spec.get('row_label',spec['source']),'column':column,'value_sha256':hashlib.sha256(value.encode()).hexdigest()})
     return cells
 
 

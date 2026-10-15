@@ -2,11 +2,12 @@
 from tools.table_cell_controls import operate, visible
 
 
-def validate(source, target, parents, cells, session_id, current_url):
+def validate(source, target, parents, cells, session_id, current_url, row_label=None):
     def label(value):
         return isinstance(value, str) and 0 < len(value) <= 160 and value == value.strip()
     if not label(source) or not label(target) or source == target:
         return False
+    if row_label is not None and not label(row_label):return False
     if not isinstance(parents, list) or len(parents) > 5 or any(not label(p) for p in parents):
         return False
     if len(set(parents)) != len(parents) or source in parents:
@@ -27,22 +28,23 @@ def validate(source, target, parents, cells, session_id, current_url):
             and 0 < len(current_url) <= 2048)
 
 
-def add_tree_row(session, source, target, parents, cells, session_id, current_url):
+def add_tree_row(session, source, target, parents, cells, session_id, current_url, row_label=None):
     try:
-        return _add_tree_row(session, source, target, parents, cells, session_id, current_url)
+        return _add_tree_row(session, source, target, parents, cells, session_id, current_url, row_label)
     except Exception as exc:
         return {'error': 'tree_row_execution_uncertain', 'error_type': type(exc).__name__,
                 'tree_row_status': 'uncertain', 'executed': None, 'automatic_retry_allowed': False,
                 'saved_filter_verified': False, 'membership_verified': False}
 
 
-def _add_tree_row(session, source, target, parents, cells, session_id, current_url):
+def _add_tree_row(session, source, target, parents, cells, session_id, current_url, row_label=None):
     """One non-replaying UI sequence. A partial failure is never retried or undone."""
-    if not validate(source, target, parents, cells, session_id, current_url):
+    if not validate(source, target, parents, cells, session_id, current_url, row_label):
         return {'error': 'tree_row_arguments_invalid', 'tree_row_status': 'not_started', 'executed': False}
     session._ensure_started()
     steps = []
     changed = False
+    row_label=row_label or source
 
     def bound():
         state = session._capture_state('tree-row-binding')
@@ -57,7 +59,7 @@ def _add_tree_row(session, source, target, parents, cells, session_id, current_u
     if not matched:
         return fail('tree_row_binding_changed', state)
     # Do not overwrite or add a duplicate row. The tree label itself is excluded.
-    existing = [e for e in visible(session.page.get_by_text(source, exact=True))
+    existing = [e for e in visible(session.page.get_by_text(row_label, exact=True))
                 if not e.evaluate("e=>Boolean(e.closest('[role=tree]'))")]
     if existing:
         return fail('tree_row_label_already_present', state)
@@ -91,14 +93,14 @@ def _add_tree_row(session, source, target, parents, cells, session_id, current_u
         state, matched = bound()
         if not matched:
             return fail('tree_row_binding_changed', state)
-        probe = operate(session, source, cell['column'])
+        probe = operate(session, row_label, cell['column'])
         if probe.get('error') or probe.get('control_enabled') is not True:
             return fail('tree_row_cell_unavailable')
     for cell in cells:
         state, matched = bound()
         if not matched:
             return fail('tree_row_binding_changed', state)
-        result = operate(session, source, cell['column'], cell['action'], cell['value'])
+        result = operate(session, row_label, cell['column'], cell['action'], cell['value'])
         steps.append({'tool': 'browser_table_cell_control_semantic', 'column': cell['column'],
                       'status': result.get('cell_control_status'), 'value_sha256': result.get('value_sha256'),
                       'value_length': result.get('value_length')})
@@ -108,6 +110,6 @@ def _add_tree_row(session, source, target, parents, cells, session_id, current_u
     if not matched:
         return fail('tree_row_binding_changed', state)
     return {**state, 'tree_row_status': 'applied', 'executed': True, 'mutation_executed': True,
-            'child_steps': steps, 'cell_row': source, 'automatic_retry_allowed': False,
+            'child_steps': steps, 'cell_row': row_label, 'automatic_retry_allowed': False,
             'saved_filter_verified': False, 'membership_verified': False,
             'whole_sequence_network_coverage_verified': False}

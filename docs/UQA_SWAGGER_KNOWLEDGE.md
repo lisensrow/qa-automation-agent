@@ -1,5 +1,15 @@
 # U-Connect: установленная схема Swagger OpenAPI
 
+## Редакции после обновления и явный выбор источника v260–v268
+
+После обновления 15 октября 2026 зарегистрирована отдельная редакция lab-installed-contract-20261015-v260-post-update:426paths/681operations/839schemas. Raw schema SHA256292242e76b9e8c40208e39d9841ffbc0cefcba96bc7ab688a67f53895f33acbb, projection SHA256fdb521fb5220e4d9fc38740f05c4208789304882c3101c4db072660af8b9bbe3; Job20261015-120022-69c9d724/tc-390bb2ac/ev-4d24d6b6f8bf. Старый v197 источник сохранён. Это две исторические operator-installed-schema редакции; свежесть текущего runtime, execution, semantic/PASS и совместимость другой версии не подтверждены. Версии продукта/frontend/ядра/плагинов/ОС новой редакции unknown.
+
+С v268 OBSERVE api_inspect_contract_page имеет optional source_id: только точный зарегистрированный ID того же стенда. При нескольких редакциях вызов без source_id возвращает not_unique и available_source_ids. Выбери требуемую редакцию по задаче и повтори только read-only lookup с этим ID; сохраняй тот же ID при обходе request/response refs. Не выбирать latest молча, не смешивать схемы разных редакций и не выдавать выбор исторической записи за текущую применимость. Если caller закрепил api_contract_source_id в requirement, Core подставляет его и отклоняет замену. Stand также привязан к persistent Job/case. Модель не передаёт пути файлов, pins, исходные Job/evidence или URL; эти связи остаются операторскими.
+
+Первый native lookup после добавления второй редакции Job20261015-121146-fb7855bc вернул два not_unique: тогда model schema не давала source_id, хотя Python reader его поддерживал. Этот BLOCKED не свидетельствует о недоступности UC; исправлено подключение выбора зарегистрированной редакции, не защита источников. Новая модельная проверка оценивается отдельно, без переписывания старого результата.
+
+Root request модели обеих редакций: POST /api/v1/policy → CreatePolicyPayload (required name/type/action), POST /api/v1/procedures → CreateProcedureRequestPayload (name/xml). Свежий отдельный raw-schema read подтвердил defaults is_active=true/active=true; структурный lookup по-прежнему defaults НЕ экспортирует, поэтому нельзя приписывать ему это знание. Для будущего создания нужны explicit false, точный scope и самостоятельные saved/execution oracle, не только валидная структура.
+
 ## Установленная схема Swagger OpenAPI: источник и область
 
 15октября2026, v197, execution_mode=operator_installed_schema_read, validation_status=structural_census_only, evidence_for_pass=false. Источник — HTTP200 фактически установленного backend по пути /api/v1/docs/openapi.json; адрес установлен чтением api/app.py, не перебором endpoint. Backend container u-backend:4.9.0, frontend container u-frontend-prime-ui:2.21.0; product_release/ОС/версии ядра/плагинов unknown. Container tag не равен номеру общего релиза продукта.
@@ -10,7 +20,7 @@ Raw schema SHA256: 578c2f09bb95b1816b7d773209959f6e0c335abd31d2d6588406cd978a1e8
 
 ### Зарегистрированный исторический источник: штатный lookup v206
 
-api_inspect_contract_page — OBSERVE инструмент чтения зарегистрированного исторического источника. Через tool_catalog_select можно открыть его schema; аргументы method/path/reference_chain и optional stand. Core привязывает stand к persistent Job/case; другой stand отклоняется. Для модельного tool оператор должен зарегистрировать ровно один источник этого стенда; неоднозначность даёт отказ. Модель НЕ выбирает source ID, filesystem path, pins или Job/evidence: неизвестные аргументы отклоняются, связь задана оператором в приватном runtime manifest. Более низкоуровневый операторский Python reader поддерживает явный source ID, но модельный tool этого параметра не имеет.
+История v206: api_inspect_contract_page был OBSERVE инструментом одного зарегистрированного исторического источника; его модельные аргументы ограничивались method/path/reference_chain и optional stand. Source ID тогда отсутствовал в model schema, неоднозначность давала отказ. С v268 это ограничение выбора редакции изменено, см. раздел выше. Запрет model filesystem paths/pins/исходного evidence и обязательная привязка stand сохранены.
 
 Source adapter сверяет origin конфигурации стенда, точные исходные Job/case/evidence, provenance operator_installed_schema_read и два SHA256. Содержимое первичного evidence читается заново; его собственные pass/verdict flags должны быть false. Нет HTTP/fetch/authentication/отправки задач. Tool result содержит reference page и источник; current_schema_recency_verified=false, execution_mode=registered_historical_operator_schema_snapshot. source_registration_verified означает регистрацию/проверку байтов, не текущую совместимость. Source gates атомарной памяти не изменяются. Core явно сохраняет usable_for_pass/verdict=false для ВСЕХ ответов этого инструмента, включая отказ и успешный lookup.
 

@@ -1,5 +1,9 @@
 # Проверка текущего этапа
 
+Финальный268:241/241 smoke PASS и8 SHA совпали после полного прогона.20 Markdown проверены. Explicit Ubuntu wildcard266 также прошёл normal prepared six-cell phase; короткий Ubuntu запрос остаётся BLOCKED. Ни один из этих результатов не подтверждает Save/AST/member или политику/процедуру в исполнении.
+
+Frozen263:241/241 smoke PASS, включая отдельный leaf/row mapping, duplicate row labels, чужую подпись и отсутствие автоповтора. Native Windows prepared PASS относится только к шести ячейкам unsaved формы. Native Ubuntu short-prompt BLOCKED до condition writes при несовпадении шаблона; этот результат не переписан. Экспериментальное изменение пустых колонок снято и отсутствует в production diff.
+
 Актуальный code checkpoint v253, 15 октября 2026:241/241 smoke PASS,11 SHA совпали после полного прогона. Документационный пакет v255:20 Markdown файлов, проверка внутренних ссылок и obvious private-data markers PASS. Старые результаты ниже оставлены как история, не текущие счётчики.
 
 Два normal Core run_turn251 с локальной моделью прошли узкий whole-phase критерий шести ячеек несохранённых условий Windows/Ubuntu без operator browser preparation. Полное создание коллекции, saved AST/состав, nested conditions, политики и процедуры не приняты. Prepared-job-entry252 заблокирован до WRITE авторизацией; диагностический cert-login503 не переименован в product FAIL или compiler defect. Fixture241 не означает241 бизнес-сценарий.
