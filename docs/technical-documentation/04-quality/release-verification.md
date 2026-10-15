@@ -1,5 +1,7 @@
 # Проверка текущего этапа
 
+Финальный280:242/242 smoke PASS (/tmp/v280-full-smoke.log),11SHA совпали (/tmp/v280-release-code.sha256). Предыдущие счётчики ниже исторические. Typed normal prepared Ubuntu/Windows прошли только6несохранённых ячеек. Новые native policy/procedure reads подтвердили выбор reader и2страницы одного source, но не семантическую полноту ответа, создание или execution. Whole cases BLOCKED по диагностическим границам; HTTP200/ACK не повышали до business PASS.
+
 Финальный268:241/241 smoke PASS и8 SHA совпали после полного прогона.20 Markdown проверены. Explicit Ubuntu wildcard266 также прошёл normal prepared six-cell phase; короткий Ubuntu запрос остаётся BLOCKED. Ни один из этих результатов не подтверждает Save/AST/member или политику/процедуру в исполнении.
 
 Frozen263:241/241 smoke PASS, включая отдельный leaf/row mapping, duplicate row labels, чужую подпись и отсутствие автоповтора. Native Windows prepared PASS относится только к шести ячейкам unsaved формы. Native Ubuntu short-prompt BLOCKED до condition writes при несовпадении шаблона; этот результат не переписан. Экспериментальное изменение пустых колонок снято и отсутствует в production diff.

@@ -54,6 +54,7 @@ PRODUCTION_FILES = [
 ]
 SMOKES = [
     "smoke_api_contract_sources.py",
+    "smoke_api_request_contracts.py",
     "smoke_table_horizontal_viewport.py",
     "smoke_procedure_graph.py",
     "smoke_api_contract_projection.py",

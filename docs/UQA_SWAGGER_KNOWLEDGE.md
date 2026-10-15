@@ -1,5 +1,13 @@
 # U-Connect: установленная схема Swagger OpenAPI
 
+## Один bounded request-контракт — v276–v280
+
+Reviewed UQA technical guidance/candidate, не новая официальная спецификация или runtime продуктовый PASS. api_inspect_request_contract получает операцию и ровно одну прямую application/json request reference из того же registered source с проверкой job/case/evidence/schema/projection pins. Не раскрывает defaults/examples/descriptions; не обходит рекурсивно все references, не делает HTTP, не исполняет payload и не разрешает mutations. Inline/union, revision mixing, mismatch и output budget дают отказ.
+
+Caller может закрепить source в read-only кейсе. Тогда catalog показывает оба schema reader, скрывая caller-owned stand/source_id; runtime подставляет контекст и сохраняет отказ при подмене. Это устраняет ненужный выбор уже закреплённой редакции моделью, но не меняет policy/права или historical/currentness. Explicit standalone lookup и неоднозначность без source сохраняются.
+
+Expected: operation+root request и точные required из закреплённого источника lab-installed-contract-20261015-v260-post-update. Actual normal Core/local model: policy Job20261015-133101-aef50462/tc-c39a1086/ev-f1af25220a6e → CreatePolicyPayload(name/type/action), procedure Job20261015-134839-4d867be6/tc-9cc9340e/ev-4a712bb52e35 → CreateProcedureRequestPayload(name/xml); каждый observed2pages/required_matches=true. Tool не назывался в задании, operator page preparation отсутствовала; schemas предзагружены caller-bound каталогом. Browser/remote observers/resources/operations0. Raw schema hash292242e76b9e8c40208e39d9841ffbc0cefcba96bc7ab688a67f53895f33acbb; версии server/frontend/core/plugin/OS unknown, current_schema_recency_verified=false. Whole diagnostic cases BLOCKED; semantic_answer_verified=false/business_execution_verified=false. Ранний no-selection277 и rejected source mismatch279 сохранены. Не объявлять полное владение Swagger, валидацию payload или создание/исполнение по чтению двух страниц.
+
 ## Редакции после обновления и явный выбор источника v260–v268
 
 После обновления 15 октября 2026 зарегистрирована отдельная редакция lab-installed-contract-20261015-v260-post-update:426paths/681operations/839schemas. Raw schema SHA256292242e76b9e8c40208e39d9841ffbc0cefcba96bc7ab688a67f53895f33acbb, projection SHA256fdb521fb5220e4d9fc38740f05c4208789304882c3101c4db072660af8b9bbe3; Job20261015-120022-69c9d724/tc-390bb2ac/ev-4d24d6b6f8bf. Старый v197 источник сохранён. Это две исторические operator-installed-schema редакции; свежесть текущего runtime, execution, semantic/PASS и совместимость другой версии не подтверждены. Версии продукта/frontend/ядра/плагинов/ОС новой редакции unknown.

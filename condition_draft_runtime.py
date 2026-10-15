@@ -1,7 +1,7 @@
 """Explicit caller-locked condition phase; normal policy/verifier, never Save."""
 import json
 from urllib.parse import urlsplit
-from condition_plan import compile_condition_plan, fingerprint, response_schema
+from condition_plan import compile_condition_plan, fingerprint, response_schema, plan_instruction
 import condition_draft_profiles as profiles
 from frontend_check_contracts import evaluate_contract, normalized_origin
 
@@ -19,7 +19,7 @@ def validate_context(job,case_id,preparing=False):
         raise ValueError('condition_draft_context_invalid')
     if preparing and case.get('condition_draft_state'):
         raise ValueError('condition_draft_already_attempted')
-    expected=profiles.requirement_for_plan(req.get('expected_plan'),planned[0]['check_id'])
+    expected=profiles.requirement_for_plan(req.get('expected_plan'),planned[0]['check_id'],req.get('condition_profile_id'))
     if profiles.immutable_requirement(req)!=expected:
         raise ValueError('condition_draft_requirement_changed')
     if not profiles.source_current():raise ValueError('condition_draft_source_changed')
@@ -92,10 +92,10 @@ def run(api,messages,job_id,case_id,action_policy,force_read_only=False):
         guidance=[]
         for query in reviewed_search_queries(job.get('request','')):
             guidance.append(call('knowledge_search',{'query':query,'limit':3}))
-        p=profiles.profile(); schema=response_schema(p)
+        p=profiles.profile(req['condition_profile_id']); schema=response_schema(p)
         schema['properties']['conditions'].update(minItems=len(req['expected_plan']['conditions']),
                                                  maxItems=len(req['expected_plan']['conditions']))
-        response=api.ask_ollama([{'role':'system','content':'Extract a logical condition plan only. No tool calls, UI arguments, execution or success claims. Use exact UI field/operator/value labels from reviewed guidance. Return the typed JSON plan.'},
+        response=api.ask_ollama([{'role':'system','content':plan_instruction(p)},
             {'role':'user','content':job['request']+'\nReviewed guidance (not execution evidence):\n'+json.dumps(guidance,ensure_ascii=False)}],
             tools=[],response_schema=schema)
         reply=response.get('message') or {}

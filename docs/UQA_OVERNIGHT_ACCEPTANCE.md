@@ -1,5 +1,9 @@
 # План приёмки UQA: дневное продолжение
 
+Актуальный280:242/242 smoke PASS,11SHA неизменны. Typed v4 normal prepared Ubuntu/Windows прошли6несохранённых ячеек без UI-pattern подсказок и operator browser preparation. Native policy/procedure request reader получил по2страницы закреплённого historical source; UC HTTP/actions отсутствовали. Следующие пункты ниже — история, не указание повторять успешные или неопределённые операции.
+
+Следующая последовательность: (1) reviewed knowledge/docs и release checkpoint; (2) source-bound полный lifecycle коллекции с immutable Save/AST/member oracle; (3) новая owned выключенная политика, точный scope, отдельно безопасный effect; (4) workspace/граф/параметры процедуры и отдельное исполнение. Нужна также отдельная приёмка обычной freeform маршрутизации; prepared профиль ею не является. Night automation остаётся PAUSED. Старые uncertain/awaiting_verification не освобождать/не переименовывать/не повторять.
+
 Финал268/269:241/241 smoke PASS,8SHA неизменны,20MD PASS; normal prepared Windows и отдельный explicit *Ubuntu* PASSED только шесть ячеек unsaved draft. Короткий Ubuntu BLOCKED сохранён. Дальнейший приоритет — корректный immutable Save/AST/member контракт, затем политики/процедуры; не подменять это повторной приёмкой тех же ячеек.
 
 Текущий checkpoint v263–v265: прежняя ночная automation PAUSED; дневное продолжение разрешено отдельно. UC доступен, службы уже работали — вручную не запускались. Windows normal prepared PASS только6ячеек несохранённого фильтра после source/row_label fix; Ubuntu короткий запрос BLOCKED/model value mismatch. Full263241/241PASS; mapping/index/revision history сохранены. Нельзя считать этот этап полной готовностью коллекций/политик/процедур.

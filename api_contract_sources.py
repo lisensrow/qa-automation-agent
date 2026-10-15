@@ -6,6 +6,7 @@ runtime state, separate from source evidence and from current-runtime trust.
 import hashlib
 import json
 import re
+from copy import deepcopy
 from pathlib import Path
 from urllib.parse import urlsplit
 import job_store
@@ -15,6 +16,37 @@ from api_contract_projection import inspect_api_contract_page, FLAGS, MAX_BYTES,
 TOKEN=re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,159}\Z')
 PIN=re.compile(r'[0-9a-f]{64}\Z')
 FIELDS={'source_id','stand','origin','job_id','case_id','evidence_id','projection_sha256','schema_sha256'}
+
+def schema_tools_for_case(job, case_id):
+    """Expose reader schemas for an explicitly source-bound read-only QA case.
+
+    Availability is not a call, grant, source validity claim or business oracle.
+    Every eventual call still passes the ordinary stand/source/policy checks.
+    """
+    if not isinstance(job,dict) or job.get('job_type') not in {'manual','regression'}:return set()
+    case=next((c for c in job.get('test_cases',[]) if c.get('case_id')==case_id),{})
+    req=case.get('requirement') or {};source=req.get('api_contract_source_id')
+    stand=job.get('stand')
+    if (req.get('action_profile')!='read_only' or not isinstance(source,str) or not TOKEN.fullmatch(source)
+            or not isinstance(stand,str) or not TOKEN.fullmatch(stand) or req.get('stand') not in (None,stand)):
+        return set()
+    return {'api_inspect_contract_page','api_inspect_request_contract'}
+
+
+def bind_reader_catalog(catalog, job, case_id):
+    """Do not ask the model to invent context IDs already owned by the caller."""
+    names=schema_tools_for_case(job,case_id)
+    if not names:return catalog
+    result=deepcopy(catalog)
+    for item in result:
+        fn=item.get('function') or {}
+        if fn.get('name') not in names:continue
+        params=fn['parameters']
+        for key in ('stand','source_id'):params['properties'].pop(key,None)
+        params['required']=[key for key in params.get('required',[]) if key not in {'stand','source_id'}]
+        fn['description']=('Context-bound: stand and source_id are injected from this QA case. Omit both. '
+            'Schema availability grants no permission. '+fn.get('description',''))
+    return result
 
 def _pairs(pairs):
     result={}
@@ -92,3 +124,42 @@ def inspect_registered_contract_page(stand, method, path, reference_chain=(), so
         return result
     except (OSError,ValueError,TypeError,KeyError,UnicodeError,AttributeError,RecursionError):
         return dict(denied,reason='registered_contract_source_invalid')
+
+
+def inspect_registered_request_contract(stand, method, path, source_id=None):
+    """Two bounded historical reads: operation + its direct JSON request root.
+
+    No recursive closure, guessed ref, HTTP, freshness promotion or execution.
+    Both reads must independently validate the same registered source and pins.
+    """
+    refused={'contract_observation_status':'unavailable',**FLAGS}
+    root=inspect_registered_contract_page(stand,method,path,source_id=source_id)
+    if root.get('contract_observation_status')!='observed':return root
+    try:
+        media=(root['operation'].get('request_body') or {}).get('content',{}).get('application/json')
+        if not isinstance(media,dict) or set(media)!={'$ref'}:
+            return dict(refused,reason='registered_json_request_root_not_single_reference')
+        ref=media['$ref']
+        if ref not in root['direct_schema_references']:
+            return dict(refused,reason='registered_request_reference_not_exposed')
+        page=inspect_registered_contract_page(stand,method,path,[ref],source_id=root['source_id'])
+        if page.get('contract_observation_status')!='observed':return page
+        keys=('source_id','source_job_id','source_case_id','source_evidence_id','stand',
+              'schema_sha256','projection_sha256','method','path_template')
+        if any(page.get(k)!=root.get(k) for k in keys) or page.get('schema_reference')!=ref:
+            return dict(refused,reason='registered_request_revision_changed')
+        result={k:root[k] for k in keys}
+        result.update(contract_observation_status='observed',observation_kind='bounded_registered_request_contract',
+            operation_id=root['operation']['operation_id'],
+            request_body_required=root['operation']['request_body']['required'],media_type='application/json',
+            request_schema_reference=ref,request_schema=page['schema'],
+            direct_schema_references=page['direct_schema_references'],
+            observed_page_count=2,reference_path_verified=True,complete_reference_closure=False,
+            defaults_exported=False,examples_exported=False,descriptions_exported=False,
+            source_registration_verified=True,current_schema_recency_verified=False,
+            execution_mode='registered_historical_operator_request_contract',**FLAGS)
+        if len(json.dumps(result,ensure_ascii=False).encode())>MAX_OUTPUT_BYTES:
+            return dict(refused,reason='registered_request_output_budget')
+        return result
+    except (KeyError,TypeError,ValueError,AttributeError):
+        return dict(refused,reason='registered_request_contract_invalid')

@@ -43,7 +43,7 @@ class Fake:
         assert kwargs['tools']==[] and kwargs['response_schema']
         stored=self.job['test_cases'][0]['requirement']
         assert stored['bindings']['grid_session']=='fixture-session'
-        assert stored['expected_plan']==profiles.requirement_for_plan(plan,'ck-phase')['expected_plan']
+        assert stored['expected_plan']==profiles.requirement_for_plan(plan,'ck-phase',stored['condition_profile_id'])['expected_plan']
         proposed=deepcopy(plan)
         if self.wrong_plan:proposed['conditions'][0]['value']='Changed'
         return {'message':{'content':json.dumps(proposed)}}
@@ -93,4 +93,20 @@ with patch.object(profiles,'source_current',return_value=True), \
     prepared=uqa._prepared_regression_case('fixture-job')
     assert prepared[2]['requirement']['type']=='bounded_condition_draft'
     assert prepared[2]['requirement']['check_contracts']==req['check_contracts']
-print('PASS bounded condition runtime: explicit caller contract/source/pins, normal policy callbacks, no Save, proposal before compile, redirect/read-only/expected/replay denial')
+previous_plan=plan
+plan=deepcopy(plan)
+next(r for r in plan['conditions'] if r['field']=='OS name').update(operator='Contains',value='Ubuntu')
+fake=Fake();fake.job['test_cases'][0]['requirement']=profiles.requirement_for_plan(plan,'ck-phase',profiles.FAMILY_PROFILE_ID)
+assert exercise(fake)['status']=='observed_ui_draft'
+cells=json.loads(fake.job['test_cases'][0]['requirement']['bindings']['grid_expected'])
+import hashlib
+assert next(c for c in cells if c['row']=='Endpoint.OS name' and c['column']=='Value')['value_sha256']==hashlib.sha256(b'*Ubuntu*').hexdigest()
+next(r for r in plan['conditions'] if r['field']=='Archived')['value']=False
+next(r for r in plan['conditions'] if r['field']=='CI class')['value']='endpoint'
+fake=Fake();fake.job['test_cases'][0]['requirement']=profiles.requirement_for_plan(plan,'ck-phase',profiles.TYPED_FAMILY_PROFILE_ID)
+assert exercise(fake)['status']=='observed_ui_draft'
+cells=json.loads(fake.job['test_cases'][0]['requirement']['bindings']['grid_expected'])
+assert next(c for c in cells if c['row']=='Archived' and c['column']=='Value')['value_sha256']==hashlib.sha256(b'No').hexdigest()
+assert next(c for c in cells if c['row']=='CI class' and c['column']=='Value')['value_sha256']==hashlib.sha256(b'Endpoint').hexdigest()
+plan=previous_plan
+print('PASS bounded condition runtime: explicit caller contract/source/pins, literal Contains encoding, normal policy callbacks, no Save, proposal before compile, redirect/read-only/expected/replay denial')

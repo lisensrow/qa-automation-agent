@@ -2033,6 +2033,7 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        "api_inspect_request_contract",
         "browser_inspect_labeled_grid_values_semantic",
         "api_inspect_contract_page",
         "knowledge_search",
@@ -6428,7 +6429,7 @@ def record_tool_evidence(
     if tool_name == 'browser_inspect_saved_block_graph_semantic':
         eligibility['usable_for_pass'] = False
         eligibility['reason'] = 'saved_graph_structure_only_not_business_oracle'
-    if tool_name == 'api_inspect_contract_page':
+    if tool_name in {'api_inspect_contract_page','api_inspect_request_contract'}:
         eligibility['usable_for_pass'] = False
         eligibility['reason'] = 'historical_contract_page_not_runtime_business_evidence'
     if isinstance(result,dict) and result.get("response_body_truncated") is True:
@@ -14652,6 +14653,8 @@ def run_turn(
         )
 
     selected_model_tools = {required_observation["tool"]} if required_observation else set()
+    from api_contract_sources import schema_tools_for_case,bind_reader_catalog
+    case_schema_tools=schema_tools_for_case(managed_agent_job,case_id)
     from product_knowledge_context import reviewed_tool_schema_hints
     reviewed_schema_tools = reviewed_tool_schema_hints(navigation_task)
     contract_schema_tools = locked_contract_schema_tools(managed_agent_job, case_id)
@@ -14702,7 +14705,8 @@ def run_turn(
                 data = {"message": {"content": UQA_CHECKS_START + json.dumps(
                     {"checks": contract_check_templates}, ensure_ascii=False) + UQA_CHECKS_END}}
             else:
-                catalog = model_tool_catalog(selected_model_tools | required_names | reviewed_schema_tools)
+                catalog = model_tool_catalog(selected_model_tools | required_names | reviewed_schema_tools | case_schema_tools)
+                catalog = bind_reader_catalog(catalog,managed_agent_job,case_id)
                 if action_policy == 'confirm_mutations':
                     from ui_popup_context import menu_tool_catalog
                     catalog = menu_tool_catalog(catalog, messages[popup_context_start:])

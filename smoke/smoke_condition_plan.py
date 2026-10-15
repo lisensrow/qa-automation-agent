@@ -1,6 +1,6 @@
 """Pure compiler: model owns logic only; caller owns profile and expected."""
 from copy import deepcopy
-from condition_plan import compile_condition_plan, fingerprint, response_schema, FLAGS
+from condition_plan import compile_condition_plan, fingerprint, response_schema, FLAGS, plan_instruction
 
 spec={'source':'Attribute A','parents':['Category'],'value_column':'Value','value_action':'select',
       'operator_column':'Operator','operators':{'equal':'Equal','pattern':'Wildcard'},'default_operator':'equal'}
@@ -51,4 +51,43 @@ denied(plan,p=bad,sha=fingerprint(bad))
 bad=deepcopy(qualified);bad['fields']['other']['row_label']=' '
 denied(plan,p=bad,sha=fingerprint(bad))
 denied({**plan,'conditions':[dict(plan['conditions'][0],row_label='invented')]})
+semantic=deepcopy(qualified)
+semantic['fields']['other']['operators']['Contains']='Wildcard'
+semantic['fields']['other']['value_encodings']={'Contains':'glob_contains'}
+literal_plan=deepcopy(plan);literal_plan['conditions'][1].update(operator='Contains',value='Ubuntu')
+compiled=compile_condition_plan(literal_plan,semantic,literal_plan,fingerprint(semantic))
+assert compiled['logical_plan']['conditions'][1]['value']=='Ubuntu'
+assert compiled['ui_steps'][1]['arguments']['cells']==[
+    {'column':'Operator','action':'select','value':'Wildcard'},
+    {'column':'Value','action':'fill','value':'*Ubuntu*'}]
+assert all(compiled[k] is False for k in FLAGS)
+assert 'plain user literal' in plan_instruction(semantic) and 'plain user literal' not in plan_instruction(profile)
+for value in ('','*Ubuntu*','a?b','a\\b','a\nb','x'*999):
+    candidate=deepcopy(literal_plan);candidate['conditions'][1]['value']=value
+    denied(candidate,p=semantic,expected=candidate,sha=fingerprint(semantic))
+wrong=deepcopy(literal_plan);wrong['conditions'][1]['value']='Windows'
+denied(wrong,p=semantic,expected=literal_plan,sha=fingerprint(semantic))
+for encoding in ('arbitrary_template',{},False):
+    bad=deepcopy(semantic);bad['fields']['other']['value_encodings']={'Contains':encoding}
+    denied(literal_plan,p=bad,expected=literal_plan,sha=fingerprint(bad))
+typed=deepcopy(semantic)
+typed['fields']['attribute'].update(value_type='boolean',value_labels={'true':'Yes','false':'No'})
+typed['fields']['class']={**spec,'source':'Attribute C','value_type':'enum','value_labels':{'endpoint':'Endpoint','server':'Server'}}
+typed_plan=deepcopy(literal_plan);typed_plan['conditions'][0]['value']=False
+typed_plan['conditions'].append({'field':'class','operator':'equal','value':'endpoint'})
+compiled=compile_condition_plan(typed_plan,typed,typed_plan,fingerprint(typed))
+values={s['arguments']['source']:s['arguments']['cells'][-1]['value'] for s in compiled['ui_steps']}
+assert values=={'Attribute A':'No','Attribute B':'*Ubuntu*','Attribute C':'Endpoint'}
+variants={v['properties']['field']['enum'][0]:v for v in response_schema(typed)['properties']['conditions']['items']['anyOf']}
+assert variants['attribute']['properties']['value']=={'type':'boolean'}
+assert variants['class']['properties']['value']=={'type':'string','enum':['endpoint','server']}
+for value in (0,1,'false','No',None):
+    candidate=deepcopy(typed_plan);candidate['conditions'][0]['value']=value
+    denied(candidate,p=typed,expected=candidate,sha=fingerprint(typed))
+candidate=deepcopy(typed_plan);candidate['conditions'][-1]['value']='Endpoint'
+denied(candidate,p=typed,expected=candidate,sha=fingerprint(typed))
+bad=deepcopy(typed);bad['fields']['attribute']['value_labels']={'true':'No','false':'No'}
+denied(typed_plan,p=bad,expected=typed_plan,sha=fingerprint(bad))
+bad=deepcopy(typed);bad['fields']['class']['value_type']={}
+denied(typed_plan,p=bad,expected=typed_plan,sha=fingerprint(bad))
 print('PASS condition plan: caller pin/expected, closed logical schema, no model UI arguments, duplicates/logic/value/profile denials; not an executor')

@@ -1,5 +1,13 @@
 # UQA: опыт структурного планирования
 
+## Логические типы вместо UI-форматирования — v270–v280
+
+Reviewed UQA guidance, namespace uqa/document_review/hypothesis, не официальная спецификация продукта и не developer-confirmed bug/fix. Версии server/frontend/agent/plugin/os unknown. Ubuntu/Windows ниже — литералы фильтра, не доказанная ОС реальной КЕ.
+
+В supported caller-prepared uc.collections.os-family.v4 модель предлагает Archived=false(boolean), CI class=endpoint(enum), OS name Contains Ubuntu/Windows(plain literal). Trusted profile отдельно задаёт UI No/Endpoint, Operator Wildcard и *literal*, точный row_label Endpoint.OS name. Не давать модели выбирать pins/mappings/UI encodings или выводить expected из её ответа. String false/No вместо boolean, неизвестные enum, wildcard metacharacters и несовпадение expected отвергаются. Прежний v2 остаётся самостоятельной совместимой схемой.
+
+Expected: три логических условия flat AND и независимые6cell hashes до генерации. Actual: normal prepared Ubuntu Job20261015-124128-54229803/tc-1c4b0c0e/ev-dac624844853 и Windows Job20261015-124453-b6a01a17/tc-78c2194f PASSED6cells/5Y0N/noTimeout/0resources/operations/no operator browser preparation. Предыдущий v3 Job20261015-123408-12c2551c BLOCKED до condition writes из-за string false; история не переписана. Это узкая unsaved UI phase, не Save/AST/member/nested filters/freeform CLI routing. Общий Core не содержит UC-specific value if/else; mapping принадлежит product profile. Fixture tests не заменяют эти native observations.
+
 ## Типизированный компилятор условий и свежее чтение v248
 
 15октября2026, experimental_model_plan_recipe_execution, Job20261015-090636-f0bcfc48/tc-6f85d97a. В caller requirement до генерации закреплены профиль/hash, expected logical plan и6expected cell hashes. Отдельный production pure condition_plan строит field-specific typed response schema, проверяет plan против caller expected/profile pin и компилирует только UI-аргументы; выполнение остаётся у экспериментального harness. Модельный план ev-7731c01e09ec, compiled plan ev-61fcce85baf5, applied rows ev-417edce74e84/ev-008efffc8593/ev-73b0aaf714db. После всех строк независимый DOM readback ev-c0bbe21510c0 прочитал6ячеек и подтвердил all_matched=true, включая Equal для Archived и CI class.3строки/4установленных значения,5Y0N/noTimeout. Фаза подтверждена, но общий caseBLOCKED0resources/operations/browserclosed; noSave/noAST/member oracle, нет общего production runtime или самостоятельного входа.

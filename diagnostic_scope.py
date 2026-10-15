@@ -1,5 +1,6 @@
 """Bind bounded read-only diagnostics to the persistent QA case stand."""
-DIAGNOSTIC_TOOLS = frozenset({'ssh_docker_ps','ssh_docker_logs','ssh_find_backend_request','api_inspect_contract_page'})
+API_CONTRACT_TOOLS=frozenset({'api_inspect_contract_page','api_inspect_request_contract'})
+DIAGNOSTIC_TOOLS = frozenset({'ssh_docker_ps','ssh_docker_logs','ssh_find_backend_request'}) | API_CONTRACT_TOOLS
 
 
 def scope_diagnostic_arguments(name, arguments, job, case_id):
@@ -18,7 +19,7 @@ def scope_diagnostic_arguments(name, arguments, job, case_id):
     if requested is not None and (not isinstance(requested,str) or requested.strip()!=stand):
         return arguments, 'diagnostic_stand_mismatch'
     arguments['stand']=stand
-    if name=='api_inspect_contract_page' and 'api_contract_source_id' in requirement:
+    if name in API_CONTRACT_TOOLS and 'api_contract_source_id' in requirement:
         locked=requirement['api_contract_source_id']
         if not isinstance(locked,str) or not locked or len(locked)>159:
             return arguments,'diagnostic_source_binding_invalid'

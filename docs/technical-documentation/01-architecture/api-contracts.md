@@ -1,5 +1,11 @@
 # Установленные API-контракты и Swagger
 
+## Ограниченный request reader — checkpoint280
+
+api_inspect_request_contract читает операцию и одну прямую application/json request reference. Страницы должны иметь одинаковые registered source/job/case/evidence/schema/projection pins. Inline/union, revision mixing, лишняя глубина и output budget не принимаются. Defaults/examples/descriptions не экспортируются; HTTP к UC отсутствует. Чтение модели не валидирует бизнес-payload.
+
+Explicit source-bound read-only case получает два schema reader в catalog без caller-owned stand/source_id; runtime инжектирует закреплённый контекст, mismatch по-прежнему запрещён. Catalog не даёт разрешений. Native policy Job20261015-133101-aef50462/ev-f1af25220a6e и procedure Job20261015-134839-4d867be6/ev-4a712bb52e35 выбрали reader без его имени в задании/operator page preparation:2pages/exact required. Источник historical/current_schema_recency_verified=false, business/semantic_answer verified=false,0UC actions, whole diagnostic BLOCKED. Это не полное владение Swagger или API mutations.
+
 ## Плагины и задания: уточнение v222–v226
 
 Свежее операторское чтение установленной схемы подтвердило исходный raw hash197; это свежесть schema bytes в момент чтения, не инвентаризация/исполнение и не native source admission. Job20261015-051813-7970a59b/tc-6c03ce22 содержит7operations/root models и6reachable pages, без business calls. Старый registered historical reader не изменён: его enum_values_exported=false остаётся верным. Отдельный223profile экспортирует только declared values TaskStatus(created,error,success,progress,timeout) и AgentStatus(online,offline,archived), не подтверждая семантику/терминальность/эффект.

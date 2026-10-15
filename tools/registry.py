@@ -177,6 +177,11 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {"type":"function","function":{"name":"api_inspect_request_contract",
+        "description":"OBSERVE: read a registered historical operation and its direct application/json request schema together. Exactly two source/pin-checked pages; no HTTP, recursive schema closure, defaults, enum values, payload validation or business PASS. Same stand/source selection and caller lock as api_inspect_contract_page. Use when the question needs required request fields, not just operation roots.",
+        "parameters":{"type":"object","additionalProperties":False,"properties":{
+            "stand":{"type":"string"},"method":{"type":"string"},"path":{"type":"string"},"source_id":{"type":"string"}},
+            "required":["method","path"]}}},
     {"type":"function","function":{"name":"api_inspect_contract_page",
         "description":"Read-only: одна страница исторического API-контракта зарегистрированного источника текущего стенда. При нескольких редакциях выбери source_id только из available_source_ids; не смешивай редакции и не считай выбранную текущей автоматически. Пустая reference_chain читает operation, затем передавай цепочку только раскрытых direct_schema_references. Не выполняет HTTP, не знает enum values/полную валидацию, не доказывает свежесть, permission или PASS. Pins/пути файлов/исходное evidence задаёт оператор, не модель.",
         "parameters":{"type":"object","additionalProperties":False,"properties":{
@@ -2246,6 +2251,13 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == 'api_inspect_request_contract':
+        from api_contract_sources import inspect_registered_request_contract
+        if set(arguments)-{'stand','method','path','source_id'}:
+            from api_contract_projection import FLAGS
+            return {'contract_observation_status':'unavailable','reason':'contract_tool_arguments_invalid',**FLAGS}
+        return inspect_registered_request_contract(arguments.get('stand'),arguments.get('method'),
+            arguments.get('path'),source_id=arguments.get('source_id'))
     if name == "browser_inspect_labeled_grid_values_semantic":
         from tools.browser import _session
         from tools.grid_value_readback import inspect_values

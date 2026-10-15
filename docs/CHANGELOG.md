@@ -2,6 +2,16 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v270–v280 — типизированные условия и ограниченное чтение request-контрактов
+
+Review281: оба существующих knowledge-документа обновлены без создания дублирующих per-patch заметок. Две derived UQA/document_review записи остались candidate, не runtime product facts. Обе DB сохранены до индексирования; integrity, replay dedup и retrieval новых/старого row-mapping рецептов PASS,1189 unrelated chunks неизменны. История прежних записей и Jobs сохранена.
+
+condition_plan поддерживает optional boolean/enum с trusted labels и Contains plain literal → UI Wildcard. Строка вместо boolean, неизвестный enum, wildcard/control characters и подмена expected отклоняются; v2 string-профиль совместим. Typed v4 normal prepared Ubuntu Job20261015-124128-54229803/tc-1c4b0c0e/ev-dac624844853 и Windows Job20261015-124453-b6a01a17/tc-78c2194f PASSED6ячеек unsaved draft,5Y0N/noTimeout/0resources/operations, без operator browser preparation. V3 Job20261015-123408-12c2551c с ошибочным string false сохранён BLOCKED; oracle не подгонялся. Нет свободной CLI-маршрутизации, Save/AST/member/nesting acceptance.
+
+api_inspect_request_contract читает операцию и одну прямую application/json request reference, проверяя одинаковые provenance/schema/projection pins. Inline/union, revision mixing, лишняя глубина и output budget fail closed. Source-bound read-only catalog показывает reader, но скрывает закреплённые caller stand/source_id из модели; scope gate сохраняет инъекцию и запрет подмены. Native policy Job20261015-133101-aef50462/ev-f1af25220a6e и procedure Job20261015-134839-4d867be6/ev-4a712bb52e35: observed2pages/required_matches=true/exact source,0browser/remote observers/resources/operations. Источник historical/current=false, whole diagnostic BLOCKED/business_execution_verified=false/semantic_answer_verified=false. Ранние277(no reader selection) и279(source mismatch blocked) сохранены.
+
+Финальный frozen280:242/242 smoke PASS,11 code SHA неизменны. Tests покрывают типы, encoding, source mismatch, revision mixing, бюджет и неизменность глобального catalog. STEP/AUTO/v069/locked oracle/journal не менялись. Политика и процедура ещё не приняты как создание/исполнение.
+
 ## v268–v269 — модельный выбор зарегистрированной редакции с caller lock
 
 Финальный268: py_compile/241 smoke PASS (/tmp/v268-full-smoke.log),8 code SHA неизменны (/tmp/v268-release-code.sha256),20 technical Markdown PASS. Явный Ubuntu wildcard case266 Job20261015-121941-cdea5748 / tc-6924fceb PASSED5Y0N/noTimeout/0resops через normal prepared entry. Это конкретное задание с заданным *Ubuntu*, не исправление короткого промпта и не полный Save/AST/member PASS. Оба прежних model failures сохранены.

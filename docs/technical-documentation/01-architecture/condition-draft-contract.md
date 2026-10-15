@@ -1,5 +1,11 @@
 # Условия коллекций: логический план и исполнимый контракт
 
+## Типизированный профиль v4 — checkpoint280
+
+Boolean и enum имеют caller-owned UI labels; Contains принимает plain literal, trusted glob_contains строит Wildcard *literal*. Модель не задаёт row_label/mapping/value_labels. Bool допускает только boolean, enum — известный ID; wildcard/control characters отклоняются. Expected не исправляется под модель. Старый string/v2 профиль сохранён.
+
+Normal prepared runtime: Ubuntu Job20261015-124128-54229803 и Windows Job20261015-124453-b6a01a17 PASSED6exact cells/5confirmations/0resources/operations без operator browser preparation. Это explicit caller-prepared flat AND из3полей, не Save/AST/member, nesting или общий natural-language entry. V3 ошибочный string false Job20261015-123408-12c2551c остался BLOCKED.
+
 ## Назначение
 
 Отделить понимание человеческого задания от управления конкретным интерфейсом. Модель выбирает логические условия; проверяемый компилятор строит низкоуровневые действия по доверенному профилю. Память помогает выбрать применимый профиль, но не заменяет текущую проверку UI, разрешение или oracle.
