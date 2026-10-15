@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v227–v228 — текущий reported audit и реальный prepared read case
+
+Operator read-only Job20261015-053814-e84462cd/tc-72da19f4: Ubuntu-карточка→Agent→Plugins→native linked GET, без модели и мутаций. ev-7b91f2fc9e16 audit summary, ev-81481dd5ebd8 CI GET, ev-a85b092e8ada plugin GET, ev-4a6421559ca0 scope outcome. Reported45plugins, last_audit_at2026-10-14T21:13:37.263Z, возраст30292.2s при чтении; max_age3600 => plugin_audit_stale/BLOCKED. Не45подтверждённо актуальных загруженных плагинов. Отдельная operator UI-label projection ev-89153332a562: displayed Agent Version1.2.25/online, Ubuntu22.04.4LTS; binary не проверен, planned1.3.27 только контекст, oracle не переписывался. Три выбранных плагина в старом audit reported version1.2.25/load_status=true, не actual readiness.
+
+Prepared local-model Job20261015-054556-b367e83f/tc-63f7d263 (uc-front-010, executeCommand) завершился passed3/3 с7LLM calls. Обычный retrieval использовал руководство и новый UQA_PLUGIN_TASKS_KNOWLEDGE.md; browser tools реально открыли карточку/вкладки и инспектор. Источник ev-7d8922316c85 снова audit_fresh=false/plugin_audit_stale. Locked checks проверяли принадлежность reported plugin, явную версию и timestamp/age, а не audit_fresh=true. PASS означает чтение/отчёт snapshot, не установку, выполнение, свежесть или полный регресс. Отдельный operator_scope_review сохраняет это различие; исходный case/verdict не меняется.
+
+Наблюдённый UI inventory GET имеет gateway prefix /api/v1/u-auth/u-sys/api/v1/agents/{id}/plugin; Swagger relative path /api/v1/agents/{agent_id}/plugin. Это одна read-only связка по agent identity, не общий prefix rewrite и не разрешение POST/executor. Оба Jobs0resources/0operations, браузеры закрыты. Код не менялся после225, финальный233runner/4SHA остаётся предыдущей code-проверкой; новые native reads не подменяют функциональный plugin PASS.
+
 ## v222–v226 — installed plugin/task contracts и предметный recall
 
 Fresh read-only schema Job20261015-051813-7970a59b/tc-6c03ce22: ev-f694b7865fd9 (7операций/9root models, profile SHA79f48b13ab21b8bd365b19d87b3f98328ed296c4b8b850a4a1b4903cf0d3f539), ev-1d857ed68da8 (6reachable model pages, SHAe08bc65fc3cc2bc0530f3fbb62e046ee5fd037e1dc6b4fd7f7c3786fdc522e13). Raw OpenAPI978174bytes/hash578c2f09bb95b1816b7d773209959f6e0c335abd31d2d6588406cd978a1e8082 совпала с197. GET/schema только; ни agent/plugin/task бизнес-вызовов, ни инвентаризации/установки/исполнения. Case BLOCKED,0resources/operations. Старый schema registry не изменён и SSH не маскируется под native GET.
