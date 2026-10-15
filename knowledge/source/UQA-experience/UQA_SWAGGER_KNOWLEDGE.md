@@ -8,6 +8,20 @@ Raw schema SHA256: 578c2f09bb95b1816b7d773209959f6e0c335abd31d2d6588406cd978a1e8
 
 ## Выбор операции: метод плюс путь, не только operationId
 
+### Зарегистрированный исторический источник: штатный lookup v206
+
+api_inspect_contract_page — OBSERVE инструмент чтения зарегистрированного исторического источника. Через tool_catalog_select можно открыть его schema; аргументы method/path/reference_chain и optional stand. Core привязывает stand к persistent Job/case; другой stand отклоняется. Для модельного tool оператор должен зарегистрировать ровно один источник этого стенда; неоднозначность даёт отказ. Модель НЕ выбирает source ID, filesystem path, pins или Job/evidence: неизвестные аргументы отклоняются, связь задана оператором в приватном runtime manifest. Более низкоуровневый операторский Python reader поддерживает явный source ID, но модельный tool этого параметра не имеет.
+
+Source adapter сверяет origin конфигурации стенда, точные исходные Job/case/evidence, provenance operator_installed_schema_read и два SHA256. Содержимое первичного evidence читается заново; его собственные pass/verdict flags должны быть false. Нет HTTP/fetch/authentication/отправки задач. Tool result содержит reference page и источник; current_schema_recency_verified=false, execution_mode=registered_historical_operator_schema_snapshot. source_registration_verified означает регистрацию/проверку байтов, не текущую совместимость. Source gates атомарной памяти не изменяются. Core явно сохраняет usable_for_pass/verdict=false для ВСЕХ ответов этого инструмента, включая отказ и успешный lookup.
+
+Поддерживается только исторический operator-schema профиль, не live native schema ingest. Регистрация lab snapshot v197 опирается на Job20261015-012947-b938acd8/tc-3fa058b8/ev-90768490c112 с прежними schema/projection hash; это не публикация самого артефакта в Git и не пересчёт свежести по времени регистрации. Модель должна читать operation root, затем переходить только по фактически раскрытым refs; required/nullable/enum_count не разрешают произвольные payload или действия. Не представлять технический source lookup как самостоятельное создание/применение политики.
+
+Native Core trial после удаления модельного source_id: Job20261015-025942-d516fede/tc-53f3adf8. Tool ev-4234259db288 самостоятельно выбран моделью через каталог и успешно прочитал root POST /api/v1/policy; audit ev-b22970b173e3. У Core evidence usable_for_pass/verdict=false. Модель не сделала следующего lookup раскрытых request/action refs, поэтому обязательные поля по этим страницам в данном прогоне не доказаны. Общий Job BLOCKED, resources0/journal0; это ограниченный native lookup, не полная автономная работа со Swagger или политикой. Предыдущие source_id=lab failures сохранены отдельно.
+
+Актуализация v206: более ранние разделы о том, что model tool/source adapter ещё отсутствует, описывают v197–v204. Теперь реализован только зарегистрированный ИСТОРИЧЕСКИЙ source tool с запретом verdict; свежий live-native schema adapter и полная автономная цепочка reference pages остаются незавершёнными.
+
+## Выбор операции: метод плюс путь, не только operationId — правило
+
 В схеме есть один повтор operationId: get_update_api_v1_agents_update_head используется для GET и HEAD /api/v1/agents/update. Поэтому operationId не является однозначным ключом вызова: сверять также метод, путь, параметры и текущий scope. Это наблюдение схемы, не developer-confirmed bug. Ни GET, ни наличие операции в Swagger сами по себе не дают разрешения на её выполнение.
 
 ## Большой контракт политики: ограниченные страницы v204

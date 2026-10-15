@@ -2,6 +2,16 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v205–v206 — штатное чтение зарегистрированных исторических API-источников
+
+Финал установленного интерфейса без модельного source_id:229/229PASS /tmp/v206-final2-full-smoke.log (включая profile/py_compile),18Markdown/link/private-marker checks PASS. Consistent snapshot/integrity/1164 unrelated chunks unchanged и3 новых/прежних recall queries PASS. Runtime source registration подтверждённо ignored Git; нет HTTP/UC business writes/новых операций или canonical promotion. Полный source fixture Windows не засчитывается: mirror не содержит stands.py. Все native Jobs закрыты BLOCKED, исходные ошибки сохранены.
+
+Native финал после снятия source_id из model schema: Job20261015-025942-d516fede/tc-53f3adf8, ev-4234259db288 root observed/usable_for_pass=false/verdict=false, audit ev-b22970b173e3. Модель сама нашла tool, но request/action ref pages не прочитала; весь Job BLOCKED. Это частичная native capability, не автономная приёмка контракта/политики. Промежуточные /tmp/v206-full-smoke.log и /tmp/v206-final-full-smoke.log прерваны до окончательного интерфейса, НЕPASS; финальный /tmp/v206-final2-full-smoke.log отдельно.
+
+- Аудит формы политики: launcher Create policy остаётся консервативным commit в journal; без typed lifecycle proof новые клики не выполнялись. Нет обхода через keyboard и повторной отправки старых intents.
+- api_contract_sources + OBSERVE api_inspect_contract_page: private operator registration, persistent stand/origin, exact source Job/case/evidence, provenance и двойные pins. Никаких произвольных путей, HTTP, credentials, dispatch или promotion. На ошибке source selection — только bounded source IDs своего стенда; текущая применимость не доказывается.
+- Review поймал необходимость отдельного Core evidence запрета для нового tool: добавлены usable_for_pass/verdict=false override и fixture. Первый прерванный native lookup Job20261015-025441-ce2fb721/tc-efbc9626 получил один unavailable ответ из-за source_id=lab; не считается приёмкой. Первый runner прерван до финального audit, НЕPASS. Финальные профиль/runner/native trace фиксируются после завершения.
+
 ## v203–v204 — чтение политик и порционные API-reference pages
 
 Финал установленной версии:228/228PASS /tmp/v204-final-full-smoke.log, профиль/py_compile/18 Markdown/link/private-marker checks PASS. Согласованный snapshot document-index.before-v204-policy-sources.db, integrity/1152 unrelated chunks unchanged и четыре повторных запроса новых/прежних рецептов PASS. Нет canonical promotion, новых UC-ресурсов/операций или исполнения API.

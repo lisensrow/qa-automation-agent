@@ -1,5 +1,5 @@
 """Bind bounded read-only diagnostics to the persistent QA case stand."""
-DIAGNOSTIC_TOOLS = frozenset({'ssh_docker_ps','ssh_docker_logs','ssh_find_backend_request'})
+DIAGNOSTIC_TOOLS = frozenset({'ssh_docker_ps','ssh_docker_logs','ssh_find_backend_request','api_inspect_contract_page'})
 
 
 def scope_diagnostic_arguments(name, arguments, job, case_id):

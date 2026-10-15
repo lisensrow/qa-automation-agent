@@ -11,6 +11,16 @@
 
 ## Диагностическое сравнение режима рассуждения v200
 
+### v205–v206: граница формы политики и штатный API-source lookup
+
+Финальная установленная версия:229/229PASS /tmp/v206-final2-full-smoke.log, server profile/py_compile и18MDPASS. Точечная индексация рецепта сохранила1164 прочих фрагмента, snapshot/integrity/3recall queries PASS. Registration — ignored private runtime state, не Git; native root lookup не повышен до полного task PASS.
+
+Native final2 Job20261015-025942-d516fede/tc-53f3adf8: модель сама выбрала tool через каталог, root lookup ev-4234259db288 observed; Core evidence pass/verdict=false проверены. Но цепочка request/action refs не прочитана: полная task acceptance BLOCKED, resources0/journal0; audit ev-b22970b173e3. Первая попытка выбора source ID завершилась отказом, в финальном model schema source_id снят полностью: операторская конфигурация должна однозначно выбрать источник стенда. Ни более мягкого oracle, ни заявленного полного Swagger владения нет.
+
+Аудит v205 подтвердил техническую границу: Create policy в старом общем journal classifier трактуется как возможный commit, хотя observed UI использует его как launcher. Надёжного generic UI-lifecycle oracle для завершения такого journal intent пока нет. Новые клики/keyboard-обходы/переигрывание старых uncertain операций не выполнялись. Прежние определения STEP/AUTO/v069/journal не ослаблены; автономное создание политики по-прежнему не принято.
+
+api_contract_sources и OBSERVE api_inspect_contract_page добавляют модельный доступ к операторски зарегистрированным историческим страницам контракта. Private runtime manifest, exact stand/origin/source Job/case/evidence, provenance/hash recheck; нет произвольных путей/pins из tool args, HTTP/executor/auth changes или canonical promotion. Stand bind использует прежний diagnostic scope механизм. Регистрация и совпадение байтов не доказывают свежесть/current applicability. Core принудительно выставляет pass/verdict eligibility=false для любого ответа этого tool. Порционный parser и лимиты v204 сохраняются. Profile включает provenance/stand/pin/duplicate registration/metadata/budget и explicit evidence-ineligibility negatives.
+
 ### v203–v204: политики и порционное чтение большого контракта
 
 Финал:228/228PASS /tmp/v204-final-full-smoke.log, профиль/py_compile/18MDPASS. Индекс двух reviewed источников обновлён с consistent snapshot/integrity и1152 другими фрагментами без изменений; четыре новых/прежних recall queries PASS. Новые данные не повышаются до verified, source gates и старые Jobs сохраняются.

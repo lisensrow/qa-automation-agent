@@ -2031,6 +2031,7 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        "api_inspect_contract_page",
         "knowledge_search",
         "ssh_docker_ps",
         "ssh_find_backend_request",
@@ -6387,6 +6388,9 @@ def record_tool_evidence(
     if tool_name == 'browser_inspect_saved_block_graph_semantic':
         eligibility['usable_for_pass'] = False
         eligibility['reason'] = 'saved_graph_structure_only_not_business_oracle'
+    if tool_name == 'api_inspect_contract_page':
+        eligibility['usable_for_pass'] = False
+        eligibility['reason'] = 'historical_contract_page_not_runtime_business_evidence'
     if isinstance(result,dict) and result.get("response_body_truncated") is True:
         eligibility["usable_for_pass"] = False
         eligibility["reason"] = "native_response_body_truncated"

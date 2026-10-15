@@ -166,6 +166,7 @@ from tools.browser import (
 )
 
 from knowledge_tool import knowledge_search
+from api_contract_sources import inspect_registered_contract_page
 
 from ssh_worker import (
     docker_ps,
@@ -176,6 +177,11 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {"type":"function","function":{"name":"api_inspect_contract_page",
+        "description":"Read-only: одна страница исторического API-контракта зарегистрированного источника текущего стенда. Пустая reference_chain читает operation, затем передавай цепочку только раскрытых direct_schema_references. Не выполняет HTTP, не знает enum values/полную валидацию, не доказывает свежесть, permission или PASS. Pins/пути файлов/источник evidence задаёт оператор, не модель.",
+        "parameters":{"type":"object","additionalProperties":False,"properties":{
+            "stand":{"type":"string"},"method":{"type":"string"},"path":{"type":"string"},
+            "reference_chain":{"type":"array","maxItems":8,"items":{"type":"string"}}},"required":["method","path"]}}},
     {
         "type": "function",
         "function": {
@@ -2215,6 +2221,12 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "api_inspect_contract_page":
+        if set(arguments)-{'stand','method','path','reference_chain'}:
+            from api_contract_projection import FLAGS
+            return {'contract_observation_status':'unavailable','reason':'contract_tool_arguments_invalid',**FLAGS}
+        return inspect_registered_contract_page(arguments.get("stand"), arguments.get("method"), arguments.get("path"),
+            arguments.get("reference_chain", ()))
     if name == "browser_table_cell_control_semantic":
         from tools.browser import _session
         from tools.table_cell_controls import operate
