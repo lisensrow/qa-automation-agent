@@ -2,6 +2,18 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v235–v239 — ограниченное восстановление вкладки поля
+
+Финальный установленный код: py_compile и 236/236 технических smoke PASS; /tmp/v239-release-full-smoke.log, четыре SHA256 в /tmp/v239-release-code.sha256 проверены неизменными после suite. Это регресс механизмов UQA, не 236 автономных сценариев UC. Промежуточные v237 результаты не заменяют финальную проверку.
+
+Повторный реальный whole-draft local-model Job20261015-080725-6d8e350f/tc-0f01886b: четыре разрешённых unsaved WRITE, ноль отказов supervisor и без timeout. После missing field ev-83af344da390 Core inspect ev-62f0a31b047f и click ev-342b1c1755e8 выполнили recovery; модель штатно заполнила Name ev-bd6defb4e552. Затем использовала неподходящие click/inspect для конструктора вместо drag/table-cell controls; ноль вызовов cell-control, остановка repeated_semantic_inspection. BLOCKED, ноль ресурсов/операций, браузер закрыт. Recovery применён в настоящем model run; всё задание не выполнено. Нужен отдельный ограниченный контракт/адаптер конфигурации условий, не повтор неизменного промпта и не ослабление oracle.
+
+Модельные whole-draft прогоны оставались BLOCKED: локальная модель игнорировала Settings hint после Field not found либо повторяла неверное меню. Экспериментальный supervisor подтверждает только прежние policy prompts одной новой несохранённой заготовки; не сохраняет, не заменяет policy и не создаёт product evidence. Повторы не считаются обучением или автономной приёмкой.
+
+Добавлены control_location_recovery.py и Core recover_missing_field_panel: running обычный Job/case, write_ui_state/write_resource, confirm_mutations и настоящий отказ fill/select. Источник повторно проверяется по persistent request. Единственный текущий tab требует fresh OBSERVE с exact role/session/URL/selected=false. Принимаются существующие строгие native стратегии role:tab и explicit_role_text:tab с requested_role=tab, role_constraint_matched=true, element.role=tab. Затем один INTERACT через прежнюю policy/compatibility probe; observations/evidence/history помечены model_selected_action=false. Повтор field/panel/session/URL запрещён. Нет fill/save, новых прав, смены STEP/AUTO или journal replay.
+
+Первый live239 Job20261015-074936-b89253c7 выявил неучтённую explicit_role_text:tab, отказ до click. Следующий20261015-075520-9177bd4c ещё использовал старый установленный файл: установка ожидала sudo; его BLOCKED не проверяет финальное исправление. После установки Job20261015-080449-81143ef2/tc-315842f9 подтвердил настоящее Name missing ev-5bbfb9db6a44, recovery inspect ev-ce54e1845db8, click ev-421a523b267a и подтверждённое Name fill ev-a1d64c6b5194. Operator-prepared entry, без Save/ресурсов/операций; whole-task acceptance остаётся BLOCKED. Старые uncertain/awaiting операции не изменены. Новый smoke проверяет роли, отказы, policy и once-only replay; полный runner и модельная приёмка учитываются отдельно.
+
 ## v231–v234 — критерии целого сценария, заполнение условий и documented entry
 
 Native231 Job20261015-064110-4ab69b4e/tc-8a35addc рано вернул PASS доступности Add; Core отклонил write_ui_state_acceptance_contract_missing. Native232 с тремя predeclared checks Job20261015-064708-4c8d873f/tc-e3e73351 ушёл в неверное меню и остановлен repeated_missing_semantic_click. Оба BLOCKED0resources/operations, исходные ответы сохранены отдельно; это не автономная приёмка и не основание ослаблять oracle.

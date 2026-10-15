@@ -1,5 +1,9 @@
 # Поток исполнения задачи
 
+## Восстановление расположения поля
+
+После реального отказа fill/select Core может один раз перейти к вкладке, указанной перепроверенным источником исходного задания. Нужны running Job/case с write profile, прежняя confirm_mutations policy, единственный текущий tab и отдельная свежая инспекция роли, видимости, enabled и selected=false в той же session/URL. Обычная ссылка или произвольный текст не подходят. Разрешён только INTERACT переход, не fill/save. Evidence помечается Core navigation recovery, а не выбором модели. Дальнейшие инструменты проходят обычные проверки. Повтор того же recovery запрещён; STEP/AUTO, v069, oracle и журнал не меняются.
+
 v234: документированный родительский раздел может объяснять уже наблюдённый вход. Source-rechecked product adapter возвращает label без URL/команды/разрешения. Core сверяет его с leaf фактического успешного browser_open_page и единственным navigation label той же native entry с session; новый редактор дополнительно требует прежней same-session/origin approved transition. Неизвестный источник, отсутствие/дубли label и неподдержанный формат не обходятся. Это проверка навигационного предусловия, не право создания: v069, stand lock, journal и oracle продолжают действовать. Product-specific соответствие берётся из отдельно принятой декларации руководства, не из свободного model prose.
 
 Справочный `/advice STAND QUESTION` — отдельный явный вход, не новая ветка STEP/AUTO. Он создаёт knowledge-only Job, использует фиксированный read allowlist и не входит в обычный test run_turn. Ответ находится в advisory.state/response, не становится PASS/FAIL и не запускает предложение. MVP не обследует текущий UI/API и не выбирает режим автоматически по словам пользователя. Подробнее: [advisory contract](advisory-contract.md).

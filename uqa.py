@@ -14440,6 +14440,56 @@ def _prepared_tabs_route_message(required_observation):
     }
 
 
+def recover_missing_field_panel(name, arguments, result, messages, attempted,
+                                job_id, case_id, action_policy, force_read_only=False):
+    """One observed INTERACT recovery, never a fill, save or permission upgrade."""
+    if (force_read_only or action_policy!='confirm_mutations' or not job_id or not case_id
+            or name not in {'browser_fill_semantic','browser_select_semantic'}
+            or not isinstance(result,dict)
+            or not (str(result.get('error','')).startswith('Field not found:')
+                    or result.get('error')=='select_field_not_found')):
+        return
+    job=get_job(job_id) or {}
+    case=next((c for c in job.get('test_cases',[]) if c.get('case_id')==case_id),{})
+    if (job.get('job_type')=='advisory' or 'advisory' in job or job.get('status')!='running'
+            or case.get('status')!='running'
+            or (case.get('requirement') or {}).get('action_profile') not in {'write_ui_state','write_resource'}):
+        return
+    from product_knowledge_context import retrieve_control_location_hint
+    from control_location_recovery import candidate_for_missing_field
+    hint=retrieve_control_location_hint(job.get('request',''),arguments.get('field'))
+    state=_latest_browser_state_for_navigation(messages) or {}
+    candidate=candidate_for_missing_field(hint,state)
+    if not candidate or classify_tool_action(candidate['tool'],candidate['arguments'])!='interact':
+        return
+    key=(arguments.get('field'),candidate['arguments']['name'],state.get('session_id'),state.get('current_url'))
+    if key in attempted:
+        return
+    attempted.add(key)
+    def observe(tool,args):
+        receipt=execute_tool_with_policy(tool,args,messages,force_read_only=force_read_only,
+            action_policy=action_policy,job_id=job_id,case_id=case_id,require_compatibility_probe=True)
+        receipt={**receipt,'core_navigation_recovery':{'model_selected_action':False,'kind':'documented_field_panel'}}
+        obs=record_tool_observations(job_id,case_id,tool,args,receipt)
+        evidence=record_tool_evidence(job_id,case_id,tool,args,receipt,
+                                     observation_ids=[o['observation_id'] for o in obs])
+        if evidence:
+            receipt['uqa_evidence_id']=evidence['evidence_id']
+        messages.append({'role':'assistant','content':'','tool_calls':[{'function':{'name':tool,'arguments':args}}]})
+        messages.append({'role':'tool','tool_name':tool,'content':json.dumps(tool_result_for_model(tool,receipt),ensure_ascii=False)})
+        return receipt
+    inspection=observe('browser_inspect_semantic',candidate['arguments'])
+    if (inspection.get('error') or inspection.get('visible') is not True or inspection.get('enabled') is not True
+            or inspection.get('selected') is not False
+            or inspection.get('semantic_strategy') not in {'role:tab','explicit_role_text:tab'}
+            or inspection.get('requested_role')!='tab' or inspection.get('role_constraint_matched') is not True
+            or (inspection.get('element') or {}).get('role')!='tab'
+            or inspection.get('session_id')!=state.get('session_id')
+            or inspection.get('current_url')!=state.get('current_url')):
+        return
+    return observe(candidate['tool'],candidate['arguments'])
+
+
 def run_turn(
     messages,
     job_id=None,
@@ -14480,6 +14530,7 @@ def run_turn(
                 messages.append({"role": "tool", "tool_name": "knowledge_search",
                                  "content": json.dumps(result, ensure_ascii=False)})
     failed_semantic_inspections = {}
+    attempted_field_panel_recovery = set()
     failed_semantic_clicks = {}
     completed_core_observations = {}
     repeated_completed_observations = set()
@@ -15786,6 +15837,12 @@ def run_turn(
                     ),
                 }
             )
+
+            if len(tool_calls)==1:
+                recovered_panel=recover_missing_field_panel(name,arguments,result,messages,attempted_field_panel_recovery,
+                    job_id,case_id,action_policy,force_read_only)
+                if isinstance(recovered_panel,dict) and not recovered_panel.get('error') and recovered_panel.get('current_url'):
+                    last_browser_fingerprint=(recovered_panel['current_url'],str(recovered_panel.get('text_preview') or '')[:2500])
 
             if telemetry_route_message:
                 telemetry_followup = _read_only_agent_telemetry_followup(
