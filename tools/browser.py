@@ -4181,20 +4181,41 @@ class BrowserSession:
             result["error"] = "slider_value_not_applied"
         return result
 
-    def _resolve_tree(self, tree=None, exact=True):
+    def _resolve_tree(self, tree=None, exact=True, item=None):
         candidates = (
             self.page.get_by_role("tree", name=tree, exact=exact)
             if tree
             else self.page.get_by_role("tree")
         )
+        if candidates.count() > 50:
+            return None, {"error": "tree_scope_limit_exceeded", "executed": False}
         visible = []
-        for index in range(min(candidates.count(), 50)):
+        for index in range(candidates.count()):
             candidate = candidates.nth(index)
             try:
                 if candidate.is_visible():
                     visible.append(candidate)
             except Exception:
                 continue
+        if item is not None:
+            if not isinstance(item, str) or not item.strip() or len(item) > 160 or exact is not True:
+                return None, {"error": "exact_bounded_tree_anchor_required", "executed": False}
+            anchored = []
+            for candidate in visible:
+                matches = candidate.get_by_role("treeitem", name=item, exact=True)
+                if matches.count() > 500:
+                    return None, {"error": "tree_scope_limit_exceeded", "executed": False}
+                for index in range(matches.count()):
+                    target = matches.nth(index)
+                    # A nested tree belongs to itself, not an outer ancestor.
+                    if target.is_visible() and target.evaluate(
+                        "(e,t)=>e.closest('[role=tree]')===t", candidate.element_handle()
+                    ):
+                        anchored.append(candidate)
+            if len(anchored) == 1:
+                return anchored[0], None
+            return None, {"error": "tree_anchor_not_found" if not anchored else "ambiguous_tree_anchor",
+                          "tree": tree, "item": item, "matches": len(anchored), "executed": False}
         if len(visible) == 1:
             return visible[0], None
         return None, {
@@ -4235,10 +4256,10 @@ class BrowserSession:
             """
         )
 
-    def inspect_tree_semantic(self, tree: str = None, exact: bool = True):
+    def inspect_tree_semantic(self, tree: str = None, exact: bool = True, item: str = None):
         self._ensure_started()
         self._reset_diagnostics()
-        tree_locator, error = self._resolve_tree(tree, exact)
+        tree_locator, error = self._resolve_tree(tree, exact, item)
         if error:
             return error
         items = self._tree_snapshot(tree_locator)
@@ -4246,6 +4267,7 @@ class BrowserSession:
         result.update(
             {
                 "tree_name": tree,
+                "tree_anchor_item": item,
                 "tree_items": items,
                 "visible_tree_item_count": len(items),
                 "tree_inspection_status": "observed",
@@ -4263,7 +4285,7 @@ class BrowserSession:
     ):
         self._ensure_started()
         self._reset_diagnostics()
-        tree_locator, error = self._resolve_tree(tree, exact)
+        tree_locator, error = self._resolve_tree(tree, exact, item if not tree and exact is True else None)
         if error:
             return error
         locator = tree_locator.get_by_role("treeitem", name=item, exact=exact)
@@ -13981,8 +14003,8 @@ def set_slider_semantic(
     return _session.set_slider_semantic(field, value, exact)
 
 
-def inspect_tree_semantic(tree: str = None, exact: bool = True) -> dict:
-    return _session.inspect_tree_semantic(tree, exact)
+def inspect_tree_semantic(tree: str = None, exact: bool = True, item: str = None) -> dict:
+    return _session.inspect_tree_semantic(tree, exact, item)
 
 
 def set_tree_item_expanded(

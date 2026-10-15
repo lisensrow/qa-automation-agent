@@ -88,6 +88,7 @@ SMOKES = [
     "smoke_plugin_version_reference.py",
     "smoke_distribution_catalog.py",
     "smoke_table_cell_controls.py",
+    "smoke_tree_anchor.py",
     "smoke_form_controls.py",
     "smoke_advanced_form_controls.py",
     "smoke_temporal_controls.py",

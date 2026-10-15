@@ -1119,12 +1119,14 @@ TOOLS = [
             "name": "browser_inspect_tree_semantic",
             "description": (
                 "Read-only снимок одной точной ARIA tree: видимые items, "
-                "levels, expanded, selected, checked и disabled states."
+                "levels, expanded, selected, checked и disabled states. "
+                "Если деревьев несколько, item привязывает дерево по уникальному видимому точному пункту; exact=true обязателен."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "tree": {"type": "string"},
+                    "item": {"type": "string"},
                     "exact": {"type": "boolean"}
                 }
             }
@@ -2763,6 +2765,7 @@ def execute_tool(name: str, arguments: dict):
         return inspect_tree_semantic(
             arguments.get("tree"),
             arguments.get("exact", True),
+            arguments.get("item"),
         )
 
     if name == "browser_set_tree_item_expanded":

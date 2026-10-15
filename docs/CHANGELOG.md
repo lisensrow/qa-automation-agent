@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v229–v230 — привязка безымянного дерева конструктора условий
+
+Native local-model draft Job20261015-062525-8355e9e9/tc-ddda0c3d самостоятельно открыл новый editor, заполнил Name и прошёл часть вкладок; фильтр не настроен, сохранения нет. Ошибочный container=CMDB исправлялся после инспекции. Пилот закрыт BLOCKED0resources/operations; его результат не считать созданной коллекцией. Операторский diagnosis Job20261015-062946-88cb3a77/tc-b0589b91 выявил два безымянных дерева и ambiguous_tree.
+
+tools/browser.py: _resolve_tree поддерживает exact item anchor, inspect_tree_semantic принимает item, set_tree_item_expanded связывает ближайшее дерево по уникальному пункту. Нет fallback с ошибочного именованного дерева или выбора первого match. Скрытые пункты не выбираются, дубликаты внутри/между деревьями, вложенные деревья и лимиты проверяются. Registry расширяет только OBSERVE инспекцию; v069, STEP/AUTO, journal/oracles не меняются. Новый Playwright smoke и полный234runner PASS; py_compile PASS.
+
+Live operator-assisted proof: ev-5f616f7a0863 → ev-05b4877b8280 → ev-46b1d2500cd6: Common expanded=false→true, появились CI class/Archived уровня2. Никаких Save/POST создания/обновлений/задач; JobBLOCKED0resources/operations. Опыт записан в UQA_COLLECTIONS_KNOWLEDGE.md и существующую глубокую память как один uqa/test_experience/hypothesis candidate; SHA925cd66dedbaef0307c7e62f19882cd92da94315f8a04712705cf02fef8e6022, replay dedup, обе БД integrity PASS,1172 unrelated chunks неизменны, recall PASS. Первое добавление candidate отклонено SourcePolicy из-за отсутствия applicability в trusted source; исправлен registry helper, валидаторы не ослаблялись. Повтор допустился только после полного логического сравнения обеих БД с сохранёнными снимками. Нет verified promotion/автономной приёмки; новый native прогон после изменения проверяется отдельно.
+
 ## v227–v228 — текущий reported audit и реальный prepared read case
 
 Operator read-only Job20261015-053814-e84462cd/tc-72da19f4: Ubuntu-карточка→Agent→Plugins→native linked GET, без модели и мутаций. ev-7b91f2fc9e16 audit summary, ev-81481dd5ebd8 CI GET, ev-a85b092e8ada plugin GET, ev-4a6421559ca0 scope outcome. Reported45plugins, last_audit_at2026-10-14T21:13:37.263Z, возраст30292.2s при чтении; max_age3600 => plugin_audit_stale/BLOCKED. Не45подтверждённо актуальных загруженных плагинов. Отдельная operator UI-label projection ev-89153332a562: displayed Agent Version1.2.25/online, Ubuntu22.04.4LTS; binary не проверен, planned1.3.27 только контекст, oracle не переписывался. Три выбранных плагина в старом audit reported version1.2.25/load_status=true, не actual readiness.
