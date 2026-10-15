@@ -10,6 +10,16 @@ Raw schema SHA256: 578c2f09bb95b1816b7d773209959f6e0c335abd31d2d6588406cd978a1e8
 
 В схеме есть один повтор operationId: get_update_api_v1_agents_update_head используется для GET и HEAD /api/v1/agents/update. Поэтому operationId не является однозначным ключом вызова: сверять также метод, путь, параметры и текущий scope. Это наблюдение схемы, не developer-confirmed bug. Ни GET, ни наличие операции в Swagger сами по себе не дают разрешения на её выполнение.
 
+## Большой контракт политики: ограниченные страницы v204
+
+inspect_api_contract_page читает одну operation page или одну schema page по цепочке локальных refs, проверенных от operation текущей pinned проекции. Method+path и оба hash обязательны в каждом вызове. Пустая цепочка возвращает operation/root refs; следующий ref должен быть непосредственно доступен с предыдущей страницы. Максимум8 звеньев,20 прямых refs на страницу,32KiB output; вход1MiB/100000nodes/depth24. Запрещены jumps к произвольной существующей схеме, внешние/missing refs, выбранная truncation и циклическая цепочка. Брать другую ветвь можно только начиная с её корректного общего префикса. Непрочитанные ветви не объявляются проверенными: complete_reference_closure=false; enum_values_exported=false явно указывает, что enum_count не раскрывает допустимые значения. Все прежние permission/PASS/execution/current applicability/complete payload validation flags=false. Нет filesystem/HTTP/dispatch/model tool/source adapter; pins не доказывают свежесть или authority.
+
+Snapshot replay той же установленной схемы v197, source Job20261015-012947-b938acd8/ev-90768490c112, после metadata audit: Job20261015-023335-00ac7909/tc-d2535a5e/ev-98c0c9d68243. Старый full closure по-прежнему отклоняет POST /api/v1/policy как reference_closure_budget: лимит20 не поднят. Порционно прочитаны operation, CreatePolicyPayload и пять прямых моделей. Required создания: name,type,action; action предлагает PolicyActionAgentConfig/PolicyActionAgentPlugin/PolicyActionAgentTask. Plugin action требует force_update; task action name/data; LogicalModule-Input operator/items. Наличие остальных optional полей не доказывает допустимость любого payload. PolicyType содержит enum_count, не значения: не придумывать числовой/string discriminator из количества, имени модели или старого UI.
+
+Первый context-only qwen trial tc-07e22ea7/ev-75cf53bee90b дал7/8: ошибочно объявил значения enum доступными. Исходный FAIL сохранён; после добавления явного enum_values_exported=false повторяется тот же oracle, не более мягкий. Это не execution test и не developer-confirmed баг UC. Версии/ОС/ядро/плагин для текущей применимости неизвестны; старые container tags не заменяют свежую проверку.
+
+Итог повторной проверки того же oracle с явным enum_values_exported=false: tc-5c5ca907/ev-ae4e013959d6,8/8 context-only checks PASS, без действий, не автономная API-приёмка. Первый7/8FAIL не переписывается; это исправление полноты машинного описания проекции, не новое знание допустимых enum значений и не разрешение конструировать/исполнять payload.
+
 ## Коллекции политики процедуры плагины: карта контрактов
 
 | Метод и путь backend | Назначение контракта | Body / ответ по схеме |

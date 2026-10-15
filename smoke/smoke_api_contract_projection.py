@@ -98,4 +98,48 @@ finally:
     observer.MAX_OUTPUT_BYTES=old_output;observer.MAX_REFERENCED_SCHEMAS=old_closure
     observer.MAX_NODES=old_nodes;observer.MAX_DEPTH=old_depth
 assert inspect()['contract_observation_status']=='observed'
+
+def page(document=base,chain=(),**kwargs):
+    raw=json.dumps(document).encode()
+    pins={'expected_projection_sha256':hashlib.sha256(raw).hexdigest(),'expected_schema_sha256':schema_pin}
+    pins.update(kwargs)
+    return observer.inspect_api_contract_page(raw,method='GET',path='/items/{uid}',reference_chain=chain,**pins)
+
+p=page()
+assert p['observation_kind']=='bounded_reference_page' and 'operation' in p and 'schema' not in p
+assert p['direct_schema_references']==['#/components/schemas/Item']
+p=page(chain=['#/components/schemas/Item'])
+assert p['schema']['required']==['id'] and p['reference_path_verified']
+assert p['enum_values_exported'] is False
+assert p['complete_reference_closure'] is False and all(p[k] is False for k in observer.FLAGS)
+assert page(chain=['#/components/schemas/Item']*2)['reason']=='cyclic_reference_path'
+assert page(chain=['#/components/schemas/Unknown'])['reason']=='reference_not_exposed_by_previous_page'
+assert page(chain=['#/components/schemas/Item']*9)['reason']=='reference_path_budget'
+assert page(chain=True)['reason']=='reference_path_budget'
+assert page(chain=['https://example.test/private'])['reason']=='invalid_reference_path'
+assert page(expected_projection_sha256='0'*64)['reason']=='projection_hash_mismatch'
+assert page(expected_schema_sha256='0'*64)['reason']=='schema_hash_mismatch'
+
+large=copy.deepcopy(base)
+large['schemas']={}
+for i in range(31):
+    children=[{'$ref':'#/components/schemas/N'+str(n)} for n in (2*i+1,2*i+2) if n<31]
+    large['schemas']['N'+str(i)]={'anyOf':children} if children else {'type':'string'}
+large['counts']['component_schemas']=31
+for op in large['paths']['/items/{uid}'].values():
+    op['responses']['200']['application/json']={'$ref':'#/components/schemas/N0'}
+refused(large,'reference_closure_budget')
+p=page(large,['#/components/schemas/N0','#/components/schemas/N1'])
+assert p['schema_reference'].endswith('/N1') and len(p['direct_schema_references'])==2
+# N2 exists but is a sibling of N1: a caller cannot jump sideways by schema name.
+assert page(large,['#/components/schemas/N0','#/components/schemas/N1','#/components/schemas/N2'])['reason']=='reference_not_exposed_by_previous_page'
+bad=copy.deepcopy(large);bad['schemas']['N1']={'projection_truncated':True}
+assert page(bad,['#/components/schemas/N0','#/components/schemas/N1'])['reason']=='selected_schema_truncated'
+# An unvisited sibling remains unread, not silently declared validated/complete.
+assert page(bad,['#/components/schemas/N0','#/components/schemas/N2'])['complete_reference_closure'] is False
+try:
+    observer.MAX_OUTPUT_BYTES=64
+    assert page()['reason']=='contract_output_budget'
+finally:
+    observer.MAX_OUTPUT_BYTES=old_output
 print('API contract projection: PASS (pins, closed grammar, cycles, budgets, no values/dispatch/permission/PASS)')

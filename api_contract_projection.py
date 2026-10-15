@@ -14,6 +14,7 @@ MAX_OUTPUT_BYTES = 32768
 MAX_REFERENCED_SCHEMAS = 20
 METHODS = {'get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace'}
 FLAGS = {'permission_granted': False, 'evidence_for_pass': False,
+         'enum_values_exported': False,
          'operation_execution_verified': False, 'business_semantics_verified': False,
          'current_runtime_applicability_verified': False,
          'complete_payload_validation': False, 'authentication_contract_available': False}
@@ -157,6 +158,40 @@ def _operation(value):
 
 
 def inspect_api_contract(raw, *, expected_projection_sha256, expected_schema_sha256, method, path):
+    return _inspect_projection(raw, expected_projection_sha256=expected_projection_sha256,
+        expected_schema_sha256=expected_schema_sha256, method=method, path=path)
+
+
+def inspect_api_contract_page(raw, *, expected_projection_sha256, expected_schema_sha256,
+                              method, path, reference_chain=()):
+    """Read one operation/schema page along a bounded, verified local reference path.
+
+    Empty chain selects operation roots. Each next reference must be exposed by
+    the preceding page, not merely exist somewhere in the snapshot. No traversal
+    of siblings, closure expansion, HTTP or claim of complete schema validation.
+    """
+    return _inspect_projection(raw, expected_projection_sha256=expected_projection_sha256,
+        expected_schema_sha256=expected_schema_sha256, method=method, path=path,
+        page_mode=True, reference_chain=reference_chain)
+
+
+def _direct_page_refs(nodes, schemas):
+    refs = set()
+    for root in nodes:
+        for node in _schema_nodes(root):
+            _need(node.get('projection_truncated') is not True, 'selected_schema_truncated')
+            if '$ref' not in node:
+                continue
+            match = REF.fullmatch(node['$ref'])
+            _need(match and match[1] == 'schemas', 'unsupported_selected_reference')
+            _need(match[2] in schemas, 'missing_schema_reference')
+            refs.add(node['$ref'])
+            _need(len(refs) <= MAX_REFERENCED_SCHEMAS, 'page_reference_budget')
+    return sorted(refs)
+
+
+def _inspect_projection(raw, *, expected_projection_sha256, expected_schema_sha256, method, path,
+                        page_mode=False, reference_chain=()):
     """Inspect a method+path template and flat reference closure; never dispatch."""
     refused = {'contract_observation_status': 'unavailable', **FLAGS}
     try:
@@ -216,6 +251,28 @@ def inspect_api_contract(raw, *, expected_projection_sha256, expected_schema_sha
         queue.extend(selected.get('request_body', {}).get('content', {}).values())
         for content in selected['responses'].values():
             queue.extend(content.values())
+        if page_mode:
+            _need(isinstance(reference_chain, (tuple, list)) and len(reference_chain) <= 8,
+                  'reference_path_budget')
+            _need(all(isinstance(r, str) and REF.fullmatch(r) for r in reference_chain),
+                  'invalid_reference_path')
+            _need(len(reference_chain) == len(set(reference_chain)), 'cyclic_reference_path')
+            refs = _direct_page_refs(queue, document['schemas'])
+            page = {'operation': selected}
+            for reference in reference_chain:
+                _need(reference in refs, 'reference_not_exposed_by_previous_page')
+                schema = document['schemas'][REF.fullmatch(reference)[2]]
+                refs = _direct_page_refs([schema], document['schemas'])
+                page = {'schema_reference': reference, 'schema': schema}
+            result = {'contract_observation_status': 'observed', 'observation_kind': 'bounded_reference_page',
+                'method': method.upper(), 'path_template': path,
+                'schema_sha256': expected_schema_sha256, 'projection_sha256': expected_projection_sha256,
+                'reference_chain': list(reference_chain), 'direct_schema_references': refs,
+                'reference_path_verified': True, 'complete_reference_closure': False,
+                'duplicate_operation_id_in_snapshot': identifiers.count(selected['operation_id']) > 1,
+                'integrity_matches_supplied_pins': True, **page, **FLAGS}
+            _need(len(json.dumps(result, ensure_ascii=False).encode()) <= MAX_OUTPUT_BYTES, 'contract_output_budget')
+            return result
         while queue:
             item = queue.pop()
             for node in _schema_nodes(item):

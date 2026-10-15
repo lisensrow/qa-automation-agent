@@ -2,6 +2,15 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v203–v204 — чтение политик и порционные API-reference pages
+
+Финал установленной версии:228/228PASS /tmp/v204-final-full-smoke.log, профиль/py_compile/18 Markdown/link/private-marker checks PASS. Согласованный snapshot document-index.before-v204-policy-sources.db, integrity/1152 unrelated chunks unchanged и четыре повторных запроса новых/прежних рецептов PASS. Нет canonical promotion, новых UC-ресурсов/операций или исполнения API.
+
+- Operator native readback списка политик: Job20261015-023335-00ac7909/tc-40226b7f, GET ev-72d1944b7c77 полный offset0/limit50/count0/total0; список пуст. Переход использовал ранее наблюдённый native route, не самостоятельную модельную навигацию. Первый harness case остановился до plus из-за observe/interact ограничения, не backend/model error. Ничего не создано/назначено/запущено, журнал пуст; прежние uncertain операции неизменны.
+- api_contract_projection.inspect_api_contract_page: одна operation/schema page, проверенный путь refs от exact method/path, до8 звеньев/20 прямых refs/32KiB. Прежний full-closure лимит20 не поднят. Нельзя прыгать к соседней/посторонней схеме, разворачивать циклы или скрывать truncation/missing ref. Все execution/PASS/permissions/current/complete-validation false, complete_reference_closure=false; enum_values_exported=false теперь явная общая metadata. Нет HTTP/tool/source adapter.
+- Profile Windows/server PASS; установленный snapshot replay7 pages ev-98c0c9d68243 раскрыл request модели политики и действий. Старый full-closure по-прежнему unavailable, не был ослаблен. Сохранён первый qwen7/8FAIL (enum availability); после явной metadata тот же oracle8/8PASS tc-5c5ca907/ev-ae4e013959d6, context-only/operator-prepared, не API execution.
+- Финальный полный runner /tmp/v204-final-full-smoke.log ещё проверяется; промежуточный /tmp/v204-full-smoke.log прерван перед enum metadata audit, НЕPASS. Память/архитектура/техническая документация отделяют реализованное чтение от незакрытых автономного создания, scope, расписания и эффекта применения.
+
 ## v201–v202 — источник отсутствующей колонки и безопасная прокрутка таблицы
 
 Финал установленной версии с action receipt: py_compile/профиль PASS, полный228/228PASS (/tmp/v202-final-full-smoke.log), технический пакет18 Markdown/link/private-marker checks PASS. Проект typed table-view evidence описан отдельно как ещё не реализованный verifier, не новая принятая capability. Точечный индекс с consistent snapshot/integrity/1153 unrelated chunks unchanged и повторным recall нового опыта/прежнего маршрута PASS; canonical promotion отсутствует.

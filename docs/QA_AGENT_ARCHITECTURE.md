@@ -11,6 +11,14 @@
 
 ## Диагностическое сравнение режима рассуждения v200
 
+### v203–v204: политики и порционное чтение большого контракта
+
+Финал:228/228PASS /tmp/v204-final-full-smoke.log, профиль/py_compile/18MDPASS. Индекс двух reviewed источников обновлён с consistent snapshot/integrity и1152 другими фрагментами без изменений; четыре новых/прежних recall queries PASS. Новые данные не повышаются до verified, source gates и старые Jobs сохраняются.
+
+Новый pure inspect_api_contract_page возвращает одну operation/schema page по проверяемому пути локальных refs от exact method/path и двух pins. До8 refs цепочки,20 прямых refs страницы/32KiB; старый closure-limit20 неизменен. Циклы пути, прыжки к нераскрытой соседней модели, внешние/missing refs/selected truncation отвергаются. Непосещённые ветви не считаются прочитанными, complete_reference_closure=false. enum_values_exported=false явно обозначает отсутствие значений перечислений; прежние permission/PASS/execution/current/complete-validation flags=false. Нового model tool/HTTP executor/source adapter нет, STEP/AUTO/v069 и журнал неизменны.
+
+На сохранённой установленной схеме7 bounded pages политики доступны; Job20261015-023335-00ac7909/tc-d2535a5e/ev-98c0c9d68243, старый full-closure всё ещё reference_closure_budget. Model interpretation сначала7/8FAIL (enum availability), после явной metadata тот же oracle8/8PASS tc-5c5ca907/ev-ae4e013959d6; не автономное исполнение. Независимый свежий native GET списка политик ev-72d1944b7c77 подтвердил пустой полный список; оператор открыл наблюдённый маршрут, без Create/assign/run. Все case/Job остаются BLOCKED для бизнес-приёмки, журнал пуст. Это не проверка фактического действия политики на КЕ.
+
 ### Уточнение v201–v202: источник ОС и горизонтальная область
 
 Модельная проверка нового recall: qwen3:14b, tc-51ef7915/ev-04b8012cb823 в viewport Job,7/7 source-interpretation checks PASS, включая различение API/UI и отсутствие confirmed bug/autonomous acceptance/execute_now. Контекст подготовлен операторским harness через production query selection и текущий индекс, browser tools=[]; это не автономное выполнение. Полный Job/case BLOCKED сохранён.
