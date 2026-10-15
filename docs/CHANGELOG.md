@@ -2,6 +2,12 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v200 — controlled think-on native comparison, partial progress only
+
+- Один process-local UQA_THINK=1 trial на том же request/expected/planned_checks v199;6 reasoning calls, никаких новых подсказок, операторской навигации, постоянной конфигурации или UC-мутаций.
+- Модель восстановилась после неправильного role=tab, по inspector выбрала link и открыла правильный UUID-view; native table показывает1 строку. Job20261015-020129-d93efcad/tc-0cd703f4, ev-4e76c0c535ac/ev-5cb54ae19a75; audit ev-4535fd26fceb сохранил BLOCKED/0resources/ops.
+- os_name-колонка в DOM не наблюдалась, свежий API OS-источник не читался. Generic ui_assertion visible_row_count unsupported/text missing — не обходить. Не full autonomous PASS, не confirmed product bug. Следом source/layout/DOM readback и отдельный typed proof design. Код/полный227/227 — прежний v199, не новый smoke-run200.
+
 ## v199 — intent-aware память просмотра существующей коллекции
 
 - Read/create intent маршрутизирует product queries к разным reviewed рецептам; positive/negative и RAM/CPU tests PASS, бюджет3 неизменен, обычное чтение1query. Native recipe сохраняет различие выбранной коллекции и общей CMDB, не задаёт permission.

@@ -9,6 +9,14 @@
 - Технически наблюдает меню, поля и категории редактора, но операторская карта интерфейса не равна автономной способности выполнить весь workflow.
 - Полностью автономное создание коллекций, применение политик и сборка/исполнение процедур пока не приняты. Известные ограничения и результаты реальных прогонов приведены ниже; технические smoke-тесты не заменяют эту приёмку.
 
+## Диагностическое сравнение режима рассуждения v200
+
+Один native trial с process-local UQA_THINK=1, без новых подсказок/операторской навигации: Job20261015-020129-d93efcad/tc-0cd703f4. Запрос, expected и planned_checks идентичны v199; default/permanent config не менялся. После неверного role=tab модель прочитала inspector и нажала точное имя как link (ev-4e76c0c535ac), достигнув правильного UUID-view. Native table ev-5cb54ae19a75 показывает1 строку, snapshot_complete=true в рамках ограниченного DOM observer; это не доказательство полноты виртуализированных столбцов.
+
+В снимке нет колонки os_name/OS Name: headers — статус, класс КЕ, имя, локация, тег, подразделение, дата создания и пустой selection header. Свежий API-источник os_name в этом trial не читался. Итог BLOCKED: visible_row_count не поддержан как поле generic ui_assertion, а текст ОС отсутствует в наблюдении. Нельзя менять expected или считать отсутствие ОС ошибкой валидатора/confirmed bug продукта. Offline audit ev-4535fd26fceb зафиксировал частичный навигационный прогресс и тот же oracle; resources0/operations0, ни одного нового WRITE. Это не full autonomous acceptance и не повод назначить think-on универсальным решением.
+
+Следующий шаг — независимая operator-readonly сверка сохранённого layout, фактического native table response и DOM/overflow, чтобы понять отсутствие OS-колонки. Затем отдельный дизайн typed table-count/cell proof с контекстом выбранного view; не включать неизвестные поля в generic assertions и не ослаблять semantic mismatch/fallback gates. Production-код и227/227 после v199 неизменны.
+
 ## Чтение существующей коллекции и граница локальной модели v199
 
 Product adapter различает положительное намерение просмотра и создания: read/open/inspect/открой/прочитай без create/new/создай/новая выбирает source-bound рецепт существующего view, не новую форму. RAM/CPU facets и прежний лимит3 queries сохранены; обычное чтение использует1 query. Отрицательные ограничения не расширяют тему/authority. Рецепт с native click/config/table доказательствами индексирован,1153 unrelated chunks/integrity unchanged PASS; profile/py_compile/полный227/227PASS (/tmp/v199-full-smoke.log).
