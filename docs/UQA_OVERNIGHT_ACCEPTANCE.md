@@ -4,6 +4,10 @@
 
 ## Последовательность
 
+FINAL209/210: server pycompile/profile/full229/229PASS /tmp/v209-full-smoke.log,18MDPASS. New native explanation Job20261015-033103-19f0ca67/tc-7d1c5de4/ev-4c13f80d21b5 CLOSED/BLOCKED,0resources/operations/other tools;2 штатных grounding knowledge searches найдены, но модель НЕТочно объяснила namespace и generic Core completion принудил test JSON с выдуманнымobs. НЕnativePASS. Следующий211: уменьшить нерелевантный навигационный контекст для чистого layout-вопроса (не мешать явному open/read/create), один тот же запрос с изменённым retrieval; если снова неточно — не повторять. Advisory completion contract — отдельная задача, test oracle не ослаблять. Старые2ops без изменений; cutoff/report/PAUSED сохранён.
+
+v209: task-aware column recall реализован, источники и индекс не менялись. Обычный вопрос об отсутствующей ОС выбрал current reviewed namespace recipe; локальная модель8/8 interpretation checks PASS, Job20261015-031433-b6323e04/tc-2ca6175a/ev-a7bf96c072af, operator-prepared production-query context only. Это не UI repair и не autonomous acceptance. Server full runner /tmp/v209-full-smoke.log ещё проверить перед commit. Старые uncertain/awaiting_verification операции сохранены. Следом полезен один native Core справочный запрос без операторского извлечения chunks; не повторять одинаковые API/GUI ошибки и не ослаблять guard. Cutoff09:00MSK/report/PAUSED неизменен.
+
 1. Память: source-validated bounded context в knowledge_search. v176 установлен; fixture и py_compile PASS; полный runner 218/218 PASS. Production recall вернул два проверенных по hash правила состава коллекций. Candidate не становится verified или evidence PASS.
 2. Live model-context probe: PASS, 23.12 seconds, composition/recompute/no_false_pass/recheck все true. Receipt /tmp/v176-model-context-receipt.json. Это не сквозная UI-приёмка и не обучение весов.
 3. Официальное руководство: коллекции, политики, процедуры. Сохранять revision/hash, разделять declared_spec, runtime actual и операторский опыт. Не объявлять confirmed bug без developer confirmation.

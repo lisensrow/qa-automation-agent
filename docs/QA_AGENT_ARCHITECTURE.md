@@ -11,6 +11,12 @@
 
 ## Диагностическое сравнение режима рассуждения v200
 
+### v209: поиск каталога колонок по обычной задаче
+
+Финальные серверные py_compile/profile/full runner229/229 PASS (/tmp/v209-full-smoke.log),18Markdown checks PASS. v210 native Core explanation: Job20261015-033103-19f0ca67/tc-7d1c5de4/ev-4c13f80d21b5, штатные knowledge_search ev-ad06aa28b411 и ev-603018fb7e66,0 other tools/resources/operations, CLOSED/BLOCKED. Оператор не подставлял chunks, но Core самостоятельно сделал task grounding. Модель неточно пересказала диагноз (в сохранённом layout bare os_name есть, хотя field map его не разрешает), затем generic structured-result repair принудил справочный ответ к тестовому JSON с выдуманной observation-ссылкой. Реального PASS это не дало. Свободное справочное применение памяти ещё не принято; это ограничение retrieval/application и advisory-vs-test завершения, не новый баг UC. Дальше — отделить предметное объяснение от лишнего навигационного контекста и проектировать безопасный advisory contract; не менять locked oracle ради текста модели.
+
+Продуктовый адаптер различает явные вопросы о колонках/layout/table fields и условия отбора. В прежнем бюджете трёх запросов он извлекает проверенный namespace-рецепт v208; создание сохраняет отдельный маршрут, отрицательные ограничения не активируют тему. Сам ключ колонки в Core не зашит. Производственные запросы для обычного вопроса об отсутствующей ОС нашли рецепт, а реальная локальная модель прошла8/8 проверок интерпретации: Job20261015-031433-b6323e04/tc-2ca6175a/ev-a7bf96c072af. Это operator-prepared production-query context, не самостоятельный поиск/исправление через UI. UC-объекты, память/история и policy не менялись; переиндексация не потребовалась. Полный серверный runner проверяется отдельно, локальный Windows fixture упёрся в ограничения временных файлов/SQLite cleanup и не засчитывается как полный PASS.
+
 ### v207–v208: отрицательное сравнение режима и namespace-диагноз колонок
 
 Финал source-only этапа:4 source hashes сверены с первичным join, consistent index snapshot/integrity/1148 unrelated chunks unchanged и4 новых/прежних recall queries PASS;18Markdown/link/private checks PASS. Реальный qwen по повторно извлечённому namespace-рецепту дал8/8 checks PASS (tc-96030f59/ev-e741433b0f46 в diagnosis Job), context-only/operator-prepared, не UI repair. Production code unchanged; прежние229/229 не новый runner208.

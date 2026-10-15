@@ -24,6 +24,8 @@ CONCEPTS = {
         'read_query': 'просмотр существующей коллекции привязка таблицы',
         'read_intent': r'\b(?:откр\w*|прочит\w*|прочест\w*|просмотр\w*|open|read|inspect|view)\b',
         'create_intent': r'\b(?:созда\w*|нов\w*|create|creation|new)\b',
+        'layout_intent': r'\b(?:колон\w*|столбц\w*|column\w*|layout|table\s+(?:fields|headers)|поля\s+таблиц\w*)\b',
+        'layout_query': 'колонки коллекции каталог полей',
         'task_facets': (
             (r'\bram\b|оперативн\w*\s+памят', 'RAM агрегаты единицы отсутствие данных'),
             (r'\bcpu\b|процессор\w*|\bядр\w*', 'CPU не спутать CI ядра текущую нагрузку'),
@@ -69,17 +71,22 @@ def reviewed_search_queries(task):
         if any(term in positive for term in spec['terms']):
             facets = [query for pattern, query in spec.get('task_facets', ())
                       if re.search(pattern, positive)]
+            creating = bool(re.search(spec.get('create_intent', r'(?!)'), positive))
+            layout = bool(spec.get('layout_query') and
+                          re.search(spec['layout_intent'], positive))
             read_intent = (bool(spec.get('read_query')) and bool(re.search(spec['read_intent'], positive))
-                           and not re.search(spec['create_intent'], positive))
-            if read_intent:
+                           and not creating)
+            if read_intent or (layout and not creating):
                 queries.append(spec['read_query'])
             elif spec.get('search_query'):
                 queries.append(spec.get('facet_base_query',spec['search_query'])
-                               if facets else spec['search_query'])
+                               if facets and not layout else spec['search_query'])
             # Keep the same three-query budget. Explicit subject matter takes
             # priority over a generic entry-route recipe; never supply answers.
+            if layout:
+                queries.append(spec['layout_query'])
             queries.extend(facets)
-            if not read_intent and spec.get('experience_query'):
+            if not (read_intent or layout) and spec.get('experience_query'):
                 queries.append(spec['experience_query'])
     return queries[:3]
 

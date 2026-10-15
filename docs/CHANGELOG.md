@@ -2,6 +2,12 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v209 — предметный поиск знаний о колонках
+
+Финал: серверные py_compile/profile/full229/229 PASS /tmp/v209-full-smoke.log,18MDPASS. Native diagnostic v210 FAILED application accuracy: Job20261015-033103-19f0ca67/tc-7d1c5de4/ev-4c13f80d21b5, штатные2grounding searches, без операторских chunks и без иных tools/resources/operations. Модель смешала layout key и field map, generic completion потребовал test JSON и породил ложную observation-ссылку; всё BLOCKED, не business PASS. Не объявлять context8/8 полноценной native acceptance. Зафиксирована необходимость более точной предметной выборки и отдельного advisory completion contract без ослабления проверки тестов.
+
+В product_knowledge_context добавлен layout facet с приоритетом перед RAM/CPU, без увеличения бюджета трёх запросов. Русские/английские запросы, создание/чтение, отрицания и отличие filter key от layout покрыты дополнительными проверками. Ключи продукта остаются в reviewed источнике, не в Core. Реальная qwen по production-query retrieval прошла8/8 (tc-2ca6175a/ev-a7bf96c072af в Job20261015-031433-b6323e04); это context-only, не автономная UI-приёмка. Источники/индекс не переписывались, UC writes отсутствуют. STEP/AUTO, v069 и журнал сохранены.
+
 ## v207–v208 — namespace колонок вместо гипотезы о прокрутке
 
 Финал:4 hashes primary evidence сверены, backup/integrity/1148 unrelated chunks unchanged/4recall queries PASS,18MDPASS. Namespace memory interpretation реальной моделью8/8PASS tc-96030f59/ev-e741433b0f46 (operator-prepared retrieved context only). Код/STEP/AUTO/policy/журнал не менялись, прежние229/229 остаются последним code run, не новым208 smoke.

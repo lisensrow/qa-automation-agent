@@ -29,6 +29,17 @@ assert reviewed_search_queries('Прочитай коллекцию RAM и CPU')
 assert reviewed_search_queries('Не открывай существующую коллекцию') == []
 assert reviewed_search_queries('Открой новую коллекцию') == ['коллекции создание','наблюдённый маршрут поля коллекции']
 assert reviewed_search_queries('Создай коллекцию. Существующие коллекции не изменяй.') == ['коллекции создание','наблюдённый маршрут поля коллекции']
+layout_query='колонки коллекции каталог полей'
+assert reviewed_search_queries('Почему в коллекции Windows отсутствует колонка ОС?') == [read_query,layout_query]
+assert reviewed_search_queries('Inspect collection table fields and RAM') == [read_query,layout_query,ram_query]
+assert reviewed_search_queries('Коллекция: столбцы RAM и CPU') == [read_query,layout_query,ram_query]
+assert reviewed_search_queries('Create a collection with CPU columns') == ['коллекции создание',layout_query,cpu_query]
+assert reviewed_search_queries('Открой новую коллекцию и поля таблицы') == ['коллекции создание',layout_query]
+assert reviewed_search_queries('Создай коллекцию по os_name') == ['коллекции создание','наблюдённый маршрут поля коллекции']
+assert reviewed_search_queries('Открой коллекцию. Не изменяй колонки RAM и CPU.') == [read_query]
+assert reviewed_search_queries('Не меняй колонки коллекции') == []
+assert reviewed_search_queries('Inspect CPU table columns without collections') == []
+assert reviewed_search_queries('Read collection layout. Do not create policies or procedures.') == [read_query,layout_query]
 
 with TemporaryDirectory() as temp:
     root = Path(temp)
