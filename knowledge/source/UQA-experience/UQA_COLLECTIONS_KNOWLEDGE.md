@@ -1,5 +1,13 @@
 # U-Connect: создание коллекций, RAM CPU и опыт проверки
 
+## Сохранённый Windows-фильтр и переход редактирования v194
+
+15октября2026, live_operator_assisted, Job20261015-010502-d0b6d605/tc-6633cdea. После cog с точным owner treeitem выбрать Edit collection, role=menuitem. WRITE-подтверждение прежней v069 относится только к открытию редактора тестового объекта, не Save/Update/пересчёту. Маршрут /cmdb/collections/<owned-id>/settings/composition, затем Conditions. Ничего не заполнялось/сохранялось/пересчитывалось; resources0/operations0. Не автономная приёмка.
+
+GET сохранённого фильтра загружается при открытии editor; последующий click Conditions может уже не содержать его. Читать фактически наблюдённый request_id в той же сессии, не угадывать endpoint. Native GET ev-b7fe086a2751 с linked observation/полным200-телом: filter.operator=must, leaves is_archived/equal/"false", ci_class/equal/"endpoint", os_name/wildcard/"*Windows*". Это конкретная сохранённая конфигурация, не доказательство всей семантики конструктора.
+
+В каноническую product DB добавлены три observed_fact candidate collections.saved_filter: saved_root_operator, saved_leaf_fields, saved_os_wildcard. Scope unknownверсии/ОС, конкретный filter_id в conditions, feature_profile=owned-windows-collection-saved-filter. Consistent snapshot/source validation/legacy unchanged/integrity/history/exact replay dedup PASS. Нет verified promotion, business PASS или автоматического model bootstrap этих predicate. Частный пример не является универсальным определением Windows/Linux.
+
 ## Повторная проверка составов и меню редактирования v193
 
 15 октября 2026, execution_mode=live_operator_assisted_readback. Job20261015-004404-02cac4d4; актуальные версии сервера/frontend/ядра/плагинов unknown, прежние версии не переносились. Native GET списка подтвердил десять campaign-owned коллекций, все manual/clear_on_update=true. Case tc-a91b3f23 прочитал полный ответ таблицы каждой коллекции; audit ev-3496342a49b5 проверил уникальные ID и count/total. All=4, Windows=1, Ubuntu=1, Linux=3, Astra=1, RED OS=1; четыре аппаратные коллекции содержат те же четыре ID. ОС-подмножества непересекаются и покрывают All; Linux равен Ubuntu/Astra/RED именно в этой лабе, не всем возможным Linux. Независимый свежий полный GET Endpoint tc-c325f40a/ev-fc5460c6de0f подтвердил точное совпадение четырёх ID с All.

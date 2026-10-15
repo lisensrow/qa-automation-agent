@@ -4,6 +4,10 @@
 
 ## v193 — read-only повторная проверка десяти коллекций
 
+Live context-only reasoning v194:8/9FAIL (tc-9383482c/ev-0e185b611fda), RAM unknown. Сохранённые retrieved chunks не содержали раздела RAM/единиц; AND/OR и safety8 критериев корректны. Не выдавать за full model PASS; требуется targeted retrieval, критерии неизменны.
+
+Дополнение v194: policy-confirmed Edit collection→Conditions без Save/Update. Windows saved-filter подтверждён native GET ev-b7fe086a2751. Три scoped candidate в существующей product DB; consistent snapshot/source/integrity/legacy/dedup/history PASS. UC-записей, ресурсов и journal operations не меняли; production-код прежний, версии unknown, не автономная приёмка.
+
 - Native readback десяти коллекций и offline audit точных ID/полноты; All4 подтверждён независимым свежим GET Endpoint. ОС-подмножества согласованы. Job20261015-004404-02cac4d4, audit ev-3496342a49b5, baseline ev-fc5460c6de0f.
 - Все16 аппаратных ячеек None-подобные: не считать числовым PASS. Фильтры/пороги/inventory не перепроверены. Баг разработчиком не подтверждён.
 - Принадлежащая строке коллекции cog открывает Edit collection/Update collection; неоднозначность разрешена фактическим owner container, не индексом. Оба пункта не нажимались, изменения/пересчёта нет.

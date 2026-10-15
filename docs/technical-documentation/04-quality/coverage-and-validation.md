@@ -1,5 +1,7 @@
 # Проверки, покрытие и ограничения
 
+Актуальный опыт коллекций: операторский readback десяти сохранённых коллекций проверил точные составы; All совпал с независимым списком четырёх Endpoint.16 RAM/CPU ячеек нечисловые, поэтому отображение метрик не принято. Редактор одного тестового Windows-фильтра открыт через прежнюю policy без сохранения/пересчёта; native GET подтверждает конкретную конфигурацию. Три source-bound candidate сохранены с узким scope, но это не автономное создание, не general verified promotion и не автоматическое знание всего конструктора. Production-код после226/226 не менялся.
+
 Технический runner: run_smoke_v070.py. Tests в smoke/ в основном используют isolated fixtures/temporary state; число PASS не равно количеству автоматизированных продуктовых сценариев. Py_compile проверяет синтаксис, не бизнес-правильность.
 
 Первый профиль v175 проверяет bounded record schema, отсутствие самостоятельной promotion, trusted source hash/revision/applicability, runtime evidence/case/identity, deterministic dedup, conflict handling, transactional rollback и сохранение legacy таблиц. 10000 повторных событий одного утверждения не создают 10000 variants и не увеличивают independent source count. История этих событий сохраняется отдельно.

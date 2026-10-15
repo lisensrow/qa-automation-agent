@@ -11,6 +11,8 @@
 
 ## Повторная проверка коллекций v193
 
+v194: через существующую policy открыт только Edit collection для owned Windows, затем Conditions; Save/Update не выполнялись. Native GET/linked observation подтверждает must + archived false + endpoint + Windows wildcard. Три scoped candidate занесены в canonical DB с consistent backup/legacy/integrity/dedup/history PASS. Bootstrap новых predicate не реализован, reviewed рецепт индексируется отдельно. Job20261015-010502-d0b6d605/tc-6633cdea/ev-b7fe086a2751, версии unknown, operator-assisted, не autonomous PASS.
+
 Операторское чтение десяти campaign-owned коллекций проверило точные составы ОС и совпадение All с независимым полным списком четырёх Endpoint. Все16 аппаратных ячеек — None-подобный текст; отображение RAM/CPU не принято, условия/пороги не перепроверены. Native owner binding разрешил неоднозначность cog и показал разные пункты Edit collection/Update collection; ни один не запускался. Рецепт и ссылки на первичные доказательства: UQA_COLLECTIONS_KNOWLEDGE.md, Job20261015-004404-02cac4d4. Production-код, STEP/AUTO, v069 и UC не менялись. Прежние226/226 относятся к v192, не новому прогону. Полная автономная приёмка открыта.
 
 ## Исторический runtime-контекст глубокой памяти v192
