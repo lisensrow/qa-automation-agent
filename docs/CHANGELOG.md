@@ -2,6 +2,22 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v219–v221 — логический контур, обязательный порядок и candidate memory
+
+v219 отделяет model outline от trusted caller binding. Safe diagnostic сохраняет только известные stage IDs, bool/type, количество неизвестных полей и закрытый reason code. Native Ubuntu Job20261015-050114-0425550c/tc-1887d141/ev-c9e9c3da489f rejected/proposal_unsafe_or_unsupported_order: проверки раньше подготовки черновика. Native Windows218 Job20261015-045753-78c259aa/tc-0a1b16b9/ev-0d7a1b4cfcd9 rejected/ValueError, точная причина не сохранена и не выдумывается. Ни один план не исполнялся.
+
+v220: явный deterministic_supported_profile builder создаёт отдельный proposal-only skeleton из trusted binding. Это не починка или принятие проваленного model plan. Operator evidence ev-e4e7651d7157 в том же Ubuntu Job/case, pin441287bfe906d0556884577f97a82dbfd386660577549eca32c7e3e40f97c4b8; исходное rejected evidence неизменно. Все authority/runtime/precondition/ownership/lifecycle/schema/PASS/replay flags false. Нового CLI/executor нет; operation_workflow, STEP/AUTO/v069/journal не менялись.
+
+v221: reviewed UQA_PLANNING_KNOWLEDGE.md, SHA25623395f2bad50373a87c9bcff23c111792600863df4e1b693a3b502d3ba0dc5f7. Existing gate добавил один uqa/test_experience/hypothesis candidate planning.required_order / host_owned_mandatory_order_preferred; replay дедуплицирован. Consistent snapshots обеих DB, integrity/legacy counts и1181 прочий chunk сохранены; новый recall и прежние policy/columns queries PASS. Canonical verified promotion/search publication нет; reviewed note индексируется отдельно. Native advisory Job20261015-050851-86f75078 сам нашёл S1/chunk2 нового source: основной вывод о code-owned порядке и proposal≠реальные предусловия применён; limitation сформулирована неточно, общей semantic accuracy/admin acceptance нет.0cases/resources/operations/UC actions; unrelated static facts не прикрепились.
+
+Финал кода: py_compile/full233/233PASS /tmp/v220-release-full-smoke.log,3SHA unchanged /tmp/v220-release-code.sha256.218/219 runners233PASS на своих промежуточных frozen revisions. Backup218–221, Jobs/DB/private artifacts вне Git; исходные ошибки215/217/218/219 сохранены.
+
+## v218 — типизированное предложение выключенного scoped create
+
+preparation_proposal.py: закрытый generic proposal, без tools/endpoints/product payload. Trusted caller задаёт stand/campaign/resource kind/key/new test name/scope/explicit target IDs; модель не может менять binding. Явное desired_enabled=false и порядок prepare_disabled_draft → verify_disabled_draft → verify_exact_scope → commit_create → verify_saved_disabled_scope обязательны. Ни заявленные проверки, ни структурная валидность не являются реально пройденными проверками. Snapshot/hash повторно проверяют неизменность; no execution/runtime/ownership/preconditions/UI lifecycle/payload-schema/PASS/replay flags всегда false.
+
+Новый isolated smoke проверяет119 неверных permutations, широкие/пустые/повторные targets, чужую привязку, bool/int, добавление tool/payload/run/activate, неполные этапы и смену pin. Схема ответа модели задаёт grammar, но не порядок: независимый validator остаётся обязательным. Production planner/dispatcher/STEP/AUTO/v069/journal не меняются; существующий operation_workflow остаётся fixed create/rename/cleanup. Пока нет UI lifecycle proof, новый исполнитель и auto-promotion не подключаются.
+
 ## v217 — отдельный typed brief в справочном режиме
 
 Финал release: py_compile и232/232PASS /tmp/v217-release-full-smoke.log;6code SHA256 до/после совпали /tmp/v217-release-code.sha256.19technicalMD/link/private-marker checks PASS. Более ранние216full и217final-full — промежуточные ревизии, не доказательства финального legacy parser. Резервные копии216/217 сохранены; STEP/AUTO/v069/oracle/journal не изменены, старые2незавершённые операции на месте. SourceKB/index и история модели не переписаны.

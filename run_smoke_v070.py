@@ -17,6 +17,7 @@ PRODUCTION_FILES = [
     ROOT / "request_event_census.py",
     ROOT / "advisory_contract.py",
     ROOT / "static_source_facts.py",
+    ROOT / "preparation_proposal.py",
     ROOT / "ui_popup_context.py",
     ROOT / "procedure_graph.py",
     ROOT / "api_contract_projection.py",
@@ -278,6 +279,7 @@ SMOKES = [
     "smoke_form_audit_observation.py",
     "smoke_incomplete_search_phase.py",
     "smoke_static_source_facts.py",
+    "smoke_preparation_proposal.py",
 ]
 
 

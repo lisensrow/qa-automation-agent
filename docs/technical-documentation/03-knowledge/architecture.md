@@ -1,5 +1,7 @@
 # Архитектура общей памяти
 
+v221 использует прежний candidate gate без расширения доверия: reviewed UQA_PLANNING_KNOWLEDGE.md поддерживает один uqa/test_experience/hypothesis claim об инженерной рекомендации host-owned обязательного порядка. Это не runtime факт UConnect и не developer confirmation. Источник содержит точные Job/case/evidence, expected/actual, разные execution modes и ограничения; ошибка модели не становится успехом отдельного deterministic builder. Обе DB получили consistent backups, replay event дедуплицирован, legacy counts/1181 indexed chunks сохранены. Canonical verified promotion/search publication нет; reviewed source note индексируется отдельно. Native /advice получил новый source обычным retrieval и применил основной вывод, с непроверенной точностью формулировок. Product source gates не ослаблены.
+
 ## Три слоя
 
 v215: policy facet для default/activation/launcher/submit и first-positive-mention ordering сохраняют3query budget. Политика для коллекции получает policy context первой; это эвристика retrieval, не semantic planner. Native /advice нашёл точный source213, но модель заявила «не включена» вместо static is_active=true. Citation/bytes validation не равны factual verification. Ответ сохранён с отдельным operator accuracy review=rejected, без переписывания и promotion; правильный KB источник не меняется. Следующий этап — typed source facts/детерминированный critical-fact brief и pre-commit assertions, не дополнительные подсказки.

@@ -2,6 +2,10 @@
 
 ## Кратко: возможности и границы на 15 октября 2026
 
+- v218–v221: pure proposal/outline validator отклоняет неверный порядок и подмену caller scope; отдельный deterministic skeleton задаёт зависимости узкого supported profile. Это не новый production CLI/executor и не доказательство реально проверенных предусловий. Два native model предложения отклонены. Опыт сохранён как один uqa/hypothesis/test_experience candidate и reviewed index source; дедупликация, legacy DB и1181 прежний chunk проверены. Native /advice нашёл новый опыт и применил основной вывод, но semantic/admin приёмка не заявляется.
+
+- v218: preparation_proposal.py независимо проверяет только предложение disabled/scoped create: точный caller binding, желаемое enabled=false и пять упорядоченных стадий; fingerprint защищает неизменность. Это отдельный pure validator, не новый CLI mode, не подключённый executor и не доказательство текущих предусловий/ownership. operation_workflow/journal/v069 не расширены.
+
 Последняя реальная проверка217: advisory Job20261015-044801-86f8780e вывел отдельный typed historical true по связанному S1/chunk2 и объяснил, почему исходник не доказывает создание/исполнение.0cases/resources/operations/UC actions; factual/runtime flags false. Первый217 plan20261015-044401-ffe2bb5b отклонён как исполнимый из-за порядка submit до disable/scope; оригинал сохранён. Политики/процедуры не объявляются автономно готовыми.
 
 - v217: /advice выводит связанный типизированный historical fact отдельно от непроверенного пояснения модели. Привязка только по точным source Job/evidence в перепроверенных chunks; registry/evidence/chunk связь проверяется до и после generation. Смена источника отклоняет ответ. Это не semantic validator: противоречивый пересказ модели автоматически не распознаётся и не повышается до verified.

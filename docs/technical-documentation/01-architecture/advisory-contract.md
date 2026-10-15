@@ -51,6 +51,12 @@ Source path должен быть каноническим внутри имен
 
 ### Следующий технический шаг: типизированный порядок безопасной подготовки
 
+v219–v220: логический outline отделён от caller-owned identities; неправильный порядок отклоняется, не сортируется молча. Native218Windows rejected с неполной причиной ValueError;219Ubuntu rejected с проверками раньше подготовки. Отдельный deterministic_supported_profile builder создаёт кодовый порядок узкого proposal-only профиля из trusted binding; model_plan_accepted=false. Это не общий planner, новый CLI/executor или переоценка проваленного ответа как успешного. Freshness/ownership/draft/preconditions/UI lifecycle/backend effect остаются непроверенными. Опыт хранится отдельно как candidate engineering guidance, не runtime факт продукта.
+
+v218 реализовал только pure proposal validator preparation_proposal.py, отдельный от /advice и существующего operation_workflow. Вход — закрытое предложение и trusted caller binding; stand/campaign/resource/scope/targets не выводятся из metadata модели. Требуются desired_enabled=false и пять точных стадий prepare_disabled_draft → verify_disabled_draft → verify_exact_scope → commit_create → verify_saved_disabled_scope. Это намерения проверок, не receipts. Валидность структуры/пина не проверяет ownership, freshness, UI lifecycle, payload schema, фактические предусловия или бизнес-результат. Все соответствующие flags false.
+
+Тесты отклоняют119 перестановок, широкие/пустые/дублированные IDs, bool/int, неизвестные поля/tool/payload/run/activate и смену binding/pin. JSON schema модели разрешает те же stage tokens в любом порядке; только отдельный validator проверяет правильный порядок. Нет нового production CLI mode, tools или разрешений. Включение и расписание намеренно не входят в этот профиль.
+
 Это проект контракта, не реализованный executor и не разрешение снимать journal barrier. Текущий operation_workflow поддерживает лишь фиксированное create/name-only rename/cleanup; добавление подготовки формы требует отдельного проверяемого протокола. Свободный numbered list модели не исполняется.
 
 - Неизменяемый план до начала: stand, собственный новый ресурс, точная тестовая коллекция и перечень разрешённых КЕ, тип политики из фактической схемы, отдельные preparation/commit/verification stages и hash. Пустой или неопределённый scope не означает all.
