@@ -1,5 +1,11 @@
 # План приёмки UQA: дневное продолжение
 
+Результат296–298: оба model inventory-read прогона PASSED3/3 (Windows173528-e5bb2f3d, Astra173847-1d006518), navigation recipe retrieved. Исходные fingerprints сохранены отдельными scope receipts. Следующий этап — source-bound pinned core update и fresh plugin audit через прежнюю policy/journal; принятого executor ещё нет. Старые list/full osAudit ответы сохранены только как historical shape, не fresh run. Не повторять успешную read-пару ради счётчиков. Полный298:243/243технических smoke PASS, не243бизнес-сценария UC.
+
+Вечерний приоритет292–296: только Windows+Astra agent/plugin regression; коллекции/политики/процедуры отложены. Jira полностью read-only, названия меняет пользователь. Сначала завершить текущий native296 Windows, не повторять неизменные292/295 failures; проверить фактический retrieval нового navigation facet. После успешной навигации — Astra, затем реальный pinned core update и fresh plugin audit через прежнюю policy/journal, exact task/fetch/oracle. Без свежего аудита и ядра1.3.27 нельзя объявлять выполненным регресс1.3.27. Не выполнять опасные команды старых шаблонов автоматически.
+
+Preflight293 сохранён Job20261015-171320-073339c2; каталог44плагинов ev-fd8fce7a0a5a. На обеих целях reported1.2.25/online;45plugin snapshots от14октября stale. Память294 candidate/index/dedup/integrity/1207otherchunks PASS, не autonomous acceptance. В296 меняется только выбор поисковых facets, не разрешения/клики/критерии. Night automation остаётся PAUSED. Старые uncertain/awaiting-verification операции не освобождать/не повторять.
+
 Windows144239-c74933d1 тоже ordinary six-cell PASS; оба native UI runs завершены. Финальный full284 после них243/243 smoke PASS,5SHA неизменны,20MD PASS. Память286: candidate/retrieval/integrity/dedup PASS,1203other chunks сохранены. Полное сохранение и policy/procedure business acceptance ещё впереди.
 
 v284: whole-request ordinary entry добавлен для явно названного CMDB и ограниченной unsaved OS-family фазы. Ubuntu144053-e6af5d4c и Windows144239-c74933d1 PASSED без заранее созданного кейса/браузера. Не повторять старые blocked Jobs; whole-request parser не является общим NL planner и не создаёт сохранённую коллекцию. Следующий business рубеж по-прежнему Save/AST/member → inactive policy/exact scope/effect → procedure graph/params/run.

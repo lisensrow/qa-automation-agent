@@ -49,6 +49,12 @@ plugin_result='создание задания не является прове�
 assert reviewed_search_queries('Проверь версию и загрузку плагина, результат задачи') == [plugin_base, plugin_load, plugin_result]
 assert reviewed_search_queries('Inspect plugin version, load status and fetch result') == [plugin_base, plugin_load, plugin_result]
 assert reviewed_search_queries('Read plugin inventory') == [plugin_base]
+plugin_navigation = 'плагины агента CMDB Agent Plugins container owner'
+assert reviewed_search_queries('For one exact CI inspect plugin inventory version') == [plugin_base, plugin_navigation, plugin_load]
+assert reviewed_search_queries('Прочитай плагины в карточке КЕ и их версии') == [plugin_base, plugin_navigation, plugin_load]
+assert reviewed_search_queries('Read plugin inventory without CMDB') == [plugin_base]
+assert reviewed_search_queries('CMDB contains a CI') == []
+assert len(reviewed_search_queries('CI plugin version task result')) == 3
 assert reviewed_search_queries('Не обновляй плагины') == []
 assert reviewed_search_queries('Open collection layout without plugins') == [read_query, layout_query]
 assert reviewed_search_queries('Плагин для коллекции')[:1] == [plugin_base]
