@@ -63,6 +63,10 @@ def admitted_catalog(tools, trace, scope):
         if t['function']['name'] in {'browser_create_pinned_agent_audit_semantic','browser_inspect_pinned_agent_audit_semantic'}:
             for k,v in pins.items():
                 t['function']['parameters']['properties'][k]['enum']=[v]
+            if pins:
+                schema=t['function']['parameters']
+                schema['properties']={k:v for k,v in schema['properties'].items() if k in pins}
+                schema['required']=list(pins)
     return catalog
 
 

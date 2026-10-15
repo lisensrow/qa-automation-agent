@@ -72,6 +72,9 @@ def evaluate_recovery(job, operation, evidence_id, contract):
     if isinstance(contract,dict) and contract.get('kind')=='owned_agent_audit_execution':
         from audit_operation_recovery import evaluate
         return evaluate(job,operation,evidence_id,contract)
+    if isinstance(contract,dict) and contract.get('kind')=='owned_plugin_audit_execution':
+        from plugin_audit_runtime import evaluate_execution
+        return evaluate_execution(job,operation,evidence_id,contract)
     try:
         if (not isinstance(contract, dict) or type(contract.get('version')) is not int or contract['version'] != 1
                 or contract.get('kind') not in {'member_present', 'member_absent'}

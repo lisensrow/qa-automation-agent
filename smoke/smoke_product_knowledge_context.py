@@ -49,6 +49,9 @@ plugin_result='создание задания не является прове�
 assert reviewed_search_queries('Проверь версию и загрузку плагина, результат задачи') == [plugin_base, plugin_load, plugin_result]
 assert reviewed_search_queries('Inspect plugin version, load status and fetch result') == [plugin_base, plugin_load, plugin_result]
 assert reviewed_search_queries('Read plugin inventory') == [plugin_base]
+assert 'inventory плагины без параметров регресс' in reviewed_search_queries('Плагин serviceAudit версии 1.3.2')
+assert len(reviewed_search_queries('Плагин networkDeviceAudit версия и результат задачи'))==3
+assert reviewed_search_queries('Не запускай плагин serviceAudit')==[]
 plugin_navigation = 'плагины агента CMDB Agent Plugins container owner'
 assert reviewed_search_queries('For one exact CI inspect plugin inventory version') == [plugin_base, plugin_navigation, plugin_load]
 assert reviewed_search_queries('Прочитай плагины в карточке КЕ и их версии') == [plugin_base, plugin_navigation, plugin_load]

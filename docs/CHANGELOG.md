@@ -1,5 +1,11 @@
 # История изменений UQA
 
+## v314–318 — переносимый inventory workflow и контроль завершения
+
+Девять pinned профилей без параметров, native receipts/readiness, три execution-stage контракта и canonical subset report; старые osAudit callers совместимы. Scoped memory facet остаётся в прежнем трёхзапросном бюджете. Safe continuation принимает только verified exact delivery с исходным evidence/fingerprints, без повторной установки и переписывания старых Jobs. Модельные bound actions не позволяют менять immutable цель/версию; phase admission, compilation и terminal feedback раскрываются отдельно от самостоятельных действий модели.
+
+Реальная Windows serviceAudit доставка1.3.2 и последующий pluginAudit verified, но модель преждевременно закончила цикл. v318 добавляет bounded отказ такого завершения до canonical report; не подменяет бизнес-oracle и не отправляет задачи автоматически. Новые live результаты ещё проверяются. Full316251/251 технических smoke PASS, полный318 отдельно. Документация и candidate-память сохраняют историю отказов, операторский запуск существующей Ollama и ограничения subset. Zephyr read-only; весь регресс не объявлен PASS.
+
 ## v312 — штатная модельная приёмка osAudit на Windows и Astra
 
 Windows Job20261015-204330-99d918fa и Astra20261015-204608-2a11b687 завершили native Core workflow: память/current readiness → pluginAudit → exact fresh result/loaded inventory → osAudit → exact fresh result → canonical expected/actual. Новые операции2+2 verified execution-only. Windows самостоятельно исправила выбор после native-fact phase refusal; Astra сразу выбрала refresh. Подготовка scope/oracle, deterministic phase admission/reporter и2standing confirmations каждого Job учтены; operator runtime hints/product actions0. Оба business verdictBLOCKED по неизменному legacy baseline, не полный regressionPASS. Старые uncertain/awaiting операции сохранены. Full311250/250 smoke PASS; Zephyr без изменений. Next: свободный вход и автономные update/delivery ветки, затем переносимые контракты следующих плагинов по источникам, не повтор установки на готовые targets.

@@ -36,6 +36,11 @@ def validate_locked_update_scope(job, case, arguments, scope_key='pinned_agent_u
             'pinned_plugin_delivery': {'ci_name', 'agent_id', 'version', 'plugin_name', 'core_version'},
             'pinned_audit_task': {'ci_name', 'agent_id', 'core_version', 'task_name'}}.get(scope_key)
     expected_scope=scope
+    if scope_key=='pinned_audit_task' and requirement.get('type')=='pinned_plugin_audit':
+        from plugin_audit_profiles import scopes
+        expected_scope,_=scopes(requirement)
+        if arguments.get('task_name')=='pluginAudit' and requirement.get('allow_plugin_audit_refresh') is True:
+            expected_scope={**expected_scope,'task_name':'pluginAudit'}
     if (scope_key=='pinned_audit_task' and requirement.get('type')=='pinned_agent_audit'
             and requirement.get('allow_plugin_audit_refresh') is True and isinstance(scope,dict)
             and arguments=={**scope,'task_name':'pluginAudit'}):
@@ -47,10 +52,14 @@ def validate_locked_update_scope(job, case, arguments, scope_key='pinned_agent_u
         raise ValueError('locked_pinned_update_scope_required')
 
 
-def pinned_audit_payload(ci, agent, tasks, agent_id, core_version, task_name, audit=None):
+def pinned_audit_payload(ci, agent, tasks, agent_id, core_version, task_name, audit=None, plugin_name=None, plugin_version=None):
     from tools.agent_plugins import summarize_plugin_audit
-    if task_name not in {'pluginAudit', 'osAudit'}:
+    from plugin_audit_profiles import version_allowed
+    generic=version_allowed(plugin_name,plugin_version) and task_name in {plugin_name,'pluginAudit'}
+    if task_name not in {'pluginAudit', 'osAudit'} and not generic:
         raise ValueError('audit_task_not_admitted')
+    if (plugin_name is not None or plugin_version is not None) and not generic:
+        raise ValueError('audit_plugin_profile_invalid')
     if (not isinstance(ci, dict) or not ci.get('id') or ci.get('agent_id') != agent_id
             or not isinstance(agent, dict) or agent.get('id') != agent_id
             or agent.get('version') != core_version or core_version != '1.3.27'
@@ -66,8 +75,8 @@ def pinned_audit_payload(ci, agent, tasks, agent_id, core_version, task_name, au
             raise ValueError('audit_task_identity_mismatch')
         if t.get('status') not in {'success', 'error', 'timeout'}:
             raise ValueError('existing_audit_pending')
-    if task_name == 'osAudit':
-        checked = summarize_plugin_audit(ci, audit, 'osAudit', '1.3.4')
+    if task_name != 'pluginAudit':
+        checked = summarize_plugin_audit(ci, audit, plugin_name or 'osAudit', plugin_version or '1.3.4')
         if (checked.get('observation_result') != 'PASS'
                 or any(p.get('load_error_present') for p in checked.get('matched_plugins', []))):
             raise ValueError('fresh_os_audit_plugin_not_loaded')
@@ -100,6 +109,9 @@ def build_pinned_audit_report(job, case_id, task_id):
     """Canonical report from same-case native evidence, never model supplied facts."""
     case = next((c for c in job.get('test_cases', []) if c.get('case_id') == case_id), {})
     requirement = case.get('requirement') or {}
+    if requirement.get('type')=='pinned_plugin_audit':
+        from plugin_audit_profiles import build_report
+        return build_report(job,case_id,task_id)
     scope = requirement.get('pinned_audit_task') or {}
     if requirement.get('locked') is not True or scope.get('task_name') != 'osAudit':
         return {'error': 'locked_audit_report_scope_required'}
@@ -152,7 +164,8 @@ def build_pinned_audit_report(job, case_id, task_id):
 
 def pinned_plugin_payload(ci, agent, tasks, agent_id, core_version, plugin_name, version):
     """First admitted delivery profile; no arbitrary plugins or deletion."""
-    if plugin_name != 'osAudit' or version != '1.3.4':
+    from plugin_audit_profiles import version_allowed
+    if not ((plugin_name == 'osAudit' and version == '1.3.4') or version_allowed(plugin_name,version)):
         raise ValueError('plugin_delivery_profile_not_admitted')
     if (not isinstance(ci, dict) or ci.get('agent_id') != agent_id or not ci.get('id')
             or not isinstance(agent, dict) or agent.get('id') != agent_id

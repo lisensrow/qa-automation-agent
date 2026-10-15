@@ -4582,7 +4582,7 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
     if requirement.get("type") == "owned_resource_workflow":
         initialize_workflow(job_id, case_id)
     stage = current_stage(job_id, case_id) or requirement.get("operation_stage")
-    if requirement.get('type')=='pinned_agent_audit' and requirement.get('operation_stages'):
+    if requirement.get('type') in {'pinned_agent_audit','pinned_plugin_audit'} and requirement.get('operation_stages'):
         stage=next((s for s in requirement['operation_stages'] if s.get('tool')==name and s.get('arguments')==arguments),None)
         if commit and stage is None:
             raise ValueError('audit operation not declared')
@@ -14593,6 +14593,13 @@ def run_turn(
             outcome=run_agent_audit(sys.modules[__name__],messages,job_id,case_id,action_policy,force_read_only)
             if not outcome.get('started'):
                 finalize_case_blocked(job_id,case_id,outcome.get('reason','pinned_audit_context_invalid'))
+            return outcome
+        if (phase_case.get('requirement') or {}).get('type')=='pinned_plugin_audit':
+            import sys
+            from plugin_audit_runtime import run as run_plugin_audit
+            outcome=run_plugin_audit(sys.modules[__name__],messages,job_id,case_id,action_policy,force_read_only)
+            if not outcome.get('started'):
+                finalize_case_blocked(job_id,case_id,outcome.get('reason','plugin_context_invalid'))
             return outcome
         if (phase_case.get('requirement') or {}).get('type')=='bounded_condition_draft':
             import sys

@@ -2631,7 +2631,7 @@ class BrowserSession:
             return None
         return urlunsplit((source.scheme, source.netloc, path, "", ""))
 
-    def inspect_pinned_agent_readiness_semantic(self, ci_name, agent_id):
+    def inspect_pinned_agent_readiness_semantic(self, ci_name, agent_id, plugin_name='osAudit', plugin_version='1.3.4'):
         """Read current core and osAudit readiness on one observed exact target."""
         from tools.agent_plugins import summarize_plugin_audit
         self._ensure_started()
@@ -2653,11 +2653,15 @@ class BrowserSession:
             if a.status != 200 or p.status != 200:
                 raise ValueError('read unavailable')
             agent = a.json()
-            audit = summarize_plugin_audit(ci, p.json(), 'osAudit', '1.3.4')
+            from plugin_audit_profiles import version_allowed
+            if not ((plugin_name=='osAudit' and plugin_version=='1.3.4') or version_allowed(plugin_name,plugin_version)):
+                return {'error':'readiness_plugin_profile_invalid','ready':False}
+            audit = summarize_plugin_audit(ci, p.json(), plugin_name, plugin_version)
             ready = (agent.get('id') == agent_id and agent.get('version') == '1.3.27'
                      and agent.get('status') == 'online' and audit['observation_result'] == 'PASS'
                      and not any(x['load_error_present'] for x in audit['matched_plugins']))
             return {'ci_name': ci_name, 'ci_id': ci['id'], 'agent_id': agent_id,
+                    'plugin_name':plugin_name,'plugin_version':plugin_version,
                     'core_version': agent.get('version'), 'agent_status': agent.get('status'),
                     'plugin_audit': audit, 'ready': bool(ready), 'mutation_executed': False,
                     'scope': 'core1.3.27_osAudit1.3.4_readiness_only_not_execution_PASS'}
@@ -2711,13 +2715,24 @@ class BrowserSession:
                     'host_name': data.get('host_name'),
                     'os_subset': {k: os_data.get(k) for k in ('architecture','current_build_os','family','name','version')},
                     'mutation_executed': False, 'full_regression_passed': False}
+            if own.get('plugin_name') and own['task_name'] not in {'pluginAudit','managePlugin'}:
+                from plugin_audit_profiles import summarize
+                result['audit_data_summary']=summarize(own['plugin_name'],envelope.get('data'))
+            result['result_code']=envelope.get('result')
+            if own['task_name']=='managePlugin':
+                downloaded=data.get('plugins_downloaded');deleted=data.get('plugins_scheduled_for_deletion')
+                result['delivery_verified']=bool(isinstance(downloaded,list) and len(downloaded)==1
+                    and downloaded[0].get('plugin_name')==own.get('plugin_name')
+                    and type(downloaded[0].get('size_bytes')) is int and downloaded[0]['size_bytes']>0 and deleted==[])
+                result['plugin_name']=own.get('plugin_name');result['plugin_version']=own.get('plugin_version')
             if own['task_name']=='pluginAudit' and result['native_result_verified']:
-                result['plugin_readiness']=self.inspect_pinned_agent_readiness_semantic(ci_name,agent_id)
+                result['plugin_readiness']=self.inspect_pinned_agent_readiness_semantic(ci_name,agent_id,
+                    own.get('plugin_name') or 'osAudit',own.get('plugin_version') or '1.3.4')
             return result
         except Exception:
             return {'error': 'audit_full_not_ready_or_invalid', 'native_result_verified': False}
 
-    def create_pinned_agent_audit_semantic(self, ci_name, agent_id, core_version, task_name):
+    def create_pinned_agent_audit_semantic(self, ci_name, agent_id, core_version, task_name, plugin_name=None, plugin_version=None):
         """WRITE task dispatch, exclusively pluginAudit/osAudit without parameters."""
         from tools.agent_update import pinned_audit_payload
         from native_dispatch import AuditPreflightRefused
@@ -2740,11 +2755,11 @@ class BrowserSession:
         try:
             a = self.context.request.get(agent_url, timeout=15000)
             t = self.context.request.get(tasks_url, params={'name': task_name, 'periodic': False, 'limit': 100, 'offset': 0}, timeout=15000)
-            p = self.context.request.get(plugins_url, timeout=15000) if task_name == 'osAudit' else None
+            p = self.context.request.get(plugins_url, timeout=15000) if task_name != 'pluginAudit' else None
             if a.status != 200 or t.status != 200 or (p is not None and p.status != 200):
                 return refuse('audit_preflight_unavailable')
             payload = pinned_audit_payload(ci, a.json(), t.json(), agent_id, core_version, task_name,
-                                           p.json() if p is not None else None)
+                                           p.json() if p is not None else None,plugin_name,plugin_version)
         except Exception:
             return refuse('audit_preflight_not_admitted')
         try:
@@ -2760,6 +2775,7 @@ class BrowserSession:
                 self._pinned_audit_tasks = {}
             self._pinned_audit_tasks[created['id']] = {
                 'ci_id': ci['id'], 'ci_name': ci_name, 'agent_id': agent_id,
+                'plugin_name':plugin_name,'plugin_version':plugin_version,
                 'session_id': self.session_id, 'sent_at': sent_at, 'task_name': task_name,
                 'received_at': datetime.now(timezone.utc).isoformat(), 'server_created_at': created.get('created_at')}
             return {'status': 'created', 'executed': True, 'mutation_executed': True,
@@ -2777,6 +2793,9 @@ class BrowserSession:
         """One admitted exact plugin; never delete or disable OS compatibility."""
         from tools.agent_update import pinned_plugin_payload
         from tools.agent_plugins import summarize_plugin_audit
+        from native_dispatch import AuditPreflightRefused
+        def refuse(error):
+            return AuditPreflightRefused(error=error,executed=False,mutation_executed=False,dispatch_state='not_started')
         self._ensure_started()
         ci, _, observed_url, error = self._observed_agent_task_context(ci_name)
         if error:
@@ -2800,11 +2819,19 @@ class BrowserSession:
                 return {'error': 'plugin_delivery_preflight_unavailable', 'executed': False}
             audit = summarize_plugin_audit(ci, p.json(), plugin_name, version)
             if audit.get('observation_result') == 'PASS':
-                return {'error': 'plugin_already_loaded_fresh', 'executed': False}
+                return refuse('plugin_already_loaded_fresh')
+            matches=audit.get('matched_plugins') or []
+            if len(matches)>1: return refuse('plugin_version_ambiguous')
+            if matches:
+                current=matches[0].get('version')
+                if not isinstance(current,str) or not re.fullmatch(r'\d+\.\d+\.\d+',current):return refuse('plugin_current_version_unknown')
+                if tuple(map(int,current.split('.')))>tuple(map(int,version.split('.'))):return refuse('plugin_downgrade_forbidden')
             payload = pinned_plugin_payload(ci, a.json(), t.json(), agent_id, core_version, plugin_name, version)
         except Exception:
-            return {'error': 'plugin_delivery_preflight_not_admitted', 'executed': False}
+            return refuse('plugin_delivery_preflight_not_admitted')
         try:
+            from datetime import datetime,timezone
+            sent_at=datetime.now(timezone.utc).isoformat()
             response = self.context.request.post(plugins_url + '/update', data=payload, timeout=15000)
             created = response.json() if response.status == 202 else None
             valid = (isinstance(created, dict) and created.get('id')
@@ -2814,10 +2841,18 @@ class BrowserSession:
             if not valid:
                 return {'error': 'plugin_delivery_receipt_unverified', 'executed': False,
                         'create_status': response.status, 'dispatch_may_have_occurred': True}
+            received_at=datetime.now(timezone.utc).isoformat()
+            if not hasattr(self,'_pinned_audit_tasks'):self._pinned_audit_tasks={}
+            self._pinned_audit_tasks[created['id']]={'ci_id':ci['id'],'ci_name':ci_name,'agent_id':agent_id,
+                'session_id':self.session_id,'sent_at':sent_at,'received_at':received_at,
+                'server_created_at':created.get('created_at'),'task_name':'managePlugin',
+                'plugin_name':plugin_name,'plugin_version':version}
             return {'status': 'created', 'executed': True, 'mutation_executed': True,
                     'task_id': created['id'], 'agent_id': agent_id, 'ci_name': ci_name,
                     'plugin_name': plugin_name, 'requested_version': version,
-                    'create_status': response.status, 'business_pass': False, 'plugin_verified': False}
+                    'create_status': response.status, 'business_pass': False, 'plugin_verified': False,
+                    'task_name':'managePlugin','request_origin':UC_ORIGIN,'session_id':self.session_id,
+                    'sent_at':sent_at,'received_at':received_at,'server_created_at':created.get('created_at')}
         except Exception:
             return {'error': 'plugin_delivery_dispatch_uncertain', 'executed': False,
                     'dispatch_may_have_occurred': True}

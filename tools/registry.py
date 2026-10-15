@@ -2096,7 +2096,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "agent_build_pinned_audit_report",
-            "description": "Сформировать канонический итоговый expected/actual отчёт из locked oracle и первичных доказательств собственной osAudit задачи текущего case. Не принимает произвольный verdict/evidence/expected; не пишет Zephyr. Используй для итогового отчёта аудита.",
+            "description": "Сформировать канонический expected/actual отчёт из locked oracle и первичных доказательств собственной audit-задачи текущего case. Поддерживает osAudit и закреплённые inventory-профили. Не принимает произвольные verdict/evidence/expected, не пишет Zephyr. Используй этот отчёт для итогового ответа.",
             "parameters": {"type": "object", "additionalProperties": False, "properties": {
                 "task_id": {"type": "string"}
             }, "required": ["task_id"]}
@@ -2106,9 +2106,10 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_inspect_pinned_agent_readiness_semantic",
-            "description": "Read-only: текущие core version/online и свежий loaded osAudit1.3.4 для точной наблюдённой КЕ/agent_id через родной API. ready не означает выполнение теста. Не требует клика по Plugins.",
+            "description": "Read-only: текущие core/online и свежая загрузка закреплённого плагина на точной КЕ. Без plugin_name/plugin_version проверяет osAudit1.3.4. ready не означает выполнение теста.",
             "parameters": {"type": "object", "additionalProperties": False, "properties": {
-                "ci_name": {"type": "string"}, "agent_id": {"type": "string"}
+                "ci_name": {"type": "string"}, "agent_id": {"type": "string"},
+                "plugin_name": {"type":"string"}, "plugin_version": {"type":"string"}
             }, "required": ["ci_name", "agent_id"]}
         }
     },
@@ -2126,11 +2127,12 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_create_pinned_agent_audit_semantic",
-            "description": "WRITE: только новая непериодическая pluginAudit или osAudit без произвольных параметров на точной КЕ/core1.3.27. osAudit требует свежей загрузки osAudit1.3.4. Требует locked scope и journal; ACK не PASS.",
+            "description": "WRITE: новая непериодическая задача разрешённого inventory-профиля или pluginAudit, без произвольных параметров. Точная КЕ/core1.3.27, locked scope, fresh loaded version и journal обязательны. Выбирай текущие допустимые аргументы; ACK не PASS.",
             "parameters": {"type": "object", "additionalProperties": False, "properties": {
                 "ci_name": {"type": "string"}, "agent_id": {"type": "string"},
                 "core_version": {"type": "string", "enum": ["1.3.27"]},
-                "task_name": {"type": "string", "enum": ["pluginAudit", "osAudit"]}
+                "task_name": {"type": "string", "enum": ["pluginAudit", "osAudit","driveDeviceAudit","gpuDeviceAudit","softAudit","smbiosAudit","networkDeviceAudit","serviceAudit","displayDeviceAudit","processMonitoring","baseSystemMonitoring"]},
+                "plugin_name":{"type":"string"},"plugin_version":{"type":"string"}
             }, "required": ["ci_name", "agent_id", "core_version", "task_name"]}
         }
     },
@@ -2138,12 +2140,12 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_deliver_pinned_agent_plugin_semantic",
-            "description": "WRITE: доставка только osAudit1.3.4 на точную КЕ с ядром1.3.27; проверка ОС включена, удаление невозможно. Нужен locked scope; ACK202 не PASS.",
+            "description": "WRITE: точечная доставка закреплённой версии разрешённого inventory-плагина на КЕ/core1.3.27. OS-check включён, удаление/понижение/повтор запрещены. Locked scope и journal обязательны. ACK202 не загрузка: прочитай свою managePlugin задачу, затем pluginAudit.",
             "parameters": {"type": "object", "additionalProperties": False, "properties": {
                 "ci_name": {"type": "string"}, "agent_id": {"type": "string"},
                 "core_version": {"type": "string", "enum": ["1.3.27"]},
-                "plugin_name": {"type": "string", "enum": ["osAudit"]},
-                "version": {"type": "string", "enum": ["1.3.4"]}
+                "plugin_name": {"type": "string"},
+                "version": {"type": "string"}
             }, "required": ["ci_name", "agent_id", "core_version", "plugin_name", "version"]}
         }
     },
@@ -2778,7 +2780,8 @@ def execute_tool(name: str, arguments: dict):
 
     if name == "browser_inspect_pinned_agent_readiness_semantic":
         from tools.browser import _session
-        return _session.inspect_pinned_agent_readiness_semantic(arguments.get('ci_name'), arguments.get('agent_id'))
+        return _session.inspect_pinned_agent_readiness_semantic(arguments.get('ci_name'), arguments.get('agent_id'),
+            arguments.get('plugin_name','osAudit'),arguments.get('plugin_version','1.3.4'))
 
     if name == "browser_inspect_pinned_agent_audit_semantic":
         from tools.browser import _session
@@ -2788,7 +2791,8 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_create_pinned_agent_audit_semantic":
         from tools.browser import _session
         return _session.create_pinned_agent_audit_semantic(
-            arguments.get('ci_name'), arguments.get('agent_id'), arguments.get('core_version'), arguments.get('task_name'))
+            arguments.get('ci_name'), arguments.get('agent_id'), arguments.get('core_version'), arguments.get('task_name'),
+            arguments.get('plugin_name'),arguments.get('plugin_version'))
 
     if name == "browser_deliver_pinned_agent_plugin_semantic":
         from tools.browser import _session

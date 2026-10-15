@@ -51,6 +51,7 @@ class Requests:
         return self.receipt
 requests = Requests()
 s = object.__new__(BrowserSession)
+s.session_id = 'fixture-session'
 s._ensure_started = lambda: None
 s.context = SimpleNamespace(request=requests)
 s._observed_agent_task_context = lambda name: (ci, tasks,

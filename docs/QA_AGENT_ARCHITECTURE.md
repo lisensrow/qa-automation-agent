@@ -1,5 +1,13 @@
 # Архитектура QA-агента UQA
 
+## v314–318: девять inventory-профилей и незавершённый цикл
+
+Добавлен общий typed `pinned_plugin_audit`: точечная доставка закреплённой версии с OS-check/no deletion → собственный managePlugin/full → pluginAudit/fresh loaded inventory → новый аудит без параметров/full → canonical expected/actual. Девять allowlisted профилей ограничены структурой source US-T79/US-T102 v1.0, не полной независимой сверкой ОС/UI. Полный бизнес-кейс остаётся BLOCKED. Обычные v069 policy, STEP/AUTO и журнал/replay protection сохранены; прежние неопределённые операции не мигрируются.
+
+Модель выбирает действия; framework ограничивает фазу и компилирует zero-argument bound actions из locked scope в обычный защищённый Core. v318 отвергает преждевременный текстовый финал до canonical report максимум дважды, не выполняя действий за модель. Это явно учитываемая помощь, не свободная автономия и не ручная подсказка во время прогона. Подготовка case/oracle и делегированные scope confirmations учитываются отдельно.
+
+Windows serviceAudit: delivery в Job20261015-212433-65a35e46 и refresh в Job20261015-214258-60b58699 execution-verified; версия1.3.2 loaded/no error подтверждена. Ни один из этих частичных Jobs не завершил весь цикл. Ollama после ConnectTimeout запущена оператором с прежними настройками. Новые Windows remaining-audit и Astra full-cycle проверяются отдельно, без повторной доставки Windows. Подробности: technical-documentation/04-quality/inventory-plugin-acceptance.md. Память источников сохранена с historical revisions, snapshots/dedup/integrity; reviewed candidate не равен verified specification. Zephyr не изменяется.
+
 ## Кратко: возможности и границы на 15 октября 2026
 
 - v312 native acceptance: normal Core Windows204330-99d918fa/tc-0170ce0a/ev-04676fba67bf и Astra204608-2a11b687/tc-3740b368/ev-cacf0f7e42d3 completed=true. Обе модели выполнили conditional pluginAudit → own fresh result/loaded inventory → osAudit → own fresh result → canonical report, обе новые journal операции каждого Job verified execution-only. Business BLOCKED по legacy baseline сохранён. Framework phase admission/reporter и2делегированные scope confirmations каждого Job учтены отдельно; runtime hints/product actions оператора0. Это bounded prepared workflow на уже обновленных/оснащённых целях, не general NL, не модельная приёмка update/delivery и не40кейсов. Full311250/250 technical PASS.

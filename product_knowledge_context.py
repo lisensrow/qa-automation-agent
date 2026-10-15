@@ -65,6 +65,7 @@ PLUGIN_REVIEWED_TOPIC = {
     'terms': ('плагин', 'plugin'),
     'search_query': 'плагины агента инвентаризация обновление полный результат задачи',
     'task_facets': (
+        (r'\b(?:drivedeviceaudit|gpudeviceaudit|softaudit|smbiosaudit|networkdeviceaudit|serviceaudit|displaydeviceaudit|processmonitoring|basesystemmonitoring)\b', 'inventory плагины без параметров регресс'),
         (r'\bci\b|\bcmdb\b|карточк\w*', 'плагины агента CMDB Agent Plugins container owner'),
         (r'верси\w*|\bversions?\b|загруз\w*|\bload\w*', 'версия и загрузка плагина разные проверки'),
         (r'задач\w*|результат\w*|\btasks?\b|\bresults?\b|\bfetch\b', 'создание задания не является проверкой его результата'),
