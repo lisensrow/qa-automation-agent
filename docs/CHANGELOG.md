@@ -2,6 +2,12 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v211 — изоляция справочного контекста без объявления успешной автономности
+
+Проверено: server py_compile/profile/full229/229PASS /tmp/v211-full-smoke.log,19MD/link/private checks PASS. Резервная копия до изменения сохранена; Jobs/artifacts/backups не включаются в Git.
+
+Для чистого layout-вопроса исключён общий navigation recipe, для явного open/read/create сохранён. Тот же native request получил1search вместо2 и38700 вместо48440 символов initial context. Job20261015-033549-f018e454/tc-eeddf8fd/ev-7623c3c8e151: верный ключ и отсутствие выполненного исправления названы, но осталась противоречивая рекомендация bare os_name и generic test-JSON repair с выдуманнымobs. CLOSED/BLOCKED,0other tools/resources/operations; новых одинаковых прогонов не планируется. Никаких UC writes/источников/index/admission/promotion не менялось. Добавлен design-only advisory contract в shareable technical docs; режим ещё не реализован, safety/test gates не ослаблялись.
+
 ## v209 — предметный поиск знаний о колонках
 
 Финал: серверные py_compile/profile/full229/229 PASS /tmp/v209-full-smoke.log,18MDPASS. Native diagnostic v210 FAILED application accuracy: Job20261015-033103-19f0ca67/tc-7d1c5de4/ev-4c13f80d21b5, штатные2grounding searches, без операторских chunks и без иных tools/resources/operations. Модель смешала layout key и field map, generic completion потребовал test JSON и породил ложную observation-ссылку; всё BLOCKED, не business PASS. Не объявлять context8/8 полноценной native acceptance. Зафиксирована необходимость более точной предметной выборки и отдельного advisory completion contract без ослабления проверки тестов.

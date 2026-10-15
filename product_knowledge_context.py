@@ -76,9 +76,9 @@ def reviewed_search_queries(task):
                           re.search(spec['layout_intent'], positive))
             read_intent = (bool(spec.get('read_query')) and bool(re.search(spec['read_intent'], positive))
                            and not creating)
-            if read_intent or (layout and not creating):
+            if read_intent:
                 queries.append(spec['read_query'])
-            elif spec.get('search_query'):
+            elif spec.get('search_query') and (not layout or creating):
                 queries.append(spec.get('facet_base_query',spec['search_query'])
                                if facets and not layout else spec['search_query'])
             # Keep the same three-query budget. Explicit subject matter takes

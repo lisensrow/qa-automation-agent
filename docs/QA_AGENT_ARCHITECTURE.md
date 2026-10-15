@@ -11,6 +11,14 @@
 
 ## Диагностическое сравнение режима рассуждения v200
 
+### v211: предметная изоляция контекста и граница advisory
+
+Финал: server py_compile/profile/full runner229/229PASS /tmp/v211-full-smoke.log;19Markdown/link/private checks PASS. Backup code/docs до изменений сохранён отдельно. Это техническая проверка установленного кода, не число успешно выполненных UC-сценариев.
+
+Чистый вопрос о колонках теперь извлекает только namespace-рецепт; явные open/read/create сохраняют маршрут. RAM/CPU и отрицания проверяются прежними gates, бюджет не вырос. SAME request/ожидания/harness, default think-off: Job20261015-033549-f018e454/tc-eeddf8fd/ev-7623c3c8e151 CLOSED/BLOCKED, один штатный search ev-5b50e711f3e7, без иных tools/resources/operations. Контекст первого model turn снизился с48440 до38700 символов; это наблюдение, не доказательство устранения ошибок. Модель назвала endpoint.os_name и явно признала отсутствие исправления, но одновременно рекомендовала добавить bare os_name в table_config; generic completion снова потребовал тестовый JSON с выдуманной observation-ссылкой. Полная справочная точность НЕ принята, одинаковые retries прекращены. Layout и UC не менялись; канонические знания не повышались.
+
+В technical-documentation/01-architecture/advisory-contract.md описан следующий, ЕЩЁ НЕ РЕАЛИЗОВАННЫЙ contract: immutable advisory intent, точный read allowlist+dispatch guard, separate non-verdict response, проверяемые ссылки и новый explicit execution Job после согласия. Это не отключение structured test validation и не новый способ обойти journal. Следующий реальный блокер политик — typed UI-launcher lifecycle, а не нехватка общего разрешения пользователя.
+
 ### v209: поиск каталога колонок по обычной задаче
 
 Финальные серверные py_compile/profile/full runner229/229 PASS (/tmp/v209-full-smoke.log),18Markdown checks PASS. v210 native Core explanation: Job20261015-033103-19f0ca67/tc-7d1c5de4/ev-4c13f80d21b5, штатные knowledge_search ev-ad06aa28b411 и ev-603018fb7e66,0 other tools/resources/operations, CLOSED/BLOCKED. Оператор не подставлял chunks, но Core самостоятельно сделал task grounding. Модель неточно пересказала диагноз (в сохранённом layout bare os_name есть, хотя field map его не разрешает), затем generic structured-result repair принудил справочный ответ к тестовому JSON с выдуманной observation-ссылкой. Реального PASS это не дало. Свободное справочное применение памяти ещё не принято; это ограничение retrieval/application и advisory-vs-test завершения, не новый баг UC. Дальше — отделить предметное объяснение от лишнего навигационного контекста и проектировать безопасный advisory contract; не менять locked oracle ради текста модели.
