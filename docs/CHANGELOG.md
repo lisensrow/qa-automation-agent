@@ -2,6 +2,16 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v246–v248 — отдельный логический компилятор и финальное чтение ячеек
+
+Frozen final248: py_compile,238/238smoke PASS (/tmp/v248-release-full-smoke.log),3codeSHA неизменны (/tmp/v248-release-code.sha256),20technicalMD PASS. Набор244/237 относится к предыдущему code checkpoint, а первый246/238 — к схеме до field-specific union; финальным считается248.
+
+Добавлен condition_plan.py: caller задаёт closed profile со source hash, labels/parents/columns/operator mapping и типом заполнения; pin защищает профиль, expected существует до генерации. Модель выдаёт только logic/field/operator/value. Неизвестные поля/операторы, duplicate field, смена логики/значения/profile hash, лишние UI-поля и размеры отклоняются. Порядок строк плоской группы нормализуется. Возвращаются ограниченные UI steps без session/URL; все permission/runtime/saved/membership/PASS flags false. Это чистая библиотека, не общий runtime/CLI.
+
+Первый compiled-phase Job20261015-090143-87d5bef0 остановился ValueError до настройки, точная причина/предложение не сохранены. После исправления журналирования Job20261015-090405-cf4287dd сохранил предложение: Wildcard для Archived и CI class отклонён condition_plan_unknown_operator до любых condition writes. Caller contract отдельно компилируется. Плоская union-схема заменена typed anyOf по полям, без ослабления валидатора. Два BLOCKED сохранены,0resources/operations; это не доказательство bug UC.
+
+Job20261015-090636-f0bcfc48/tc-6f85d97a после изменения схемы: правильный план, production pure compiler,3applied UI rows/4value receipts через прежнюю policy,5Y0N/noTimeout. Независимое свежее DOM-чтение ev-c0bbe21510c0 после всех строк сравнило6ячеек, включая Equal операторов Archived/CI class, all_matched=true. Expected6hashes и profile/pin/expected plan сохранены до model generation, source/contract проверялись перед каждой UI-стадией. Phase configured, но весь caseBLOCKED: operator-prepared entry/harness executor, noSave/noAST/member oracle и ещё не normal production workflow. Новые pure negative fixtures/py_compile и полный runner проверяются на frozen коде; новые технические документы раскрывают границы.
+
 ## v240–v244 — составное действие конструктора и доступность схемы
 
 v245 — отдельно, без последующих production code edits: experimental_model_plan_recipe_execution Job20261015-085016-4004ece3/tc-5792940c. Tool-free structured local-model plan ev-c6caee568b63 совпал с заранее заданным expected. Экспериментальный trusted compiler, а не модель, сформировал source/parents/columns; через прежнюю policy выполнены applied rows ev-94246c241e98/ev-ffbfa4bda970/ev-382bf77f43b4,4matched value receipts,5Y0N/noTimeout. Phase configured, но общий JobBLOCKED0resources/operations/browserclosed: operator entry, noSave, нет production интеграции, saved AST/member oracle или финального DOM после всех строк. Результат и неудачные243/244 сохранены в прежней UQA_PLANNING_KNOWLEDGE.md и одном document_review/hypothesis candidate; обе DB backups/integrity/dedup/1192unrelated chunks/recallPASS. Не benchmark моделей и не verified product promotion. Следующая разработка — supported typed plan/compiler/runtime contract, не дальнейшее накопление подсказок тому же React циклу.
