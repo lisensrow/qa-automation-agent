@@ -9,7 +9,13 @@
 - Технически наблюдает меню, поля и категории редактора, но операторская карта интерфейса не равна автономной способности выполнить весь workflow.
 - Полностью автономное создание коллекций, применение политик и сборка/исполнение процедур пока не приняты. Известные ограничения и результаты реальных прогонов приведены ниже; технические smoke-тесты не заменяют эту приёмку.
 
+## Финал v195 и автономная граница v196
+
+Установленный финальный runner226/226PASS (/tmp/v195-final-full-smoke.log), профиль, py_compile и16 Markdown проверены. Real context reasoning9/9 не подменяет UI-приёмку. Новый обычный native run_turn Job20261015-011946-a64684b5/tc-949d3649 оказался BLOCKED: модель открыла общий CMDB и inspected table (ev-b6d227e22cdb), но не перешла в указанную Windows-коллекцию. Четыре строки общей таблицы не доказательство состава коллекции. Core также отказал неподдерживаемому ui_assertion field visible_row_count; ложный PASS не выдан, ресурсов/операций0. Эта навигационная граница остаётся открытой; не делать идентичный retry. Старые uncertain/awaiting_verification записи не менялись.
+
 ## Повторная проверка коллекций v193
+
+v195: product adapter выбирает разделы по положительному предмету задачи RAM/CPU: логика группировки + единицы/агрегаты, затем маршрут при оставшемся бюджете. Верхняя граница прежняя — три search queries; Core/STEP/AUTO/v069 не менялись, answers/permission в query не передаются. Отрицательные ограничения не добавляют facet. Profile/py_compile PASS. Реальный qwen context-only case tc-7588ae13/ev-a0a980c29485 в Job20261015-010502-d0b6d605 прошёл9/9 неизменных критериев AND/OR/архив/Endpoint/inventory_bytes/None/не-PASS/unknowncompatibility/noexecution. Раньше8/9: RAM unknown при отсутствующем разделе RAM в retrieved context. Новый результат — operator-prepared reasoning через production reviewed queries, не автономный UI workflow, не новая проверка числового отображения. Полный runner фиксируется отдельно после завершения.
 
 v194: через существующую policy открыт только Edit collection для owned Windows, затем Conditions; Save/Update не выполнялись. Native GET/linked observation подтверждает must + archived false + endpoint + Windows wildcard. Три scoped candidate занесены в canonical DB с consistent backup/legacy/integrity/dedup/history PASS. Bootstrap новых predicate не реализован, reviewed рецепт индексируется отдельно. Job20261015-010502-d0b6d605/tc-6633cdea/ev-b7fe086a2751, версии unknown, operator-assisted, не autonomous PASS.
 

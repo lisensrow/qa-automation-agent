@@ -21,6 +21,11 @@ CONCEPTS = {
         'terms': ('коллекц', 'collection'),
         'search_query': 'коллекции создание',
         'experience_query': 'наблюдённый маршрут поля коллекции',
+        'task_facets': (
+            (r'\bram\b|оперативн\w*\s+памят', 'RAM агрегаты единицы отсутствие данных'),
+            (r'\bcpu\b|процессор\w*|\bядр\w*', 'CPU не спутать CI ядра текущую нагрузку'),
+        ),
+        'facet_base_query': 'логика условий состава коллекций',
         'claims': {'composition_formula': 'automatic_plus_manual_minus_exclusions',
                    'clear_on_update_semantics': 'recompute_not_accumulate'},
     },
@@ -59,8 +64,14 @@ def reviewed_search_queries(task):
     queries = []
     for spec in CONCEPTS.values():
         if any(term in positive for term in spec['terms']):
+            facets = [query for pattern, query in spec.get('task_facets', ())
+                      if re.search(pattern, positive)]
             if spec.get('search_query'):
-                queries.append(spec['search_query'])
+                queries.append(spec.get('facet_base_query',spec['search_query'])
+                               if facets else spec['search_query'])
+            # Keep the same three-query budget. Explicit subject matter takes
+            # priority over a generic entry-route recipe; never supply answers.
+            queries.extend(facets)
             if spec.get('experience_query'):
                 queries.append(spec['experience_query'])
     return queries[:3]

@@ -12,6 +12,16 @@ assert reviewed_search_queries('Открой политику; без проце
 assert reviewed_search_queries('Не создавай политики или процедуры.') == []
 assert reviewed_search_queries('Создай коллекцию. Никаких политик или процедур.') == ['коллекции создание','наблюдённый маршрут поля коллекции']
 assert reviewed_search_queries(None) == []
+ram_query='RAM агрегаты единицы отсутствие данных'
+cpu_query='CPU не спутать CI ядра текущую нагрузку'
+logic_query='логика условий состава коллекций'
+assert reviewed_search_queries('Коллекция RAM не меньше 2 GiB') == [logic_query,ram_query,'наблюдённый маршрут поля коллекции']
+assert reviewed_search_queries('Создай коллекцию по оперативной памяти') == [logic_query,ram_query,'наблюдённый маршрут поля коллекции']
+assert reviewed_search_queries('Collection CPU cores') == [logic_query,cpu_query,'наблюдённый маршрут поля коллекции']
+assert reviewed_search_queries('Коллекция RAM и CPU') == [logic_query,ram_query,cpu_query]
+assert reviewed_search_queries('Коллекция. Не меняй RAM и CPU.') == ['коллекции создание','наблюдённый маршрут поля коллекции']
+assert reviewed_search_queries('Не создавай коллекцию RAM') == []
+assert reviewed_search_queries('Проверь CPU без коллекций') == []
 
 with TemporaryDirectory() as temp:
     root = Path(temp)

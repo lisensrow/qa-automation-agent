@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v195 — предметная выборка памяти коллекций без расширения бюджета
+
+Финальный установленный runner226/226PASS (/tmp/v195-final-full-smoke.log),16 Markdown/link/private-marker checks PASS. Последующий автономный read-only v196 Job20261015-011946-a64684b5/tc-949d3649 BLOCKED: модель прочитала общий CMDB вместо нужной коллекции и предложила unsupported assertion visible_row_count. False PASS отвергнут; resources0/operations0. Это не успешная UI-навигация; изменения в данном trial отсутствуют.
+
+- Product adapter добавляет RAM/CPU facets только по положительному запросу коллекции; выбирает логику группировки и аппаратные единицы/агрегаты вместо общей инструкции создания. Прежняя граница3 queries сохранена; никакой новой permission или продуктовой логики в Core.
+- Профиль с отрицательными запросами и py_compile PASS. Первая промежуточная выборка остановлена до модели из-за отсутствия logic chapter; исправлена, не считалась модельным прогоном. Промежуточный полный runner прерван перед заменой версии; не выдаётся за PASS.
+- Один реальный повтор после конкретного retrieval fix: Job20261015-010502-d0b6d605/tc-7588ae13/ev-a0a980c29485,9/9PASS против прежних8/9. Oracle не менялся, готовый ответ не добавлялся; canonical candidates + retrieved recipe с RAM chapter. Context-only/operator-prepared, не autonomous UI acceptance. Финальный полный runner проверяется отдельно.
+
 ## v193 — read-only повторная проверка десяти коллекций
 
 Live context-only reasoning v194:8/9FAIL (tc-9383482c/ev-0e185b611fda), RAM unknown. Сохранённые retrieved chunks не содержали раздела RAM/единиц; AND/OR и safety8 критериев корректны. Не выдавать за full model PASS; требуется targeted retrieval, критерии неизменны.
