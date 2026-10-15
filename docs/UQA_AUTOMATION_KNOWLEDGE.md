@@ -40,6 +40,16 @@ ev-ef9a50468138: Logical показывает «Если / То» и predicate �
 
 ## Что пока не доказано
 
+### Сохранённый граф процедуры: наблюдённая структура, не исполнение
+
+15 октября 2026, operator_readonly, Job20261014-235424-0de03747/case tc-34935085. Сначала origin/probe, затем ранее наблюдённый адрес Procedures/probe: существующие объекты не менялись. ev-8ff5b674bba4f: exposed SVG count0 — это отсутствие доступных SVG-имен, не отсутствие SVG. ev-b357ef938c39: canvas1 без имени/fallback; ev-6592e9664f08: tree_not_found в существующем редакторе, не в новой палитре.
+
+ev-aede75cc4c39: DOM census показывает SVG6, одна большая область1627×865 с274 descendants, canvas1, native draggable0; среди атрибутов data-id/data-uqa-id. Это форма DOM, не доказанный unique workspace/block oracle. Нельзя делать вывод «редактор только canvas» или отождествлять все SVG с рабочим графом.
+
+ev-8ac7d9fad984: прочитан уже полученный GET /api/v1/u-auth/u-sys/api/v1/procedures, HTTP200, body не обрезан. Envelope limit/offset/count/total/items; два элемента содержат id/name/description/xml/context/active/debug/created_at/updated_at. Значения команд/параметров не выводились. ev-71d616904abf: ограниченный offline XML census: root xml, block/next/field/value/variables/variable; два шаблона имеют11 и3 block. Разбор структуры не проверяет правильность команд, связей, параметров, выполнения или совместимость другой версии.
+
+Следующий контракт должен связывать точный owned draft, наблюдённые block IDs, связи/параметры и сохранённый XML без исполнения. GET/schema/census не даёт разрешения POST/Save/Run. Конкретный graph validator и безопасный block editor ещё не реализованы.
+
 ### Повторяемая ошибка перехода из меню в редактор (модель, не баг UC)
 
 15 октября, live_local_model qwen3:14b: Job20261014-233520-79fd039b/tc-dee5b4ec, ev-dd50a19a6941 наблюдает одно enabled Add procedure/menuitem. Модель пропустила пункт и искала категории до открытия редактора; BLOCKED. Дополнительная диагностическая подсказка в Job20261014-234619-f946db24/tc-cb5743c9 также не помогла: ev-1b9e97a97a75 Add menu, ev-ad70abd9591e Logical/treeitem missing, ev-aa89e4ccbae4 повтор Logical/menuitem blocked. Оба прогона resources0/operations[], без Save/Run. Второй эксперимент снят, production restored к195e9f6.

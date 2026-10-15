@@ -2,6 +2,10 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v188 — read-only предпосылка проверки графа
+
+Operator Job20261014-235424-0de03747/case tc-34935085: native SVG/canvas inspection, DOM shape census, чтение уже полученного GET списка процедур и ограниченный offline XML census. SVG6/canvas1; API возвращает2 XML-шаблона с block/next/field/value/variables,11/3 block. Содержимое команд/параметров не печаталось; без редактирования/Save/Run. Полный graph oracle ещё не реализован. Промежуточные диагностические cases BLOCKED сохранены: origin guard, отсутствующее tree и очищенный network event buffer не подменены PASS. Production code не менялся после restored223/223; shareable package дополнен контрактом графа.
+
 ## v187 — проверка и снятие неэффективной recovery-гипотезы
 
 Финальный восстановленный production runner223/223 PASS (/tmp/v187-restored-full-smoke.log). Это повтор проверенной v186, не выпуск экспериментального recovery.

@@ -4,6 +4,8 @@
 
 ## С чего начать
 
+Новая граница: [процедуры и контракт блочного графа](01-architecture/procedure-graph-contract.md). Наблюдённый формат отделён от ещё не реализованной приёмки.
+
 - Руководителям: [назначение и готовность](00-overview/product-and-readiness.md).
 - Разработчикам: [компоненты](01-architecture/components.md), [исполнение](01-architecture/execution.md), [формат знаний](03-knowledge/record-contract-v1.md).
 - Тестировщикам: [проверки и границы](04-quality/coverage-and-validation.md), [доказательства](02-safety/evidence-and-verdicts.md).
