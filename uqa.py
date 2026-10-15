@@ -4585,6 +4585,15 @@ def execute_tool_with_policy(
         arguments,
     )
 
+    if job_id:
+        scoped_job = get_job(job_id) or {}
+        if scoped_job.get('job_type') == 'advisory' or 'advisory' in scoped_job:
+            from advisory_contract import advisory_tool_allowed
+            if not advisory_tool_allowed(scoped_job, name):
+                return {'error': 'advisory_tool_not_allowed', 'status': 'blocked_by_policy',
+                        'executed': False, 'action_class': action_class,
+                        'action_policy_status': 'blocked_by_advisory_contract'}
+
     authoritative_task_text = None
 
     if action_policy == "confirm_mutations" and job_id and case_id:
@@ -5398,7 +5407,8 @@ def banner():
             f"Ollama: {OLLAMA_URL}\n"
             f"Tools: {len(tool_names)} available\n\n"
             f"/clear  /status  /blockers  /jobs  /queue  /job JOB_ID\n"
-            f"/run-next  /run-job JOB_ID  /cleanup JOB_ID  /exit",
+            f"/run-next  /run-job JOB_ID  /cleanup JOB_ID  /exit\n"
+            f"/advice STAND QUESTION — знания без исполнения и тестового verdict",
             title="U-Connect QA Agent",
         )
     )
@@ -5566,8 +5576,13 @@ def recover_ollama_transport(model_messages, tools):
 def ask_ollama(
     messages,
     tools=TOOLS,
+    response_schema=None,
 ):
     import time
+
+    if response_schema is not None:
+        if tools != [] or not isinstance(response_schema, dict) or len(json.dumps(response_schema)) > 8192:
+            raise ValueError('bounded_tool_free_response_schema_required')
 
     global LLM_CALL_COUNTER, _OLLAMA_READY_UNTIL
 
@@ -5630,6 +5645,7 @@ def ask_ollama(
                         "model": MODEL,
                         "messages": model_messages,
                         "tools": tools,
+                        **({'format': response_schema} if response_schema is not None else {}),
                         "stream": False,
                         "think": UQA_THINK,
                         "keep_alive": "30m",
@@ -14410,6 +14426,10 @@ def run_turn(
     force_read_only=False,
     action_policy="legacy",
 ):
+    if job_id:
+        scoped_job = get_job(job_id) or {}
+        if scoped_job.get('job_type') == 'advisory' or 'advisory' in scoped_job:
+            raise ValueError('advisory_job_requires_separate_read_only_entry')
     # Conversation history may contain a binding from an earlier turn.
     # Never carry that authority into the user's next task.
     messages[:] = [message for message in messages
@@ -16313,6 +16333,28 @@ def main():
 
         if user_input == "/exit":
             break
+
+        if user_input == '/advice' or user_input.startswith('/advice '):
+            parts = user_input.split(maxsplit=2)
+            if len(parts) != 3:
+                console.print('Usage: /advice STAND QUESTION')
+                continue
+            try:
+                from advisory_contract import run_advisory_request
+                advisory = run_advisory_request(parts[2], parts[1])
+                console.print('Справочный ответ: не тест, не PASS и не разрешение исполнения.')
+                console.print('Job: ' + advisory['job_id'])
+                if advisory['response']:
+                    console.print(Markdown(advisory['response']['answer']))
+                    console.print(Markdown(advisory['response']['limitations']))
+                    for source in advisory['sources']:
+                        console.print(source['citation_id'] + ': ' + source['source']
+                                      + ' / ' + source['heading'] + ' / sha256=' + source['source_sha256'])
+                else:
+                    console.print('Проверяемый справочный ответ недоступен; действия не выполнялись.')
+            except Exception as exc:
+                console.print('Advisory error: ' + type(exc).__name__)
+            continue
 
         if user_input == "/clear":
             messages = [

@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v214 — явный справочный режим без исполнения и QA verdict
+
+Финал: py_compile/full231/231PASS /tmp/v214-release-full-smoke.log, code SHA до/после неизменны,19MDPASS. Добавочные namespace-parent/alias/backslash/stand/blank/cancellation отказы проверены; native source context повторно прошёл final guard. Предыдущие v214 full/final/final2 logs — промежуточные ревизии. Backup исходного и промежуточного кода сохранён, данные/Jobs не коммитятся.
+
+advisory_contract.py +/advice STAND QUESTION создают новый knowledge-only Job, current source/chunk recheck и bounded model JSON с citations. Core dispatcher deny-all-except-knowledge guard и отказ generic run_turn не дают превратить справочный Job в исполнительный; tools=[] и schema не являются единственной защитой. Ответ хранится в Job.advisory; базовый blocked — отсутствие test verdict. Максимум3queries/4Markdown chunks/18000chars, без нового индекса/canonical promotion. ask_ollama optional schema совместим с прежним transport и требует tools=[].
+
+Первый actual CLI Job20261015-040349-1b92cedc unavailable/ValueError сохранён без выдуманной причины. После schema второй20261015-040634-6de5945d answered с корректным namespace и непроверенным исправлением, проверяемыми S1/S2 источниками,0cases/resources/operations. Фактическая точность произвольных ответов/current UI/административная готовность не объявлены. Новый guard fixture проверяет отказ WRITE/DESTRUCTIVE/OBSERVE/unknown tools, mode changes, stale/outside sources, invented refs, model tool calls, source changes during inference и неизменность schema-free transport. UI-launcher recovery ещё не реализован, выбран независимый безопасный этап вместо ослабления journal.
+
 ## v213 — source-only профиль редактора политики
 
 Read-only4frontend assets/hashes дали source-bound различие launcher/local state и final form submit/create/update. Initial is_active=true и пустые условия зафиксированы как риск, не доказанное runtime применение; frontend type ids не объявлены OpenAPI enums. Evidence ev-7706a44920e9 в Job20261015-035134-c25e4db9/tc-f5e3d115, BLOCKED/resources0/journal0. Reviewed recipe обновлён в документной памяти,4hashchecks/backup/integrity/1166unrelated chunks unchanged/4recall queries PASS. Canonical code-binding admission и journal не менялись; никаких UI Save/Run. Safety docs содержат следующий immutable-stage design, не уже реализованный bypass. Production212230/230 остаётся последним code-run, не новым213smoke.

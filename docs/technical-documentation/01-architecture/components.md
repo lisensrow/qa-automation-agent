@@ -15,6 +15,7 @@ UQA сейчас — Python-система с локальным persistent stat
 | Recovery/workflow | operation_recovery.py, operation_workflow.py | Evidence-only reconciliation, locked stages и неизменность принятых ID |
 | Resource lifecycle | ledger в Job и cleanup mechanisms | Учёт owned ресурсов, зависимости, область очистки и проверки результата |
 | Документная память | knowledge_index.py, knowledge_tool.py | Индексация источников и knowledge_search |
+| Справочный вход | advisory_contract.py и /advice в CLI | Новый knowledge-only Job, source recheck, bounded schema/citations, отсутствие исполнения и test verdict |
 | Продуктовые facts | product_knowledge_store.py, product_knowledge_retrieval.py | Scoped facts/confirmations и ограниченный проверенный retrieval |
 | Новые knowledge records | product_knowledge_records.py | Additive candidate schema v1, trusted source admission, дедупликация/конфликты |
 | Идентичность памяти | memory_identity.py, prepared_memory.py | Актуальные component identities и подготовленное чтение памяти |

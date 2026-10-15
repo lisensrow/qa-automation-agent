@@ -2,6 +2,8 @@
 
 ## Кратко: возможности и границы на 15 октября 2026
 
+- Отдельно отвечает справочно через /advice STAND QUESTION: knowledge-only Job, перепроверенные Markdown sources/citations, модель без tools и без test verdict. Один native CLI сценарий принят структурно; произвольная factual accuracy и текущий UI/API этим не гарантируются.
+
 - Сопоставляет ожидаемый и фактический результат с доказательствами; различает PASS/FAIL/BLOCKED. Текст модели или ACK сам по себе не считается выполненной проверкой.
 - Подтверждённо выполняет ограниченные сценарии чтения карточек Ubuntu/Windows и вкладки Agent; отдельные сценарии фильтра и открытия/закрытия формы также проверены. Это не покрытие всего интерфейса.
 - Разделяет наблюдения и изменения, сохраняет STEP/AUTO и v069 policy, записывает намерения операций и блокирует неопределённые повторы. Хранит сведения о принадлежащих тесту ресурсах на диске.
@@ -10,6 +12,16 @@
 - Полностью автономное создание коллекций, применение политик и сборка/исполнение процедур пока не приняты. Известные ограничения и результаты реальных прогонов приведены ниже; технические smoke-тесты не заменяют эту приёмку.
 
 ## Диагностическое сравнение режима рассуждения v200
+
+### v214: отдельный knowledge-only advisory вход
+
+Финальная release revision: server py_compile/full231/231PASS /tmp/v214-release-full-smoke.log, code SHA-256 до/после suite неизменны,19Markdown/link/private checks PASS. Усилены canonical namespace path, stand precheck, nonblank response и защита cancellation. Источники native pilot повторно прошли итоговый path guard. Предыдущие v214 full/final/final2 logs — промежуточные ревизии, не финальный release. Исходные и промежуточные файлы сохранены в backups/v214-advisory-20261015; Jobs/данные/артефакты не включаются в Git.
+
+UI-launcher profile213 остаётся candidate: не реализуем journal release по неполному no-effect proof. Независимый полезный этап — advisory_contract.py, явный /advice STAND QUESTION, Job.advisory с contract/request hash/stand/source hashes/response/state. Нет cases/resources/planned checks; базовый Job blocked означает отсутствие QA verdict, отдельный advisory.state=answered — справочный ответ. Generic run_turn отвергает advisory Job; общий dispatcher допускает только knowledge_search при валидном running contract, все иные tools/простая смена job_type запрещены. Новое исполнение требует другого обычного Job и прежней policy/journal; STEP/AUTO не менялись.
+
+До3queries/4chunks/18000chars: curated UQA-experience Markdown rederived/current exact chunks +source hashes, проверка повторяется после model call. Источники вне root/stale/неподдержанные игнорируются; docx/API пока не поддержаны именно этим MVP. Модель tools=[] +bounded response schema с допустимыми citation IDs; повторный validator отвергает tool calls/test JSON/unbound ev-obs refs/unknown citations. ask_ollama получил optional response_schema только при tools=[]; прежние вызовы без schema не меняются. Проверка ссылок не проверяет истинность прозы, factual/current_runtime/evidence_for_pass/execution_authorized всегда false, promotion отсутствует.
+
+Первый native CLI Job20261015-040349-1b92cedc rejected/unavailable с ValueError (точная причина не сохранена; не угадывать),0cases/resources/operations. После schema/без ослабления validators SAME CLI task Job20261015-040634-6de5945d advisory=answered: endpoint.os_name, несовпадение API/layout/map, замена/backend/DOM не проверены; S1/S2 chunks2/3 source SHA cdcf5cbd73c723573f6a5b51f22f077ab175d2fa1a2a4f574975410acbccc16d. Без операторских chunks, startup banner подавлен только в test harness, command dispatch/retrieval/model реальные. Это новый mode pilot, не контролируемый causal mode benchmark, не autonomous UI/admin acceptance. Job QA statusblocked,0cases/resources/journal, model receipt/hash сохранён отдельно. Топ-level advisory marker найден только у этих двух новых Jobs: старые задания не задеты.
 
 ### v213: источник различия launcher/submit и риск активного default
 
