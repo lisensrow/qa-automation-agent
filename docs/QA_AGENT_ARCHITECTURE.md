@@ -11,6 +11,12 @@
 
 ## Диагностическое сравнение режима рассуждения v200
 
+### v213: источник различия launcher/submit и риск активного default
+
+Read-only4public assets сверены по точным bytes/SHA; Job20261015-035134-c25e4db9/tc-f5e3d115/ev-7706a44920e9 CLOSED/BLOCKED/0resources0journal. Launcher списка меняет local dialog state, отдельный form automation-policy-form имеет submit→create/update hooks→POST/PUT repository. Initial values задают is_active=true/type agent_config/condition must+items[], plugin draft force_update=false; watcher имени может менять initial blank. Это static implementation, не runtime toggles/backend acceptance/no-autosave proof. Frontend ids agent_config/agent_task/agent_plugin отделены от concept labels и непроверенных OpenAPI enums. Никаких форм/Save/Run/политик не создавалось, journal не освобождён, unknown code-binding adapter не обходится.
+
+Reviewed recipe в существующем UQA_AUTOMATION_KNOWLEDGE проиндексирован один раз:4hashes сверены с evidence, consistent backup/integrity/1166unrelated chunks unchanged,4new/old retrieval queries PASS. История и остальные источники сохранены; canonical DB admission/promotion отсутствует. Production code212/full230/230 unchanged: новый полный runner213 не запускался. Technical safety docs уточняют дизайн immutable UI/business стадий и обязательный inactive/owned scope перед будущим тестовым commit. Следующий шаг — реализация и отрицательная приёмка такого профиля, не вывод permission из одного marker.
+
 ### v212: request-start census перед типизированным launcher lifecycle
 
 Финал: server py_compile и full runner230/230PASS /tmp/v212-full-smoke.log;19MD/link/private checks PASS. Новый модуль также включён в compile list runner. Резервные копии code/docs сохранены до изменения. Это foundation наблюдения, не завершённый UI-launcher recovery.

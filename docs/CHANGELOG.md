@@ -2,6 +2,10 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v213 — source-only профиль редактора политики
+
+Read-only4frontend assets/hashes дали source-bound различие launcher/local state и final form submit/create/update. Initial is_active=true и пустые условия зафиксированы как риск, не доказанное runtime применение; frontend type ids не объявлены OpenAPI enums. Evidence ev-7706a44920e9 в Job20261015-035134-c25e4db9/tc-f5e3d115, BLOCKED/resources0/journal0. Reviewed recipe обновлён в документной памяти,4hashchecks/backup/integrity/1166unrelated chunks unchanged/4recall queries PASS. Canonical code-binding admission и journal не менялись; никаких UI Save/Run. Safety docs содержат следующий immutable-stage design, не уже реализованный bypass. Production212230/230 остаётся последним code-run, не новым213smoke.
+
 ## v212 — учёт начала запросов без права освобождать journal
 
 Проверки: server py_compile/full230/230PASS /tmp/v212-full-smoke.log,19MDPASS, fresh native receipt linkage PASS. Production compile list включает новый модуль; runtime guards и старые операции не менялись.
