@@ -2121,6 +2121,7 @@ def classify_tool_action(
         "browser_observe_iframe_surface_change_semantic",
         "browser_verify_iframe_surface_readiness_semantic",
         "browser_get_network_detail",
+        "browser_inspect_saved_block_graph_semantic",
         "browser_inspect_semantic",
         "browser_inspect_table_row",
         "browser_inspect_table_semantic",
@@ -6377,6 +6378,9 @@ def record_tool_evidence(
     if evidence_over_budget:
         eligibility["usable_for_pass"] = False
         eligibility["reason"] = "evidence_payload_over_budget"
+    if tool_name == 'browser_inspect_saved_block_graph_semantic':
+        eligibility['usable_for_pass'] = False
+        eligibility['reason'] = 'saved_graph_structure_only_not_business_oracle'
     if isinstance(result,dict) and result.get("response_body_truncated") is True:
         eligibility["usable_for_pass"] = False
         eligibility["reason"] = "native_response_body_truncated"

@@ -158,6 +158,7 @@ from tools.browser import (
     set_table_all_selected,
     inspect_bulk_action_semantic,
     get_network_detail,
+    inspect_saved_block_graph_semantic,
     delete_json_resource,
     archive_json_resource,
     authenticate_saved_stand,
@@ -453,6 +454,17 @@ TOOLS = [
                 },
                 "required": ["stand"]
             }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_inspect_saved_block_graph_semantic",
+            "description": "Read one exact saved block-XML record from a previously observed GET request_id. Requires current session/origin, a fixed 60-second freshness limit and a complete collection. Returns counts only, never XML/commands/field values. Does not prove workspace binding, business correctness or execution; never Save/Run or PASS authority.",
+            "parameters": {"type":"object","properties":{
+                "request_id":{"type":"string","description":"Native network_requests request_id, e.g. n16."},
+                "exact_name":{"type":"string","description":"Exact name of the single saved record to inspect."}},
+                "required":["request_id","exact_name"],"additionalProperties":False}
         }
     },
     {
@@ -2294,6 +2306,13 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_authenticate_saved_stand":
         return authenticate_saved_stand(
             arguments["stand"]
+        )
+
+    if name == "browser_inspect_saved_block_graph_semantic":
+        if set(arguments) != {'request_id', 'exact_name'}:
+            return {'error': 'saved_graph_arguments_invalid', 'executed': False}
+        return inspect_saved_block_graph_semantic(
+            arguments['request_id'], arguments['exact_name'],
         )
 
     if name == "browser_get_network_detail":

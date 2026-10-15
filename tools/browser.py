@@ -1738,6 +1738,22 @@ class BrowserSession:
 
         return result
 
+    def inspect_saved_block_graph_semantic(self, request_id, exact_name, max_age_seconds=60):
+        """Read a saved record from a captured GET, never XML values or new requests."""
+        from tools.block_graph_controls import summarize_saved_block_graph
+        try:
+            self._ensure_started()
+            detail = self.get_network_detail(request_id)
+            result = summarize_saved_block_graph(
+                detail, exact_name, current_origin=self.page.url,
+                current_session_id=self.session_id, max_age_seconds=max_age_seconds,
+            )
+        except Exception:
+            # Never expose native response exceptions, headers, bodies or credentials.
+            return {'error': 'saved_graph_native_source_unavailable', 'mutation_executed': False,
+                    'evidence_for_pass': False, 'permission_granted': False}
+        return {**result, 'mutation_executed': False}
+
     def get_network_detail(self, request_id: str):
         self._ensure_started()
 
@@ -13750,6 +13766,10 @@ def probe_capabilities() -> dict:
 
 def get_network_detail(request_id: str) -> dict:
     return _session.get_network_detail(request_id)
+
+
+def inspect_saved_block_graph_semantic(request_id: str, exact_name: str) -> dict:
+    return _session.inspect_saved_block_graph_semantic(request_id, exact_name, max_age_seconds=60)
 
 
 def inspect_agent_telemetry_semantic(

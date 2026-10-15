@@ -2,7 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v190 — native source-bound чтение сохранённого графа
+
+- Новый OBSERVE инструмент и tools/block_graph_controls.py: только существующий native GET, текущие session/origin, фиксированная свежесть60s, полный untruncated collection envelope и ровно одна exact-name запись. Без нового HTTP-запроса, XML/значений в ответе, endpoint/payload от модели или выбора freshness моделью. Workspace/context остаются unverified.
+- Инструмент не может дать business PASS: record_tool_evidence сохраняет usable_for_pass/verdict=false. Native wiring/negative profile/py_compile и финальный suite225/225 PASS (/tmp/v190-final-full-smoke.log); policy/STEP/AUTO/journal не менялись.
+- Первый model trial20261015-001327-4ad7e23b отклонён на age0; age-control убран из public schema без ослабления проверки. Повтор после конкретной правки Job20261015-001805-ba56b74e/tc-be9e3125 прочёл11блоков (ev-6e51b552eb73); model summary ev-0cf2ddfb7ed5 корректно отказался утверждать запуск/полное создание. Operator navigation, не полная автономная приёмка. Resources0/operations[].
+
 ## v189 — ограниченный структурный XML observer
+
 
 Финальный установленный runner224/224 PASS (/tmp/v189-full-smoke.log), technical Markdown package16/16 PASS. Следующая source-bound обвязка ещё не относится к этому выпуску.
 
