@@ -9,6 +9,12 @@
 - Технически наблюдает меню, поля и категории редактора, но операторская карта интерфейса не равна автономной способности выполнить весь workflow.
 - Полностью автономное создание коллекций, применение политик и сборка/исполнение процедур пока не приняты. Известные ограничения и результаты реальных прогонов приведены ниже; технические smoke-тесты не заменяют эту приёмку.
 
+## Чтение существующей коллекции и граница локальной модели v199
+
+Product adapter различает положительное намерение просмотра и создания: read/open/inspect/открой/прочитай без create/new/создай/новая выбирает source-bound рецепт существующего view, не новую форму. RAM/CPU facets и прежний лимит3 queries сохранены; обычное чтение использует1 query. Отрицательные ограничения не расширяют тему/authority. Рецепт с native click/config/table доказательствами индексирован,1153 unrelated chunks/integrity unchanged PASS; profile/py_compile/полный227/227PASS (/tmp/v199-full-smoke.log).
+
+Обычный native run без операторской навигации Job20261015-015616-1c29fe67/tc-a6e3ec77 остался BLOCKED. Правильный recipe query записан ev-62f3939a0a43, но модель подставила имя вместо UUID в deep link; первый open нормализовался к origin по прежнему guard. Далее named table inspector вернул unique_visible_fallback общей CMDB (ev-19075db1bab3), не привязку к коллекции. Core отверг semantic mismatch/unsupported ui_assertion visible_row_count; false PASS нет, resources0/operations0. Query routing исправлен технически, автономная навигация НЕ принята. Не наращивать prose и не повторять тот же think-off run; допустим отдельный диагностический mode comparison без новых подсказок, permanent config/policy не меняя.
+
 ## Ограниченное машинное чтение API-контрактов v198
 
 Финальная установленная версия после marker/ref audit:227/227PASS (/tmp/v198-final-full-smoke.log), profile/py_compile и17 Markdown проверки PASS. Сеть/UC-объекты в этом этапе не менялись; schema replay и7/7 модели не заменяют native execution acceptance.

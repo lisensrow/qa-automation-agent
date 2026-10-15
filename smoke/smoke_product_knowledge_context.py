@@ -22,6 +22,13 @@ assert reviewed_search_queries('Коллекция RAM и CPU') == [logic_query,
 assert reviewed_search_queries('Коллекция. Не меняй RAM и CPU.') == ['коллекции создание','наблюдённый маршрут поля коллекции']
 assert reviewed_search_queries('Не создавай коллекцию RAM') == []
 assert reviewed_search_queries('Проверь CPU без коллекций') == []
+read_query='просмотр существующей коллекции привязка таблицы'
+assert reviewed_search_queries('Открой существующую коллекцию Windows') == [read_query]
+assert reviewed_search_queries('Read existing collection. Do not create or edit.') == [read_query]
+assert reviewed_search_queries('Прочитай коллекцию RAM и CPU') == [read_query,ram_query,cpu_query]
+assert reviewed_search_queries('Не открывай существующую коллекцию') == []
+assert reviewed_search_queries('Открой новую коллекцию') == ['коллекции создание','наблюдённый маршрут поля коллекции']
+assert reviewed_search_queries('Создай коллекцию. Существующие коллекции не изменяй.') == ['коллекции создание','наблюдённый маршрут поля коллекции']
 
 with TemporaryDirectory() as temp:
     root = Path(temp)

@@ -2,6 +2,12 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v199 — intent-aware память просмотра существующей коллекции
+
+- Read/create intent маршрутизирует product queries к разным reviewed рецептам; positive/negative и RAM/CPU tests PASS, бюджет3 неизменен, обычное чтение1query. Native recipe сохраняет различие выбранной коллекции и общей CMDB, не задаёт permission.
+- Consistent index snapshot/integrity/1153 unrelated chunks unchanged/точный recall PASS. Profile/py_compile/полный227/227PASS /tmp/v199-full-smoke.log.
+- Native think-off Job20261015-015616-1c29fe67/tc-a6e3ec77 BLOCKED: правильный query получен, но имя выдумано как path ID; root table unique_visible_fallback не коллекция. Semantic mismatch/unsupported field отвергнуты,0resources/ops. Это не автономная навигационная починка; нового identical retry не делать.
+
 ## v198 — hash-pinned bounded API-contract observer
 
 Финал после marker/ref audit: установленный runner227/227PASS /tmp/v198-final-full-smoke.log, профиль/py_compile/17MarkdownPASS. Никаких UC-мутаций или новых разрешений. Следующий этап остаётся отдельной приёмкой.
