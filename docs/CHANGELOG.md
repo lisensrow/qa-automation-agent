@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v198 — hash-pinned bounded API-contract observer
+
+Финал после marker/ref audit: установленный runner227/227PASS /tmp/v198-final-full-smoke.log, профиль/py_compile/17MarkdownPASS. Никаких UC-мутаций или новых разрешений. Следующий этап остаётся отдельной приёмкой.
+
+- Новый чистый api_contract_projection.py + профиль в smoke/runner. Method/path lookup, двойные hash pins, closed grammar, typed reference traversal, duplicate-key/nonfinite/externalref/truncation/count/type/budget refusals. Никакого filesystem/HTTP/dispatch, Core/STEP/AUTO/v069 не менялись.
+- Вход1MiB/100000nodes/depth24, output32KiB/20schema. Плоские циклические refs поддержаны; literal $ref/projection_truncated property names не являются маркерами. Содержимое неподдерживаемых данных не отражается в отказе. Pin не означает authority или текущую совместимость.
+- Profile Windows+server/py_compile PASS. Installed projection replay8/9: policy-create закрыт reference_closure_budget, не расширяли лимит. Финальный replay совпал с модельным input; qwen request-field interpretation7/7PASS (tc-41e9c7f2/ev-538b2f9bce26). Не operation execution/PASS и не новый model tool. Initial227/227PASS относится к версии до marker/ref audit; final suite отдельно.
+
 ## v197 — установленная OpenAPI: карта контрактов без исполнения
 
 Финал: stable предметный заголовок обеспечил retrieval metadata/map; consistent snapshot +integrity/1161 unrelated chunks unchanged PASS. Context-only локальная модель tc-a3e23934/ev-5931ee45baa38/8PASS по method/path/202/operationId/noexecution; это не native API execution. Пакет17 Markdown проверен. Сырые runtime artifacts/Jobs/DB не коммитятся.

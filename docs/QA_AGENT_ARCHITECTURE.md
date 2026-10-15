@@ -9,6 +9,16 @@
 - Технически наблюдает меню, поля и категории редактора, но операторская карта интерфейса не равна автономной способности выполнить весь workflow.
 - Полностью автономное создание коллекций, применение политик и сборка/исполнение процедур пока не приняты. Известные ограничения и результаты реальных прогонов приведены ниже; технические smoke-тесты не заменяют эту приёмку.
 
+## Ограниченное машинное чтение API-контрактов v198
+
+Финальная установленная версия после marker/ref audit:227/227PASS (/tmp/v198-final-full-smoke.log), profile/py_compile и17 Markdown проверки PASS. Сеть/UC-объекты в этом этапе не менялись; schema replay и7/7 модели не заменяют native execution acceptance.
+
+api_contract_projection.inspect_api_contract — чистый наблюдатель сохранённой структурной проекции: без filesystem/HTTP/credentials/dispatch. Выбирает точную пару method/path template; перепроверяет pins SHA256 проекции и исходной схемы, закрытую грамматику, counts, локальные refs и лимиты. Duplicate JSON keys, внешние ссылки, нечисловые counts, bool/int подмены, неизвестные поля, обрезка и отсутствующие refs дают фиксированный отказ без эха содержимого. Циклические schema refs возвращаются плоским ограниченным графом, не разворачиваются бесконечно. Поле модели с именем $ref не путается со служебной ссылкой.
+
+Бюджеты: вход1MiB/100000nodes/depth24, максимум20 связанных схем и32KiB результата. Examples/defaults/descriptions/enum values не принимаются, источник не является полным JSON Schema validator. Caller pins доказывают совпадение байтов с ожиданием вызывающего, не доверие к нему или свежесть источника. Все permission/PASS/execution/current applicability/auth contract/complete payload validation flags=false. Новый model tool/HTTP executor/source adapter не добавлен, STEP/AUTO/v069/journal неизменны.
+
+Profile Windows+server и py_compile PASS. Replay фактического снимка:8/9 контрактов доступны, создание политики отказано reference_closure_budget; лимит не повышали. Финальный tc-68e8bd05/ev-feaea55df819 в schema-census Job20261015-012947-b938acd8 совпадает с прежним контекстом модели (ev-1f3e3dacd3fe). Реальный qwen tc-41e9c7f2/ev-538b2f9bce267/7 корректно прочитал обязательные request fields и отказ/ограничения. Это operator-prepared machine-context interpretation, не API execution и не autonomous UI. Промежуточный runner227/227PASS до marker/ref audit; финальный полный прогон фиксируется отдельно.
+
 ## Финал v195 и автономная граница v196
 
 Финал197: reviewed Swagger source индексирован с consistent snapshot, integrity и1161 unrelated chunks unchanged; повторное извлечение metadata/map PASS. Context-only qwen tc-a3e23934/ev-5931ee45baa3 в schema-census Job прошёл8/8 выбора method/path и ограничений202/duplicateoperationId/noexecution. Это operator-prepared context, не native execution. Технический пакет17 Markdown/link/private-marker checks PASS. Следующий198 — bounded machine-readable contract lookup с hash/schema pin и отказом по отсутствующим/обрезанным данным; source gate не обходить.

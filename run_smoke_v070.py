@@ -16,6 +16,7 @@ PRODUCTION_FILES = [
     ROOT / "native_dispatch.py",
     ROOT / "ui_popup_context.py",
     ROOT / "procedure_graph.py",
+    ROOT / "api_contract_projection.py",
     ROOT / "tools" / "block_graph_controls.py",
     ROOT / "operation_recovery.py",
     ROOT / "operation_workflow.py",
@@ -42,6 +43,7 @@ PRODUCTION_FILES = [
 ]
 SMOKES = [
     "smoke_procedure_graph.py",
+    "smoke_api_contract_projection.py",
     "smoke_saved_block_graph.py",
     "smoke_product_runtime_context.py",
     "smoke_popup_model_context.py",
