@@ -53,6 +53,25 @@ def decode_phase_decision(content,catalog):
         raise ValueError('model_phase_decision_not_admitted')
     return {'function':{'name':decision['name'],'arguments':decision['arguments']}}
 
+def final_summary_schema(canonical):
+    if canonical.get('report_type')!='locked_plugin_subset' or canonical.get('verdict')!='BLOCKED' or not canonical.get('task_id'):
+        raise ValueError('canonical_plugin_report_required')
+    return {'type':'object','additionalProperties':False,'required':['task_id','verdict','summary'],
+        'properties':{'task_id':{'type':'string','enum':[canonical['task_id']]},
+            'verdict':{'type':'string','enum':[canonical['verdict']]},
+            # Length stays enforced by decode_final_summary. Large maxLength
+            # grammar generation is not compatible with the installed backend.
+            'summary':{'type':'string'}}}
+
+def decode_final_summary(content,canonical):
+    final_summary_schema(canonical)
+    value=json.loads(content)
+    if (not isinstance(value,dict) or set(value)!={'task_id','verdict','summary'}
+        or value['task_id']!=canonical['task_id'] or value['verdict']!=canonical['verdict']
+        or not isinstance(value['summary'],str) or not 1<=len(value['summary'].strip())<=2000):
+        raise ValueError('model_final_summary_invalid')
+    return value
+
 def compile_bound_action(name,args,req):
     if name in {REFRESH,RUN_AUDIT}:
         if args!={}:raise ValueError('bound_action_has_no_overrides')
@@ -237,8 +256,12 @@ def run(api,messages,job_id,case_id,action_policy,force_read_only=False):
                 structured_decisions.append({'after_step':len(trace),'name':call['function']['name'],
                     'argument_keys':sorted(call['function']['arguments']),'automatic_action_taken':False})
             else:
-                response=api.ask_ollama(model_view,tools=[])
+                model_view.append({'role':'system','content':'Return only the final summary JSON from the supplied schema. '
+                    'Copy canonical task_id/verdict exactly; summarize actual result and the incomplete independent checks. '
+                    'The canonical expected/actual report remains authoritative; no new action is permitted.'})
+                response=api.ask_ollama(model_view,tools=[],response_schema=final_summary_schema(canonical))
                 m=response.get('message') or {};calls=m.get('tool_calls') or [];text=str(m.get('content') or '')
+                decode_final_summary(text,canonical)
             messages.append({'role':'assistant','content':text,**({'tool_calls':calls} if calls else {})})
             if not calls:
                 feedback=incomplete_terminal_feedback(canonical,catalog,text)
@@ -293,6 +316,7 @@ def run(api,messages,job_id,case_id,action_policy,force_read_only=False):
         body['framework_typed_domain_prompt']=True
         body['framework_structured_decision_transport']=True
         body['framework_strict_stage_admission']=True
+        body['framework_structured_final_summary']=True
         body['model_structured_decisions']=structured_decisions
         body['framework_terminal_refusals']=terminal_refusals
         body['framework_terminal_phase_refusals']=terminal_phase_refusals

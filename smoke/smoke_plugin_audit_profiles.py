@@ -91,6 +91,7 @@ for stage in stages_for(r):
 print('plugin_audit_profiles: PASS (9 bounded profiles, phase gates and 3 execution proofs; fixtures only)')
 from operation_journal import _fingerprint
 from plugin_audit_runtime import incomplete_terminal_feedback,terminal_phase_key,consume_terminal_refusal,scoped_model_messages,DOMAIN_PROMPT,phase_decision_schema,decode_phase_decision
+from plugin_audit_runtime import final_summary_schema,decode_final_summary
 feedback=incomplete_terminal_feedback(None,catalog_for(TOOLS,[ready,made,done],r))
 assert feedback['automatic_action_taken'] is False
 assert feedback['business_BLOCKED_does_not_complete_workflow'] is True
@@ -128,6 +129,18 @@ for bad in [{'name':RUN_AUDIT,'arguments':{}},{'name':REFRESH,'arguments':{'agen
     try:decode_phase_decision(json.dumps(bad),phase_catalog)
     except ValueError:pass
     else:raise AssertionError('invalid model choice must not dispatch')
+canonical={'report_type':'locked_plugin_subset','task_id':'own','verdict':'BLOCKED'}
+assert final_summary_schema(canonical)['properties']['task_id']['enum']==['own']
+assert final_summary_schema(canonical)['properties']['summary']=={'type':'string'}
+assert decode_final_summary(json.dumps({'task_id':'own','verdict':'BLOCKED','summary':'subset only'}),canonical)['verdict']=='BLOCKED'
+for bad in [{'task_id':'other','verdict':'BLOCKED','summary':'x'},
+            {'task_id':'own','verdict':'PASS','summary':'x'},
+            {'task_id':'own','verdict':'BLOCKED','summary':' '},
+            {'task_id':'own','verdict':'BLOCKED','summary':'x'*2001},
+            {'task_id':'own','verdict':'BLOCKED','summary':'x','expected':'changed'}]:
+    try:decode_final_summary(json.dumps(bad),canonical)
+    except ValueError:pass
+    else:raise AssertionError('final model text cannot change canonical identity/verdict')
 original=deepcopy(job);stage=stages_for(r)[0]
 prior_op={'operation_id':'old-op','case_id':'case','status':'verified',
     **{k:stage[k] for k in ['tool','workflow_id','stage_id','resource_key']},

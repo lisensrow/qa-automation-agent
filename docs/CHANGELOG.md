@@ -1,5 +1,13 @@
 # История изменений UQA
 
+Final328:251/251technical smoke PASS after wire-schema freeze,2SHAOK,22MDPASS. Candidate memory328 source/history/snapshots/dedup/integrity/retrievalDONE,1223otherchunks preserved. No Jobs/DB/raw artifacts committed, no Jira writes. Queue continues after reviewed read-only Windows network final; whole-regression PASS not claimed.
+
+## v327–328 — устойчивый финал без повторного аудита
+
+Windows network224506-ec3e5243:10rows matched,3verified operations, model-selected canonical report; completion остановился только на prose-format. Отдельная model-only structured final continuation completed,0new agent tasks; исходный failed trace не переписан. Новый final transport pins canonical taskID/BLOCKED, локально проверяетsummary1..2000/extra fields/identity. Wire length keywords вызвали native modelHTTP400 grammar init; убраны только с wire, decoder limits/expected/permission неизменны. Negative fixtures сохраняют fail-closed поведение. Focused PASS; intermediate327suite251/251, но код менялся во время него, поэтому final328 проверяется отдельно с замороженными SHA.
+
+Read-only source review:19Astra titles, remoteConnections details/Windows source cycle недоступны, reload Jira ERR_CONNECTION_TIMED_OUT. Не объявлять полный regression/source export и не угадывать steps. Jira/Zephyr unchanged. После final328/memory/docs checkpoint — очередь Astra network и остальных safe profiles без повторной Windows delivery.
+
 Финальный checkpoint325: full325251/251 technical smoke PASS,2codeSHA unchanged,22Markdown package PASS. Reviewed source/candidate325 indexed after snapshots of both existing databases; dedup/integrity/retrieval PASS,1223otherchunks preserved, new live-drive proof retrievable. Это не251бизнес-кейс и не повышение candidate вverified. Следующая очередь пропускает завершённые ячейки и останавливается при первом incomplete/uncertain; Jira/Zephyr без правок.
 
 Native325 принято как bounded execution: Windows remaining-drive223538-6640ec93 и Astra full-drive223550-693e48e9 completed=true;3/7records structure matched,1/3operations verified. Astra впервые прошла новый drive lifecycle отdelivery доотчёта в одном run с явной strict-stage/structured-selection помощью framework. Прежние failures сохранены, полнота независимого ОС/UI oracle не проверена → whole-caseBLOCKED. Final full325 и memory/source checkpoint проверяются отдельно; следующий этап — остальные профили обеих ОС, не повтор успешной пары.
