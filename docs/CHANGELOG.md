@@ -2,6 +2,16 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v201–v202 — источник отсутствующей колонки и безопасная прокрутка таблицы
+
+Финал установленной версии с action receipt: py_compile/профиль PASS, полный228/228PASS (/tmp/v202-final-full-smoke.log), технический пакет18 Markdown/link/private-marker checks PASS. Проект typed table-view evidence описан отдельно как ещё не реализованный verifier, не новая принятая capability. Точечный индекс с consistent snapshot/integrity/1153 unrelated chunks unchanged и повторным recall нового опыта/прежнего маршрута PASS; canonical promotion отсутствует.
+
+Реальный qwen3:14b по повторно извлечённым production queries фрагментам:7/7 interpretation checks PASS, tc-51ef7915/ev-04b8012cb823 в live viewport Job. Правильно различил API/UI, результат прокрутки, отсутствие developer confirmation и автономной приёмки; никаких действий. Это operator-prepared retrieved context only, не autonomous browser PASS; case/Job сохраняют BLOCKED.
+
+- Свежие config/table/DOM доказательства: os_name задан и приходит как windows, но не отображается. Горизонтальная прокрутка до237px не выявила колонку. Причина не установлена, не confirmed bug; старые BLOCKED сохранены.
+- Универсальный browser_scroll_table_horizontal_semantic(start/end): INTERACT, strict named/unique table, ближайший viewport, проверка достигнутой позиции, snapshots и action receipt. Никаких business PASS/all-columns guarantees, редактирования данных или изменений STEP/AUTO/v069/generic assertions/inspect fallback.
+- Изолированные fixtures проверяют start/end/idempotency, ошибочное имя, неоднозначность, RTL, отсутствие overflow, некорректные аргументы. Operator live readback: Job20261015-021952-da23464b/tc-3f154f58, ev-130d25dfbb6b/ev-92f8d43d61a8; resources0/operations0, не autonomous acceptance. Финальный общий runner фиксируется после завершения, промежуточный v202-full-smoke.log прерван перед добавлением action receipt и не считается PASS.
+
 ## v200 — controlled think-on native comparison, partial progress only
 
 - Один process-local UQA_THINK=1 trial на том же request/expected/planned_checks v199;6 reasoning calls, никаких новых подсказок, операторской навигации, постоянной конфигурации или UC-мутаций.

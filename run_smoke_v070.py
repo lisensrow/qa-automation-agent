@@ -42,6 +42,7 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_table_horizontal_viewport.py",
     "smoke_procedure_graph.py",
     "smoke_api_contract_projection.py",
     "smoke_saved_block_graph.py",

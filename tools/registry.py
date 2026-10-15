@@ -132,6 +132,7 @@ from tools.browser import (
     inspect_order_semantic,
     resize_semantic,
     inspect_table_semantic,
+    scroll_table_horizontal_semantic,
     sort_table_semantic,
     verify_table_sort_roundtrip_semantic,
     set_table_row_selected,
@@ -1467,6 +1468,21 @@ TOOLS = [
                     "exact": {"type": "boolean"}
                 }
             }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_scroll_table_horizontal_semantic",
+            "description": (
+                "Прокручивает только горизонтальную область одной таблицы к start/end. "
+                "При заданном table требует точное реальное имя; без имени — единственную видимую таблицу. "
+                "Возвращает геометрию и снимки до/после; не изменяет записи, не доказывает полноту колонок или PASS."
+            ),
+            "parameters": {"type": "object", "properties": {
+                "edge": {"type": "string", "enum": ["start", "end"]},
+                "table": {"type": "string"}, "exact": {"type": "boolean"}
+            }, "required": ["edge"]}
         }
     },
     {
@@ -2850,6 +2866,9 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("table"),
             arguments.get("exact", True),
         )
+
+    if name == "browser_scroll_table_horizontal_semantic":
+        return scroll_table_horizontal_semantic(arguments.get("edge"), arguments.get("table"), arguments.get("exact", True))
 
     if name == "browser_sort_table_semantic":
         return sort_table_semantic(

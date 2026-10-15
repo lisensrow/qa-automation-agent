@@ -2162,6 +2162,9 @@ def classify_tool_action(
     if name == "browser_inspect_dialog_focus_trap_semantic":
         return "interact"
 
+    if name == "browser_scroll_table_horizontal_semantic":
+        return "interact"
+
     if name == "browser_set_viewport_semantic":
         return "interact"
 

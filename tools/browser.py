@@ -6588,6 +6588,61 @@ class BrowserSession:
         )
         return result
 
+    def scroll_table_horizontal_semantic(self, edge, table=None, exact=True):
+        """Move only the nearest horizontal table viewport; never infer data completeness."""
+        if edge not in ('start', 'end') or not isinstance(exact, bool):
+            return {'error': 'unsupported_table_scroll_arguments', 'executed': False}
+        self._ensure_started()
+        self._reset_diagnostics()
+        locator, error = self._resolve_table(table, exact)
+        if error:
+            return error  # No fallback from an incorrect requested name.
+        # Inspect only the nearest overflowing ancestor, never the whole page.
+        probe = locator.evaluate('''t=>{
+            for(let p=t.parentElement,i=0;p&&i<8;p=p.parentElement,i++){
+                if(p===document.body||p===document.documentElement)break;
+                const s=getComputedStyle(p);
+                if(['auto','scroll'].includes(s.overflowX)&&p.scrollWidth>p.clientWidth+1){
+                    if(s.direction!=='ltr'||s.writingMode!=='horizontal-tb')return {error:'unsupported_table_scroll_direction'};
+                    return {left:p.scrollLeft,max:p.scrollWidth-p.clientWidth,width:p.clientWidth};
+                }
+            }return {error:'table_horizontal_viewport_not_found'};
+        }''')
+        if probe.get('error'):
+            return {'error': probe['error'], 'executed': False}
+        before = self._table_snapshot(locator)
+        self._begin_action_execution()
+        moved = locator.evaluate('''(t,wanted)=>{
+            for(let p=t.parentElement,i=0;p&&i<8;p=p.parentElement,i++){
+                if(p===document.body||p===document.documentElement)break;
+                const s=getComputedStyle(p);
+                if(['auto','scroll'].includes(s.overflowX)&&p.scrollWidth>p.clientWidth+1){
+                    if(s.direction!=='ltr'||s.writingMode!=='horizontal-tb')return false;
+                    p.scrollTo({left:wanted==='end'?p.scrollWidth-p.clientWidth:0,behavior:'instant'});return true;
+                }
+            }return false;
+        }''', edge)
+        self.page.wait_for_timeout(300)
+        after_geometry = locator.evaluate('''t=>{
+            for(let p=t.parentElement,i=0;p&&i<8;p=p.parentElement,i++){
+                if(p===document.body||p===document.documentElement)break;
+                const s=getComputedStyle(p);
+                if(['auto','scroll'].includes(s.overflowX)&&p.scrollWidth>p.clientWidth+1)
+                    return {left:p.scrollLeft,max:p.scrollWidth-p.clientWidth,width:p.clientWidth};
+            }return null;
+        }''')
+        reached = bool(moved and after_geometry and abs(after_geometry['left'] -
+            (after_geometry['max'] if edge == 'end' else 0)) <= 1)
+        result = self._capture_state('scroll-table-horizontal-semantic')
+        result.update({'table_name': table, 'table_resolution': 'named' if table else 'unique_visible',
+            'scroll_edge': edge, 'scroll_status': 'reached' if reached else 'unverified',
+            'viewport_before': probe, 'viewport_after': after_geometry,
+            'table_before': before, 'table_after': self._table_snapshot(locator),
+            'mutation_executed': False, 'business_pass': False, 'all_columns_observed': False})
+        if not reached:
+            result['error'] = 'table_scroll_not_verified'
+        return self._finish_action_execution(result)
+
     def sort_table_semantic(
         self,
         column: str,
@@ -14049,6 +14104,10 @@ def resize_semantic(
         exact,
         role,
     )
+
+
+def scroll_table_horizontal_semantic(edge: str, table: str = None, exact: bool = True) -> dict:
+    return _session.scroll_table_horizontal_semantic(edge, table, exact)
 
 
 def inspect_table_semantic(
