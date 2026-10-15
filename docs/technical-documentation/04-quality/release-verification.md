@@ -1,5 +1,9 @@
 # Проверка текущего этапа
 
+Актуальный code checkpoint v253, 15 октября 2026:241/241 smoke PASS,11 SHA совпали после полного прогона. Документационный пакет v255:20 Markdown файлов, проверка внутренних ссылок и obvious private-data markers PASS. Старые результаты ниже оставлены как история, не текущие счётчики.
+
+Два normal Core run_turn251 с локальной моделью прошли узкий whole-phase критерий шести ячеек несохранённых условий Windows/Ubuntu без operator browser preparation. Полное создание коллекции, saved AST/состав, nested conditions, политики и процедуры не приняты. Prepared-job-entry252 заблокирован до WRITE авторизацией; диагностический cert-login503 не переименован в product FAIL или compiler defect. Fixture241 не означает241 бизнес-сценарий.
+
 Дата: 14 октября 2026. Установленный v175: py_compile PASS; полный runner 217/217 PASS. Новый профиль прошёл изолированно, включая 10000 повторов, canonical dedup/conflicts, source tampering/version/project/namespace gates, OS/release/document history, developer attribution и rollback.
 
 Production migration добавил knowledge_v1_* без изменения старых таблиц: 3 facts, 3 fact scopes, 18 confirmations, 2 scope status events и sqlite_sequence совпали по schema/content fingerprint с consistent backup. Документный индекс также не изменился при migration. SQLite integrity check PASS.

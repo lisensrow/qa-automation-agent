@@ -2033,6 +2033,7 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        "browser_inspect_labeled_grid_values_semantic",
         "api_inspect_contract_page",
         "knowledge_search",
         "ssh_docker_ps",
@@ -13288,6 +13289,9 @@ def _prepared_regression_case(job_id):
         validate_contracts(requirement.get("check_contracts"))
         if set(requirement["check_contracts"]) != {p["check_id"] for p in _normalize_planned_checks(planned_checks)}:
             raise ValueError("prepared_contract_result_coverage_invalid")
+    elif requirement.get('type')=='bounded_condition_draft':
+        from condition_draft_runtime import validate_context
+        validate_context(job,case['case_id'],preparing=True)
 
     spec = {
         "title": case.get("title") or "Prepared regression case",
@@ -13324,7 +13328,7 @@ def run_prepared_regression_job(job_id):
     # Prepared, validated contracts are authoritative; natural-language compilation
     # must not discard them. This exception is confined to the prepared-job path.
     if not (spec["requirement"].get("locked") is True
-            and spec["requirement"].get("type") == "frontend_contracts"):
+            and spec["requirement"].get("type") in {"frontend_contracts","bounded_condition_draft"}):
         prepare_locked_requirements([spec])
     set_job_status(job_id, "running")
     update_test_case(job_id, case_id, status="running")
@@ -14513,6 +14517,16 @@ def run_turn(
     messages.append({"role": "system", "uqa_case_navigation_task": navigation_task,
                      "content": "Current case navigation target remains the original task. "
                                 "Recovery prompts do not authorize a different resource or section."})
+    if job_id and case_id:
+        phase_job=get_job(job_id) or {}
+        phase_case=next((c for c in phase_job.get('test_cases',[]) if c.get('case_id')==case_id),{})
+        if (phase_case.get('requirement') or {}).get('type')=='bounded_condition_draft':
+            import sys
+            from condition_draft_runtime import run as run_condition_draft
+            outcome=run_condition_draft(sys.modules[__name__],messages,job_id,case_id,action_policy,force_read_only)
+            if outcome.get('status')!='observed_ui_draft':
+                finalize_case_blocked(job_id,case_id,outcome.get('reason','condition_draft_unavailable'))
+                return
     if action_policy == "confirm_mutations" and job_id and case_id:
         from product_knowledge_context import reviewed_search_queries, retrieve_declared_context
         from product_runtime_context import retrieve_observed_context
@@ -14664,6 +14678,10 @@ def run_turn(
             required_names = (({required_observation["tool"]} if required_observation else set())
                               | form_support_tools | contract_schema_tools)
             completed_checks = completed_readonly_contract_checks(get_job(job_id), case_id) if job_id and case_id else None
+            if completed_checks is None and job_id and case_id:
+                import sys
+                from condition_draft_runtime import completed_checks as completed_condition_checks
+                completed_checks=completed_condition_checks(sys.modules[__name__],get_job(job_id),case_id)
             if pending_compatibility_probe:
                 pending_compatibility_probe = False
                 compatibility_probe_attempts += 1

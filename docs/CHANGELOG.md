@@ -2,6 +2,16 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v249–v255 — обычный runtime ограниченной фазы условий и независимый readback
+
+Добавлены condition_draft_profiles, condition_draft_runtime и OBSERVE browser_inspect_labeled_grid_values_semantic. Ожидаемый план/шесть hashes, source/profile/preparation pins фиксируются до модели. Однократное durable состояние запрещает повтор частичной попытки. Entry берётся только из настроенного стенда; каждый UI-шаг проходит прежние policy и compatibility checks. Поддержано только существующее Core-предложение saved-auth на том же origin, без автоматического включения reuse credentials. В verifier добавлены независимые cell hashes и freshness относительно последующего WRITE. Prepared regression сохраняет и проверяет явный requirement вместо его замены текстовым компилятором.
+
+Native Windows251 Job20261015-093918-1d84b4de / tc-b42de2d8 и Ubuntu251 Job20261015-094203-27d568f7 / tc-155b4f1e: normal Core PASSED по шести ячейкам несохранённого фильтра, без operator browser preparation, по5 подтверждённых WRITE,0resources/operations. Readback ev-6a4901024846 / ev-e3bd2bb3e9f1. Первый Windows driver ошибся уже после Core PASS, вызвав отсутствующий job_store.recompute_job_status; helper исправлен на uqa.recompute_job_status, исходные статусы не переписаны. Это не полный create/save/member workflow.
+
+Prepared-entry Job20261015-095820-09ac66bc BLOCKED до WRITE. Единственная разрешённая попытка saved-auth Job20261015-101139-5ece617a также BLOCKED; повторов пароля нет. Диагностика Job20261015-101930-ddd043f7: cert-login503/check-before428/check-after428, сертификат настроен и не просрочен. Позднее наблюдены активные Ansible-процессы, остановленные uauth/ucontrol и перезапуски backend; причинную связь с развёртыванием ещё не подтверждали. Авторизацию/права/защиту не меняли, в обновление не вмешивались.
+
+Frozen v253: py_compile/241 smoke PASS,11 SHA совпали. Политики и процедуры пока исследованы по установленной OpenAPI: create defaults active=true требуют явного inactive и отдельного точного scope; запросов создания/активации/запуска не выполняли. Старые uncertain/awaiting-verification операции не освобождались. STEP/AUTO/v069/journal сохранены.
+
 ## v246–v248 — отдельный логический компилятор и финальное чтение ячеек
 
 Frozen final248: py_compile,238/238smoke PASS (/tmp/v248-release-full-smoke.log),3codeSHA неизменны (/tmp/v248-release-code.sha256),20technicalMD PASS. Набор244/237 относится к предыдущему code checkpoint, а первый246/238 — к схеме до field-specific union; финальным считается248.

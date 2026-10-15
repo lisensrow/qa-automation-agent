@@ -6,6 +6,7 @@ import json
 from urllib.parse import urlsplit
 
 TOOL_FIELDS = {
+    "browser_inspect_labeled_grid_values_semantic": ("ui_grid_values", {"cell_values_match_binding"}),
     "browser_inspect_form_validation_semantic": ("ui_contract_audit", {"form_controls_opened", "native_states_reported",
         "form_controls_restored", "no_input_submit_execution"}),
     "browser_inspect_semantic": ("ui_element", {"value_matches_binding", "value_empty"}),
@@ -49,6 +50,10 @@ def validate_contracts(contracts):
         tool = contract.get("tool")
         if tool not in TOOL_FIELDS or not isinstance(contract.get("subject_binding"), str):
             raise ValueError("frontend_contract_tool_or_subject_invalid")
+        if tool == 'browser_inspect_labeled_grid_values_semantic' and any(
+                not isinstance(contract.get(key),str) or not contract[key]
+                for key in ('cells_binding','session_binding','url_binding')):
+            raise ValueError('grid_contract_bindings_required')
         if tool == "browser_inspect_form_validation_semantic" and (
                 contract.get("phase") not in {"opened", "restored"}
                 or not isinstance(contract.get("close_key_binding"), str)
@@ -288,6 +293,52 @@ def search_phase_fact(case, requirement, contract, subject, saved_url):
     return observation, facts, evidence, [s["observation_id"] for s in sources]
 
 
+def grid_fact(data, contract, bindings, case, evidence):
+    """Compare fresh native hashes, never a tool/model boolean claiming a match."""
+    import re
+    if (data.get('grid_value_status')!='observed'
+            or data.get('session_id')!=bindings.get(contract['session_binding'])
+            or not isinstance(data.get('session_id'),str) or not data['session_id']
+            or data.get('url')!=bindings.get(contract['url_binding'])):
+        raise ValueError('grid_contract_context_mismatch')
+    expected=json.loads(bindings.get(contract['cells_binding']) or 'null')
+    if not isinstance(expected,list) or not 1<=len(expected)<=32:
+        raise ValueError('grid_contract_expected_invalid')
+    def indexed(rows, actual=False):
+        if not isinstance(rows,list) or len(rows)!=len(expected):
+            raise ValueError('grid_contract_cells_incomplete')
+        result={}
+        for row in rows:
+            if (not isinstance(row,dict) or set(row)!=({'row','column','value_sha256','value_length'} if actual else {'row','column','value_sha256'})
+                    or any(not isinstance(row.get(k),str) or not 0<len(row[k])<=160 for k in ('row','column'))
+                    or not isinstance(row.get('value_sha256'),str) or not re.fullmatch('[0-9a-f]{64}',row['value_sha256'])):
+                raise ValueError('grid_contract_cell_invalid')
+            if actual and (type(row['value_length']) is not int or not 0<=row['value_length']<=1000):
+                raise ValueError('grid_contract_cell_length_invalid')
+            key=(row['row'],row['column'])
+            if key in result:raise ValueError('grid_contract_duplicate_cell')
+            result[key]=row['value_sha256']
+        return result
+    wanted=indexed(expected); actual=indexed(data.get('grid_values'),True)
+    requested=data.get('requested_cells')
+    if (not isinstance(requested,list) or len(requested)!=len(wanted)
+            or any(not isinstance(c,dict) or set(c)!={'row','column'}
+                   or not isinstance(c['row'],str) or not isinstance(c['column'],str) for c in requested)
+            or sorted((c['row'],c['column']) for c in requested)!=sorted(wanted)
+            or set(actual)!=set(wanted)):
+        raise ValueError('grid_contract_requested_scope_mismatch')
+    evidences=case.get('evidence') or []
+    positions=[i for i,e in enumerate(evidences) if e.get('evidence_id')==evidence.get('evidence_id')]
+    if len(positions)!=1:raise ValueError('grid_contract_evidence_order_unknown')
+    for later in evidences[positions[0]+1:]:
+        if not str(later.get('type','')).startswith('browser_'):continue
+        try:result=json.loads(later['value']).get('result',{})
+        except (ValueError,TypeError,KeyError):raise ValueError('grid_contract_later_action_unknown')
+        if result.get('action_class') in {'write','destructive','system'} and result.get('executed') is not False:
+            raise ValueError('grid_contract_readback_precedes_mutation')
+    return actual==wanted
+
+
 def evaluate_contract(case, requirement, check, saved_url):
     """Rebuild references and assertions from Core records, never model claims."""
     output = deepcopy(check)
@@ -335,7 +386,8 @@ def evaluate_contract(case, requirement, check, saved_url):
         data = observation["data"]
         is_agent = observation_type in {"agent_telemetry", "agent_plugin_audit"}
         is_tabs = observation_type == "ui_tab_navigation"
-        if (is_agent or is_tabs) and normalized_origin(data.get("url")) != normalized_origin(saved_url):
+        is_grid = observation_type == "ui_grid_values"
+        if (is_agent or is_tabs or is_grid) and normalized_origin(data.get("url")) != normalized_origin(saved_url):
             raise ValueError("agent_contract_stand_origin_mismatch")
         if data.get("ci_name" if is_agent else "subject") != subject:
             raise ValueError("frontend_contract_subject_mismatch")
@@ -351,6 +403,8 @@ def evaluate_contract(case, requirement, check, saved_url):
                 actual = agent_fact(data, field, requirement.get("bindings") or {})
             elif is_tabs:
                 actual = tab_fact(data, field, contract, requirement.get("bindings") or {})
+            elif is_grid:
+                actual = grid_fact(data, contract, requirement.get('bindings') or {}, case, evidence)
             else:
                 actual = data.get(field)
             if assertion["operator"] == "same_origin":

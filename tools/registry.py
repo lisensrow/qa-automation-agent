@@ -2201,6 +2201,13 @@ TOOLS.append({"type":"function","function":{"name":"browser_table_cell_control_s
         "action":{"type":"string","enum":["inspect","fill","select"]},"value":{"type":"string"},"table":{"type":"string"}},
         "required":["row","column"]}}})
 
+TOOLS.append({'type':'function','function':{'name':'browser_inspect_labeled_grid_values_semantic',
+    'description':'OBSERVE exact labeled div-grid row/column controls, returning only value hashes and lengths. Requires current native session/URL; refuses ambiguity and passwords. Does not submit or change controls.',
+    'parameters':{'type':'object','additionalProperties':False,'properties':{
+        'cells':{'type':'array','minItems':1,'maxItems':32,'items':{'type':'object','additionalProperties':False,
+            'properties':{'row':{'type':'string'},'column':{'type':'string'}},'required':['row','column']}},
+        'session_id':{'type':'string'},'current_url':{'type':'string'}},'required':['cells','session_id','current_url']}}})
+
 TOOLS.append({'type':'function','function':{'name':'browser_add_tree_row_semantic',
     'description':'Add ONE new condition row: expand exact tree parents, drag exact leaf to an observed logical target, set exact column controls. Use for condition builders instead of clicking leaves/And. Never saves. Refuses an existing row, changed session/URL, ambiguity or partial failure; do not retry automatically. Read parents/columns/choices from memory and current UI.',
     'parameters':{'type':'object','additionalProperties':False,'properties':{
@@ -2237,6 +2244,10 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_inspect_labeled_grid_values_semantic":
+        from tools.browser import _session
+        from tools.grid_value_readback import inspect_values
+        return inspect_values(_session, **arguments)
     if name == "browser_add_tree_row_semantic":
         from tools.browser import _session
         from tools.tree_row_controls import add_tree_row

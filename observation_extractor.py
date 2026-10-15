@@ -675,6 +675,13 @@ def extract_observations(
             },
         }]
 
+    if tool_name == "browser_inspect_labeled_grid_values_semantic":
+        return [{'type':'ui_grid_values','source':'browser','data':{
+            'tool':tool_name,'subject':result.get('subject'),'session_id':result.get('session_id'),
+            'requested_cells':result.get('requested_cells'),'grid_values':result.get('grid_values'),
+            'grid_value_status':result.get('grid_value_status'),
+            **_url_data(result.get('current_url'))}}]
+
     if tool_name == "browser_verify_exact_table_row_tabs_semantic":
         return [{"type": "ui_tab_navigation", "source": "browser", "data": {
             "tool": tool_name, "subject": result.get("name") or arguments.get("name"),
