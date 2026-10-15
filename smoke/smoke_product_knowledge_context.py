@@ -42,6 +42,19 @@ assert reviewed_search_queries('Inspect CPU table columns without collections') 
 assert reviewed_search_queries('Read collection layout. Do not create policies or procedures.') == [read_query,layout_query]
 assert reviewed_search_queries('Why is the OS column missing from the collection?') == [layout_query]
 assert reviewed_search_queries('Колонка ОС коллекции. Посмотри накопленный опыт; ничего не сохраняй.') == [layout_query]
+policy_facet='политика открытие редактора отдельный submit активность по умолчанию'
+policy_queries=['политики создание',policy_facet,'наблюдённый маршрут формы политики']
+assert reviewed_search_queries('Политика включена по умолчанию?') == policy_queries
+assert reviewed_search_queries('Explain policy default activation and launcher versus submit') == policy_queries
+assert reviewed_search_queries('Создай неактивную политику') == policy_queries
+assert reviewed_search_queries('Объясни отличие открытия редактора политики от сохранения') == policy_queries
+assert reviewed_search_queries('Открой политику; не меняй активность.') == ['политики создание','наблюдённый маршрут формы политики']
+assert reviewed_search_queries('Не включай политики по умолчанию') == []
+assert reviewed_search_queries('Submit collection layout without policies') == [layout_query]
+assert reviewed_search_queries('Explain inactive policy') == policy_queries
+assert reviewed_search_queries('Политика по умолчанию только для тестовой коллекции') == policy_queries
+assert reviewed_search_queries('Сначала процедура, затем политика') == ['процедуры создание','наблюдённый маршрут формы процедуры','политики создание']
+assert reviewed_search_queries('Сначала коллекция, затем политика по умолчанию') == ['коллекции создание','наблюдённый маршрут поля коллекции','политики создание']
 
 with TemporaryDirectory() as temp:
     root = Path(temp)

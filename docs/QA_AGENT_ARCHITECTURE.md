@@ -13,6 +13,16 @@
 
 ## Диагностическое сравнение режима рассуждения v200
 
+### v215: policy facet и отрицательная factual проверка
+
+Финальная техническая версия: py_compile/full231/231PASS /tmp/v215-final-full-smoke.log, SHA4code files до/после совпали,19Markdown/link/private checks PASS. Первый215log — pre-warning intermediate. Технический PASS не отменяет accuracy rejected native ответа.
+
+Product adapter добавляет default/activation/launcher/submit facet и сортировку доменов по первому положительному упоминанию пользователя. Политика для коллекции больше не теряет предметный query из-за dictionary order. Бюджет3не вырос; это не универсальный semantic planner. Negative/read/create/RAM/CPU/layout guards сохранены; bool-default и wire IDs не зашиты в Core.
+
+Native /advice Job20261015-042403-5e7a83ed получил source213chunks2/3/4/6 SHA d7e991f2fe39a6bf10831b8e7d97e0edea25b902ab2ec1097a5e758f27029871 без операторских chunks. Structurally answered, но фраза «Новая политика по умолчанию не включена» противоречит static initial_active=true из Job20261015-035134-c25e4db9/tc-f5e3d115/ev-7706a44920e9. Это ошибка интерпретации UQA, НЕ runtime default и НЕ bug UC. Job.advisory.operator_review сохраняет rejected/expected true/source-evidence hash/original-response fingerprint; ответ и QA blocked статус не переписаны.0cases/resources/journal/UC actions. Правильный KB источник/индекс не менялись, promotion отсутствует.
+
+CLI теперь явно предупреждает о непроверенной точности и применимости. Семантическая приёмка политик НЕ пройдена; одинаковых retries нет. Дальше нужен typed source-fact adapter/детерминированный critical-fact brief и pre-commit проверки. Final runner231 проверяется после warning; первый215log промежуточный.
+
 ### v214: отдельный knowledge-only advisory вход
 
 Финальная release revision: server py_compile/full231/231PASS /tmp/v214-release-full-smoke.log, code SHA-256 до/после suite неизменны,19Markdown/link/private checks PASS. Усилены canonical namespace path, stand precheck, nonblank response и защита cancellation. Источники native pilot повторно прошли итоговый path guard. Предыдущие v214 full/final/final2 logs — промежуточные ревизии, не финальный release. Исходные и промежуточные файлы сохранены в backups/v214-advisory-20261015; Jobs/данные/артефакты не включаются в Git.

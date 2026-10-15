@@ -2,6 +2,8 @@
 
 ## Три слоя
 
+v215: policy facet для default/activation/launcher/submit и first-positive-mention ordering сохраняют3query budget. Политика для коллекции получает policy context первой; это эвристика retrieval, не semantic planner. Native /advice нашёл точный source213, но модель заявила «не включена» вместо static is_active=true. Citation/bytes validation не равны factual verification. Ответ сохранён с отдельным operator accuracy review=rejected, без переписывания и promotion; правильный KB источник не меняется. Следующий этап — typed source facts/детерминированный critical-fact brief и pre-commit assertions, не дополнительные подсказки.
+
 v209: явные вопросы о колонках/столбцах/layout/table fields выбирают отдельный reviewed каталог и namespace-опыт. Предметный адаптер сохраняет три запроса максимум: маршрут просмотра либо создания, рецепт колонок, затем аппаратный аспект при наличии бюджета. Обычное имя filter key не включает этот маршрут; отрицания исключаются. Ключи ответов не зашиты в Core. Производственный retrieval и8/8 context-only проверки локальной модели подтверждают доступность знания, не автономное редактирование UI. Переиндексация и изменение канонических facts не нужны; история сохраняется.
 
 v211 уточняет маршрут: в чистом вопросе о колонках навигационный рецепт не добавляется; явный open/read/create по-прежнему получает его. Тот же native прогон стал компактнее, но свободный пересказ остался противоречивым; полноценной приёмки нет. Одинаковые retries прекращены. Проект отдельного [advisory contract](../01-architecture/advisory-contract.md) не реализован и не заменяет проверку factual accuracy. Правильный источник не переписывается под ошибку модели, negative diagnostic не становится знанием о баге UC.

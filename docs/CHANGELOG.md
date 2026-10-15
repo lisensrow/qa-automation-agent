@@ -2,6 +2,12 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v215 — предметный policy recall и factual accuracy failure
+
+Финал технической проверки: py_compile/full231/231PASS /tmp/v215-final-full-smoke.log,4code SHA unchanged,19MDPASS. /tmp/v215-full-smoke.log — промежуточный pre-warning; фактическая приёмка policy advice остаётся rejected.
+
+Policy facet и first-positive-mention ordering сохраняют3queries и не позволяют коллекции-scope скрыть primary policy context; RU/EN/negative/multi-domain assertions добавлены. Native Job20261015-042403-5e7a83ed нашёл правильный source213, но неверно назвал default («не включена» против static true). Original response сохранён, operator accuracy review=rejected/source hashes/fingerprint;0cases/resources/journal/UC actions. Это не баг UC и не runtime proof. Правильный KB/индекс не менялись, ошибки не promoted. CLI предупреждает о непроверенной точности/применимости; административная приёмка не закрыта. Дальше typed critical-fact grounding/pre-commit guards, не одинаковые retries.
+
 ## v214 — явный справочный режим без исполнения и QA verdict
 
 Финал: py_compile/full231/231PASS /tmp/v214-release-full-smoke.log, code SHA до/после неизменны,19MDPASS. Добавочные namespace-parent/alias/backslash/stand/blank/cancellation отказы проверены; native source context повторно прошёл final guard. Предыдущие v214 full/final/final2 logs — промежуточные ревизии. Backup исходного и промежуточного кода сохранён, данные/Jobs не коммитятся.

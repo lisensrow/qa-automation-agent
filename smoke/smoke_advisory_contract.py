@@ -135,6 +135,14 @@ with TemporaryDirectory(prefix='uqa-advisory-') as temp:
             except ValueError: pass
             else: raise AssertionError('cancelled Job overwritten')
         assert job_store.get_job(created[-1])['status'] == 'cancelled'
+commands = iter(['/advice fixture Explain.', '/exit'])
+with patch.object(uqa, 'banner'), patch.object(uqa, 'read_user_input', lambda: next(commands)), \
+     patch.object(advisory, 'run_advisory_request', return_value={'job_id': 'fixture',
+         'response': validated, 'sources': []}), patch.object(uqa.console, 'print') as printed:
+    uqa.main()
+    assert any('Точность объяснения и применимость' in str(call.args[0])
+               for call in printed.call_args_list if call.args)
+
 with patch.object(uqa, 'ensure_ollama_ready'), \
      patch.object(uqa, 'acquire_llm_gate', return_value=(None, 0)), \
      patch.object(uqa, 'release_llm_gate'), patch.object(uqa.httpx, 'Client') as client:

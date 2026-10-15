@@ -16345,6 +16345,7 @@ def main():
                 console.print('Справочный ответ: не тест, не PASS и не разрешение исполнения.')
                 console.print('Job: ' + advisory['job_id'])
                 if advisory['response']:
+                    console.print('Точность объяснения и применимость к текущей версии не подтверждены; сверяйте источники перед действиями.')
                     console.print(Markdown(advisory['response']['answer']))
                     console.print(Markdown(advisory['response']['limitations']))
                     for source in advisory['sources']:

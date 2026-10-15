@@ -43,6 +43,10 @@ CONCEPTS = {
         'terms': ('политик', 'policy', 'policies'),
         'search_query': 'политики создание',
         'experience_query': 'наблюдённый маршрут формы политики',
+        'task_facets': (
+            (r'по\s+умолчан\w*|\bdefaults?\b|активн\w*|\b(?:activation|active|inactive)\b|\bsubmit\b|\blauncher\b|сохранени\w*',
+             'политика открытие редактора отдельный submit активность по умолчанию'),
+        ),
         'claims': {'supported_types': ['agent_configuration', 'agent_task_update', 'agent_plugin_management'],
                    'condition_logic': 'same_as_collection_conditions'},
     },
@@ -67,7 +71,12 @@ def reviewed_search_queries(task):
     positive = ' '.join(re.split(r'(?iu)\b(?:не|без|никаких|нельзя|never|without|do not|no)\b', clause, 1)[0]
                         for clause in re.split(r'[.!?;\n]+', task[:12000])).casefold()
     queries = []
-    for spec in CONCEPTS.values():
+    def first_mention(spec):
+        positions = [positive.find(term) for term in spec['terms'] if term in positive]
+        return min(positions) if positions else len(positive) + 1
+    # User topic order, not dictionary order, decides which domain gets the
+    # bounded budget first. A collection used as scope must not hide a policy.
+    for spec in sorted(CONCEPTS.values(), key=first_mention):
         if any(term in positive for term in spec['terms']):
             facets = [query for pattern, query in spec.get('task_facets', ())
                       if re.search(pattern, positive)]
