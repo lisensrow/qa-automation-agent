@@ -16,6 +16,7 @@ os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/opt/uqa/browsers")
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 from tools.agent_observability import summarize_agent_observation
+from request_event_census import RequestEventCensus
 
 
 ARTIFACTS_BASE = Path("/opt/uqa/artifacts/browser")
@@ -137,6 +138,8 @@ class BrowserSession:
         self.action_execution_counter = 0
         self.active_action_execution_id = None
 
+        self._request_event_census = RequestEventCensus()
+
         self.last_uc_auth = None
         self._last_inspected_exact_target = None
         self._last_inspected_exact_row = None
@@ -191,6 +194,14 @@ class BrowserSession:
                 **self._context_kwargs()
             )
         )
+
+        # Context events include child pages and requests without a response.
+        # This bounded observer never grants mutation/replay permission.
+        self._request_event_census = RequestEventCensus()
+        self.context.on('request', self._on_census_request_started)
+        self.context.on('requestfinished', self._on_census_request_finished)
+        self.context.on('requestfailed', self._on_census_request_failed)
+        self._request_event_census.capture_active = True
 
         self.page = (
             self.context.new_page()
@@ -750,7 +761,18 @@ class BrowserSession:
             execution_id
         )
 
+        self._request_event_census.begin(execution_id)
+
         return execution_id
+
+    def _on_census_request_started(self, request):
+        self._request_event_census.started(request)
+
+    def _on_census_request_finished(self, request):
+        self._request_event_census.completed(request)
+
+    def _on_census_request_failed(self, request):
+        self._request_event_census.completed(request, failed=True)
 
     def _finish_action_execution(
         self,
@@ -774,6 +796,8 @@ class BrowserSession:
             result["network_capture_scope"] = (
                 "fetch_xhr_until_capture_state"
             )
+
+            result['request_event_census'] = self._request_event_census.finish(execution_id)
 
         self.active_action_execution_id = None
 

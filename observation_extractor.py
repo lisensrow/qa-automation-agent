@@ -203,6 +203,7 @@ def _browser_state_observation(
             "network_window_closed": result.get(
                 "network_window_closed"
             ),
+            "request_event_census": result.get("request_event_census"),
             "network_capture_scope": result.get(
                 "network_capture_scope"
             ),

@@ -2,6 +2,12 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v212 — учёт начала запросов без права освобождать journal
+
+Проверки: server py_compile/full230/230PASS /tmp/v212-full-smoke.log,19MDPASS, fresh native receipt linkage PASS. Production compile list включает новый модуль; runtime guards и старые операции не менялись.
+
+Добавлен bounded request_event_census и browser-context wiring, запись в linked ui_state observation, isolated native smoke и compile/suite entry. Считает отправленный failed/pending POST и весь поток внутри окна, а не только последние30ответов. Pending cap256, sticky incomplete, без URL/headers/body; неизвестные источники/late traffic/WS/backend effects не объявляются покрытыми. v069/STEP/AUTO/old journal/recovery неизменны. Fresh read-only lab receipt join Job20261015-034526-30f466e2/tc-22e564b3/ev-00971d180491 подтвердил8starts/7GET+1POST,0pending, evidence/observation linkage; CLOSED/BLOCKED/0resources0ops. Не автономная policy/collection приёмка, launcher ещё не освобождён.
+
 ## v211 — изоляция справочного контекста без объявления успешной автономности
 
 Проверено: server py_compile/profile/full229/229PASS /tmp/v211-full-smoke.log,19MD/link/private checks PASS. Резервная копия до изменения сохранена; Jobs/artifacts/backups не включаются в Git.

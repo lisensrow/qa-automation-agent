@@ -11,6 +11,14 @@
 
 ## Диагностическое сравнение режима рассуждения v200
 
+### v212: request-start census перед типизированным launcher lifecycle
+
+Финал: server py_compile и full runner230/230PASS /tmp/v212-full-smoke.log;19MD/link/private checks PASS. Новый модуль также включён в compile list runner. Резервные копии code/docs сохранены до изменения. Это foundation наблюдения, не завершённый UI-launcher recovery.
+
+Новый request_event_census.py подключён к browser context request/requestfinished/requestfailed и текущему action receipt; observation_extractor сохраняет эту запись. Только методы/типы, времена и счётчики; URL/body/headers не читаются. Pending≤256, потеря/overflow/unknown/nested-window sticky incomplete. Response preview по-прежнему ограничен30, но start-counters не зависят от него. Никаких policy/STEP/AUTO/oracle/reconciliation изменений: future/WS/service-worker coverage, causal attribution, business effect и replay authority не заявляются. Старые uncertain/awaiting операции сохранены.
+
+Isolated native fixture прошёл failed POST без response, pending POST,41starts против30preview и негативные случаи. Fresh lab Job20261015-034526-30f466e2/tc-22e564b3: click ev-b7cec1bfa3d4, join ev-00971d180491;8starts/7GET+1POST/0pending/tracking_incomplete=false переданы в evidence и linked observation. POST — текущий table query; не blanket WRITE permission. Job CLOSED/BLOCKED/resources0/journal0/browserclosed, operator-only instrumentation check, не local-model acceptance и не исправление OS column. Полный runner230 проверяется отдельно перед commit. Следующий launcher oracle не должен выводить «ничего не изменилось» из одних нулевых счётчиков.
+
 ### v211: предметная изоляция контекста и граница advisory
 
 Финал: server py_compile/profile/full runner229/229PASS /tmp/v211-full-smoke.log;19Markdown/link/private checks PASS. Backup code/docs до изменений сохранён отдельно. Это техническая проверка установленного кода, не число успешно выполненных UC-сценариев.
