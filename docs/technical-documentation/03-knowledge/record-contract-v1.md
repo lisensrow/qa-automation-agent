@@ -28,6 +28,8 @@ Canonical claim ID определяется project/namespace/concept/kind/predi
 - ingest_record(record, policy, db_path): транзакционный candidate-only sink; exact replay возвращает duplicate_event, изменённый payload того же event ID отклоняется.
 - read_history(project_id, product_namespace, concept_id, db_path, limit): read-only выдача до 50 scoped вариантов; no PASS/no upgrade advice, без automatic verified retrieval.
 
+v192 добавляет в read_history поле execution_modes: ограниченный список режимов событий данного variant/scope/source level. Типизированный исторический adapter отдельно разрешает только два reviewed runtime predicate с повторной проверкой native источника; это не автоматическая публикация всех кандидатов, не verified retrieval и не право выполнить действие. Исходный statement и значения XML в модельный context не экспортируются.
+
 DocumentSource/SourcePolicy задаёт доверенный оператор, а не входной JSON модели. project_id должен совпадать с policy, product_namespace — входить в её явно заданный allowed_namespaces; пустая allowlist запрещает admission. Текущий код не реализует end-user RBAC. Все результаты admission имеют evidence_for_pass=false; кандидат не публикуется в search и не разрешает действий.
 
 Recipe и code_binding/static_implementation спроектированы, но не приняты этим первым validator. Новые типы потребуют отдельного versioned контракта и tests; текущая схема не превращается в произвольный JSON-мешок.

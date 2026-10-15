@@ -2,6 +2,12 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v192 — source-rechecked типизированный runtime-контекст модели
+
+- product_runtime_context.py читает два явно рассмотренных historical candidate predicate/value из атомарной DB; заново проверяет native source integrity/eligibility/observations и тело, исключает conflict/tampering/unknown values/modes/scope. Произвольные statement/XML/значения полей не выдаются, история не переписывается. read_history дополнен bounded execution_modes.
+- observed_product_context подключён к обычному knowledge_search и initial grounding. Все flags current applicability/semantic verification/PASS/upgrade advice остаются false. Profile/py_compile/isolated production run_turn wiring и полный установленный runner226/226 PASS (/tmp/v192-full-smoke.log).
+- Live qwen context-only probe Job20261015-003603-a05c4261: первый точный contract не прошёл; диагностический повтор с сохранением критериев tc-3871d0e3/ev-36fcf6a284ed дал5/6: format label неверен, пять остальных полей, включая ограничения и operator mode, верны. Full model check FAIL, не UI-приёмка. Идентичные дальнейшие повторы не запускались.
+
 ## v191 — два runtime-кандидата в глубокой продуктовой памяти
 
 - Новый операторский read-only source Job20261015-002529-066aab5d/tc-1452c037, ev-80089519fd84: GET200, необрезанное тело, linked observation; без изменения или запуска UC. Старые receipts без links не переписывались, source gate не ослаблялся.

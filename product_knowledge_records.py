@@ -387,7 +387,10 @@ def read_history(project_id, product_namespace, concept_id, db_path=DB_PATH, lim
             results.append({'identity':json.loads(r[0]), 'variant_id':r[1], 'value':json.loads(r[2]),
                   'statement':r[3], 'scope':scope, 'source_level':r[5], 'status':r[6],
                   'first_seen_at':r[7], 'last_seen_at':r[8], 'confirmation_group_count':r[9],
-                  'source_refs':[json.loads(s[0]) for s in refs[:3]], 'source_refs_limited':len(refs)>3})
+                  'source_refs':[json.loads(s[0]) for s in refs[:3]], 'source_refs_limited':len(refs)>3,
+                  'execution_modes':[mode[0] for mode in con.execute(
+                      'SELECT DISTINCT execution_mode FROM knowledge_v1_events WHERE variant_id=? AND scope_id=? AND source_level=? ORDER BY execution_mode LIMIT 5',
+                      (r[1],_hash(scope),r[5])).fetchall()]})
         return {'status':'ok','results':results,
                 'has_more':len(rows)>limit, 'evidence_for_pass':False, 'upgrade_advice_authorized':False}
     finally:

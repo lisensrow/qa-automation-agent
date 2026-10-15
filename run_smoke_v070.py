@@ -33,6 +33,7 @@ PRODUCTION_FILES = [
     ROOT / "knowledge_fact_contracts.py",
     ROOT / "knowledge_index.py",
     ROOT / "product_knowledge_records.py",
+    ROOT / "product_runtime_context.py",
     ROOT / "product_knowledge_context.py",
     ROOT / "prepared_memory.py",
     ROOT / "product_knowledge_retrieval.py",
@@ -42,6 +43,7 @@ PRODUCTION_FILES = [
 SMOKES = [
     "smoke_procedure_graph.py",
     "smoke_saved_block_graph.py",
+    "smoke_product_runtime_context.py",
     "smoke_popup_model_context.py",
     "smoke_control_hint_history.py",
     "smoke_control_location_hint.py",

@@ -9,29 +9,35 @@
 - Технически наблюдает меню, поля и категории редактора, но операторская карта интерфейса не равна автономной способности выполнить весь workflow.
 - Полностью автономное создание коллекций, применение политик и сборка/исполнение процедур пока не приняты. Известные ограничения и результаты реальных прогонов приведены ниже; технические smoke-тесты не заменяют эту приёмку.
 
-## Контекст открытого меню v186
+## Исторический runtime-контекст глубокой памяти v192
 
-### Атомарная runtime-память формата процедур v191
+product_runtime_context выдаёт только два проверяемых типизированных predicate/value из атомарной памяти procedures.saved_definition. Перед выдачей повторно проверяются native GET/eligibility/linked observations, hash сохранённого envelope и фактическая поддерживаемая структура тела. Произвольные statement/XML/параметры не переносятся. Conflict, source tampering, неизвестные значения/режимы и неподходящий scope исключаются. read_history теперь явно возвращает execution_modes; код не меняет историю или статус кандидатов.
+
+Контекст подключён как observed_product_context к обычному knowledge_search и начальному documentary grounding. Это historical candidate, не текущая совместимость, semantic promotion, permission или PASS. Профиль, штатное run_turn wiring с изолированными callback и полный runner226/226 PASS. Real qwen context-only Job20261015-003603-a05c4261, diagnostic case tc-3871d0e3/ev-36fcf6a284ed:5/6 критериев, точный format label не воспроизведён, ограничения/режим корректны. Полный model probe FAIL; критерии не смягчались, UI-действий не было.
+
+## Атомарная runtime-память формата процедур v191
 
 Два observed_fact кандидата procedures.saved_definition записаны в существующую product knowledge DB: сериализация block_xml_v1 и наличие отдельного context. Источник — новый native GET с linked observation, Job20261015-002529-066aab5d/tc-1452c037/ev-80089519fd84. Версии/ОС/ядро/плагин явно unknown; режим live_operator_assisted. Source integrity, exact replay dedup, read_history и consistent snapshot/legacy fingerprint проверены. Прежние данные не заменены; runtime gate не ослаблен и старые evidence не переписаны.
 
-Это candidate-only admission, не verified promotion. Новые runtime-кандидаты пока не публикуются автоматически в model retrieval; индексированный операторский опыт доступен отдельно. Следующий этап — ограниченная типизированная выдача с повторной проверкой первичного источника, без переноса произвольного statement в привилегированный prompt и без объявления применимости к текущему выпуску.
+Это candidate-only admission, не verified promotion. На этапе v191 model retrieval этих записей ещё не был подключён; v192 добавил только явно проверяемое подмножество с повторной проверкой источника. Произвольные новые кандидаты автоматически не публикуются. Индексированный операторский опыт остаётся отдельным слоем.
 
-### Чтение сохранённого графа из native GET v190
+## Чтение сохранённого графа из native GET v190
 
 Новый OBSERVE browser_inspect_saved_block_graph_semantic принимает только request_id и exact_name. Источник берётся из native cache, не из JSON модели; проверяются GET200, текущая сессия/origin, фиксированная свежесть60секунд, необрезанный ответ, полная коллекция и единственная точная запись. Произвольный endpoint/XML и выбор срока свежести моделью не принимаются. Новый сетевой запрос не выполняется. Возвращаются только структурные количества, не XML, имена, типы блоков, ID или значения полей.
 
 Сохранённая запись не считается привязанной к отображаемой workspace; context не проверен. Evidence инструмента принудительно unusable_for_pass/verdict независимо от текста модели. STEP/AUTO/v069/journal сохраняются. Native/profile/py_compile и финальный runner225/225 PASS. Live qwen3:14b с операторской навигацией Job20261015-001805-ba56b74e/tc-be9e3125: ev-6e51b552eb73 прочёл11блоков, ev-0cf2ddfb7ed5 правильно отметил saved-only и отсутствие доказательства запуска/создания. Это реальный source-read, не автономная навигация или graph/save/run приёмка; resources0/operations[].
 
-### Ограниченный структурный XML observer v189
+## Ограниченный структурный XML observer v189
 
 procedure_graph.py отделён от Core и не выполняет сетевых/стендовых действий. Публичные inspect_block_xml/compare_block_xml дают counts, фиксированные причины отказа и сравнение структуры/значений/layout без экспорта исходных значений или идентификаторов. Уникальность block/variable ID, variable references и next/value вложенность проверяются; неизвестные конструкции, DTD и превышения бюджетов отклоняются. Поддержка консервативная: statement/mutation и исполнительный context ещё не проверяются, эквивалентная перестановка полей может дать несовпадение.
 
 Профиль, replay двух сохранённых XML и установленный runner224/224 PASS (/tmp/v189-full-smoke.log). Это не новый model tool, UI-workspace binding, business oracle или подтверждение запуска. STEP/AUTO/v069/journal не менялись.
 
-### Read-only графовая предпосылка v188
+## Read-only графовая предпосылка v188
 
 Операторский case tc-34935085 Job20261014-235424-0de03747 наблюдал6 SVG (одна большая область) и1 canvas; exposed SVG0 не означает SVG0. В уже полученном GET списка процедур находятся два XML-шаблона; bounded offline census различает block/next/field/value/variables и11/3 block. Это не исполнение и не полноценный semantic graph oracle. Существующие процедуры не менялись. Нужен отдельный контракт точного owned graph и сравнения сохранённой структуры; никакого произвольного drag. Подробная граница — technical-documentation/01-architecture/procedure-graph-contract.md.
+
+## Контекст открытого меню v186 и аудит v187
 
 Аудит v187: дополнительная фиксированная recovery-подсказка не исправила live переход в редактор (Job20261014-234619-f946db24 / tc-cb5743c9 BLOCKED/resources0/operations[]). Эксперимент снят; uqa.py/ui_popup_context.py/smoke восстановлены точно к195e9f6, профиль PASS. Не выдавать техническую работоспособность подсказки за улучшение автономности. Следующий шаг — native contracts workspace/blocks/edges/parameters и точные переходы, не наращивание prose.
 
