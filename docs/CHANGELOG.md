@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v197 — установленная OpenAPI: карта контрактов без исполнения
+
+Финал: stable предметный заголовок обеспечил retrieval metadata/map; consistent snapshot +integrity/1161 unrelated chunks unchanged PASS. Context-only локальная модель tc-a3e23934/ev-5931ee45baa38/8PASS по method/path/202/operationId/noexecution; это не native API execution. Пакет17 Markdown проверен. Сырые runtime artifacts/Jobs/DB не коммитятся.
+
+- Фактическая схема GET200:386 paths/635 operations/766 schemas, OpenAPI3.1.0; приватная структурная проекция с hash/Job/evidence, без examples/defaults/descriptions/auth values. Один повтор operationId у GET/HEAD учтён: method+path обязательны.
+- Reviewed Swagger recipe и техническая API-заметка различают конфигурацию/пересчёт коллекции, определение/задание/запуск политики, шаблон процедуры и отправку plugin task. Required/nullable не принимаются за всю бизнес-валидацию;202 не PASS.
+- Это operator-installed-schema read, не635 проверенных операций и не autonomous Swagger. Canonical source adapter/typed lookup ещё предстоят; gate не ослаблен. Production-код не менялся, прежний195 runner226/226 не новый прогон197.
+
 ## v195 — предметная выборка памяти коллекций без расширения бюджета
 
 Финальный установленный runner226/226PASS (/tmp/v195-final-full-smoke.log),16 Markdown/link/private-marker checks PASS. Последующий автономный read-only v196 Job20261015-011946-a64684b5/tc-949d3649 BLOCKED: модель прочитала общий CMDB вместо нужной коллекции и предложила unsupported assertion visible_row_count. False PASS отвергнут; resources0/operations0. Это не успешная UI-навигация; изменения в данном trial отсутствуют.

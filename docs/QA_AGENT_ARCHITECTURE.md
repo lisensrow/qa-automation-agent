@@ -11,6 +11,10 @@
 
 ## Финал v195 и автономная граница v196
 
+Финал197: reviewed Swagger source индексирован с consistent snapshot, integrity и1161 unrelated chunks unchanged; повторное извлечение metadata/map PASS. Context-only qwen tc-a3e23934/ev-5931ee45baa3 в schema-census Job прошёл8/8 выбора method/path и ограничений202/duplicateoperationId/noexecution. Это operator-prepared context, не native execution. Технический пакет17 Markdown/link/private-marker checks PASS. Следующий198 — bounded machine-readable contract lookup с hash/schema pin и отказом по отсутствующим/обрезанным данным; source gate не обходить.
+
+v197: операторски прочитана фактически установленная OpenAPI3.1.0 по source-bound адресу;386 paths/635 operations/766 schemas. Один operationId повторяется у GET/HEAD: выбор только по нему недопустим. Приватная безопасная structural projection с hash/Job20261015-012947-b938acd8/tc-3fa058b8/ev-90768490c112; examples/defaults/descriptions/auth values не экспортировались. Контракты collection configuration/recompute, policy definition/job/run, procedure template и plugin-task ACK различены. Ни одна бизнес-операция API не запускалась, это не autonomous Swagger acceptance. Новый reviewed UQA_SWAGGER_KNOWLEDGE.md и technical API contract note; canonical runtime gate не ослаблен для SSH source, такой admission/typed lookup остаётся отдельной задачей. Production-код после195 не менялся.
+
 Установленный финальный runner226/226PASS (/tmp/v195-final-full-smoke.log), профиль, py_compile и16 Markdown проверены. Real context reasoning9/9 не подменяет UI-приёмку. Новый обычный native run_turn Job20261015-011946-a64684b5/tc-949d3649 оказался BLOCKED: модель открыла общий CMDB и inspected table (ev-b6d227e22cdb), но не перешла в указанную Windows-коллекцию. Четыре строки общей таблицы не доказательство состава коллекции. Core также отказал неподдерживаемому ui_assertion field visible_row_count; ложный PASS не выдан, ресурсов/операций0. Эта навигационная граница остаётся открытой; не делать идентичный retry. Старые uncertain/awaiting_verification записи не менялись.
 
 ## Повторная проверка коллекций v193
