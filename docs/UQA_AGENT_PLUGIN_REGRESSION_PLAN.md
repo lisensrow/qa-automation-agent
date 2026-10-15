@@ -1,5 +1,15 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## Актуальный checkpoint333–336 и ближайшие шаги
+
+Ограниченная матрица9inventory plugins×Windows/Astra обработана18/18:16structure matches,2empty display mismatches; osAudit обеих ОС ранее отдельно. Все полные source cases BLOCKED до независимой полноты ОС/UI,18не процент полного регресса. Четыре ячейки с раздельными операторски подготовленными продолжениями, остальные bounded/strict-stage framework; update core1.3.27 ранее операторский. Не повторять готовые версии/Jobs. Jira/Zephyr никаких writes.
+
+1. Сохранять reviewed Jobs/evidence/versions/history в существующей глубокой памяти, не в разрозненных сырых inventory dump.333indexed/dedup/integrity/retrieval уже завершён.
+2. API source-reading:334/335nested-model попытки неполные, false proof IDs заблокированы Core.335подсказочный эксперимент снят после техническогоPASS и live неуспеха. Teacher336 проверил source-bound reference paths/programm/TaskFull.result{}, оформляет reviewed recipe. Следующий критерий — модель сама извлекает рецепт и читает реальные страницы с корректными ссылками; это declaration lookup, не business-PASS.
+3. Независимые OS/UI oracle: exact safe parameterized task contract до отправки, актуальные unit/time windows, совпадение identity, проверка hardware presence дляempty displays и Windows uninstallString. Не ослаблять старые expected; новый подтверждённый oracle только до нового безопасного прогона. Generic request schema не доказывает рабочий executeCommand payload.
+4. Остальные source cases — после доступного полного чтения/экспорта с учётом пагинации; Jira сейчас timeout, названия не заменяют steps/expected. VNC только нынешний plugin-based вариант, logging user-approved existence variant отдельно от5dayrotation. Установка/права/перезагрузка/сертификаты/удаление не разрешаются одним старым шаблоном. No unsupported case PASS.
+5. После принятых plugin/task циклов вернуться к самостоятельному freeform planner и коллекциям/политикам/процедурам. Ночное правило до09MSK16Oct, затем честный отчёт/read-only/PAUSED, не убивать уже исполняемые продуктовые задачи ради cutoff.
+
 ## Завершённый checkpoint v312
 
 Native Core model workflow принят на обеих ОС: Windows204330-99d918fa, Astra204608-2a11b687. Модель сама прошла stale inventory → pluginAudit → own fresh result/loaded inventory → osAudit → own fresh result → canonical report; все4новые execution операции verified. Business BLOCKED из-за неизменного legacy baseline, не полногоPASS. Оператор заранее подготовил scope/oracle/профиль и раньше обновил/оснастил targets; framework phase gates/reporter и standing confirmations2+2 явно отмечены, runtime hints/product actions0. Full311250/250 technical PASS. Далее: актуальные data-driven testcase contracts, самостоятельные update/delivery ветки без повторной установки на готовые цели и поддержанный свободный вход; затем другие плагины. Zephyr не писать, полные40кейсов не объявлять пройденными. Предыдущие пункты сохраняют историю разработки.

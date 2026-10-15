@@ -1,5 +1,9 @@
 # Архитектура QA-агента UQA
 
+## v336: неэффективный schema-handoff не оставлен в runtime
+
+Source-only модели334/335 не прошли nested schemas; generic QA finale выдал ложные ссылки на evidence/observations, прежний Core verifier сохранил BLOCKED,0product operations. Derived-candidate эксперимент335 прошёл251/251technical tests, но не live цель; полностью снят, baseline reader/fixture подтверждены Git/focused test. Вместо повторных подсказок операторский guarded-read336 проверил реальные reference paths/CommandAdditionalParams/TaskFull и подготовил переносимый reviewed recipe с явной границей teacher vs model. Следующая приёмка — отдельное применение памяти локальной моделью, без UC actions. Source-only исторические декларации не используют бизнес-PASS validation и не доказывают command execution. Первичные Job/evidence/refs и ограничения в inventory knowledge source; продуктовый oracle/permissions не менялись.
+
 ## Checkpoint333: матрица исполнения не равна полному регрессу
 
 Finite329 завершила9inventory-профилей×Windows/Astra:18обработанных ячеек,16structure subsets matched,2display пустые/не соответствуют nonempty. Последние10GPU/display/SMBIOS/process/base runs по3verified operations, own native results/canonical+structured finals, indexed recipe/0format refusals; основной runtime328 не изменён. Четыре исторические ячейки составлены из раздельных продолжений, не18uninterrupted lifecycles. Все полные source cases остаются BLOCKED из-за независимой полноты ОС/UI; empty display не объявлен багом или PASS. Точные primary proofs и переносимые ограничения — в reviewed inventory recipe. Следующий этап — независимый oracle, не replay успешно отправленных задач. Read-only332 прочитал task request contract с0операциями, но отдельные модели/ответ ещё не приняты; не считать command execution.

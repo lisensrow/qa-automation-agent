@@ -1,5 +1,11 @@
 # История изменений UQA
 
+## v336 — provenance ошибки source-чтения и обучающий recipe
+
+Memory336 candidate indexed once после обеих DB snapshots: source SHA8c9a4eb1e9b8ac1f93427c64c54e7d814f39ea5fff2b1e789e59a33b4293a66a, integrity/dedup/retrieval PASS,1223unrelated chunks unchanged. Targeted TaskFull/CommandAdditionalParams query вернул новую336главу. Отдельный concept schema_reading.command_task_models с feature_profile registered_api_contract_pages_v1, agent version unknown: декларацию API не привязываем к вымышленной версии агента.22MD validation PASS. Production reader/fixture baseline восстановлен, эксперимент335 не закоммичен.
+
+334/335model schema lookups неполные; fabricated evidence/observation IDs отклонены прежним Core, все неподтверждённые passed checks BLOCKED.335candidate hints251/251technical PASS/4SHAOK, но цель не достигнута; runtime/fixture возвращены точно к baseline, эксперимент сохранён вне production. Teacher336 через6guarded read receipts подтвердил reachable schemas/programm/TaskFull.result{}; это явная операторская подготовка,0agent tasks. Переносимый full reference-chain recipe и отрицательные уроки сохраняются в candidate memory без verified promotion. Следующий модельный recall/application ещё не принят. Jira reload снова timeout, никаких writes/изменений безопасности.
+
 ## v333 — завершена ограниченная inventory-матрица
 
 Memory333 indexed once: SHAfc8e133704442fc191f3beb9db60339aa7f48d94be7e2150f7f731bf28875542c, обе DB snapshots before-v333, integrity/dedup/retrieval PASS и1223unrelated chunks unchanged; targeted display query вернул новый primary proof.22MD validation PASS, production328 codeSHA unchanged. Никаких Jobs/DB/raw logs в commit.
