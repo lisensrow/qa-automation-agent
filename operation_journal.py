@@ -158,7 +158,7 @@ def record_receipt(job_id, operation_id, result=None, error_type=None):
         if operation['status'] != 'sending':
             raise ValueError('operation not sending')
         valid_result = isinstance(result, dict)
-        from native_dispatch import DisabledBeforeDispatch, MissingBeforeDispatch
+        from native_dispatch import DisabledBeforeDispatch, MissingBeforeDispatch, AuditPreflightRefused
         native_disabled = (type(result) is DisabledBeforeDispatch
                            and result.get('error') == 'element_disabled')
         native_missing = (type(result) is MissingBeforeDispatch
@@ -169,6 +169,10 @@ def record_receipt(job_id, operation_id, result=None, error_type=None):
         not_sent = ((native_disabled or native_missing) and not error_type
                     and operation['tool'] == 'browser_click_semantic'
                     and result.get('click_status') == 'not_executed')
+        not_sent = not_sent or (type(result) is AuditPreflightRefused and not error_type
+                    and operation['tool']=='browser_create_pinned_agent_audit_semantic'
+                    and bool(result.get('error')) and result.get('executed') is False
+                    and result.get('mutation_executed') is False and result.get('dispatch_state')=='not_started')
         result = result if valid_result else {}
         acknowledged = (valid_result and not error_type and not result.get('error')
                         and result.get('executed') is not False and (
@@ -216,6 +220,8 @@ def reconcile_operation(job_id, operation_id, evidence_id):
         requirement = case.get('requirement') or {}
         from operation_workflow import active_stage
         stage = active_stage(data, operation['case_id']) or requirement.get('operation_stage') or {}
+        if requirement.get('type')=='pinned_agent_audit' and requirement.get('operation_stages'):
+            stage=next((s for s in requirement['operation_stages'] if s.get('stage_id')==operation['stage_id']),{})
         contract = stage.get('verification')
         if (requirement.get('locked') is not True or operation.get('verification_fingerprint') is None
                 or _fingerprint(contract) != operation['verification_fingerprint']

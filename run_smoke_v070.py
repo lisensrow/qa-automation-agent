@@ -13,6 +13,9 @@ PRODUCTION_FILES = [
     ROOT / "uqa.py",
     ROOT / "job_store.py",
     ROOT / "operation_journal.py",
+    ROOT / "tools/agent_update.py",
+    ROOT / "agent_audit_runtime.py",
+    ROOT / "audit_operation_recovery.py",
     ROOT / "native_dispatch.py",
     ROOT / "request_event_census.py",
     ROOT / "advisory_contract.py",
@@ -54,6 +57,13 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_pinned_agent_update.py",
+    "smoke_pinned_plugin_delivery.py",
+    "smoke_pinned_audit_task.py",
+    "smoke_pinned_audit_readback.py",
+    "smoke_pinned_audit_report.py",
+    "smoke_agent_audit_runtime.py",
+    "smoke_audit_operation_recovery.py",
     "smoke_api_contract_sources.py",
     "smoke_api_request_contracts.py",
     "smoke_table_horizontal_viewport.py",

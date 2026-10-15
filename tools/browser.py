@@ -259,6 +259,7 @@ class BrowserSession:
         Global artifact/action counters remain monotonic so
         evidence filenames and action ids cannot collide.
         """
+        self._pinned_audit_tasks = {}
         if self.browser is None:
             self._ensure_started()
 
@@ -2629,6 +2630,250 @@ class BrowserSession:
         ):
             return None
         return urlunsplit((source.scheme, source.netloc, path, "", ""))
+
+    def inspect_pinned_agent_readiness_semantic(self, ci_name, agent_id):
+        """Read current core and osAudit readiness on one observed exact target."""
+        from tools.agent_plugins import summarize_plugin_audit
+        self._ensure_started()
+        ci, _, observed_url, error = self._observed_agent_task_context(ci_name)
+        if error:
+            return error
+        path = urlsplit(observed_url).path.rstrip('/')
+        if (ci.get('name') != ci_name or ci.get('agent_id') != agent_id
+                or not path.endswith('/agents/' + str(agent_id) + '/tasks')
+                or urlsplit(observed_url).netloc != urlsplit(UC_ORIGIN).netloc):
+            return {'error': 'readiness_target_origin_mismatch', 'ready': False}
+        agent_url = self._same_https_origin_url(observed_url, path[:-6])
+        plugin_url = self._same_https_origin_url(observed_url, path[:-6] + '/plugin')
+        if not agent_url or not plugin_url:
+            return {'error': 'readiness_target_origin_mismatch', 'ready': False}
+        try:
+            a = self.context.request.get(agent_url, timeout=15000)
+            p = self.context.request.get(plugin_url, timeout=15000)
+            if a.status != 200 or p.status != 200:
+                raise ValueError('read unavailable')
+            agent = a.json()
+            audit = summarize_plugin_audit(ci, p.json(), 'osAudit', '1.3.4')
+            ready = (agent.get('id') == agent_id and agent.get('version') == '1.3.27'
+                     and agent.get('status') == 'online' and audit['observation_result'] == 'PASS'
+                     and not any(x['load_error_present'] for x in audit['matched_plugins']))
+            return {'ci_name': ci_name, 'ci_id': ci['id'], 'agent_id': agent_id,
+                    'core_version': agent.get('version'), 'agent_status': agent.get('status'),
+                    'plugin_audit': audit, 'ready': bool(ready), 'mutation_executed': False,
+                    'scope': 'core1.3.27_osAudit1.3.4_readiness_only_not_execution_PASS'}
+        except Exception:
+            return {'error': 'readiness_read_unavailable', 'ready': False}
+
+    def inspect_pinned_agent_audit_semantic(self, ci_name, agent_id, task_id):
+        """Read only a task created by the native adapter in this same context."""
+        from datetime import datetime, timezone
+        from tools.agent_update import audit_result_is_fresh
+        import time
+        self._ensure_started()
+        own = getattr(self, '_pinned_audit_tasks', {}).get(task_id)
+        if not own or own['ci_name'] != ci_name or own['agent_id'] != agent_id or own['session_id'] != self.session_id:
+            return {'error': 'own_audit_receipt_required', 'native_result_verified': False}
+        ci, _, observed_url, error = self._observed_agent_task_context(ci_name)
+        if (error or ci.get('id') != own['ci_id'] or ci.get('agent_id') != agent_id
+                or urlsplit(observed_url).netloc != urlsplit(UC_ORIGIN).netloc):
+            return {'error': 'audit_read_target_mismatch', 'native_result_verified': False}
+        path = urlsplit(observed_url).path.rstrip('/') + '/' + task_id + '/full'
+        url = self._same_https_origin_url(observed_url, path)
+        if not url:
+            return {'error': 'audit_read_origin_mismatch', 'native_result_verified': False}
+        try:
+            full = {}
+            for attempt in range(6):
+                r = self.context.request.get(url, timeout=10000)
+                full = r.json() if r.status == 200 else {}
+                if isinstance(full.get('result'), dict):
+                    break
+                if attempt < 5: time.sleep(1)
+            envelope = full.get('result') or {}
+            if not isinstance(envelope, dict):
+                raise ValueError('invalid envelope')
+            identity = (full.get('id') == task_id and full.get('agent_id') == agent_id
+                        and full.get('name') == own['task_name']
+                        and envelope.get('machine_uid') == own['ci_id'])
+            fresh = audit_result_is_fresh(own['sent_at'], own.get('received_at'), own.get('server_created_at'),
+                                          full.get('created_at'), envelope.get('processed_at'))
+            data = envelope.get('data')
+            data = data if isinstance(data, dict) else {}
+            os_data = data.get('os')
+            os_data = os_data if isinstance(os_data, dict) else {}
+            result={'task_id': task_id, 'agent_id': agent_id, 'ci_id': own['ci_id'],
+                    'task_name': own['task_name'], 'machine_uid': envelope.get('machine_uid'),
+                    'task_status': full.get('status'), 'processed_at': envelope.get('processed_at'),
+                    'read_at': datetime.now(timezone.utc).isoformat(), 'session_id': self.session_id,
+                    'server_created_at':full.get('created_at'),'request_origin':UC_ORIGIN,
+                    'native_result_verified': bool(identity and fresh and full.get('status') == 'success'),
+                    'identity_verified': bool(identity), 'fresh_result': bool(fresh),
+                    'host_name': data.get('host_name'),
+                    'os_subset': {k: os_data.get(k) for k in ('architecture','current_build_os','family','name','version')},
+                    'mutation_executed': False, 'full_regression_passed': False}
+            if own['task_name']=='pluginAudit' and result['native_result_verified']:
+                result['plugin_readiness']=self.inspect_pinned_agent_readiness_semantic(ci_name,agent_id)
+            return result
+        except Exception:
+            return {'error': 'audit_full_not_ready_or_invalid', 'native_result_verified': False}
+
+    def create_pinned_agent_audit_semantic(self, ci_name, agent_id, core_version, task_name):
+        """WRITE task dispatch, exclusively pluginAudit/osAudit without parameters."""
+        from tools.agent_update import pinned_audit_payload
+        from native_dispatch import AuditPreflightRefused
+        def refuse(error):
+            return AuditPreflightRefused(error=error,executed=False,mutation_executed=False,dispatch_state='not_started')
+        self._ensure_started()
+        ci, _, observed_url, error = self._observed_agent_task_context(ci_name)
+        if error:
+            return refuse(error.get('error','audit_context_unavailable'))
+        path = urlsplit(observed_url).path.rstrip('/')
+        if (ci.get('name') != ci_name or ci.get('agent_id') != agent_id
+                or not path.endswith('/agents/' + str(agent_id) + '/tasks')
+                or urlsplit(observed_url).netloc != urlsplit(UC_ORIGIN).netloc):
+            return refuse('audit_target_origin_mismatch')
+        tasks_url = self._same_https_origin_url(observed_url, path)
+        agent_url = self._same_https_origin_url(observed_url, path[:-6])
+        plugins_url = self._same_https_origin_url(observed_url, path[:-6] + '/plugin')
+        if not all((tasks_url, agent_url, plugins_url)):
+            return refuse('audit_target_origin_mismatch')
+        try:
+            a = self.context.request.get(agent_url, timeout=15000)
+            t = self.context.request.get(tasks_url, params={'name': task_name, 'periodic': False, 'limit': 100, 'offset': 0}, timeout=15000)
+            p = self.context.request.get(plugins_url, timeout=15000) if task_name == 'osAudit' else None
+            if a.status != 200 or t.status != 200 or (p is not None and p.status != 200):
+                return refuse('audit_preflight_unavailable')
+            payload = pinned_audit_payload(ci, a.json(), t.json(), agent_id, core_version, task_name,
+                                           p.json() if p is not None else None)
+        except Exception:
+            return refuse('audit_preflight_not_admitted')
+        try:
+            from datetime import datetime, timezone
+            sent_at = datetime.now(timezone.utc).isoformat()
+            response = self.context.request.post(tasks_url, data=payload, timeout=15000)
+            created = response.json() if response.status == 201 else None
+            if (not isinstance(created, dict) or not created.get('id') or created.get('agent_id') != agent_id
+                    or created.get('name') != task_name or created.get('period') is not None):
+                return {'error': 'audit_receipt_unverified', 'executed': False,
+                        'create_status': response.status, 'dispatch_may_have_occurred': True}
+            if not hasattr(self, '_pinned_audit_tasks'):
+                self._pinned_audit_tasks = {}
+            self._pinned_audit_tasks[created['id']] = {
+                'ci_id': ci['id'], 'ci_name': ci_name, 'agent_id': agent_id,
+                'session_id': self.session_id, 'sent_at': sent_at, 'task_name': task_name,
+                'received_at': datetime.now(timezone.utc).isoformat(), 'server_created_at': created.get('created_at')}
+            return {'status': 'created', 'executed': True, 'mutation_executed': True,
+                    'agent_id': agent_id, 'ci_name': ci_name, 'task_id': created['id'],
+                    'task_name': task_name, 'business_pass': False,
+                    'create_status':response.status,'session_id':self.session_id,'request_origin':UC_ORIGIN,
+                    'sent_at':sent_at,'received_at':self._pinned_audit_tasks[created['id']]['received_at'],
+                    'server_created_at':created.get('created_at'),
+                    'native_preflight': {'core_version': core_version, 'online': True,
+                        'fresh_osAudit_1_3_4_loaded_checked': task_name == 'osAudit'}}
+        except Exception:
+            return {'error': 'audit_dispatch_uncertain', 'executed': False, 'dispatch_may_have_occurred': True}
+
+    def deliver_pinned_agent_plugin_semantic(self, ci_name, agent_id, core_version, plugin_name, version):
+        """One admitted exact plugin; never delete or disable OS compatibility."""
+        from tools.agent_update import pinned_plugin_payload
+        from tools.agent_plugins import summarize_plugin_audit
+        self._ensure_started()
+        ci, _, observed_url, error = self._observed_agent_task_context(ci_name)
+        if error:
+            return error
+        if ci.get('name') != ci_name or ci.get('agent_id') != agent_id:
+            return {'error': 'plugin_delivery_target_mismatch', 'executed': False}
+        path = urlsplit(observed_url).path.rstrip('/')
+        if (not path.endswith('/agents/' + str(agent_id) + '/tasks')
+                or urlsplit(observed_url).netloc != urlsplit(UC_ORIGIN).netloc):
+            return {'error': 'plugin_delivery_origin_path_mismatch', 'executed': False}
+        tasks_url = self._same_https_origin_url(observed_url, path)
+        agent_url = self._same_https_origin_url(observed_url, path[:-6])
+        plugins_url = self._same_https_origin_url(observed_url, path[:-6] + '/plugin')
+        if not all((tasks_url, agent_url, plugins_url)):
+            return {'error': 'plugin_delivery_origin_path_mismatch', 'executed': False}
+        try:
+            a = self.context.request.get(agent_url, timeout=15000)
+            t = self.context.request.get(tasks_url, params={'name': 'managePlugin', 'limit': 100, 'offset': 0}, timeout=15000)
+            p = self.context.request.get(plugins_url, timeout=15000)
+            if any(r.status != 200 for r in (a, t, p)):
+                return {'error': 'plugin_delivery_preflight_unavailable', 'executed': False}
+            audit = summarize_plugin_audit(ci, p.json(), plugin_name, version)
+            if audit.get('observation_result') == 'PASS':
+                return {'error': 'plugin_already_loaded_fresh', 'executed': False}
+            payload = pinned_plugin_payload(ci, a.json(), t.json(), agent_id, core_version, plugin_name, version)
+        except Exception:
+            return {'error': 'plugin_delivery_preflight_not_admitted', 'executed': False}
+        try:
+            response = self.context.request.post(plugins_url + '/update', data=payload, timeout=15000)
+            created = response.json() if response.status == 202 else None
+            valid = (isinstance(created, dict) and created.get('id')
+                     and created.get('agent_id') == agent_id and created.get('name') == 'managePlugin'
+                     and created.get('additional_params', {}).get('plugins_to_update') == payload['plugins_to_update']
+                     and created.get('additional_params', {}).get('plugins_to_delete') == [])
+            if not valid:
+                return {'error': 'plugin_delivery_receipt_unverified', 'executed': False,
+                        'create_status': response.status, 'dispatch_may_have_occurred': True}
+            return {'status': 'created', 'executed': True, 'mutation_executed': True,
+                    'task_id': created['id'], 'agent_id': agent_id, 'ci_name': ci_name,
+                    'plugin_name': plugin_name, 'requested_version': version,
+                    'create_status': response.status, 'business_pass': False, 'plugin_verified': False}
+        except Exception:
+            return {'error': 'plugin_delivery_dispatch_uncertain', 'executed': False,
+                    'dispatch_may_have_occurred': True}
+
+    def create_pinned_agent_update_semantic(self, ci_name, agent_id, version):
+        """One explicit version, exact observed agent, no arbitrary task/payload."""
+        from tools.agent_update import pinned_update_payload
+        self._ensure_started()
+        ci, _, observed_url, error = self._observed_agent_task_context(ci_name)
+        if error:
+            return error
+        if ci.get('name') != ci_name or ci.get('agent_id') != agent_id:
+            return {'error': 'pinned_update_target_mismatch', 'executed': False}
+        path = urlsplit(observed_url).path.rstrip('/')
+        if (not path.endswith('/agents/' + str(agent_id) + '/tasks')
+                or urlsplit(observed_url).netloc != urlsplit(UC_ORIGIN).netloc):
+            return {'error': 'pinned_update_path_mismatch', 'executed': False}
+        collection_url = self._same_https_origin_url(observed_url, path)
+        agent_url = self._same_https_origin_url(observed_url, path[:-6])
+        if not collection_url or not agent_url:
+            return {'error': 'pinned_update_origin_mismatch', 'executed': False}
+        try:
+            a = self.context.request.get(agent_url, timeout=15000)
+            t = self.context.request.get(collection_url, params={'name': 'updateAgent', 'limit': 100, 'offset': 0}, timeout=15000)
+            if a.status != 200 or t.status != 200:
+                raise ValueError('pinned_update_read_preflight_failed')
+            payload = pinned_update_payload(ci, a.json(), t.json(), agent_id, version)
+        except ValueError as exc:
+            return {'error': str(exc) if str(exc) in {
+                'explicit_numeric_version_required', 'exact_agent_id_required', 'ci_agent_mismatch',
+                'agent_identity_mismatch', 'agent_not_online', 'current_version_unknown',
+                'already_current_or_downgrade', 'complete_update_task_list_required',
+                'update_task_identity_mismatch', 'existing_update_pending',
+                'existing_update_parameters_unknown', 'same_version_update_already_exists',
+                'pinned_update_read_preflight_failed'} else 'pinned_update_preflight_invalid',
+                'executed': False, 'mutation_executed': False}
+        except Exception:
+            return {'error': 'pinned_update_read_preflight_unavailable', 'executed': False}
+        # No retry, including network errors and malformed receipts. Core persists
+        # intent before entering this method; all uncertain outcomes stay blocked.
+        try:
+            response = self.context.request.post(collection_url, data=payload, timeout=15000)
+            created = response.json() if response.status == 201 else None
+            valid = (isinstance(created, dict) and created.get('id')
+                     and created.get('agent_id') == agent_id and created.get('name') == 'updateAgent'
+                     and created.get('additional_params', {}).get('version') == version)
+            if not valid:
+                return {'error': 'pinned_update_receipt_unverified', 'executed': False,
+                        'create_status': response.status, 'dispatch_may_have_occurred': True}
+            return {'status': 'created', 'executed': True, 'mutation_executed': True,
+                    'task_id': created['id'], 'agent_id': agent_id, 'ci_name': ci_name,
+                    'requested_version': version, 'create_status': response.status,
+                    'business_pass': False, 'update_verified': False}
+        except Exception:
+            return {'error': 'pinned_update_dispatch_uncertain', 'executed': False,
+                    'dispatch_may_have_occurred': True}
 
     def create_managed_agent_task_semantic(
         self, ci_name: str, fixture_id: str,

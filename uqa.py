@@ -2033,6 +2033,8 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        "browser_inspect_pinned_agent_audit_semantic",
+        "browser_inspect_pinned_agent_readiness_semantic",
         "api_inspect_request_contract",
         "browser_inspect_labeled_grid_values_semantic",
         "api_inspect_contract_page",
@@ -2283,6 +2285,7 @@ def classify_tool_action(
     # already-confirmed stand action that created or changed a resource.
     if name in {
         "browser_copy_value_semantic",
+        "agent_build_pinned_audit_report",
         "browser_clear_private_clipboard",
         "resource_register",
         "resource_update",
@@ -2298,7 +2301,7 @@ def classify_tool_action(
     }:
         return "destructive"
 
-    if name == "browser_create_managed_agent_task_semantic":
+    if name in {"browser_create_managed_agent_task_semantic", "browser_create_pinned_agent_update_semantic", "browser_deliver_pinned_agent_plugin_semantic", "browser_create_pinned_agent_audit_semantic"}:
         return "write"
 
     if name == "browser_fill_semantic":
@@ -2437,7 +2440,7 @@ def tool_policy_check(
     if not read_only:
         return None
 
-    if name == 'browser_add_tree_row_semantic' or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
+    if name in {'browser_add_tree_row_semantic', 'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'} or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
         return {"error":"tool_policy_blocked","status":"blocked_by_policy","tool":name,"executed":False,
                 "policy":"strict_read_only" if force_read_only else "read_only_request"}
 
@@ -4559,7 +4562,7 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
         return None
     direct = {"browser_edit_owned_resource_roundtrip_semantic", "browser_delete_json_resource",
               "browser_archive_json_resource", "browser_create_managed_agent_task_semantic",
-              "browser_disable_agent_task_semantic"}
+              "browser_disable_agent_task_semantic", "browser_create_pinned_agent_update_semantic", "browser_deliver_pinned_agent_plugin_semantic", "browser_create_pinned_agent_audit_semantic"}
     verb = str(arguments.get("name") or "").strip().casefold().split(" ")[0]
     commit = name in direct or (name == "browser_click_semantic" and verb in {
         "save", "create", "submit", "apply", "delete", "archive", "remove", "disable", "confirm",
@@ -4579,6 +4582,10 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
     if requirement.get("type") == "owned_resource_workflow":
         initialize_workflow(job_id, case_id)
     stage = current_stage(job_id, case_id) or requirement.get("operation_stage")
+    if requirement.get('type')=='pinned_agent_audit' and requirement.get('operation_stages'):
+        stage=next((s for s in requirement['operation_stages'] if s.get('tool')==name and s.get('arguments')==arguments),None)
+        if commit and stage is None:
+            raise ValueError('audit operation not declared')
     if stage is not None:
         if requirement.get("locked") is not True or not isinstance(stage, dict) or stage.get("version") != 1:
             raise ValueError("invalid operation stage")
@@ -4618,6 +4625,21 @@ def execute_tool_with_policy(
                 return {'error': 'advisory_tool_not_allowed', 'status': 'blocked_by_policy',
                         'executed': False, 'action_class': action_class,
                         'action_policy_status': 'blocked_by_advisory_contract'}
+
+    if name in {'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'}:
+        from tools.agent_update import validate_locked_update_scope
+        try:
+            scoped_job = get_job(job_id) if job_id else {}
+            scoped_case = next(c for c in scoped_job.get('test_cases', []) if c['case_id'] == case_id)
+            if action_policy != 'confirm_mutations':
+                raise ValueError('managed_policy_required')
+            validate_locked_update_scope(scoped_job, scoped_case, arguments, {
+                'browser_create_pinned_agent_update_semantic': 'pinned_agent_update',
+                'browser_deliver_pinned_agent_plugin_semantic': 'pinned_plugin_delivery',
+                'browser_create_pinned_agent_audit_semantic': 'pinned_audit_task'}[name])
+        except (ValueError, StopIteration, AttributeError, TypeError):
+            return {'error': 'locked_pinned_update_scope_required', 'executed': False,
+                    'action_class': action_class, 'action_policy_status': 'blocked_by_update_scope'}
 
     authoritative_task_text = None
 
@@ -5156,7 +5178,12 @@ def execute_tool_with_policy(
             resource_arguments["external_id"] = None
             ignored_external_id = proposed_external_id
 
-    if name in {
+    if name == 'agent_build_pinned_audit_report':
+        from tools.agent_update import build_pinned_audit_report
+        if set(arguments) != {'task_id'}:
+            return {'error':'audit_report_arguments_invalid','executed':False}
+        invoke = lambda: build_pinned_audit_report((get_job(job_id) or {}) if job_id else {}, case_id, arguments.get('task_id'))
+    elif name in {
         "operation_workflow_state",
         "operation_attach_resource",
         "operation_advance",
@@ -5180,6 +5207,18 @@ def execute_tool_with_policy(
             return {**result, "action_class": action_class}
     else:
         result = invoke()
+
+    if name == 'browser_inspect_pinned_agent_audit_semantic' and isinstance(result, dict):
+        from tools.agent_update import compare_audit_readback
+        current_job = get_job(job_id) if job_id else {}
+        current_case = next((c for c in (current_job or {}).get('test_cases', []) if c['case_id'] == case_id), {})
+        requirement = current_case.get('requirement') or {}
+        scope = requirement.get('pinned_audit_task') or {}
+        expected = requirement.get('expected_subset') if requirement.get('locked') is True else None
+        if scope.get('ci_name') != arguments.get('ci_name') or scope.get('agent_id') != arguments.get('agent_id'):
+            expected = None
+        result['locked_comparison'] = (compare_audit_readback(expected,result) if result.get('task_name')=='osAudit'
+            else {'status':'NOT_APPLICABLE','reason':'plugin_inventory_refresh_not_os_baseline'})
 
     if (
         name == "browser_create_managed_agent_task_semantic"
@@ -14500,6 +14539,30 @@ def recover_missing_field_panel(name, arguments, result, messages, attempted,
     return observe(candidate['tool'],candidate['arguments'])
 
 
+def append_reviewed_product_memory(messages, navigation_task, job_id, case_id, action_policy):
+    """Shared existing Core retrieval; no operator hints or product action calls."""
+    results = []
+    if action_policy != 'confirm_mutations' or not job_id or not case_id:
+        return results
+    from product_knowledge_context import reviewed_search_queries, retrieve_declared_context
+    from product_runtime_context import retrieve_observed_context
+    for query in reviewed_search_queries(navigation_task):
+        arguments = {'query': query, 'limit': 3}
+        result = execute_tool_with_policy('knowledge_search', arguments, messages,
+            action_policy=action_policy, job_id=job_id, case_id=case_id)
+        if isinstance(result, dict):
+            result['declared_product_context'] = retrieve_declared_context(query)
+            result['observed_product_context'] = retrieve_observed_context(query)
+            observations = record_tool_observations(job_id, case_id, 'knowledge_search', arguments, result)
+            record_tool_evidence(job_id, case_id, 'knowledge_search', arguments, result,
+                observation_ids=[o['observation_id'] for o in observations])
+            messages.append({'role':'assistant','content':'','tool_calls':[{'function':{
+                'name':'knowledge_search','arguments':arguments}}]})
+            messages.append({'role':'tool','tool_name':'knowledge_search','content':json.dumps(result,ensure_ascii=False)})
+            results.append(result)
+    return results
+
+
 def run_turn(
     messages,
     job_id=None,
@@ -14524,6 +14587,13 @@ def run_turn(
     if job_id and case_id:
         phase_job=get_job(job_id) or {}
         phase_case=next((c for c in phase_job.get('test_cases',[]) if c.get('case_id')==case_id),{})
+        if (phase_case.get('requirement') or {}).get('type')=='pinned_agent_audit':
+            import sys
+            from agent_audit_runtime import run as run_agent_audit
+            outcome=run_agent_audit(sys.modules[__name__],messages,job_id,case_id,action_policy,force_read_only)
+            if not outcome.get('started'):
+                finalize_case_blocked(job_id,case_id,outcome.get('reason','pinned_audit_context_invalid'))
+            return outcome
         if (phase_case.get('requirement') or {}).get('type')=='bounded_condition_draft':
             import sys
             from condition_draft_runtime import run as run_condition_draft
@@ -14531,24 +14601,7 @@ def run_turn(
             if outcome.get('status')!='observed_ui_draft':
                 finalize_case_blocked(job_id,case_id,outcome.get('reason','condition_draft_unavailable'))
                 return
-    if action_policy == "confirm_mutations" and job_id and case_id:
-        from product_knowledge_context import reviewed_search_queries, retrieve_declared_context
-        from product_runtime_context import retrieve_observed_context
-        for query in reviewed_search_queries(navigation_task):
-            arguments = {"query": query, "limit": 3}
-            result = execute_tool_with_policy("knowledge_search", arguments, messages,
-                                              action_policy=action_policy,
-                                              job_id=job_id, case_id=case_id)
-            if isinstance(result, dict):
-                result["declared_product_context"] = retrieve_declared_context(query)
-                result["observed_product_context"] = retrieve_observed_context(query)
-                observations = record_tool_observations(job_id, case_id, "knowledge_search", arguments, result)
-                record_tool_evidence(job_id, case_id, "knowledge_search", arguments, result,
-                                     observation_ids=[o["observation_id"] for o in observations])
-                messages.append({"role": "assistant", "content": "", "tool_calls": [
-                    {"function": {"name": "knowledge_search", "arguments": arguments}}]})
-                messages.append({"role": "tool", "tool_name": "knowledge_search",
-                                 "content": json.dumps(result, ensure_ascii=False)})
+    append_reviewed_product_memory(messages, navigation_task, job_id, case_id, action_policy)
     failed_semantic_inspections = {}
     attempted_field_panel_recovery = set()
     failed_semantic_clicks = {}

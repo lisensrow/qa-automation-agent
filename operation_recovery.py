@@ -69,6 +69,9 @@ def _read(case, evidence_id, contract, before=None, after=None):
 
 def evaluate_recovery(job, operation, evidence_id, contract):
     """Requires explicit locked immutable oracle + complete before/after GETs."""
+    if isinstance(contract,dict) and contract.get('kind')=='owned_agent_audit_execution':
+        from audit_operation_recovery import evaluate
+        return evaluate(job,operation,evidence_id,contract)
     try:
         if (not isinstance(contract, dict) or type(contract.get('version')) is not int or contract['version'] != 1
                 or contract.get('kind') not in {'member_present', 'member_absent'}

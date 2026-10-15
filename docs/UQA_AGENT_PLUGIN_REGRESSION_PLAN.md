@@ -1,5 +1,23 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## Завершённый checkpoint v312
+
+Native Core model workflow принят на обеих ОС: Windows204330-99d918fa, Astra204608-2a11b687. Модель сама прошла stale inventory → pluginAudit → own fresh result/loaded inventory → osAudit → own fresh result → canonical report; все4новые execution операции verified. Business BLOCKED из-за неизменного legacy baseline, не полногоPASS. Оператор заранее подготовил scope/oracle/профиль и раньше обновил/оснастил targets; framework phase gates/reporter и standing confirmations2+2 явно отмечены, runtime hints/product actions0. Full311250/250 technical PASS. Далее: актуальные data-driven testcase contracts, самостоятельные update/delivery ветки без повторной установки на готовые цели и поддержанный свободный вход; затем другие плагины. Zephyr не писать, полные40кейсов не объявлять пройденными. Предыдущие пункты сохраняют историю разработки.
+
+## Актуальный этап v309
+
+Глубокая память v303 уже обновлена с snapshots/dedup/retrieval; оба прототипных model-selected osAudit cycle завершены (Windows194955-09f9e32b, Astra195332-48c61f6d), но legacy baseline оставляет business BLOCKED. Теперь проверяем штатный Core runtime: при stale inventory модель сама выбирает pluginAudit, проверяет его точный fresh result/loaded inventory и только затем osAudit/read/canonical report. Execution journal новых операций должен закрыться по первичным ответам, без business-PASS promotion и без исправления старых uncertain записей. Не повторять updateAgent/delivery на уже готовых целях. Следом — повторное применение новой memory revision, проверка свободного входа и переносимые data-driven контракты следующих безопасных плагинов; весь регресс40кейсов ещё не выполнен. Подготовку/confirmation/вмешательства считать отдельно. Jira полностью read-only.
+
+## Текущий приоритет v303: именно локальная модель, не постоянный оператор
+
+Операторский подготовительный pipeline обоих targets завершён до свежих osAudit/full: core1.3.27 и loaded osAudit1.3.4 подтверждены; stale plugin audit обновлён отдельным pluginAudit без перезапуска. Legacy OS baseline выявил name/version changes, оба casesBLOCKED честно сохранены. Это не автономность. Windows local-model185831-fe7bae61 подтвердил только чтение нового plugin inventory.
+
+Далее: (1) сохранить успешный опыт/ограничения/историю полей в существующую индексированную глубокую память с backup/dedup/retrieval; (2) дать модели инструменты чтения только собственного свежего результата и независимый locked oracle; (3) принять новый model-selected полный цикл на Windows и Astra, с условным пропуском уже верных core/plugin, новым безопасным task и expected/actual/report; (4) отдельно учесть подготовку оператора, scope confirmations и любое вмешательство, не выдавая prepared entry за свободный NL routing; (5) поддержанный version/task journal reconciliation для будущих операций без изменения старых oracle. До подтверждения текущего контракта name/version не форсировать полный PASS. Zephyr не писать.
+
+## Фактический checkpoint v299
+
+Оба точных тестовых агента обновлены оператором через новый policy/journal инструмент до1.3.27 и вернулись online: Windows20261015-182605-10843200/ev-82f98b5ca0b7, Astra20261015-182859-38c56f4b/ev-a768ac42bbeb. Никаких latest, других КЕ, удаления или Jira writes. Два новых ACK остаются awaiting_verification, автоматический version reconciliation ещё не реализован; не повторять update. Полный244/244 smoke PASS. Следующий шаг — точечная доставка osAudit1.3.4 с check_endpoint_os_version=true, свежий plugin audit, затем собственная безопасная osAudit задача и OS-specific expected/actual. Старый plugin audit Windows не обновился автоматически. Локальная LLM ещё не принималась на самостоятельную отправку нового update tool; не считать операторский пилот обученным автономным регрессом.
+
 ## Текущая очередь v292–v296
 
 Обновление298: пункты1–2 ниже завершены только как prepared inventory-read: Windows173528-e5bb2f3d/tc-79d8c6e2 и Astra173847-1d006518/tc-4a489393 PASSED3/3каждый. Scope ev-ba4e5079bf10 / ev-4945ef8126ac; navigation chunk получен поиском, без operator browser entry. Это не свободный NL dispatch и не исполнение osAudit. Следующий незавершённый пункт3 — принятый executor обновления/доставки с прежними policy/journal. Historical osAudit list/full двух ОС также прочитаны: ev-12d0d0ea726b / ev-f99465570e3b в preflight293; data.os присутствует, Windows дополнительно bitlocker_volumes/kms/wsus. Существующие периодические задачи не менялись. Полный298:243/243smoke PASS.

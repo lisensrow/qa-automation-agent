@@ -1,5 +1,15 @@
 # Поток исполнения задачи
 
+## Аудиты и автономность
+
+В штатном typed audit runtime модель сама выбирает retrieval, текущую readiness, разрешённый pluginAudit при stale inventory, новый osAudit, чтение собственного результата и canonical report. Это prepared профиль: scope/oracle/catalog задаются заранее, не обещается общий свободный NL вход. Исторический expected связан с первичным Job, а не со свободным текстом LLM. Отчёт строится независимо и не принимает придуманные evidence IDs/статусы. Execution journal закрывается только по native receipt и свежему own-task result; для refresh дополнительно требуется точный loaded plugin inventory. Такое подтверждение исполнения не равно бизнес-PASS. Старые операции без заранее объявленного verification contract остаются в прежнем состоянии. Операторская подготовка, делегированные подтверждения policy и runtime-вмешательства учитываются раздельно; успешные прототипы не подменяют приёмку штатного runtime.
+
+Pinned delivery допускает пока только osAudit1.3.4 на core1.3.27, без удаления и с проверкой ОС; отдельный WRITE audit tool допускает только pluginAudit/osAudit без произвольных параметров. Операторский pipeline обеих ОС дошёл до fresh result. Скачивание не загрузка: pluginAudit обновил stale snapshot и подтвердил loaded/no load error без перезапуска. Полный case не PASS: legacy OS name/version baseline изменился. Подготовка/выполнение оператором не засчитываются как модельная автономность. Следующая приёмка должна проверить именно model-selected retrieval → preflight → task → fresh fetch → locked oracle → report, отдельно учитывая каждый тип вмешательства.
+
+## Pinned core update
+
+Узкий updateAgent инструмент v299 принимает только точную КЕ, agent_id и числовую версию из locked case/исходного запроса. До POST выполняет текущие GET identity/online/version и полного списка прежних updateAgent tasks. Обычные WRITE confirmation и журнал остаются обязательными. Запрещены latest/downgrade/повтор; сомнительный ответ не повторяется. Два операторских пилота подтвердили core1.3.27/online на Windows и Astra, но не автономность модели или регресс. Version reconciliation ещё не поддержан: журнал сохраняет awaiting_verification, отдельный postread не снимает блокировку отправки. Конкретные доказательства и границы приведены в основном плане UQA_AGENT_PLUGIN_REGRESSION_PLAN.md.
+
 ## Узкий ordinary condition entry
 
 Whole-request adapter v284 может до LLM planner построить один immutable case для явно названного CMDB/new unsaved/AND/неархивных Endpoint с Ubuntu или Windows/no Save. Expected выводится только из целого исходного запроса; hash и повторный разбор проверяются в runtime. Неподдержанный текст не обрезается и остаётся старому planner. STEP/AUTO и confirm_mutations не меняются. Это конкретный поддержанный вход, не общее создание коллекций; границы и native evidence приведены в [контракте условий](condition-draft-contract.md).

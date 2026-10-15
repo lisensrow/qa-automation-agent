@@ -11,3 +11,7 @@ class MissingBeforeDispatch(dict):
     Not a claim that a control cannot exist elsewhere or appear later.
     JSON/dict copies intentionally lose this in-process provenance.
     """
+
+
+class AuditPreflightRefused(dict):
+    """Native audit adapter returned before starting POST, never reconstructed."""
