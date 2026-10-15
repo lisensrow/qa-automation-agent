@@ -11,6 +11,12 @@
 
 ## Контекст открытого меню v186
 
+### Ограниченный структурный XML observer v189
+
+procedure_graph.py отделён от Core и не выполняет сетевых/стендовых действий. Публичные inspect_block_xml/compare_block_xml дают counts, фиксированные причины отказа и сравнение структуры/значений/layout без экспорта исходных значений или идентификаторов. Уникальность block/variable ID, variable references и next/value вложенность проверяются; неизвестные конструкции, DTD и превышения бюджетов отклоняются. Поддержка консервативная: statement/mutation и исполнительный context ещё не проверяются, эквивалентная перестановка полей может дать несовпадение.
+
+Профиль, replay двух сохранённых XML и установленный runner224/224 PASS (/tmp/v189-full-smoke.log). Это не новый model tool, UI-workspace binding, business oracle или подтверждение запуска. STEP/AUTO/v069/journal не менялись.
+
 ### Read-only графовая предпосылка v188
 
 Операторский case tc-34935085 Job20261014-235424-0de03747 наблюдал6 SVG (одна большая область) и1 canvas; exposed SVG0 не означает SVG0. В уже полученном GET списка процедур находятся два XML-шаблона; bounded offline census различает block/next/field/value/variables и11/3 block. Это не исполнение и не полноценный semantic graph oracle. Существующие процедуры не менялись. Нужен отдельный контракт точного owned graph и сравнения сохранённой структуры; никакого произвольного drag. Подробная граница — technical-documentation/01-architecture/procedure-graph-contract.md.

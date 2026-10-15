@@ -15,6 +15,7 @@ PRODUCTION_FILES = [
     ROOT / "operation_journal.py",
     ROOT / "native_dispatch.py",
     ROOT / "ui_popup_context.py",
+    ROOT / "procedure_graph.py",
     ROOT / "operation_recovery.py",
     ROOT / "operation_workflow.py",
     ROOT / "plugin_version_reference.py",
@@ -38,6 +39,7 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_procedure_graph.py",
     "smoke_popup_model_context.py",
     "smoke_control_hint_history.py",
     "smoke_control_location_hint.py",

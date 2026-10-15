@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v189 — ограниченный структурный XML observer
+
+Финальный установленный runner224/224 PASS (/tmp/v189-full-smoke.log), technical Markdown package16/16 PASS. Следующая source-bound обвязка ещё не относится к этому выпуску.
+
+- Новый procedure_graph.py: bounded block XML grammar, уникальность ID и variable references, shape next/value, отказ на неизвестных конструкциях, DTD/entities/PI и превышениях бюджетов. Без сетевых действий, eval или исполнения XML.
+- inspect_block_xml/compare_block_xml выводят counts/фиксированные причины/признаки равенства; исходные ID, типы, имена и значения не экспортируются. Layout сравнивается отдельно, порядок и идентичность консервативно строгие; context/statement/mutation ещё не поддерживаются. Все результаты evidence_for_pass/permission/business_semantics/execution=false.
+- Профиль отрицательных fixtures/py_compile и replay двух настоящих сохранённых XML (11/3 block) прошли без вывода значений. Это не новая автономная приёмка и не новый model tool. Полный runner224 проверяется отдельно; STEP/AUTO/v069/journal неизменны.
+
 ## v188 — read-only предпосылка проверки графа
 
 Operator Job20261014-235424-0de03747/case tc-34935085: native SVG/canvas inspection, DOM shape census, чтение уже полученного GET списка процедур и ограниченный offline XML census. SVG6/canvas1; API возвращает2 XML-шаблона с block/next/field/value/variables,11/3 block. Содержимое команд/параметров не печаталось; без редактирования/Save/Run. Полный graph oracle ещё не реализован. Промежуточные диагностические cases BLOCKED сохранены: origin guard, отсутствующее tree и очищенный network event buffer не подменены PASS. Production code не менялся после restored223/223; shareable package дополнен контрактом графа.
