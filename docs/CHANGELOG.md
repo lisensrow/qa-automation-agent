@@ -2,6 +2,12 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v191 — два runtime-кандидата в глубокой продуктовой памяти
+
+- Новый операторский read-only source Job20261015-002529-066aab5d/tc-1452c037, ev-80089519fd84: GET200, необрезанное тело, linked observation; без изменения или запуска UC. Старые receipts без links не переписывались, source gate не ослаблялся.
+- В procedures.saved_definition приняты observed_fact runtime_observation кандидаты serialized format и separate context, mode live_operator_assisted, unknown versions/OS/agent/plugin. Consistent private DB snapshot before-v191-native-graphs, integrity/legacy unchanged, exact replay dedup и bounded read_history PASS. Нет semantic promotion, автоматического model retrieval или бизнес-PASS.
+- Production code не менялся после установленного225/225; профиль product knowledge records повторно проверяется отдельно от реальных продуктовых сценариев.
+
 ## v190 — native source-bound чтение сохранённого графа
 
 - Новый OBSERVE инструмент и tools/block_graph_controls.py: только существующий native GET, текущие session/origin, фиксированная свежесть60s, полный untruncated collection envelope и ровно одна exact-name запись. Без нового HTTP-запроса, XML/значений в ответе, endpoint/payload от модели или выбора freshness моделью. Workspace/context остаются unverified.

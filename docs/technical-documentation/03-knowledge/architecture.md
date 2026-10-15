@@ -14,6 +14,8 @@ v176–v177 подключают отдельный declared_product_context к 
 
 ## Рост
 
+v191: первые два runtime-observation кандидата формата сохранённой процедуры записаны в каноническую product knowledge DB, не только в Markdown/FTS. Источник — новый native GET с наблюдением; versions/OS явно unknown, operator-assisted mode сохранён. Consistent snapshot, legacy preservation, dedup и history readback проверены. Автоматическая выдача этих кандидатов модели пока не подключена: нельзя подменять source integrity семантической проверкой или применимостью к текущей версии. Индексированный опыт по-прежнему отдельный слой.
+
 v186: native активное меню — кратковременный UI-контекст, не новый продуктовый факт и не самостоятельный источник verified knowledge. Названия/роли/disabled-state bounded и проверяются; состояние прошлого turn не применяется. Предложенный click vocabulary не выполняет действие, не меняет policy и не доказывает готовность редактора. Live model увидела Add procedure, но пропустила переход; Job20261014-233520-79fd039b BLOCKED без ресурсов/операций. Это отрицательный опыт текущего исполнения, не подтверждённый баг UC и не основание рекомендовать обновление продукта.
 
 v183: reviewed policy/procedure field maps находятся через indexed experience queries, отдельно от source-rechecked official declarations. Индекс обновлён одним источником с consistent snapshot, 1148 остальных chunks неизменны. Operator-only provenance и unknown runtime applicability не дают business PASS. Procedure SVG/treeitem редактор требует отдельного block/edge/save contract; обычный form census недостаточен. Context-only local model probe обнаружил неточные labels/role, хотя safety limits удержаны; полноценный автономный workflow не объявлен готовым.

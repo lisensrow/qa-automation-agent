@@ -11,6 +11,12 @@
 
 ## Контекст открытого меню v186
 
+### Атомарная runtime-память формата процедур v191
+
+Два observed_fact кандидата procedures.saved_definition записаны в существующую product knowledge DB: сериализация block_xml_v1 и наличие отдельного context. Источник — новый native GET с linked observation, Job20261015-002529-066aab5d/tc-1452c037/ev-80089519fd84. Версии/ОС/ядро/плагин явно unknown; режим live_operator_assisted. Source integrity, exact replay dedup, read_history и consistent snapshot/legacy fingerprint проверены. Прежние данные не заменены; runtime gate не ослаблен и старые evidence не переписаны.
+
+Это candidate-only admission, не verified promotion. Новые runtime-кандидаты пока не публикуются автоматически в model retrieval; индексированный операторский опыт доступен отдельно. Следующий этап — ограниченная типизированная выдача с повторной проверкой первичного источника, без переноса произвольного statement в привилегированный prompt и без объявления применимости к текущему выпуску.
+
 ### Чтение сохранённого графа из native GET v190
 
 Новый OBSERVE browser_inspect_saved_block_graph_semantic принимает только request_id и exact_name. Источник берётся из native cache, не из JSON модели; проверяются GET200, текущая сессия/origin, фиксированная свежесть60секунд, необрезанный ответ, полная коллекция и единственная точная запись. Произвольный endpoint/XML и выбор срока свежести моделью не принимаются. Новый сетевой запрос не выполняется. Возвращаются только структурные количества, не XML, имена, типы блоков, ID или значения полей.
