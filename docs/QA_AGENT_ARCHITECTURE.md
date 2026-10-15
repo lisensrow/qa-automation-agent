@@ -1,5 +1,9 @@
 # Архитектура QA-агента UQA
 
+## Checkpoint333: матрица исполнения не равна полному регрессу
+
+Finite329 завершила9inventory-профилей×Windows/Astra:18обработанных ячеек,16structure subsets matched,2display пустые/не соответствуют nonempty. Последние10GPU/display/SMBIOS/process/base runs по3verified operations, own native results/canonical+structured finals, indexed recipe/0format refusals; основной runtime328 не изменён. Четыре исторические ячейки составлены из раздельных продолжений, не18uninterrupted lifecycles. Все полные source cases остаются BLOCKED из-за независимой полноты ОС/UI; empty display не объявлен багом или PASS. Точные primary proofs и переносимые ограничения — в reviewed inventory recipe. Следующий этап — независимый oracle, не replay успешно отправленных задач. Read-only332 прочитал task request contract с0операциями, но отдельные модели/ответ ещё не приняты; не считать command execution.
+
 ## Checkpoint330: новые реальные inventory cycles
 
 Без изменения runtime328 UQA завершил Astra network230334-4b7cad4a (1interface), Windows soft230449-5b8f2eee (68software rows), Astra soft230601-c5001224 (1999rows). В каждом3операции verified, indexed recipe retrieved, structured final accepted,0premature-final refusals. Astra soft потребовал дополнительного READ того же task после not-ready, не повторной отправки. Scope/oracle и standing confirmations подготовлены операторски; strict-stage framework assistance сохраняется. Полные source cases BLOCKED до независимой полноты ОС/UI, Windows uninstallString не покрыт текущим subset. Следующий GPU уже идёт в единственной finite queue329; не повторять эти delivery/audits. Reviewed memory revision330 фиксирует переносимый урок fetch/polling и точные primary proofs; не повышать candidate в verified без валидатора.

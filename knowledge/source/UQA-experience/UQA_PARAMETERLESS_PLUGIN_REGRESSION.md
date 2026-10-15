@@ -14,6 +14,29 @@
 
 Предъявленный expected — immutable subset container/fields/types/fresh identity, actual совпал. Полный source-case всё ещё BLOCKED: независимая полнота/значения ОС и отображение UI не проверены. Windows softAudit отдельно требует source-полноту и uninstallString, не покрытые этими7полями; число строк само по себе не oracle. Jira недоступна, кейсы/результаты не изменялись. Заметка сохраняется как reviewed candidate/document_review, не runtime verified promotion; server/frontend versions остаются unknown. Полные inventory payloads в общую память не копируются.
 
+## Checkpoint333: завершение очереди18ячеек и отрицательные наблюдения
+
+Очередь329 завершена без повторной установки ранее принятых версий. Ниже10новых bounded runs после checkpoint330: в каждом normal Core/local qwen3:14b выбрала delivery→own read→refresh→fresh loaded→main→own read→canonical report→structured final, recipe retrieved,0terminal refusals, ровно3verified execution operations. Оператор подготовил locked scope/oracle и делегированные exact-scope подтверждения; framework задавал строгие фазы и bound compilation, runtime hints/product actions оператора0. Это ограниченное исполнение, не свободный регресс-планировщик.
+
+| ОС / плагин | Job / case / trace | Main task | Actual относительно заранее закреплённого subset |
+| --- | --- | --- | --- |
+| Windows / gpuDeviceAudit1.3.2 | 20261015-230725-f2a123e3 / tc-627e5b7f / ev-678b86079497 | f1661996-2845-4da6-95f7-709e141e0a14 | 1row,2поля/types matched |
+| Astra / gpuDeviceAudit1.3.2 | 20261015-230843-aa2a9e6b / tc-b30a2870 / ev-ded532b07f82 | 38cd7d31-b197-45f4-9ca1-c81752496269 | 1row,2поля/types matched |
+| Windows / displayDeviceAudit1.3.2 | 20261015-230955-c1fe798e / tc-57d7a11d / ev-b448e8259240 | 99c008a3-848e-4577-9f3c-1d47d0ad543f | []/0rows: nonempty и5field-checks НЕ совпали; не PASS |
+| Astra / displayDeviceAudit1.3.2 | 20261015-231108-65a992dd / tc-19666d41 / ev-139829dc58a8 | 5545f795-5788-4236-acfc-40d2d900305c | []/0rows: nonempty и5field-checks НЕ совпали; не PASS |
+| Windows / smbiosAudit1.3.8 | 20261015-231219-5cb80093 / tc-490db243 / ev-5b5b18cd08c5 | dfe79da0-dc8f-4b79-9609-ae8f1a7b79f4 | object с3ожидаемыми list-полями; это не число устройств |
+| Astra / smbiosAudit1.3.8 | 20261015-231332-733f6d8b / tc-5435741b / ev-505e069cf170 | 62c6deba-f864-4d39-8c62-36ea408443d5 | object с3ожидаемыми list-полями; это не число устройств |
+| Windows / processMonitoring1.3.2 | 20261015-231443-953d7102 / tc-0cdb8e37 / ev-4b54a2608b1c | 3c357f68-6cb7-44ad-85fd-79e6e000014e | 60rows,12полей/types matched |
+| Astra / processMonitoring1.3.2 | 20261015-231555-a68d94b0 / tc-de842971 / ev-029878e02c61 | fe540f54-2f50-424d-b0c1-ffad328ea4a6 | 227rows,12полей/types matched |
+| Windows / baseSystemMonitoring1.3.3 | 20261015-231707-019b0e2f / tc-9c9f61e2 / ev-77172531bef4 | 4a4cf47f-e4dd-4b31-aa7c-66ec88d6ef91 | object с7ожидаемыми полями/types matched |
+| Astra / baseSystemMonitoring1.3.3 | 20261015-231819-11e707bf / tc-f2cb64a2 / ev-116c296a0935 | bf6e4d11-c8eb-4838-bf4c-59c1379b14ab | object с7ожидаемыми полями/types matched |
+
+ОС те же: Windows10Pro22H2/build19045.6456 и Astra1.8/build1.8.1.6, ядра1.3.27; server/frontend unknown. В общей матрице9профилей×2ОС обработаны18ячеек,16subset matched/2display mismatch. Четыре ячейки ранее потребовали операторски подготовленных раздельных продолжений (service обеих ОС, drive Windows, network Windows), не считать все18непрерывными автономными lifecycles. osAudit обеих ОС ранее проверен отдельно и в эти18не включён. Проценты этих18не являются процентом полного Zephyr-регресса: полные исходные кейсы пока BLOCKED, независимые значения/полнота ОС и UI не сверены; остальные сценарии, кроме данного subset, не закрыты.
+
+Пустой display result — реальное наблюдение, не основание автоматически разрешить empty, переустановить/перезапустить неизменный тест или объявить баг. Нужны независимая current OS/device enumeration и наблюдение UI; отсутствие физического монитора на VM — пока гипотеза. Канонический отчёт сохраняет false nonempty/field checks как BLOCKED, не скрывает их за успешным native execution. Будущий эталон отсутствия мониторов должен быть подтверждён независимо и зафиксирован ДО нового прогона; старый expected/Job не менять. Значения мониторинга динамические: сравнивать согласованные единицы и временное окно, а не буквальные60/227процессов или старую загрузку CPU/RAM.
+
+Read-only model schema preflight332: Job20261015-231908-ee215a8f/tc-d1f595fd, native api_inspect_request_contract ev-05ae31f09ad3 прочитал POST /api/v1/agents/{agent_id}/tasks в registered post-update source. Audit ev-4d386786cd50 подтверждает0browser/0operations/0resources, force_read_only. Рабочая команда не отправлена; отдельное чтение CommandAdditionalParams/TaskFull и правильность model prose не доказаны (ответ не сохранён помощником), поэтому это частичный source lookup, не законченный command test. Не повторять его как неизменный failed long run. Следующая отдельная read-only фаза должна читать конкретные модели и сохранять ответ для проверки. Исторический localhost8088 source capture не доступен на UQA-host72; ConnectionRefused не доказывает недоступность UC71 и не разрешает менять службы/безопасность.
+
 ## Источники и границы
 
 16 октября2026 MSK: оператор повторно прочитал отображаемые первые10шагов Zephyr US-T79 v1.0 (Windows, цикл US-C346) и US-T102 v1.0 (Astra, цикл US-C347). Чтение не означает выполнение или полный экспорт всех40кейсов. URL источника: https://pm.acomps.ru/secure/Tests.jspa#/testPlayer/US-C346 и https://pm.acomps.ru/secure/Tests.jspa#/testPlayer/US-C347 . Никакие StartTest, actual, status, comment, case или названия циклов не менялись. Официальная основа назначения плагинов — существующий индексированный источник «UC Руководство пользователя от06.07.2026.docx», приложение4.

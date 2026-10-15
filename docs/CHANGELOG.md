@@ -1,5 +1,11 @@
 # История изменений UQA
 
+## v333 — завершена ограниченная inventory-матрица
+
+Memory333 indexed once: SHAfc8e133704442fc191f3beb9db60339aa7f48d94be7e2150f7f731bf28875542c, обе DB snapshots before-v333, integrity/dedup/retrieval PASS и1223unrelated chunks unchanged; targeted display query вернул новый primary proof.22MD validation PASS, production328 codeSHA unchanged. Никаких Jobs/DB/raw logs в commit.
+
+Queue329 complete18cells:16matching structure subsets/2empty display mismatches, НЕ полный Zephyr PASS. GPU обеих ОС1row; process Windows60/Astra227rows; SMBIOS/base — объекты с объявленными полями, не доказательство полноты hardware/телеметрии. Последние10новых bounded model runs имеют30verified operations, own fresh results и structured final без format refusals. Scope/oracle/standing confirmations/framework отмечены отдельно, split history сохранена. Runtime328 неизменен. Read-only schema332 подтвердил только lookup task request,0product mutations, не полный command-model test. Reviewed knowledge333 сохраняет primary proofs/ограничения; next independent OS/UI oracle и capture последующих source-only ответов, без повторов доставок/Jira writes.
+
 ## v330 — network Astra и softAudit Windows/Astra
 
 Memory330 indexed once: source SHA93788ea200a7d514814fdec55328c30a79fc246d97c63eb5c62171d81913ca3d, snapshots обеихDB, integrity/dedup/retrieval PASS,1223unrelated chunks unchanged. Candidate/document_review retained. Technical Markdown22files PASS; production328 codeSHA unchanged, новый full suite не требовался для documentation-only checkpoint.
