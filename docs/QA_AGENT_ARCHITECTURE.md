@@ -11,6 +11,14 @@
 
 ## Диагностическое сравнение режима рассуждения v200
 
+### v207–v208: отрицательное сравнение режима и namespace-диагноз колонок
+
+Финал source-only этапа:4 source hashes сверены с первичным join, consistent index snapshot/integrity/1148 unrelated chunks unchanged и4 новых/прежних recall queries PASS;18Markdown/link/private checks PASS. Реальный qwen по повторно извлечённому namespace-рецепту дал8/8 checks PASS (tc-96030f59/ev-e741433b0f46 в diagnosis Job), context-only/operator-prepared, не UI repair. Production code unchanged; прежние229/229 не новый runner208.
+
+Process-local think-on для API-задачи не помог: Job20261015-030909-843fa440/tc-fb302ca3/ev-cda2e37d0442,0 API calls/BLOCKED/resources0/ops0. Запрос сохранён, но индекс менялся после baseline; причинное объяснение только режимом недопустимо. Ответы модели сохранены для аудита: concept labels документа не являются точными enum значениями API. Production default/mode/policy не менялись; новых одинаковых retries нет.
+
+Независимое исследование установленного frontend и свежей Windows-коллекции объяснило отсутствие ОС: Job20261015-031433-b6323e04/tc-62244e44, native config/table/DOM +static join ev-c7988a0cd16c. Каталог с formatter создаёт endpoint.os_name, не bare os_name; grid reducer отбрасывает неизвестный layout key без os_name alias. Также отбрасывается type;7 resolved полей+selection совпадают с8 DOM headers. Это namespace несовместимость текущей тестовой конфигурации и frontend map, не developer-confirmed bug. Layout не исправлялся, значения после возможной замены/аппаратные None не проверены. Source hashes/code snippet сохранены в приватном evidence; reviewed recipe индексируется отдельно, canonical code-binding gate не имитируется. Код production после229/229 не менялся; source diagnosis не автономная приёмка создания/редактирования.
+
 ### v205–v206: граница формы политики и штатный API-source lookup
 
 Финальная установленная версия:229/229PASS /tmp/v206-final2-full-smoke.log, server profile/py_compile и18MDPASS. Точечная индексация рецепта сохранила1164 прочих фрагмента, snapshot/integrity/3recall queries PASS. Registration — ignored private runtime state, не Git; native root lookup не повышен до полного task PASS.

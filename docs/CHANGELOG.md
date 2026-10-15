@@ -2,6 +2,14 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v207–v208 — namespace колонок вместо гипотезы о прокрутке
+
+Финал:4 hashes primary evidence сверены, backup/integrity/1148 unrelated chunks unchanged/4recall queries PASS,18MDPASS. Namespace memory interpretation реальной моделью8/8PASS tc-96030f59/ev-e741433b0f46 (operator-prepared retrieved context only). Код/STEP/AUTO/policy/журнал не менялись, прежние229/229 остаются последним code run, не новым208 smoke.
+
+- API think-on diagnostic не улучшил lookup: тот же user request,0 API calls, BLOCKED; индекс обновлялся после baseline, causal mode claim не делается. Default think-off сохранён. Ошибочные concept/enum предположения модели не публикуются как продуктовые факты.
+- Fresh native layout/table/DOM и read-only static census четырёх frontend assets объяснили пропуск os_name: formatter создаёт endpoint.os_name, grid не знает bare os_name и пропускает его; type также не разрешается. Join ev-c7988a0cd16c в Job20261015-031433-b6323e04/tc-62244e44,7 resolved fields+selection=8DOMheaders.
+- Никаких layout/UC-данных/пересчётов не менялось. Замена ключа ещё не проверена; RAM/CPU None и developer-confirmed bug/fix не заявлены. Память хранит source hashes и различие static/runtime, typed code-binding admission не обходится. Production code unchanged, прежние229/229 не объявляются новым smoke-run208.
+
 ## v205–v206 — штатное чтение зарегистрированных исторических API-источников
 
 Финал установленного интерфейса без модельного source_id:229/229PASS /tmp/v206-final2-full-smoke.log (включая profile/py_compile),18Markdown/link/private-marker checks PASS. Consistent snapshot/integrity/1164 unrelated chunks unchanged и3 новых/прежних recall queries PASS. Runtime source registration подтверждённо ignored Git; нет HTTP/UC business writes/новых операций или canonical promotion. Полный source fixture Windows не засчитывается: mirror не содержит stands.py. Все native Jobs закрыты BLOCKED, исходные ошибки сохранены.
