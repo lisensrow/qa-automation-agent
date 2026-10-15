@@ -2,6 +2,13 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v193 — read-only повторная проверка десяти коллекций
+
+- Native readback десяти коллекций и offline audit точных ID/полноты; All4 подтверждён независимым свежим GET Endpoint. ОС-подмножества согласованы. Job20261015-004404-02cac4d4, audit ev-3496342a49b5, baseline ev-fc5460c6de0f.
+- Все16 аппаратных ячеек None-подобные: не считать числовым PASS. Фильтры/пороги/inventory не перепроверены. Баг разработчиком не подтверждён.
+- Принадлежащая строке коллекции cog открывает Edit collection/Update collection; неоднозначность разрешена фактическим owner container, не индексом. Оба пункта не нажимались, изменения/пересчёта нет.
+- Рецепт актуализирован отдельно от автономной приёмки; production-код и policy не менялись, технический226/226 — прежний v192.
+
 ## v192 — source-rechecked типизированный runtime-контекст модели
 
 - product_runtime_context.py читает два явно рассмотренных historical candidate predicate/value из атомарной DB; заново проверяет native source integrity/eligibility/observations и тело, исключает conflict/tampering/unknown values/modes/scope. Произвольные statement/XML/значения полей не выдаются, история не переписывается. read_history дополнен bounded execution_modes.

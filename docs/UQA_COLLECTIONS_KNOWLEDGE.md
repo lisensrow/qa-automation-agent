@@ -1,5 +1,15 @@
 # U-Connect: создание коллекций, RAM CPU и опыт проверки
 
+## Повторная проверка составов и меню редактирования v193
+
+15 октября 2026, execution_mode=live_operator_assisted_readback. Job20261015-004404-02cac4d4; актуальные версии сервера/frontend/ядра/плагинов unknown, прежние версии не переносились. Native GET списка подтвердил десять campaign-owned коллекций, все manual/clear_on_update=true. Case tc-a91b3f23 прочитал полный ответ таблицы каждой коллекции; audit ev-3496342a49b5 проверил уникальные ID и count/total. All=4, Windows=1, Ubuntu=1, Linux=3, Astra=1, RED OS=1; четыре аппаратные коллекции содержат те же четыре ID. ОС-подмножества непересекаются и покрывают All; Linux равен Ubuntu/Astra/RED именно в этой лабе, не всем возможным Linux. Независимый свежий полный GET Endpoint tc-c325f40a/ev-fc5460c6de0f подтвердил точное совпадение четырёх ID с All.
+
+Все16 ячеек ram.size/cpu.core_count четырёх аппаратных коллекций содержат None-подобный текст, не числа. Состав не доказывает отображление метрик или пороги; условия и исходный RAM/CPU inventory заново не проверены. Это наблюдаемое ограничение, не developer-confirmed bug/fix.
+
+Шестерёнка существующей коллекции открывает меню, не Settings. В tc-c325f40a диагностическая DOM-привязка ev-16b93a2ff3b4 установила owner li/role=treeitem с точным именем тестовой Windows-коллекции. Голый cog неоднозначен (два native matches): нельзя брать первый match. Штатный клик с фактически наблюдённым owner container открыл Edit collection и Update collection, оба menuitem (ev-cd9542aeaeb9). Update collection не является переходом редактирования. Edit collection по прежней policy — WRITE; его не нажимали. Save/Update/пересчёт не выполнялись. Исторический рецепт не отменяет текущую инспекцию/policy.
+
+Новых ресурсов/операций изменения нет; autonomous_acceptance=false, business_oracle_complete=false, evidence_for_pass=false. Job остаётся BLOCKED для полной приёмки. Это операторское чтение и рецепт, не самостоятельное создание коллекции локальной моделью.
+
 ## Метаданные и границы рецепта
 
 record_id: uc.collections.recipe.2026-10-14.v1; schema_version: 1; knowledge_kind: recipe/test_experience; execution_mode: live_operator_assisted; validation_status: observed exact membership; evidence_for_pass: false; review_date: 2026-10-14.
