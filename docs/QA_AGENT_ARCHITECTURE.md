@@ -1,5 +1,23 @@
 # Архитектура QA-агента UQA
 
+Final325: full325251/251 technical PASS,2productionSHA unchanged,22MD package valid. Memory325 source/history/candidate indexed with both DB snapshots/integrity/dedup/retrieval;1223otherchunks unchanged and new primary proof returned by search. Основной переход — очередь следующих safe inventory-профилей, с read-only проверкой и фиксацией каждого live результата в глубокую память. Полный source-regression/PASS и свободное планирование всех кейсов по-прежнему не подтверждены.
+
+Native325 readback: Windows remaining-drive223538-6640ec93/tc-95232f31/ev-c8db2cb87a7c и Astra full-drive223550-693e48e9/tc-0dfa35fe/ev-60c2761531a3 completed=true, structure subset3/7records matched. На Astra в одном bounded run модель выполнила delivery→own result→refresh/fresh loaded→main/own result→canonical report→финал;3операции verified. Windows1новая main операция verified без повторной установки. Recipe retrieved/structured+strictstage framework/oneformatrefusal каждого прогона раскрыты, operator runtime hints/product actions0; sourcecases остаются BLOCKED по независимой полноте ОС/UI. Операторски подготовленный scope/oracle и Windows remaining-case не выдаются за свободный NL planner.
+
+## v324–325: закрытый transport выбора действия и строгая фаза
+
+Native tool-call остановки и повторный поиск не удалось устранить одним prompt/refusal-budget. Job223232-32e55245 сделал24knowledge_search/0operations; исходный Job222634-0f502d61 подтвердил только delivery/load driveDeviceAudit1.3.5. Оба не приняты как complete и не повторяются.
+
+Typed runner теперь принимает model JSON{name,arguments} по закрытой schema текущего каталога, независимо ещё раз валидирует выбор и исполняет тот же Core с v069/journal. Строгий catalogue: open exact CMDB → exact target → readiness → нужный dispatch → own result → следующая подтверждённая фаза → canonical report → model-only финал. Retrieval reviewed memory сохраняется перед началом; после него не предлагается бессмысленный повтор knowledge_search. Подстановка scope, stage admission и JSON-adapter явно отмечены как framework assistance; синтеза product action вместо выбора модели нет. Это bounded orchestration, не свободный NL planner. Permission/oracle/uncertain-operation handling не изменены. Реальные Windows remaining-drive и Astra full-drive v325 ещё проверяются.
+
+## v320–322: фазовый budget и typed model view
+
+Лимит преждевременного текстового завершения теперь считается по hash текущего immutable каталога/own-task binding, а не глобально на всю цепочку. Успешный переход не расходует budget следующей фазы; третья остановка в той же фазе по-прежнему завершает run, общий24-turn budget не увеличен. Счётчики и события отказов сохраняются в trace. После canonical report catalogue пуст, model-only финал проверяется на exact taskID/BLOCKED; его отсутствие вызывает bounded format feedback, не новый аудит.
+
+Model view для typed plugin workflow заменяет только exact известный generic Core system prompt на короткий domain prompt, чтобы инструкции иных режимов про UQA_CHECKS_JSON/финал не конфликтовали с canonical reporter. Все user/memory/tools/results и другие system сообщения сохраняются, исходные execution messages, Core policy, journal и locked expected не меняются. Это явно учтённая framework настройка, не изменение разрешений или обучение весов.
+
+На Astra модель выполнила serviceAudit1.3.2 (Job20261015-221931-f1b5d655,58служб/6полей,verified execution), затем в отдельном read-only продолжении сама вызвала canonical reporter и сформировала финал. Windows remaining-audit ранее завершён (246служб). Операторская подготовка продолжений отражена; исходные failed traces сохранены, непрерывная delivery→audit автономия не заявлена. Полные source cases BLOCKED по независимой полноте ОС/UI. Следующий новый полный цикл — driveDeviceAudit Windows222634-0f502d61, затем очередь остальных профилей обеих ОС со stop-on-failure. Ночное правило uqa по новому явному разрешению ACTIVE до09:00MSK16октября, после отчёта PAUSED. Jira/Zephyr entirely read-only.
+
 ## v314–318: девять inventory-профилей и незавершённый цикл
 
 Добавлен общий typed `pinned_plugin_audit`: точечная доставка закреплённой версии с OS-check/no deletion → собственный managePlugin/full → pluginAudit/fresh loaded inventory → новый аудит без параметров/full → canonical expected/actual. Девять allowlisted профилей ограничены структурой source US-T79/US-T102 v1.0, не полной независимой сверкой ОС/UI. Полный бизнес-кейс остаётся BLOCKED. Обычные v069 policy, STEP/AUTO и журнал/replay protection сохранены; прежние неопределённые операции не мигрируются.

@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import datetime,timezone
 import json
+import hashlib
 import job_store as store
 from operation_journal import list_operations,reconcile_operation
 from plugin_audit_profiles import validate_context,stages_for,scopes
@@ -14,6 +15,44 @@ REPORT='agent_build_pinned_audit_report'
 REFRESH='refresh_bound_plugin_inventory'
 RUN_AUDIT='run_bound_plugin_audit'
 
+DOMAIN_PROMPT=('You are UQA executing a prepared, immutable, bounded inventory-plugin case on an authorized lab agent. '
+    'Choose tools only from the currently admitted catalogue and copy exact own task IDs from native results. '
+    'Core policy, locked expected, journal, OS compatibility and replay protection are mandatory. '
+    'Delivery is not load verification; pluginAudit is not the main plugin audit. Complete each admitted remaining stage. '
+    'After reading the main audit, first call agent_build_pinned_audit_report for that exact task, then return its '
+    'expected/actual report with task ID and verdict. Do not skip that call by answering in prose. '
+    'A whole-case BLOCKED for independent completeness is not a reason to omit executable safe stages or the canonical report. '
+    'If a real tool/prerequisite fails, do not invent facts or resend uncertain actions. No UQA_CHECKS_JSON: this typed '
+    'workflow has its own canonical report contract. No Jira/Zephyr write, unrelated agent, downgrade, deletion, '
+    'security change or arbitrary OS command. Historical samples are not literal current-machine expectations.')
+
+def scoped_model_messages(messages,generic_prompt):
+    """Typed workflow prompt, not generic QA-report instructions from other modes.
+
+    Preserve all user requests, retrieved memory, tool calls/results and feedback.
+    Only replace the exact known generic Core prompt in the model view; Core
+    permissions, execution messages, evidence and expected are unchanged.
+    """
+    view=deepcopy(messages)
+    if view and view[0].get('role')=='system' and view[0].get('content')==generic_prompt:
+        view[0]['content']=DOMAIN_PROMPT
+    return view
+
+def phase_decision_schema(catalog):
+    """Closed transport for a MODEL-selected action; not automatic dispatch."""
+    if not catalog:raise ValueError('no_admitted_action')
+    return {'oneOf':[{'type':'object','additionalProperties':False,'required':['name','arguments'],
+        'properties':{'name':{'type':'string','enum':[t['function']['name']]},
+            'arguments':deepcopy(t['function']['parameters'])}} for t in catalog]}
+
+def decode_phase_decision(content,catalog):
+    decision=json.loads(content)
+    if (not isinstance(decision,dict) or set(decision)!={'name','arguments'}
+        or not isinstance(decision['arguments'],dict)
+        or not call_admitted(catalog,decision['name'],decision['arguments'])):
+        raise ValueError('model_phase_decision_not_admitted')
+    return {'function':{'name':decision['name'],'arguments':decision['arguments']}}
+
 def compile_bound_action(name,args,req):
     if name in {REFRESH,RUN_AUDIT}:
         if args!={}:raise ValueError('bound_action_has_no_overrides')
@@ -21,19 +60,39 @@ def compile_bound_action(name,args,req):
         return CREATE,({**audit,'task_name':'pluginAudit'} if name==REFRESH else audit)
     return name,args
 
-def incomplete_terminal_feedback(canonical,catalog):
+def incomplete_terminal_feedback(canonical,catalog,text=''):
     """Do not accept prose as completion of an unfinished task workflow.
 
     This is disclosed framework feedback, not an executed or synthetic action.
     BLOCKED is a business verdict, not permission to omit the audit/report.
     """
-    if canonical:return None
+    if canonical:
+        if canonical.get('task_id') and canonical['task_id'] in text and 'BLOCKED' in text.upper():return None
+        return {'error':'canonical_report_summary_incomplete','automatic_action_taken':False,
+            'required_summary':{'task_id':canonical.get('task_id'),'verdict':canonical.get('verdict')},
+            'admitted_tools':[]}
     return {'error':'plugin_workflow_incomplete','automatic_action_taken':False,
         'business_BLOCKED_does_not_complete_workflow':True,
         'admitted_tools':[t['function']['name'] for t in catalog]}
 
+def terminal_phase_key(catalog):
+    """Budget refusal per immutable admitted phase, not per whole lifecycle.
+
+    In particular, delivery/full, refresh/full and main/full have distinct own
+    task bindings. The key is only bookkeeping, not new evidence or authority.
+    """
+    phase=sorted([{'name':t['function']['name'],'parameters':t['function']['parameters']}
+        for t in catalog],key=lambda x:x['name'])
+    return hashlib.sha256(json.dumps(phase,sort_keys=True).encode()).hexdigest()
+
+def consume_terminal_refusal(counts,catalog):
+    key=terminal_phase_key(catalog)
+    counts[key]=counts.get(key,0)+1
+    if counts[key]>2:raise RuntimeError('premature_model_termination')
+    return key
+
 def catalog_for(tools,trace,req):
-    audit,delivery=scopes(req);name=audit['task_name'];pins={};names={'knowledge_search'}
+    audit,delivery=scopes(req);name=audit['task_name'];pins={};names=set()
     created=[t['result'] for t in trace if t['tool'] in {CREATE,DELIVER} and t['result'].get('mutation_executed') is True]
     pending=next((a for a in reversed(created) if not any(t['tool']==READ and t['result'].get('task_id')==a['task_id']
         and (t['result'].get('operation_verification') or {}).get('verified') is True for t in trace)),None)
@@ -42,7 +101,6 @@ def catalog_for(tools,trace,req):
     elif any(a.get('task_name')==name for a in created):
         names.add(REPORT);pins[REPORT]={'task_id':next(a['task_id'] for a in created if a.get('task_name')==name)}
     else:
-        names.update({'browser_open_page','browser_open_agent_tasks_semantic',READY})
         pins[READY]={'ci_name':audit['ci_name'],'agent_id':audit['agent_id'],
             'plugin_name':name,'plugin_version':audit['plugin_version']}
         ready=None
@@ -51,7 +109,15 @@ def catalog_for(tools,trace,req):
             elif t['tool']==READ and t['result'].get('task_name')=='pluginAudit':ready=t['result'].get('plugin_readiness')
         delivered=bool(req.get('prior_verified_delivery')) or any(a.get('task_name')=='managePlugin' for a in created)
         refreshed=any(a.get('task_name')=='pluginAudit' for a in created)
-        if delivered and not refreshed and ready and ready.get('core_version')=='1.3.27' and ready.get('agent_status')=='online':
+        if ready is None:
+            opened=any(t['tool']=='browser_open_page' and not t['result'].get('error') for t in trace)
+            targeted=any(t['tool']=='browser_open_agent_tasks_semantic' and not t['result'].get('error') for t in trace)
+            if not opened:
+                names.add('browser_open_page');pins['browser_open_page']={'url':'https://uc.lab.local/cmdb'}
+            elif not targeted:
+                names.add('browser_open_agent_tasks_semantic');pins['browser_open_agent_tasks_semantic']={'ci_name':audit['ci_name']}
+            else:names.add(READY)
+        elif delivered and not refreshed and ready and ready.get('core_version')=='1.3.27' and ready.get('agent_status')=='online':
             names.add(CREATE);pins[CREATE]={**audit,'task_name':'pluginAudit'}
         elif ready and ready.get('ready') is True:
             names.add(CREATE);pins[CREATE]=audit
@@ -62,6 +128,8 @@ def catalog_for(tools,trace,req):
                 names.add(DELIVER);pins[DELIVER]=delivery
             elif not refreshed and (ready.get('plugin_audit') or {}).get('reason')=='plugin_audit_stale':
                 names.add(CREATE);pins[CREATE]={**audit,'task_name':'pluginAudit'}
+            else:names.add(READY)
+        else:names.add(READY)
     catalog=deepcopy([t for t in tools if t['function']['name'] in names])
     for t in catalog:
         fn=t['function'];args=pins.get(fn['name'])
@@ -148,6 +216,7 @@ def run(api,messages,job_id,case_id,action_policy,force_read_only=False):
         'framework_phase_admission':True,'ordinary_freeform_entry':False}),source='uqa_plugin_runtime',
         execution_status='observed',usable_for_pass=False,usable_for_verdict=False,eligibility_reason='reservation_only')
     trace=[];report='';canonical=None;error=None;memory=[];repeats={};terminal_refusals=0
+    terminal_phase_refusals={};terminal_refusal_events=[];structured_decisions=[]
     try:
         _session.reset_case_context()
         messages.append({'role':'system','content':'Bounded plugin inventory subset. Select only currently admitted tools/argument enums. '
@@ -156,21 +225,36 @@ def run(api,messages,job_id,case_id,action_policy,force_read_only=False):
             'Do not generate UQA_CHECKS_JSON, invent IDs, change expected, use Zephyr, or repeat uncertain sends.'})
         memory=api.append_reviewed_product_memory(messages,job['request'],job_id,case_id,action_policy)
         for turn in range(24):
-            catalog=catalog_for(TOOLS,trace,req);response=api.ask_ollama(messages,tools=catalog)
-            m=response.get('message') or {};calls=m.get('tool_calls') or [];text=str(m.get('content') or '')
+            catalog=[] if canonical else catalog_for(TOOLS,trace,req)
+            model_view=scoped_model_messages(messages,api.SYSTEM_PROMPT)
+            if catalog:
+                model_view.append({'role':'system','content':'Select the next admitted action using only the supplied JSON schema: '
+                    'name and arguments. This selects an action, it does not execute it. Do not return a final answer before '
+                    'the canonical report. Core still validates scope, policy and execution evidence.'})
+                response=api.ask_ollama(model_view,tools=[],response_schema=phase_decision_schema(catalog))
+                content=str((response.get('message') or {}).get('content') or '')
+                call=decode_phase_decision(content,catalog);calls=[call];text=''
+                structured_decisions.append({'after_step':len(trace),'name':call['function']['name'],
+                    'argument_keys':sorted(call['function']['arguments']),'automatic_action_taken':False})
+            else:
+                response=api.ask_ollama(model_view,tools=[])
+                m=response.get('message') or {};calls=m.get('tool_calls') or [];text=str(m.get('content') or '')
             messages.append({'role':'assistant','content':text,**({'tool_calls':calls} if calls else {})})
             if not calls:
-                feedback=incomplete_terminal_feedback(canonical,catalog)
+                feedback=incomplete_terminal_feedback(canonical,catalog,text)
                 if feedback is None:report=text;break
                 terminal_refusals+=1
-                if terminal_refusals>2:raise RuntimeError('premature_model_termination')
+                phase_key=terminal_phase_key(catalog)
+                terminal_refusal_events.append({'after_step':len(trace),'phase_key':phase_key,
+                    'admitted_tools':feedback['admitted_tools'],'automatic_action_taken':False})
+                consume_terminal_refusal(terminal_phase_refusals,catalog)
                 messages.append({'role':'system','content':json.dumps(feedback,ensure_ascii=False)})
                 continue
             for call in calls:
                 fn=call.get('function') or {};name=fn.get('name');args=fn.get('arguments') or {}
                 selected_name=name
                 if isinstance(args,str):args=json.loads(args)
-                catalog=catalog_for(TOOLS,trace,req)
+                catalog=[] if canonical else catalog_for(TOOLS,trace,req)
                 if not call_admitted(catalog,name,args):
                     result={'error':'plugin_phase_not_admitted','executed':False,'automatic_action_taken':False,
                         'current_native_fact_bound_operations':[{'tool':t['function']['name'],'arguments':{
@@ -206,7 +290,13 @@ def run(api,messages,job_id,case_id,action_policy,force_read_only=False):
             'ordinary_freeform_entry':False,'operator_runtime_hints':0,'operator_product_actions':0,
             'synthetic_product_action_calls':0,'error_type':error,'zephyr_written':False}
         body['framework_bound_actions']=True
+        body['framework_typed_domain_prompt']=True
+        body['framework_structured_decision_transport']=True
+        body['framework_strict_stage_admission']=True
+        body['model_structured_decisions']=structured_decisions
         body['framework_terminal_refusals']=terminal_refusals
+        body['framework_terminal_phase_refusals']=terminal_phase_refusals
+        body['framework_terminal_refusal_events']=terminal_refusal_events
         e=store.add_evidence(job_id,case_id,'bounded_local_model_plugin_trace',json.dumps(body,ensure_ascii=False),
             source='uqa_plugin_model_runtime',execution_status='observed',usable_for_pass=False,usable_for_verdict=False,
             eligibility_reason='workflow_and_structure_subset_not_whole_case_PASS')

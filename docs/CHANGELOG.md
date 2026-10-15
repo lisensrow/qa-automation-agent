@@ -1,5 +1,21 @@
 # История изменений UQA
 
+Финальный checkpoint325: full325251/251 technical smoke PASS,2codeSHA unchanged,22Markdown package PASS. Reviewed source/candidate325 indexed after snapshots of both existing databases; dedup/integrity/retrieval PASS,1223otherchunks preserved, new live-drive proof retrievable. Это не251бизнес-кейс и не повышение candidate вverified. Следующая очередь пропускает завершённые ячейки и останавливается при первом incomplete/uncertain; Jira/Zephyr без правок.
+
+Native325 принято как bounded execution: Windows remaining-drive223538-6640ec93 и Astra full-drive223550-693e48e9 completed=true;3/7records structure matched,1/3operations verified. Astra впервые прошла новый drive lifecycle отdelivery доотчёта в одном run с явной strict-stage/structured-selection помощью framework. Прежние failures сохранены, полнота независимого ОС/UI oracle не проверена → whole-caseBLOCKED. Final full325 и memory/source checkpoint проверяются отдельно; следующий этап — остальные профили обеих ОС, не повтор успешной пары.
+
+## v324–325 — закрытая схема решений и строгий stage catalogue
+
+Проверенный отказ: Windows drive222634-0f502d61 доставил/loaded1.3.5, но не начал main;223232-32e55245 исчерпал24повторных knowledge searches/0operations. Эти Jobs не переписаны как success. Добавлен closed-schema{name,arguments} transport выбора моделью, повторная admitted validation перед прежним Core и строго текущий этап без повторного поиска/навигации после доказанного перехода. Negative fixtures проверяют scope overrides/unknown actions/extra verdict keys; native permission/evidence/business oracle не ослаблены. Live325 обеих ОС проверяется отдельно.
+
+Full322:250/251, timing mismatch iframe_surface_change; focused повтор без изменения кода PASS. Full320251/251 сохранён; это не финальный PASS325. Старый лог не заменяется, новый полный набор325 будет проверен отдельно. Знания serviceAudit и ограничения композиции перенесены в reviewed source; общий регресс всё ещё не объявлен пройденным. Jira/Zephyr без изменений.
+
+## v320–322 — завершение serviceAudit и разделение фаз отчётности
+
+Новая fixture фиксирует преждевременное исчерпание общего refusal budget после успешных стадий: budget теперь отдельный для каждого exact каталога/own-task ID,2отказа на фазу, общий turn limit прежний. Native expected/evidence и dispatch guard не ослаблены. Typed domain model prompt заменяет только exact generic Core prompt, сохраняет request/memory/results; canonical report → пустой каталог → проверенный текстовый финал с bounded format correction. Full320251/251 технических smoke PASS; full322 проверяется отдельно.
+
+Astra serviceAudit main/read: Job221931-f1b5d655,58служб,6полей корректны,execution verified. Модель сама вызвала canonical reporter в отдельном подготовленном оператором read-only продолжении, затем дала итог сBLOCKED, без новых задач на агенте. Предыдущие incomplete traces не переписаны, uninterrupted autonomy не заявлена. Windows remaining-audit215414-e44946ea ранееcompletedtrue/246служб. Следующий full native case driveDeviceAudit Windows222634-0f502d61 ещё проверяется; не считать запуск PASS. Jira/Zephyr не менялись.
+
 ## v314–318 — переносимый inventory workflow и контроль завершения
 
 Девять pinned профилей без параметров, native receipts/readiness, три execution-stage контракта и canonical subset report; старые osAudit callers совместимы. Scoped memory facet остаётся в прежнем трёхзапросном бюджете. Safe continuation принимает только verified exact delivery с исходным evidence/fingerprints, без повторной установки и переписывания старых Jobs. Модельные bound actions не позволяют менять immutable цель/версию; phase admission, compilation и terminal feedback раскрываются отдельно от самостоятельных действий модели.

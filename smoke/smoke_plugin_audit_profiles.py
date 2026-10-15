@@ -43,6 +43,12 @@ assert pinned_plugin_payload(ci,agent,{'total':0,'items':[]},'agent','1.3.27','s
 ready={'tool':READY,'result':{'core_version':'1.3.27','agent_status':'online','ready':False,
     'plugin_audit':{'matched_plugins':[{'name':'serviceAudit','version':'1.2.25'}]}}}
 assert not call_admitted(catalog_for(TOOLS,[],r),CREATE,audit)
+assert [t['function']['name'] for t in catalog_for(TOOLS,[],r)]==['browser_open_page']
+opened={'tool':'browser_open_page','result':{'error':None}}
+assert [t['function']['name'] for t in catalog_for(TOOLS,[opened],r)]==['browser_open_agent_tasks_semantic']
+targeted={'tool':'browser_open_agent_tasks_semantic','result':{'error':None}}
+assert [t['function']['name'] for t in catalog_for(TOOLS,[opened,targeted],r)]==[READY]
+assert 'knowledge_search' not in [t['function']['name'] for t in catalog_for(TOOLS,[ready],r)]
 assert call_admitted(catalog_for(TOOLS,[ready],r),DELIVER,delivery)
 made={'tool':DELIVER,'result':{'task_id':'own','task_name':'managePlugin','mutation_executed':True}}
 assert not call_admitted(catalog_for(TOOLS,[ready,made],r),CREATE,audit)
@@ -84,12 +90,44 @@ for stage in stages_for(r):
         assert not evaluate_execution(bad,op,'read',stage['verification'])['verified']
 print('plugin_audit_profiles: PASS (9 bounded profiles, phase gates and 3 execution proofs; fixtures only)')
 from operation_journal import _fingerprint
-from plugin_audit_runtime import incomplete_terminal_feedback
+from plugin_audit_runtime import incomplete_terminal_feedback,terminal_phase_key,consume_terminal_refusal,scoped_model_messages,DOMAIN_PROMPT,phase_decision_schema,decode_phase_decision
 feedback=incomplete_terminal_feedback(None,catalog_for(TOOLS,[ready,made,done],r))
 assert feedback['automatic_action_taken'] is False
 assert feedback['business_BLOCKED_does_not_complete_workflow'] is True
 assert REFRESH in feedback['admitted_tools']
-assert incomplete_terminal_feedback({'verdict':'BLOCKED'},[]) is None
+assert incomplete_terminal_feedback({'verdict':'BLOCKED','task_id':'own'},[],'own BLOCKED') is None
+assert incomplete_terminal_feedback({'verdict':'BLOCKED','task_id':'own'},[],'done')['error']=='canonical_report_summary_incomplete'
+assert incomplete_terminal_feedback({'verdict':'BLOCKED','task_id':'own'},[],'other BLOCKED')['automatic_action_taken'] is False
+assert terminal_phase_key(catalog_for(TOOLS,[ready,made],r))!=terminal_phase_key(catalog_for(TOOLS,[ready,made,done],r))
+read_catalog=catalog_for(TOOLS,[ready,made],r)
+assert terminal_phase_key(read_catalog)==terminal_phase_key(list(reversed(read_catalog)))
+changed=deepcopy(read_catalog)
+next(t for t in changed if t['function']['name']==READ)['function']['parameters']['properties']['task_id']['enum']=['new-own-task']
+assert terminal_phase_key(changed)!=terminal_phase_key(read_catalog)
+counts={}
+consume_terminal_refusal(counts,read_catalog)
+consume_terminal_refusal(counts,changed)
+consume_terminal_refusal(counts,catalog_for(TOOLS,[ready,made,done],r))
+assert len(counts)==3 and sum(counts.values())==3
+consume_terminal_refusal(counts,read_catalog)
+try:consume_terminal_refusal(counts,read_catalog)
+except RuntimeError:pass
+else:raise AssertionError('same-phase repeated termination must still stop')
+messages=[{'role':'system','content':'generic'}, {'role':'user','content':'immutable expected'},
+    {'role':'system','content':'reviewed memory'}, {'role':'tool','content':'native result'}]
+saved=deepcopy(messages)
+view=scoped_model_messages(messages,'generic')
+assert view[0]['content']==DOMAIN_PROMPT and view[1:]==messages[1:] and messages==saved
+assert scoped_model_messages(messages,'another')==messages
+phase_catalog=catalog_for(TOOLS,[ready,made,done],r)
+schema=phase_decision_schema(phase_catalog)
+assert {b['properties']['name']['enum'][0] for b in schema['oneOf']}=={t['function']['name'] for t in phase_catalog}
+assert decode_phase_decision(json.dumps({'name':REFRESH,'arguments':{}}),phase_catalog)['function']['name']==REFRESH
+for bad in [{'name':RUN_AUDIT,'arguments':{}},{'name':REFRESH,'arguments':{'agent_id':'other'}},
+            {'name':REFRESH,'arguments':{},'verdict':'PASS'},{'name':'finish','arguments':{}}]:
+    try:decode_phase_decision(json.dumps(bad),phase_catalog)
+    except ValueError:pass
+    else:raise AssertionError('invalid model choice must not dispatch')
 original=deepcopy(job);stage=stages_for(r)[0]
 prior_op={'operation_id':'old-op','case_id':'case','status':'verified',
     **{k:stage[k] for k in ['tool','workflow_id','stage_id','resource_key']},

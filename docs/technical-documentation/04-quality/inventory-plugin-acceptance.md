@@ -29,3 +29,33 @@ v318 добавляет не более двух отказов преждевр
 Full318251/251 технических smoke PASS,11производственных SHA после набора неизменны. Это не251бизнес-кейс и не прохождение всей матрицы плагинов. Структура результата — ограниченный subset; независимая полнота оборудования/ПО/служб и UI ещё требуют проверки. Поэтому полный source case не получает PASS. Отсутствующие поля или пустой GPU/display результат на VM не объявляются подтверждённым дефектом без соответствующего oracle.
 
 Reviewed experience318 про частичные Jobs, loaded-факт, premature completion и операторское вмешательство добавлен в существующую глубокую память. Обе базы предварительно сохранены, integrity/dedup/retrieval проверены;1223остальных chunks неизменны, предыдущие ревизии сохранены. Это candidate/document_review, не повышение до verified specification и не обучение весов.
+
+## Завершённый remaining-audit Windows
+
+Job20261015-215414-e44946ea / tc-9251b951 / trace ev-eb5a9700d73f: completed=true. UQA выбрал bound audit, прочитал собственный свежий task3e423158-09e9-43ac-95e4-857bc7f3a4bf и сформировал canonical expected/actual. Native evidence ev-402a8b0f37e9:246служб,6обязательных строковых полей у246/246, structure subset matched. Новая операция op-bb62c770ba014da7966a49c82249694f verified execution-only. Полный case BLOCKED до независимой сверки полноты.
+
+Оператор подготовил отдельный remaining-case после прежних partial Jobs; одна делегированная confirmation, bound-action compilation и один framework terminal refusal учтены. Ручных runtime-подсказок и действий на КЕ0. Доставка/refresh в этом Job не повторялись; не выдавать его за непрерывный end-to-end delivery cycle. Astra и следующие профили оцениваются отдельно.
+
+## Astra: основной аудит и отчёт с отдельным продолжением
+
+Remaining-case Job20261015-221931-f1b5d655 / tc-a0df8014 / trace ev-bbaaf3dca189: UQA создал и прочитал собственный serviceAudit task1f828318-de44-499f-b3e1-fd6842a1d7d1.58служб,6обязательных полей у58/58; операция op-a43426c99ece413c9a8c0e4e770518d6 verified execution. Старые delivery/refresh не повторены. Исходный цикл остановился до отчёта; он не переписывается как success.
+
+Read-only report continuation ev-191eb6a3624f: модель сама выбрала canonical reporter. Отдельная финализация вернула expected/actual с taskID/BLOCKED за одну попытку; новых задач на агенте0. Подготовка обеих частей оператором раскрыта: это составное завершение, не непрерывный автономный lifecycle. Полный бизнес-кейс BLOCKED до независимой полноты.
+
+v320–322 исправляют глобальный budget преждевременного завершения на budget той же exact фазы, сохраняют2отказа/фазу и общий bounded turn limit. Для typed model view заменяется только известный generic system prompt, сохраняются user/memory/tools/evidence и backend policy. После canonical report модель получает только текстовый финал с проверкой taskID/вердикта. Fixtures не доказывают live general autonomy: новый полный цикл проверяется на driveDeviceAudit Windows Job20261015-222634-0f502d61. Jira/Zephyr не изменялись.
+
+## v325: актуальная граница самостоятельности
+
+Первый Windows drive Job222634-0f502d61 подтвердил delivery/load1.3.5, но main/report не выполнил. Следующий223232-32e55245 исчерпал24выбора поиска, не изменив агент. Поэтому prompt/budget changes не объявляются достаточными. Новый typed runner использует закрытую JSON schema для model-selected name/arguments и строгую фазу: навигация → readiness → при необходимости delivery/own result → refresh/own result → main/own result → canonical report → текстовый финал. Core permission/oracle/journal прежние. Начальный retrieval reviewed memory сохраняется, циклический повтор поиска после него не предлагается.
+
+Эта orchestration и fixed-profile подготовка оператора раскрываются явно. Работающий bounded workflow не равен произвольному человеческому промпту, самостоятельному планированию40кейсов или полному бизнес-PASS. Реальные Windows remaining-drive223538-6640ec93 и Astra full-drive223550-693e48e9 оцениваются отдельно. Все failed traces сохраняются, доставленные плагины не устанавливаются повторно.
+
+Технический full322 дал250/251: timing mismatch iframe_surface_change. Focused повтор без правок прошёл; исходный failed лог сохранён. Full325 должен пройти отдельно после фиксации кода; нельзя выдавать прежний full320 за проверку новой версии.
+
+## Подтверждённая native пара driveDeviceAudit
+
+Windows Job223538-6640ec93/tc-95232f31/ev-c8db2cb87a7c completed: собственный taskfc44d3b3-ccd7-4f06-996b-cfd77d1086f8/read ev-aef42ff4818e,3записи, закреплённые6полей/типов matched. Одна новая операция verified, без повторной delivery/refresh; remaining-case подготовлен оператором.
+
+Astra Job223550-693e48e9/tc-0dfa35fe/ev-60c2761531a3 completed: в одном новом bounded run модель прошла delivery/own result → refresh/fresh loaded1.3.5 → audit/own result → canonical report/финал. Taskf7b281f9-66c2-4555-9c07-1b199873237b/read ev-781c27d92d7c,7записей, subset matched. Все3операции verified. В обоих runs рецепт retrieved, framework strict stage/structured selection/bound compilation и один format refusal явно учтены, ручных runtime-подсказок/product actions0. Это подготовленный профиль, не общая свободная автономия. Полные cases BLOCKED по независимой полноте ОС/UI, а не PASS всего регресса.
+
+Final325:251/251technical smoke PASS,2производственных SHA после набора неизменны;22Markdown files/links valid. Reviewed память325 сохранена с резервными копиями обеих баз, историей/dedup/integrity/retrieval;1223остальных chunks сохранены, поиск возвращает новый primary proof. Старый failed322 лог не заменён. Следующая очередь запускается только после checkpoint и прекращает новые отправки при первом incomplete/uncertain, оставляя первичные результаты для разбора.
