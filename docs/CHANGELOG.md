@@ -1,5 +1,11 @@
 # История изменений UQA
 
+## v330 — network Astra и softAudit Windows/Astra
+
+Memory330 indexed once: source SHA93788ea200a7d514814fdec55328c30a79fc246d97c63eb5c62171d81913ca3d, snapshots обеихDB, integrity/dedup/retrieval PASS,1223unrelated chunks unchanged. Candidate/document_review retained. Technical Markdown22files PASS; production328 codeSHA unchanged, новый full suite не требовался для documentation-only checkpoint.
+
+Primary review подтвердил completed bounded cycles230334-4b7cad4a/230449-5b8f2eee/230601-c5001224:1network/68Windows software/1999Astra software records,9verified operations. Модель сама дождалась Astra soft результата повторным чтением, без duplicate CREATE; recipe retrieved/structured finals/0format refusals. Runtime328 не менялся, его251/251 technical smoke не переименовываются в330 или бизнес-PASS. Подготовка scope/oracle и strict-stage framework отдельно, полные source cases BLOCKED. Reviewed knowledge330: новая revision с сохранением истории и snapshots/dedup/integrity/retrieval; результаты этих проверок фиксируются после индексации. Jira без изменений.
+
 Final328:251/251technical smoke PASS after wire-schema freeze,2SHAOK,22MDPASS. Candidate memory328 source/history/snapshots/dedup/integrity/retrievalDONE,1223otherchunks preserved. No Jobs/DB/raw artifacts committed, no Jira writes. Queue continues after reviewed read-only Windows network final; whole-regression PASS not claimed.
 
 ## v327–328 — устойчивый финал без повторного аудита

@@ -1,5 +1,9 @@
 # Архитектура QA-агента UQA
 
+## Checkpoint330: новые реальные inventory cycles
+
+Без изменения runtime328 UQA завершил Astra network230334-4b7cad4a (1interface), Windows soft230449-5b8f2eee (68software rows), Astra soft230601-c5001224 (1999rows). В каждом3операции verified, indexed recipe retrieved, structured final accepted,0premature-final refusals. Astra soft потребовал дополнительного READ того же task после not-ready, не повторной отправки. Scope/oracle и standing confirmations подготовлены операторски; strict-stage framework assistance сохраняется. Полные source cases BLOCKED до независимой полноты ОС/UI, Windows uninstallString не покрыт текущим subset. Следующий GPU уже идёт в единственной finite queue329; не повторять эти delivery/audits. Reviewed memory revision330 фиксирует переносимый урок fetch/polling и точные primary proofs; не повышать candidate в verified без валидатора.
+
 Final328 checkpoint:251/251technical smoke PASS,2codeSHA unchanged,22MD package valid. Reviewed memory328 candidate/source/history indexed after both DB snapshots, integrity/dedup/retrievalPASS,1223otherchunks unchanged. Windows network final continuation accepted only as explicit operator-prepared read-only repair; no new audit/delivery. Finite queue resumes at Astra network, with stop-on-first-incomplete and no new cases after09MSK16Oct. Jira source timeout remains an independent coverage blocker.
 
 ## v327–328: финальный transport и доступность исходников

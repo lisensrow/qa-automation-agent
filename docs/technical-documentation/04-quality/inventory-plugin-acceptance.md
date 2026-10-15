@@ -1,5 +1,7 @@
 # Inventory-плагины: проверка доставки и результатов
 
+Checkpoint330: локальная модель в одном bounded run каждого нового scope завершила Astra networkDeviceAudit1.5.1 (Job230334-4b7cad4a,1interface), Windows softAudit1.3.8 (230449-5b8f2eee,68rows), Astra softAudit1.3.8 (230601-c5001224,1999rows). По3verified delivery/refresh/main операции; recipe retrieved, structured final,0format refusals. На Astra soft первое чтение было not-ready, повтор READ того же task дал fresh result без повторной отправки. Immutable scope/oracle и standing confirmations операторские, strict-stage framework отдельно. Полный source-regression всё ещё BLOCKED: независимая полнота ОС/UI и Windows uninstallString вне текущего subset. Runtime328 не менялся;251/251 — технические проверки, не251бизнес-кейс. Reviewed memory330 сохраняет exact proof/history, не выдаёт candidate за verified. Jira не изменяется.
+
 Состояние16октября2026. Продолжение [приёмки osAudit](os-audit-acceptance.md), только Windows и Astra. Zephyr не изменяется.
 
 ## Что добавлено

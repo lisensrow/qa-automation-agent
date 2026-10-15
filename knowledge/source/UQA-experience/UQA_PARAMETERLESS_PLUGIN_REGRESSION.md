@@ -1,5 +1,19 @@
 # UQA: регресс inventory-плагинов без параметров
 
+## Проверенный checkpoint330: network Astra и softAudit обеих ОС
+
+На ядрах1.3.27 выполнены три новых bounded model cycles с retrieval существующего recipe, strict-stage closed-schema framework и структурированным финалом; premature-final refusals0. Оператор подготовил immutable scope/oracle, supervisor ответил на три заранее разрешённых exact-scope подтверждения каждого цикла; runtime hints и операторских product actions0. Это не свободный NL planner и не обучение весов.
+
+| ОС / плагин | Job / case / trace | Main task | Фактический результат |
+| --- | --- | --- | --- |
+| Astra1.8/build1.8.1.6 / networkDeviceAudit1.5.1 | 20261015-230334-4b7cad4a / tc-ac63d3d5 / ev-09bdd1cc27ab | f2fb6c2e-1f02-4883-80b8-309325bd8509 | 1interface row, все11полей profile соответствуют типам |
+| Windows10Pro22H2/build19045.6456 / softAudit1.3.8 | 20261015-230449-5b8f2eee / tc-5a674569 / ev-4cfd05d58a49 | 2ded7854-9801-4a33-b0ba-06e02c373c90 | 68software rows, все7полей profile соответствуют типам |
+| Astra1.8/build1.8.1.6 / softAudit1.3.8 | 20261015-230601-c5001224 / tc-52eada6c / ev-4c9d8bd3a18b | b0d21657-182e-4859-b454-37d62918468e | 1999software rows, все7полей profile соответствуют типам |
+
+В каждом Job journal содержит ровно3новые verified операции: delivery с OS-check/no deletion → собственный managePlugin/full → pluginAudit/fresh loaded inventory → main audit → собственный fresh full → canonical expected/actual → model final. На Astra softAudit первое чтение ещё не содержало data (native_result_verified=false), модель повторила READ того же task и дождалась1999строк/native_result_verified=true. Повторной CREATE или доставки не было. Не трактовать незавершённый fetch как окончательный FAIL и не считать повтор READ повторным запуском.
+
+Предъявленный expected — immutable subset container/fields/types/fresh identity, actual совпал. Полный source-case всё ещё BLOCKED: независимая полнота/значения ОС и отображение UI не проверены. Windows softAudit отдельно требует source-полноту и uninstallString, не покрытые этими7полями; число строк само по себе не oracle. Jira недоступна, кейсы/результаты не изменялись. Заметка сохраняется как reviewed candidate/document_review, не runtime verified promotion; server/frontend versions остаются unknown. Полные inventory payloads в общую память не копируются.
+
 ## Источники и границы
 
 16 октября2026 MSK: оператор повторно прочитал отображаемые первые10шагов Zephyr US-T79 v1.0 (Windows, цикл US-C346) и US-T102 v1.0 (Astra, цикл US-C347). Чтение не означает выполнение или полный экспорт всех40кейсов. URL источника: https://pm.acomps.ru/secure/Tests.jspa#/testPlayer/US-C346 и https://pm.acomps.ru/secure/Tests.jspa#/testPlayer/US-C347 . Никакие StartTest, actual, status, comment, case или названия циклов не менялись. Официальная основа назначения плагинов — существующий индексированный источник «UC Руководство пользователя от06.07.2026.docx», приложение4.
