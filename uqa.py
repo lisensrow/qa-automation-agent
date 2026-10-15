@@ -13452,7 +13452,9 @@ def run_regression_job(
         original_request
     )
 
-    explicit_plan = (
+    from condition_request_adapter import regression_plan as condition_request_plan
+    condition_entry_plan = condition_request_plan(planning_request, current_stand)
+    explicit_plan = condition_entry_plan or (
         extract_explicit_regression_cases(
             planning_request
         )
@@ -13627,9 +13629,10 @@ def run_regression_job(
     # Compile deterministic locked requirements before
     # any test case exists. Explicit numbered scope also
     # passes here without invoking the LLM Planner.
-    prepare_locked_requirements(
-        plan
-    )
+    if condition_entry_plan is None:
+        prepare_locked_requirements(
+            plan
+        )
 
     # Only now does execution actually start.
     set_job_status(

@@ -1,5 +1,9 @@
 # План приёмки UQA: дневное продолжение
 
+Windows144239-c74933d1 тоже ordinary six-cell PASS; оба native UI runs завершены. Финальный full284 после них243/243 smoke PASS,5SHA неизменны,20MD PASS. Память286: candidate/retrieval/integrity/dedup PASS,1203other chunks сохранены. Полное сохранение и policy/procedure business acceptance ещё впереди.
+
+v284: whole-request ordinary entry добавлен для явно названного CMDB и ограниченной unsaved OS-family фазы. Ubuntu144053-e6af5d4c и Windows144239-c74933d1 PASSED без заранее созданного кейса/браузера. Не повторять старые blocked Jobs; whole-request parser не является общим NL planner и не создаёт сохранённую коллекцию. Следующий business рубеж по-прежнему Save/AST/member → inactive policy/exact scope/effect → procedure graph/params/run.
+
 Актуальный280:242/242 smoke PASS,11SHA неизменны. Typed v4 normal prepared Ubuntu/Windows прошли6несохранённых ячеек без UI-pattern подсказок и operator browser preparation. Native policy/procedure request reader получил по2страницы закреплённого historical source; UC HTTP/actions отсутствовали. Следующие пункты ниже — история, не указание повторять успешные или неопределённые операции.
 
 Следующая последовательность: (1) reviewed knowledge/docs и release checkpoint; (2) source-bound полный lifecycle коллекции с immutable Save/AST/member oracle; (3) новая owned выключенная политика, точный scope, отдельно безопасный effect; (4) workspace/граф/параметры процедуры и отдельное исполнение. Нужна также отдельная приёмка обычной freeform маршрутизации; prepared профиль ею не является. Night automation остаётся PAUSED. Старые uncertain/awaiting_verification не освобождать/не переименовывать/не повторять.

@@ -1,5 +1,13 @@
 # Условия коллекций: логический план и исполнимый контракт
 
+## Обычный вход по целому запросу — v284
+
+Windows ordinary Job20261015-144239-c74933d1/ev-d81003fde504: тот же ограниченный вход и6cell PASS/5Y0N/0resources/operations, без operator-prepared case/browser. Это дополнительный OS literal, не принятие произвольных условий.
+
+Поддержан узкий текст: «На стенде lab проверь в CMDB в новой несохранённой коллекции AND-условия: неархивные Endpoint с Ubuntu. Не сохраняй.» Windows заменяет Ubuntu. Stand может задаваться текущим контекстом, но должен быть lab. Parser не отбрасывает дополнения: лишние критерии/OR/Save/неизвестная ОС и отсутствие CMDB оставляют прежний planner. Это не общий natural-language intent resolver.
+
+Host строит typed expected и один case/check до модели; request SHA и независимый повторный разбор сверяются runtime на каждой стадии. Один запрос не превращается в несколько созданий. Штатный выбор STEP/AUTO и прежние policy prompts сохранены. Native Ubuntu Job20261015-144053-e6af5d4c/ev-3f22b4a374cd PASSED6cells, без operator-prepared case/browser,5Y0N/0resources/operations. Saved AST/member oracle отсутствует; итог ограничен unsaved UI phase.
+
 ## Типизированный профиль v4 — checkpoint280
 
 Boolean и enum имеют caller-owned UI labels; Contains принимает plain literal, trusted glob_contains строит Wildcard *literal*. Модель не задаёт row_label/mapping/value_labels. Bool допускает только boolean, enum — известный ID; wildcard/control characters отклоняются. Expected не исправляется под модель. Старый string/v2 профиль сохранён.

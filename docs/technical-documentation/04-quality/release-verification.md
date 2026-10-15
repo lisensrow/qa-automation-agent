@@ -1,5 +1,7 @@
 # Проверка текущего этапа
 
+Финальный284/286:243/243 smoke PASS (/tmp/v284-full-smoke.log),5 изменённых code SHA совпали (/tmp/v284-release-code.sha256);20 Markdown PASS. Полный набор выполнен после завершения UI model runs. Промежуточный282 failed iframe timing остаётся историей; isolated283 PASS не подменял final284 и iframe-код не меняли. Ordinary Ubuntu/Windows six-cell phase принята в узком whole-request grammar, без operator-prepared cases/browser. Review286 candidate memory: snapshots обеих DB/integrity/replay dedup/retrieval PASS,1203 unrelated chunks сохранены. Это не saved collection/policy/procedure business acceptance.
+
 Финальный280:242/242 smoke PASS (/tmp/v280-full-smoke.log),11SHA совпали (/tmp/v280-release-code.sha256). Предыдущие счётчики ниже исторические. Typed normal prepared Ubuntu/Windows прошли только6несохранённых ячеек. Новые native policy/procedure reads подтвердили выбор reader и2страницы одного source, но не семантическую полноту ответа, создание или execution. Whole cases BLOCKED по диагностическим границам; HTTP200/ACK не повышали до business PASS.
 
 Финальный268:241/241 smoke PASS и8 SHA совпали после полного прогона.20 Markdown проверены. Explicit Ubuntu wildcard266 также прошёл normal prepared six-cell phase; короткий Ubuntu запрос остаётся BLOCKED. Ни один из этих результатов не подтверждает Save/AST/member или политику/процедуру в исполнении.

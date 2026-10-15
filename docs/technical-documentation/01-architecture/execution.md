@@ -1,5 +1,9 @@
 # Поток исполнения задачи
 
+## Узкий ordinary condition entry
+
+Whole-request adapter v284 может до LLM planner построить один immutable case для явно названного CMDB/new unsaved/AND/неархивных Endpoint с Ubuntu или Windows/no Save. Expected выводится только из целого исходного запроса; hash и повторный разбор проверяются в runtime. Неподдержанный текст не обрезается и остаётся старому planner. STEP/AUTO и confirm_mutations не меняются. Это конкретный поддержанный вход, не общее создание коллекций; границы и native evidence приведены в [контракте условий](condition-draft-contract.md).
+
 ## Составное добавление условия
 
 Контракт следующего runtime и реализованные границы компилятора: [условия коллекций](condition-draft-contract.md). Профиль и expected принадлежат caller; модель выдаёт только логические условия, не UI-аргументы.

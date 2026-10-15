@@ -2,6 +2,12 @@
 
 ## Кратко: возможности и границы на 15 октября 2026
 
+- Финальный284/286:243/243 smoke PASS,5 изменённых code SHA неизменны после полного прогона,20 technical Markdown PASS. Whole-request рецепт сохранён в существующей глубокой памяти как один derived candidate/document_review: обе DB snapshots, integrity/replay dedup/retrieval PASS,1203 unrelated chunks неизменны. Native ordinary Ubuntu/Windows evidence и ограничения находятся в существующей planning note; новые продуктовые verified facts не заявлены.
+
+- Ordinary whole-request Windows Job20261015-144239-c74933d1/ev-d81003fde504 также прошёл6несохранённых ячеек без operator-prepared case/browser. Таким образом новая узкая точка входа проверена на обоих OS literals; это не обещание любого промпта или полного сохранённого workflow.
+
+- v282–v284: обычный regression entry распознаёт целиком узкий запрос «На стенде lab проверь в CMDB в новой несохранённой коллекции AND-условия: неархивные Endpoint с Ubuntu. Не сохраняй.» (также Windows). Expected строится кодом из исходного запроса до модели; request hash и повторный разбор проверяются runtime на каждой стадии. Формируется один case/одна six-cell проверка; STEP/AUTO и confirm_mutations остаются штатными. Лишние критерии/OR/Save/другой stand не отбрасываются: supported adapter не выбирается, остаётся прежний planner. Без явного CMDB этот узкий вход пока не поддержан. Реальный Ubuntu Job20261015-144053-e6af5d4c PASSED без operator-prepared case/browser; это всё ещё только несохранённые условия.
+
 - Reviewed опыт typed planning/request reader сохранён в прежней глубокой памяти и существующих двух документах, без дублей на каждый патч. Snapshot обеих DB, integrity/replay dedup/retrieval PASS,1189 unrelated chunks неизменны. Это derived UQA candidates/document_review, не новые verified факты продукта.
 
 - Checkpoint280:242/242 технических smoke PASS,11 code SHA неизменны. Typed профиль v4 принимает логические boolean/enum/Contains; trusted adapter переводит их в UI No/Endpoint/Wildcard *literal*. Короткие задания Ubuntu Job20261015-124128-54229803 и Windows Job20261015-124453-b6a01a17 прошли normal prepared runtime без operator browser preparation: независимое чтение6ячеек несохранённых условий. Это явный caller-prepared flat AND профиль, не общая маршрутизация любого промпта, Save/AST/member или вложенные фильтры.

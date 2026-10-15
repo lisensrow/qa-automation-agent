@@ -1,5 +1,15 @@
 # UQA: опыт структурного планирования
 
+## Whole-request entry без заранее созданного кейса — v284
+
+Второй ordinary run Windows Job20261015-144239-c74933d1/tc-50c3cc9f/ev-d81003fde504 также PASSED6cells/5Y0N/noTimeout/0resources/operations, без operator-prepared case/browser. Оба результата относятся к одному узкому whole-request grammar; это не general freeform routing.
+
+Reviewed derived UQA guidance/candidate/document_review; не официальный факт продукта, не баг/фикс и не full business acceptance. Scope server/frontend/core/plugin/os unknown. Ubuntu/Windows — литералы условия, а не доказанная ОС живой КЕ.
+
+Обычный regression entry распознаёт только целый запрос: «На стенде lab проверь в CMDB в новой несохранённой коллекции AND-условия: неархивные Endpoint с Ubuntu. Не сохраняй.» Также поддержан Windows. Host expected из original request существует до модели, содержит boolean false/enum endpoint/Contains plain OS literal, один case/check; request SHA и повторный разбор сверяются каждым runtime guard. Лишние критерии/OR/Save/другой stand/неизвестная ОС/отсутствие явного CMDB не отбрасываются — supported adapter не выбирается, работает прежний planner. STEP/AUTO и policy неизменны; parser не разрешает actions.
+
+Expected:6ячеек unsaved AND, no Save. Actual ordinary Ubuntu Job20261015-144053-e6af5d4c/tc-119b9053/ev-3f22b4a374cd PASSED6cells/5Y0N/noTimeout/0resources/operations, operator_prepared_case=false/operator_browser_preparation=false. Старый no-CMDB Job142845-b9c8c036 BLOCKED navigation, затем143643-aac9eda7 BLOCKED из-за временного import shadow в harness; history сохранена, guard не обходился. Контролёр нужно запускать из production import context, а не загружать старые /tmp modules. Это limited supported ordinary entry, не произвольный prompt, nesting, saved AST/member, политика или процедура.
+
 ## Логические типы вместо UI-форматирования — v270–v280
 
 Reviewed UQA guidance, namespace uqa/document_review/hypothesis, не официальная спецификация продукта и не developer-confirmed bug/fix. Версии server/frontend/agent/plugin/os unknown. Ubuntu/Windows ниже — литералы фильтра, не доказанная ОС реальной КЕ.

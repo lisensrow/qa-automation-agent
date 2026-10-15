@@ -2,6 +2,18 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v282–v284 — whole-request вход для узкой фазы условий
+
+Windows ordinary Job20261015-144239-c74933d1/tc-50c3cc9f/ev-d81003fde504 также PASSED6cells/5Y0N/noTimeout/0resources/operations, без operator-prepared case/browser. Финальный full284 после обоих UI runs:243/243 smoke PASS,5codeSHA неизменны;20 technical Markdown PASS. Прежний282 failed-run сохранён, iframe-код не изменялся.
+
+Review286: один derived ordinary-entry candidate в существующей глубокой памяти, прежняя Planning note обновлена без дублирующего файла. Обе DB snapshots, integrity/replay dedup/retrieval PASS;1203 unrelated chunks неизменны. История двух старых uncertain/awaiting_verification операций сверена и не менялась.
+
+condition_request_adapter связывает целиком исходное человеческое задание с typed profile v4: только lab, явный CMDB, новая несохранённая коллекция, AND, неархивные Endpoint, Ubuntu/Windows и запрет Save. Extra criteria, неизвестная ОС/OR/другой stand не обрезаются; adapter возвращает None и оставляет прежнее планирование. Host expected существует до модели, request SHA и повторный разбор runtime защищают от подмены. Обычный run_regression_job создаёт один case/check, не вызывает LLM planner для целиком разобранного scope и сохраняет штатный STEP/AUTO плюс confirm_mutations. Fixture интеграция проверяет это без UC вызовов.
+
+Первый обычный Job20261015-142845-b9c8c036 без CMDB остановился navigation preflight до WRITE; этот вариант исключён из adapter, guard не ослаблен. Следующий143643-aac9eda7 остановил тестовый supervisor: direct /tmp запуск загружал старые временные модули. Офлайн-диагностика доказала расхождение; -c/import uqa/runpy использует production modules без policy monkeypatch. Старые Jobs не повторялись/не переписывались. Новый Ubuntu Job20261015-144053-e6af5d4c/tc-119b9053/ev-3f22b4a374cd PASSED6cells/5Y0N/noTimeout/0resources/operations через ordinary entry без prepared case/browser.
+
+Промежуточный полный282 не принят: smoke_iframe_surface_change упал по timing, отдельный изолированный повтор283 прошёл без изменений iframe-кода. Итоговый full-run проверяется отдельно; этот одиночный повтор не заменяет весь набор. Save/AST/member/policy/procedure execution по данным этапам всё ещё не приняты.
+
 ## v270–v280 — типизированные условия и ограниченное чтение request-контрактов
 
 Review281: оба существующих knowledge-документа обновлены без создания дублирующих per-patch заметок. Две derived UQA/document_review записи остались candidate, не runtime product facts. Обе DB сохранены до индексирования; integrity, replay dedup и retrieval новых/старого row-mapping рецептов PASS,1189 unrelated chunks неизменны. История прежних записей и Jobs сохранена.

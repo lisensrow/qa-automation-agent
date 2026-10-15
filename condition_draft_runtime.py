@@ -20,6 +20,11 @@ def validate_context(job,case_id,preparing=False):
     if preparing and case.get('condition_draft_state'):
         raise ValueError('condition_draft_already_attempted')
     expected=profiles.requirement_for_plan(req.get('expected_plan'),planned[0]['check_id'],req.get('condition_profile_id'))
+    if 'condition_request_binding' in req:
+        from condition_request_adapter import request_requirement
+        expected=request_requirement(job.get('request'),job.get('stand'),planned[0]['check_id'])
+        if expected is None or len(job.get('test_cases',[]))!=1:
+            raise ValueError('condition_draft_request_binding_invalid')
     if profiles.immutable_requirement(req)!=expected:
         raise ValueError('condition_draft_requirement_changed')
     if not profiles.source_current():raise ValueError('condition_draft_source_changed')
