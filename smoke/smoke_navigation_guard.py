@@ -14,6 +14,7 @@ names = {
     "_latest_state_matches_navigation_target",
     "_managed_navigation_ready",
     "_open_page_proves_named_route",
+    "_entry_label_matches_task",
     "_confirmed_new_editor_below_named_route",
     "_successful_clicked_semantic_names",
     "_latest_unique_unnamed_icon_hints",

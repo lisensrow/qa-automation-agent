@@ -2965,6 +2965,28 @@ def _latest_state_matches_navigation_target(messages):
     )
 
 
+def _entry_label_matches_task(messages, entry, leaf):
+    task = _navigation_task_text(messages)
+    if re.search(r"(?<!\w)"+re.escape(leaf)+r"(?!\w)", _positive_navigation_context(task)):
+        return True
+    # Product vocabulary stays in its source-rechecked adapter. A documented
+    # parent label can explain an already observed entry, never create a route.
+    from product_knowledge_context import retrieve_entry_surface_hint
+    hint = retrieve_entry_surface_hint(task)
+    if (not isinstance(hint, dict) or hint.get('status')!='candidate_entry_surface_hint'
+            or hint.get('evidence_for_pass') is not False
+            or hint.get('execution_authorized') is not False
+            or hint.get('current_runtime_applicability_verified') is not False
+            or not hint.get('source_refs') or not entry.get('session_id')):
+        return False
+    label = hint.get('section_label')
+    return (isinstance(label,str) and re.fullmatch(r'[A-Za-z][A-Za-z_-]{2,63}',label) is not None
+            and label.casefold()==leaf
+            and isinstance(entry.get('navigation_labels'),list)
+            and sum(isinstance(v,str) and v.casefold()==label.casefold()
+                    for v in entry['navigation_labels'])==1)
+
+
 def _open_page_proves_named_route(messages):
     """A successful entry navigation may already be the explicitly requested surface."""
     from urllib.parse import urlsplit
@@ -2978,15 +3000,14 @@ def _open_page_proves_named_route(messages):
         if (not re.fullmatch(r"[a-z][a-z_-]{2,63}", leaf)
                 or leaf in {"all", "home", "index", "app", "login", "add", "new", "edit", "view", "details"}):
             return False
-        task = _positive_navigation_context(_navigation_task_text(messages))
-        if not re.search(r"(?<!\w)" + re.escape(leaf) + r"(?!\w)", task):
-            return False
         for message in reversed(messages or []):
             if message.get("role") != "tool" or message.get("tool_name") != "browser_open_page":
                 continue
             value = message.get("content")
             result = json.loads(value) if isinstance(value, str) else value
             if not isinstance(result, dict) or result.get("error") or result.get("executed") is False:
+                return False
+            if not _entry_label_matches_task(messages, result, leaf):
                 return False
             opened = urlsplit(str(result.get("current_url") or result.get("final_url") or ""))
             return (result.get("http_status") in {200, 204, 304}
@@ -3038,7 +3059,7 @@ def _confirmed_new_editor_below_named_route(messages):
             leaf = base.rsplit("/",1)[-1].casefold()
             if (not re.fullmatch(r"[a-z][a-z_-]{2,63}",leaf)
                     or leaf in {"all","home","index","app","login","add","new","edit","view","details"}
-                    or not re.search(r"(?<!\w)"+re.escape(leaf)+r"(?!\w)",task)
+                    or not _entry_label_matches_task(messages, entry, leaf)
                     or (opened.scheme,opened.netloc)!=(current.scheme,current.netloc)
                     or not current.path.startswith(base+"/")):
                 return False

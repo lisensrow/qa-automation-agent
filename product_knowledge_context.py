@@ -37,7 +37,7 @@ CONCEPTS = {
     'collections.form': {
         'terms': ('коллекц', 'collection'),
         'claims': {'name_field_panel': 'Settings', 'filter_panel': 'Conditions',
-                   'table_layout_panel': 'Table fields'},
+                   'table_layout_panel': 'Table fields', 'entry_section_label': 'CMDB'},
     },
     'policies.configuration': {
         'terms': ('политик', 'policy', 'policies'),
@@ -110,6 +110,23 @@ def reviewed_search_queries(task):
     return queries[:3]
 
 
+def retrieve_entry_surface_hint(task, db_path=None):
+    """Source-rechecked parent label, not a route, permission or current-state proof."""
+    queries = reviewed_search_queries(task)
+    if ('коллекции создание' not in queries
+            or any(q in queries for q in ('политики создание','процедуры создание'))):
+        return None
+    context = retrieve_declared_context('коллекция', db_path,
+                                       concepts={'collections.form':CONCEPTS['collections.form']})
+    rows = [r for r in context['results'] if r['concept_id']=='collections.form'
+            and r['predicate']=='entry_section_label']
+    if len(rows)!=1:
+        return None
+    return {'status':'candidate_entry_surface_hint','section_label':rows[0]['declared_value'],
+            'source_refs':rows[0]['source_refs'], 'evidence_for_pass':False,
+            'current_runtime_applicability_verified':False, 'execution_authorized':False}
+
+
 def retrieve_control_location_hint(task, field, db_path=None):
     """Small source-gated location data, not an instruction or permission."""
     aliases = {'name': 'name_field_panel', 'имя': 'name_field_panel',
@@ -119,7 +136,8 @@ def retrieve_control_location_hint(task, field, db_path=None):
     if (not predicate or CONCEPTS['collections.membership']['search_query']
             not in reviewed_search_queries(task)):
         return {'status':'unavailable','evidence_for_pass':False}
-    context = retrieve_declared_context(task, db_path)
+    context = retrieve_declared_context(task, db_path,
+                                       concepts={'collections.form':CONCEPTS['collections.form']})
     rows = [row for row in context['results'] if row['concept_id']=='collections.form'
             and row['predicate']==predicate]
     if len(rows)!=1:

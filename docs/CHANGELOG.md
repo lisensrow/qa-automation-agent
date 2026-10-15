@@ -2,6 +2,16 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v231–v234 — критерии целого сценария, заполнение условий и documented entry
+
+Native231 Job20261015-064110-4ab69b4e/tc-8a35addc рано вернул PASS доступности Add; Core отклонил write_ui_state_acceptance_contract_missing. Native232 с тремя predeclared checks Job20261015-064708-4c8d873f/tc-e3e73351 ушёл в неверное меню и остановлен repeated_missing_semantic_click. Оба BLOCKED0resources/operations, исходные ответы сохранены отдельно; это не автономная приёмка и не основание ослаблять oracle.
+
+Operator233: первый Job20261015-065247-09b19992 получил navigation preflight; второй20261015-065439-ae237689 дошёл до Archived, но helper ошибочно потребовал native options у ARIA combobox и остановился до значения. Оба закрыты BLOCKED без сохранения. После исправления именно экспериментального helper Job20261015-065934-19447c3d/tc-4fca1c82 реально drag leaf→And и exact row/column: No ev-3683e8030900, Endpoint ev-35f9d2e0e500, Wildcard ev-a6a964a2f7ba, *Windows* ev-7b1a814ab125; matched controls проверены. Никаких Save/создания/пересчёта/заданий. Это конфигурация несохранённого UI, не сохранённый фильтр или членство. Рецепт обновлён и дописан один uqa/test_experience/hypothesis candidate, SHA2a6fe08d1b6544a7fec1e6040e62af32f863c27e748f8cf7bafd534a3abc0f4e; snapshots обеих БД, integrity/dedup/1172 unrelated chunks/recall проверены.
+
+Причина лишнего поиска раздела: _open_page_proves_named_route принимал только явно названный пользователем leaf. Руководство «Создание коллекции», подпись рисунка48, прямо указывает CMDB. Новая declared_spec entry_section_label=CMDB добавлена через прежний SourcePolicy с проверкой исходного DOCX hash/подписи, immutable event/replay/legacy preservation; не runtime promotion. Product adapter отдаёт только source-rechecked parent label, Core не содержит UConnect route/if-else. Подтверждённая label на успешной текущей entry + session объясняет уже открытый раздел; неподтверждённые/двойные/ошибочные labels и пути отклоняются. Подтверждение WRITE, journal, stand, locked oracle, STEP/AUTO не менялись. Старые uncertain/awaiting ops не освобождены.
+
+Новый smoke_documented_entry + прежний navigation guard (AST dependency list обновлён без ослабления assertions), py_compile и финальный /tmp/v234-release-full-smoke.log235/235PASS. Первый /tmp/v234-full-smoke.log — промежуточный с отсутствующей новой функцией в AST-test extraction, не финальный release. Полный регресс продукта этими числами не подтверждается.
+
 ## v229–v230 — привязка безымянного дерева конструктора условий
 
 Native local-model draft Job20261015-062525-8355e9e9/tc-ddda0c3d самостоятельно открыл новый editor, заполнил Name и прошёл часть вкладок; фильтр не настроен, сохранения нет. Ошибочный container=CMDB исправлялся после инспекции. Пилот закрыт BLOCKED0resources/operations; его результат не считать созданной коллекцией. Операторский diagnosis Job20261015-062946-88cb3a77/tc-b0589b91 выявил два безымянных дерева и ambiguous_tree.
