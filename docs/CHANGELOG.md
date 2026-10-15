@@ -2,6 +2,20 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v222–v226 — installed plugin/task contracts и предметный recall
+
+Fresh read-only schema Job20261015-051813-7970a59b/tc-6c03ce22: ev-f694b7865fd9 (7операций/9root models, profile SHA79f48b13ab21b8bd365b19d87b3f98328ed296c4b8b850a4a1b4903cf0d3f539), ev-1d857ed68da8 (6reachable model pages, SHAe08bc65fc3cc2bc0530f3fbb62e046ee5fd037e1dc6b4fd7f7c3786fdc522e13). Raw OpenAPI978174bytes/hash578c2f09bb95b1816b7d773209959f6e0c335abd31d2d6588406cd978a1e8082 совпала с197. GET/schema только; ни agent/plugin/task бизнес-вызовов, ни инвентаризации/установки/исполнения. Case BLOCKED,0resources/operations. Старый schema registry не изменён и SSH не маскируется под native GET.
+
+Декларации различают inventory GET, update POST202, task create POST201, own task GET/full GET; версия не равна load_status. Task.enabled integer отличается от query enabled bool|null. Отдельно экспортированы declared enums TaskStatus/AgentStatus без проверки их семантики. CommandAdditionalParams требует именно programm. Raw selected-key review226 ev-1c11ce03f3ee/SHA4f56a33e8e30e1be78bc4d6fb435fa7bcfcba2be61277e0e901c42c294337be7 подтвердил result у TaskFull: только title, не required; это не вывод из отброшенных проекцией ограничений. Формат результата конкретного плагина и oracle всё равно нужны.
+
+Reviewed UQA_PLUGIN_TASKS_KNOWLEDGE.md SHA d893bbb2449e3d463be6016f36422c4ae244a7b1895f5df417573105212716ac в docs/source. Existing gate добавил один uqa/test_experience/hypothesis guidance candidate plugin_regression.evidence_chain / inventory_load_and_result_oracle_required; duplicate replay/integrity/legacy counts/1185 прежних chunks/4recallchecks PASS. Consistent backups обеих DB сохранены, verified promotion и runtime source admission нет. Источник — reviewed installed-contract experience, не официальная спецификация под ложной маркировкой.
+
+v225: reviewed-only plugin topic/facets не меняет allowlist официальных declarations. /advice interleaves <=3results каждого из<=3queries до прежнего exact-source recheck: максимум4chunks/18000chars неизменен. Основной запрос не вытесняет всю версию/загрузку/результат. RU/EN/negative/multi-domain fixtures и межзапросная fairness проверены; dispatcher/STEP/AUTO/v069/journal неизменны.
+
+Native /advice Job20261015-052721-a277ed20 выбрал source chunks2/3/4/5 без operator chunks: в гипотетическом кейсе различил version match/load_status=false, правильно назвал GET inventory/full result и ACK≠expected/actual. Operator review=limited_contract_reasoning_supported_not_general_acceptance; limitations чрезмерно обобщают неизвестное, original response/false factual-runtime flags сохранены.0cases/resources/operations/UC actions; это не настоящий регресс плагина и не проверка работающего агента.
+
+Release: py_compile/full233/233PASS /tmp/v225-release-full-smoke.log и4codeSHA unchanged /tmp/v225-release-code.sha256. Secret/Jobs/DB/private artifacts/backups не входят в commit; история и старые uncertain/awaiting operations не изменены.
+
 ## v219–v221 — логический контур, обязательный порядок и candidate memory
 
 v219 отделяет model outline от trusted caller binding. Safe diagnostic сохраняет только известные stage IDs, bool/type, количество неизвестных полей и закрытый reason code. Native Ubuntu Job20261015-050114-0425550c/tc-1887d141/ev-c9e9c3da489f rejected/proposal_unsafe_or_unsupported_order: проверки раньше подготовки черновика. Native Windows218 Job20261015-045753-78c259aa/tc-0a1b16b9/ev-0d7a1b4cfcd9 rejected/ValueError, точная причина не сохранена и не выдумывается. Ни один план не исполнялся.

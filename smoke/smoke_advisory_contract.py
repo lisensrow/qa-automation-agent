@@ -13,6 +13,9 @@ import stands
 import uqa
 import static_source_facts
 
+assert advisory.interleave_reviewed_results([[1, 2, 3, 4], [5, 6, 7], [8, 9, 10], [11]]) == [1, 5, 8, 2, 6, 9, 3, 7, 10]
+assert advisory.interleave_reviewed_results([[], [1], None]) == [1]
+
 with TemporaryDirectory(prefix='uqa-advisory-') as temp:
     root = Path(temp)
     source_root = root / 'source'; (source_root / 'UQA-experience').mkdir(parents=True)

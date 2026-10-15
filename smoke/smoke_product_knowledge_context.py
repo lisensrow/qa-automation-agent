@@ -43,6 +43,16 @@ assert reviewed_search_queries('Read collection layout. Do not create policies o
 assert reviewed_search_queries('Why is the OS column missing from the collection?') == [layout_query]
 assert reviewed_search_queries('Колонка ОС коллекции. Посмотри накопленный опыт; ничего не сохраняй.') == [layout_query]
 policy_facet='политика открытие редактора отдельный submit активность по умолчанию'
+plugin_base='плагины агента инвентаризация обновление полный результат задачи'
+plugin_load='версия и загрузка плагина разные проверки'
+plugin_result='создание задания не является проверкой его результата'
+assert reviewed_search_queries('Проверь версию и загрузку плагина, результат задачи') == [plugin_base, plugin_load, plugin_result]
+assert reviewed_search_queries('Inspect plugin version, load status and fetch result') == [plugin_base, plugin_load, plugin_result]
+assert reviewed_search_queries('Read plugin inventory') == [plugin_base]
+assert reviewed_search_queries('Не обновляй плагины') == []
+assert reviewed_search_queries('Open collection layout without plugins') == [read_query, layout_query]
+assert reviewed_search_queries('Плагин для коллекции')[:1] == [plugin_base]
+assert reviewed_search_queries('Политика для плагина')[:1] == ['политики создание']
 policy_queries=['политики создание',policy_facet,'наблюдённый маршрут формы политики']
 assert reviewed_search_queries('Политика включена по умолчанию?') == policy_queries
 assert reviewed_search_queries('Explain policy default activation and launcher versus submit') == policy_queries

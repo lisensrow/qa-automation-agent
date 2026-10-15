@@ -1,5 +1,13 @@
 # Установленные API-контракты и Swagger
 
+## Плагины и задания: уточнение v222–v226
+
+Свежее операторское чтение установленной схемы подтвердило исходный raw hash197; это свежесть schema bytes в момент чтения, не инвентаризация/исполнение и не native source admission. Job20261015-051813-7970a59b/tc-6c03ce22 содержит7operations/root models и6reachable pages, без business calls. Старый registered historical reader не изменён: его enum_values_exported=false остаётся верным. Отдельный223profile экспортирует только declared values TaskStatus(created,error,success,progress,timeout) и AgentStatus(online,offline,archived), не подтверждая семантику/терминальность/эффект.
+
+Inventory GET /api/v1/agents/{agent_id}/plugin не равен update POST .../plugin/update202. Task creation POST .../tasks201 не равна чтению GET .../tasks/{uid}/full200 или бизнес-PASS. AgentPluginDetail содержит plugin_name/version,load_status:boolean,load_error; совпадение версии без загрузки недостаточно. Task.enabled:integer и query enabled:boolean|null различаются. CommandAdditionalParams требует точное programm. Raw source-key review226 подтвердил TaskFull.result только с title, без required и явных структурных constraints; даже это не задаёт ожидаемый формат результата каждого плагина. Нужен plugin-specific oracle.
+
+Reviewed UQA_PLUGIN_TASKS_KNOWLEDGE.md сохраняет methods/paths/fields и ограничения. Canonical память получает только derived uqa/test_experience/hypothesis test guidance через прежний gate, не фальшивый official/runtime source. Native225advice применил рецепт к гипотетическому load failure и правильно назвал GET inventory/full; ограничения ответа неточны, actual installation/current inventory/task execution не проверялись. Это ограниченное знание контракта, не полный Swagger или рабочий регресс.
+
 ## Источники и идентичность
 
 UQA должна отличать общий релиз продукта, версии контейнеров и hash установленной OpenAPI. Операторское чтение текущей схемы v197 подтвердило OpenAPI3.1.0:386 путей,635 операций,766 моделей. Backend image4.9.0/frontend image2.21.0 не доказывают номер общего релиза. Схема сохранена как приватная структурная проекция с hash/Job/evidence; в Git и общий рецепт сырая схема/артефакт не попадают.

@@ -2,6 +2,8 @@
 
 ## Кратко: возможности и границы на 15 октября 2026
 
+- v222–v226: fresh installed-schema review уточнил7операций/модели плагинов и задач, типы/load fields/status declarations и ограничение result. Reviewed recipe хранится в памяти с источниками и одним derived uqa/hypothesis candidate, не как runtime PASS. Предметный plugin recall и fair query coverage проверены; реальная модель применила рецепт к гипотетическому кейсу. Установка/актуальная инвентаризация/запуск/fetch на реальной КЕ не приняты, общего Swagger владения нет.
+
 - v218–v221: pure proposal/outline validator отклоняет неверный порядок и подмену caller scope; отдельный deterministic skeleton задаёт зависимости узкого supported profile. Это не новый production CLI/executor и не доказательство реально проверенных предусловий. Два native model предложения отклонены. Опыт сохранён как один uqa/hypothesis/test_experience candidate и reviewed index source; дедупликация, legacy DB и1181 прежний chunk проверены. Native /advice нашёл новый опыт и применил основной вывод, но semantic/admin приёмка не заявляется.
 
 - v218: preparation_proposal.py независимо проверяет только предложение disabled/scoped create: точный caller binding, желаемое enabled=false и пять упорядоченных стадий; fingerprint защищает неизменность. Это отдельный pure validator, не новый CLI mode, не подключённый executor и не доказательство текущих предусловий/ownership. operation_workflow/journal/v069 не расширены.

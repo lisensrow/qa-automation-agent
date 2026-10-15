@@ -129,6 +129,12 @@ def validate_answer(message, sources):
             'execution_authorized': False}
 
 
+def interleave_reviewed_results(batches):
+    """Fair bounded query coverage before exact source checks; no extra context budget."""
+    return [batch[i] for i in range(3) for batch in batches[:3]
+            if isinstance(batch, list) and i < len(batch)]
+
+
 def run_advisory_request(request, stand):
     """New explicit advisory Job only; no inference, resumption or promotion."""
     import uqa
@@ -152,15 +158,15 @@ def run_advisory_request(request, stand):
     answer, sources, error, error_code, receipt = None, [], None, None, None
     static_facts = None
     try:
-        rows = []
+        batches = []
         queries = reviewed_search_queries(request) or [request[:256]]
         for query in queries[:3]:
             result = uqa.execute_tool_with_policy('knowledge_search', {'query': query, 'limit': 3},
                 [{'role': 'user', 'content': request}], action_policy='confirm_mutations',
                 job_id=job['job_id'])
             if isinstance(result, dict) and isinstance(result.get('results'), list):
-                rows.extend(result['results'][:3])
-        sources = recheck_source_chunks(rows, index.SOURCE_DIR)
+                batches.append(result['results'][:3])
+        sources = recheck_source_chunks(interleave_reviewed_results(batches), index.SOURCE_DIR)
         if not sources:
             raise ValueError('advisory_reviewed_sources_unavailable')
         static_facts = bind_static_facts_to_chunks(read_registered_static_facts(stand), sources)

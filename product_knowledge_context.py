@@ -61,6 +61,15 @@ CONCEPTS = {
     },
 }
 
+PLUGIN_REVIEWED_TOPIC = {
+    'terms': ('плагин', 'plugin'),
+    'search_query': 'плагины агента инвентаризация обновление полный результат задачи',
+    'task_facets': (
+        (r'верси\w*|\bversions?\b|загруз\w*|\bload\w*', 'версия и загрузка плагина разные проверки'),
+        (r'задач\w*|результат\w*|\btasks?\b|\bresults?\b|\bfetch\b', 'создание задания не является проверкой его результата'),
+    ),
+}
+
 
 def reviewed_search_queries(task):
     """Bounded product vocabulary; does not authorize an action or route."""
@@ -76,7 +85,8 @@ def reviewed_search_queries(task):
         return min(positions) if positions else len(positive) + 1
     # User topic order, not dictionary order, decides which domain gets the
     # bounded budget first. A collection used as scope must not hide a policy.
-    for spec in sorted(CONCEPTS.values(), key=first_mention):
+    # Reviewed plugin experience is not an official-guide declaration or claim allowlist.
+    for spec in sorted([*CONCEPTS.values(), PLUGIN_REVIEWED_TOPIC], key=first_mention):
         if any(term in positive for term in spec['terms']):
             facets = [query for pattern, query in spec.get('task_facets', ())
                       if re.search(pattern, positive)]
