@@ -2,6 +2,12 @@
 
 ## Кратко: возможности и границы на 15 октября 2026
 
+Последняя реальная проверка217: advisory Job20261015-044801-86f8780e вывел отдельный typed historical true по связанному S1/chunk2 и объяснил, почему исходник не доказывает создание/исполнение.0cases/resources/operations/UC actions; factual/runtime flags false. Первый217 plan20261015-044401-ffe2bb5b отклонён как исполнимый из-за порядка submit до disable/scope; оригинал сохранён. Политики/процедуры не объявляются автономно готовыми.
+
+- v217: /advice выводит связанный типизированный historical fact отдельно от непроверенного пояснения модели. Привязка только по точным source Job/evidence в перепроверенных chunks; registry/evidence/chunk связь проверяется до и после generation. Смена источника отклоняет ответ. Это не semantic validator: противоречивый пересказ модели автоматически не распознаётся и не повышается до verified.
+
+- v216: отдельный read-only адаптер извлекает bool/int из операторски зарегистрированного исторического static profile с проверкой stand/origin, Job/case/evidence, hash, anchor и точного типа. Краткий факт печатается без пересказа LLM. Это historical candidate, не текущий UI/API, не canonical admission и пока не интеграция в /advice или исполнительный режим.
+
 - Отдельно отвечает справочно через /advice STAND QUESTION: knowledge-only Job, перепроверенные Markdown sources/citations, модель без tools и без test verdict. Один native CLI сценарий принят структурно; произвольная factual accuracy и текущий UI/API этим не гарантируются.
 
 - Сопоставляет ожидаемый и фактический результат с доказательствами; различает PASS/FAIL/BLOCKED. Текст модели или ACK сам по себе не считается выполненной проверкой.

@@ -11,12 +11,13 @@ import knowledge_index as index
 import operation_journal
 import stands
 import uqa
+import static_source_facts
 
 with TemporaryDirectory(prefix='uqa-advisory-') as temp:
     root = Path(temp)
     source_root = root / 'source'; (source_root / 'UQA-experience').mkdir(parents=True)
     path = source_root / 'UQA-experience' / 'fixture.md'
-    original = '# Fixture\n\n## Namespace\nThe current catalog uses fixture.field.\n'
+    original = '# Fixture\n\n## Namespace\nThe current catalog uses fixture.field. job-static ev-static\n'
     path.write_text(original, encoding='utf-8')
     chunks = index.make_chunks(index.read_document(path))
     rows = [{'source': 'UQA-experience/fixture.md', 'chunk_no': i, **row}
@@ -121,6 +122,29 @@ with TemporaryDirectory(prefix='uqa-advisory-') as temp:
         changed = advisory.run_advisory_request('Explain source freshness.', 'fixture')
         assert changed['advisory_state'] == 'unavailable' and changed['response'] is None
         path.write_text(original, encoding='utf-8')
+        # Separately retained typed fact, never overwritten by a contradictory model paraphrase.
+        typed = {'status': 'historical_candidate', 'stand': 'fixture',
+            'source_job_id': 'job-static', 'source_evidence_id': 'ev-static',
+            'source_case_id': 'case-static', 'evidence_sha256': 'a' * 64,
+            'facts': [{'predicate': 'fixture.enabled', 'value': True,
+                       'value_type': 'bool', 'source_sha256': 'b' * 64}], **static_source_facts.FLAGS}
+        model.side_effect = None
+        model.return_value = {'message': {'content': json.dumps({
+            'answer': 'False [S1].', 'citations': ['S1'], 'limitations': 'Unverified model prose.'})}}
+        with patch.object(static_source_facts, 'read_registered_static_facts', return_value=typed):
+            grounded = advisory.run_advisory_request('Explain fixture.', 'fixture')
+            assert grounded['historical_static_facts']['facts'][0]['value'] is True
+            assert grounded['response']['answer'] == 'False [S1].'
+            assert grounded['response']['factual_accuracy_verified'] is False
+            assert grounded['historical_static_facts']['current_runtime_verified'] is False
+            assert 'historical_static_facts' not in model.call_args.args[0][1]['content']
+            assert job_store.get_job(grounded['job_id'])['advisory']['historical_static_facts'] == grounded['historical_static_facts']
+        with patch.object(static_source_facts, 'read_registered_static_facts',
+                          side_effect=[typed, {**typed, 'evidence_sha256': 'c' * 64}]):
+            changed_static = advisory.run_advisory_request('Explain fixture.', 'fixture')
+            assert changed_static['response'] is None and changed_static['historical_static_facts'] is None
+            assert job_store.get_job(changed_static['job_id'])['advisory']['error_code'] == 'advisory_static_source_changed_during_model_call'
+        model.return_value = {'message': message}
         # Use a captured creation ID rather than infer another request's Job.
         created = []
         original_create = job_store.create_job

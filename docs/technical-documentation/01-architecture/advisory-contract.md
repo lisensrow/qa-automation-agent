@@ -6,6 +6,16 @@ v214 реализует отдельный knowledge-only MVP. Расширен�
 
 ## Реализованный MVP
 
+Реальная интеграционная проверка217: Job20261015-044801-86f8780e, обычный retrieval/CLI/local model без operator chunks, отдельный typed true привязан к source213 через S1/chunk2. Модель отличила source limits от исполнения; это ограниченная справочная проверка, не autonomous admin acceptance. Первый plan21720261015-044401-ffe2bb5b отвергнут как исполнимый из-за опасного порядка пунктов; оригинал сохранён. Поддерживается точный legacy формат Job<ID>/<case>/<evidence>, но не произвольное вхождение IDs.
+
+v217 подключает v216 adapter к /advice: только exact source Job/evidence refs в текущих перепроверенных chunks связывают typed facts с ответом. До/после generation проверяется одна и та же projection и chunk linkage; изменение отвергает ответ. Private registry не попадает в prompt или Git. В Job сохраняется отдельный historical_static_facts с linked chunk hashes, в CLI — отдельный deterministic brief перед непроверенным model prose. При отсутствии связи этот блок отсутствует. Новых tools/прав/вердиктов нет.
+
+Противоречие в свободном тексте модели пока не распознаётся семантически: значение из источника сохраняется и явно отделяется, а factual_accuracy_verified остаётся false. Это основа grounding, не гарантия безошибочности и не обучение весов модели. Технические fixtures специально проверяют true в типизированном источнике при false в model prose и запрет смены источника во время generation.
+
+v216 добавляет отдельный подготовительный адаптер static_source_facts.py, ещё не вызываемый /advice. Он читает private operator registry, а не аргументы модели: exact stand/origin/source Job/case/evidence/hash; разрешённые scalar bool/int поля из static_observations и retained marker/source hash. Deterministic brief печатает значение из сохранённого profile, не free prose. Все current-runtime/entailment/PASS/permission/canonical-admission/replay flags false. Проверяется целостность исторического профиля, не сама семантика JavaScript и не актуальность deployment. Нет native GET подделки, model tool, нового индекса, миграции памяти или verified promotion. Подключение к связанным advisory sources и конфликтам — следующий этап.
+
+Retained-source diagnostic20261015-043938-aaa0406d/tc-e9968ab3/ev-00de2b10f090: static initial_active=true с provenance,0resources/operations/UCcalls/modelcalls; BLOCKED как QA. Ошибка пересказа215 не удалена и не считается исправленной этим техническим тестом.
+
 Явная команда `/advice STAND QUESTION` создаёт новый Job типа advisory до retrieval/model call. Это не автоматическое распознавание свободного текста и не новая ветка STEP/AUTO. Contract фиксирует stand, request hash, единственный knowledge_search и запреты model tools/business verdict. У такого Job нет cases/planned checks/resources. Обычный run_turn его отвергает; dispatcher дополнительно блокирует все другие инструменты, включая OBSERVE. Advisory marker сохраняет запрет при простой смене job_type. После ответа даже knowledge_search для этого Job больше не разрешён. Новое исполнение предложения требует отдельного обычного Job и прежней policy/journal.
 
 До3запросов/4фрагментов/18000символов. MVP использует только существующую curated Markdown-папку UQA-experience: проверяются путь внутри configured root, размер, повторное формирование точного chunk, heading/number/content и hash исходного файла. После model call источники проверяются вновь. Docx/pdf/API источники пока не подключены именно к этому режиму; прежний общий knowledge_search не меняется. Curated root — доверенная операторская конфигурация, не multi-tenant RBAC. Нет нового индекса, миграции canonical memory или promotion.
@@ -38,6 +48,19 @@ Source path должен быть каноническим внутри имен
 6. Исполнение предложенной процедуры требует нового явного запроса и отдельного execution Job с актуальными scope, policy, locked oracle и журналом. Справочный Job не повышается до исполнительного. Предыдущий свободный текст модели не является binding.
 
 ## Минимальная приёмка
+
+### Следующий технический шаг: типизированный порядок безопасной подготовки
+
+Это проект контракта, не реализованный executor и не разрешение снимать journal barrier. Текущий operation_workflow поддерживает лишь фиксированное create/name-only rename/cleanup; добавление подготовки формы требует отдельного проверяемого протокола. Свободный numbered list модели не исполняется.
+
+- Неизменяемый план до начала: stand, собственный новый ресурс, точная тестовая коллекция и перечень разрешённых КЕ, тип политики из фактической схемы, отдельные preparation/commit/verification stages и hash. Пустой или неопределённый scope не означает all.
+- Подготовка UI и окончательный business commit не смешиваются, но их классификация должна опираться на доверенный lifecycle profile и текущие receipts, а не имя кнопки. Static source или нулевые сетевые счётчики сами по себе этого не доказывают.
+- До commit нужны привязанные к текущему draft доказательства явно выключенной активности и узких непустых условий/owned scope. Настройка после submit не исправляет неверный порядок. Отсутствие факта, смена draft/scope/версии или неразрешённая КЕ останавливают новый план.
+- Сохранение требует прежних policy/journal и отдельного fresh native read совпавшего созданного объекта, его активности и условий. ACK не доказывает бизнес-результат.
+- Включение, расписание и реальное исполнение — отдельные разрешённые этапы с независимым oracle результата на выделенных КЕ; создание не подразумевает запуск.
+- Старые uncertain/awaiting_verification операции не переименовываются и не освобождаются этим контрактом. Новая версия плана не должна обходить unresolved send.
+
+Минимальные отрицательные fixtures будущего протокола: submit раньше disable/scope; пустая коллекция/все машины вместо exact scope; чужой resource; stale evidence; смена draft после проверки; bool/int подмена; неизвестная схема; повтор незавершённой операции; подмена сохранения запуском. Только после них и полноценного source-bound UI lifecycle proof возможна ограниченная реальная проверка нового workflow.
 
 Проверить: обычное объяснение без test JSON; обычный тест по-прежнему требует supported checks; попытку сменить режим после начала; смешанную задачу; модельный вызов скрытого WRITE/DESTRUCTIVE/неизвестного инструмента; OBSERVE вне allowlist; выдуманные citations/observations; исторический source вместо текущего proof; предложение выполнить без пользовательского согласия; повторное использование чужого scope; отсутствие записи PASS и product-memory promotion из справочного текста. Затем нужен новый native прогон локальной модели без операторских chunks. Содержательная точность ответа измеряется отдельно от правильности маршрутизации.
 

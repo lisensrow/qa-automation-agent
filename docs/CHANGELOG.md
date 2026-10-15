@@ -2,6 +2,24 @@
 
 Документ фиксирует завершённые архитектурные этапы и заметные исправления. Мелкие промежуточные патчи объединяются по возможности.
 
+## v217 — отдельный typed brief в справочном режиме
+
+Финал release: py_compile и232/232PASS /tmp/v217-release-full-smoke.log;6code SHA256 до/после совпали /tmp/v217-release-code.sha256.19technicalMD/link/private-marker checks PASS. Более ранние216full и217final-full — промежуточные ревизии, не доказательства финального legacy parser. Резервные копии216/217 сохранены; STEP/AUTO/v069/oracle/journal не изменены, старые2незавершённые операции на месте. SourceKB/index и история модели не переписаны.
+
+Независимый native CLI вопрос о границах источника: Job20261015-044801-86f8780e, advisory answered/base BLOCKED,0cases/resources/operations/UC actions. Источник найден обычным retrieval, без operator chunks; typed true связан с S1/chunk2 source213 и выведен отдельно. Пояснение различило исторический код и фактическое создание/исполнение; это ограниченная проверка linkage/render/source limits, не общий factual benchmark и не принятие плана первого pilot. Текущая runtime применимость и execution authority false. Предыдущие отклонённые ответы не изменены.
+
+Первый native CLI pilot20261015-044401-ffe2bb5b структурно answered, но typed brief не появился: curated note использует Job<ID>/<case>/<evidence> без пробела. Добавлен отдельный exact legacy parser полного triple с negative fixtures; исправление проверено на сохранённых sources без перезаписи исходного Job. Model numbered plan также поставил submit раньше disable/scope: operator review rejected_as_executable_plan, оригинал сохранён. Эта семантическая ошибка не исправляется parser и не принимается к исполнению. Второй независимый native вопрос — только о границах исторических доказательств, не повтор плана.
+
+/advice связывает зарегистрированный historical candidate только с текущими перепроверенными chunks, содержащими точные source Job/evidence IDs с границами токенов. В Job сохраняются value/provenance/linked chunks; типизированное значение выводится перед отдельно помеченным непроверенным пересказом модели. Оно не передаётся как дополнительная подсказка модели и не заменяется её ответом. После generation повторяется source projection/linkage: смена hash, исчезновение или появление связанного источника отклоняет весь ответ. На unrelated sources блок не появляется. No execution/PASS/canonical promotion.
+
+Новые fixture assertions: точная связь/неполные и поддельные refs; противоречивое model prose не меняет typed true; изменение retained evidence hash во время model call даёт unavailable. Это защита происхождения/представления, не автоматический semantic contradiction detector и не автономная административная приёмка. Исходный v216 full232PASS был промежуточным: module hash изменился при обработке Unicode, поэтому release подтверждается отдельным frozen-code217 run.
+
+## v216 — типизированный исторический факт без пересказа модели
+
+Новый static_source_facts.py: закрытый private registry в state/static_fact_sources.json, same-stand/origin, точные Job/case/evidence и SHA256, разрешённые оператором scalar fields, source-role/hash и retained marker. Только bool/int, никаких модельных путей, network или записи из reader. Неоднозначность, изменённые bytes, неверная provenance, тип и отсутствующий anchor дают unavailable без частичного вывода. Происхождение сохраняется; все runtime/PASS/permission/canonical/replay flags false. Pins не доказывают entailment или текущий deployment.
+
+Реальный retained-source diagnostic Job20261015-043938-aaa0406d/tc-e9968ab3/ev-00de2b10f090 вывел policy.static_initial_active=true непосредственно из source213, не из LLM. Source evidence SHA256 930eb7a436c2240757b5495f72781bdaf7f9432cff01bdc56c401dfa78d1b09d; dialog SHA256 f167f17074f820b0598263ab5b13157b0bd5daa9e18e902bba72183fbfe246b6. Job BLOCKED,0resources/operations; модель не вызывалась, UC не затронут. Это не автономная приёмка и не исправление factual failure215. /advice ещё не подключён к адаптеру. Private registration и evidence вне Git; существующая память/история не мигрируются.
+
 ## v215 — предметный policy recall и factual accuracy failure
 
 Финал технической проверки: py_compile/full231/231PASS /tmp/v215-final-full-smoke.log,4code SHA unchanged,19MDPASS. /tmp/v215-full-smoke.log — промежуточный pre-warning; фактическая приёмка policy advice остаётся rejected.

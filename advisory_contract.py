@@ -136,6 +136,7 @@ def run_advisory_request(request, stand):
     from stands import get_stand
     from operation_journal import list_operations
     from product_knowledge_context import reviewed_search_queries
+    from static_source_facts import read_registered_static_facts, bind_static_facts_to_chunks
     if not isinstance(request, str) or not 0 < len(request.strip()) <= 6000:
         raise ValueError('advisory_request_required')
     if not isinstance(stand, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,159}', stand):
@@ -149,6 +150,7 @@ def run_advisory_request(request, stand):
     job['status'] = 'running'
     job_store.save_job(job)  # Contract persisted BEFORE retrieval/model call.
     answer, sources, error, error_code, receipt = None, [], None, None, None
+    static_facts = None
     try:
         rows = []
         queries = reviewed_search_queries(request) or [request[:256]]
@@ -161,6 +163,7 @@ def run_advisory_request(request, stand):
         sources = recheck_source_chunks(rows, index.SOURCE_DIR)
         if not sources:
             raise ValueError('advisory_reviewed_sources_unavailable')
+        static_facts = bind_static_facts_to_chunks(read_registered_static_facts(stand), sources)
         response_schema = {'type': 'object', 'properties': {
             'answer': {'type': 'string'}, 'limitations': {'type': 'string'},
             'citations': {'type': 'array', 'minItems': 1, 'maxItems': 4,
@@ -187,9 +190,12 @@ def run_advisory_request(request, stand):
         answer = validate_answer(response.get('message'), sources)
         if recheck_source_chunks(sources, index.SOURCE_DIR) != sources:
             raise ValueError('advisory_source_changed_during_model_call')
+        if bind_static_facts_to_chunks(read_registered_static_facts(stand), sources) != static_facts:
+            raise ValueError('advisory_static_source_changed_during_model_call')
     except Exception as exc:
         # Persist type only: arbitrary exception text may contain private data.
         answer = None
+        static_facts = None
         error = type(exc).__name__
         known_code = str(exc) if type(exc) is ValueError else ''
         error_code = known_code if re.fullmatch(r'advisory_[a-z_]{1,90}', known_code) else error
@@ -201,13 +207,15 @@ def run_advisory_request(request, stand):
     current['advisory'].update(state='answered' if answer is not None else 'unavailable',
                                response=answer, sources=sources, error=error,
                                error_code=error_code, model_receipt=receipt)
+    current['advisory']['historical_static_facts'] = static_facts
     # Existing Job status vocabulary has no informational completion. BLOCKED
     # deliberately means no QA verdict; advisory.state is the separate outcome.
     current['status'] = 'blocked'
     current['summary'] = 'Advisory only; no test execution, business verdict or permission.'
     job_store.save_job(current)
     return {'job_id': current['job_id'], 'advisory_state': current['advisory']['state'],
-            'response': answer, 'sources': [{k: source[k] for k in
+            'response': answer, 'historical_static_facts': static_facts,
+            'sources': [{k: source[k] for k in
                 ('citation_id', 'source', 'chunk_no', 'heading', 'source_sha256')}
                 for source in sources if answer and source['citation_id'] in answer['citations']],
             'evidence_for_pass': False, 'execution_authorized': False}

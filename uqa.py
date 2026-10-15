@@ -16345,6 +16345,10 @@ def main():
                 console.print('Справочный ответ: не тест, не PASS и не разрешение исполнения.')
                 console.print('Job: ' + advisory['job_id'])
                 if advisory['response']:
+                    if advisory.get('historical_static_facts'):
+                        from static_source_facts import render_static_fact_brief
+                        console.print(render_static_fact_brief(advisory['historical_static_facts']))
+                    console.print('Пояснение модели — непроверенный пересказ, не замена типизированных фактов:')
                     console.print('Точность объяснения и применимость к текущей версии не подтверждены; сверяйте источники перед действиями.')
                     console.print(Markdown(advisory['response']['answer']))
                     console.print(Markdown(advisory['response']['limitations']))
