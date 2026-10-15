@@ -110,6 +110,21 @@ def reviewed_search_queries(task):
     return queries[:3]
 
 
+def reviewed_tool_schema_hints(task, source_root=None):
+    """Load one schema named by a pinned reviewed recipe; never execute or grant."""
+    queries = reviewed_search_queries(task)
+    if 'коллекции создание' not in queries or 'наблюдённый маршрут поля коллекции' not in queries:
+        return set()
+    source = (source_root or Path('/opt/uqa/knowledge/source')) / 'UQA-experience/UQA_COLLECTIONS_KNOWLEDGE.md'
+    try:
+        raw = source.read_bytes()
+    except OSError:
+        return set()
+    if hashlib.sha256(raw).hexdigest() != '41fb09e9a813f56f086b7eb494ef60e2d7ef41acbe8ddc415f5adb008d0d2cac':
+        return set()
+    return {'browser_add_tree_row_semantic'}
+
+
 def retrieve_entry_surface_hint(task, db_path=None):
     """Source-rechecked parent label, not a route, permission or current-state proof."""
     queries = reviewed_search_queries(task)

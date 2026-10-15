@@ -1,5 +1,13 @@
 # UQA: опыт структурного планирования
 
+## Конструктор условий: логический план и ограниченный исполнитель v245
+
+15 октября2026, experimental_model_plan_recipe_execution, Job20261015-085016-4004ece3/tc-5792940c. Предварительно заданы три условия и hashes четырёх expected values; оператор открыл новый несохранённый Conditions. Локальная модель qwen3:14b получила человеческое задание и обычный indexed recipe через tool-free structured response: logic и field/operator/value. Схема предлагала AND/OR, Equal/Wildcard и три поддержанных поля, но значения модель выбирала сама. Независимая проверка сравнила AND/Archived Equal No/CI class Equal Endpoint/OS name Wildcard *Windows* с заранее заданным expected, прежде чем разрешать компиляцию UI-действий. Plan evidence ev-c6caee568b63 matches_predeclared_expected=true.
+
+Экспериментальный trusted compiler сам определял parents/source/target и колонки; модель НЕ составляла низкоуровневые tool arguments. Через прежнюю policy и точный scope supervisor выполнены три browser_add_tree_row_semantic: ev-94246c241e98, ev-ffbfa4bda970, ev-382bf77f43b4; четыре значения matched по native receipts/hashes.5Y0N/noTimeout, phase_configured=true. Сохранения/новых ресурсов/journal operations нет, browser закрыт; общий Job BLOCKED. Это НЕ production-интеграция, не самостоятельная навигация, не saved AST/member oracle и не проверка итогового DOM после всех строк. Отдельные receipts подтверждают значения на момент соответствующего действия. Версии продукта/frontend/ядра/плагинов/ОС unknown.
+
+Контрпримеры сохраняются: tool-choice phase243 Job20261015-084217-44affedc и244 Job20261015-084623-5589aa60 выбрали композит, но смешали дерево/leaf/колонку; scope supervisor отклонил3предложения каждого до выполнения,0verified cells. Уточнение описания аргументов не доказало исправление. Это не строгий A/B benchmark моделей. Вывод-кандидат: для узкого поддержанного профиля разделять извлечение логического намерения и проверяемую компиляцию UI-аргументов; перенос на новые поля/вложенные AND/OR, политики и процедуры требует новых catalog/schema/oracle/runtime проверок. Не обходить действие-политику и не выдавать prototype за общую автономность.
+
 Revision: v218-v220-2026-10-15. Namespace: uqa. Это reviewed technical experience/candidate guidance, не официальная спецификация UConnect, не developer confirmation и не runtime acceptance продукта. Версии продукта/frontend/ядра/плагина и ОС для применимости этой рекомендации: unknown.
 
 ## Обязательные зависимости плана задаёт код

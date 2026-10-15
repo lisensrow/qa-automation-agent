@@ -2201,6 +2201,20 @@ TOOLS.append({"type":"function","function":{"name":"browser_table_cell_control_s
         "action":{"type":"string","enum":["inspect","fill","select"]},"value":{"type":"string"},"table":{"type":"string"}},
         "required":["row","column"]}}})
 
+TOOLS.append({'type':'function','function':{'name':'browser_add_tree_row_semantic',
+    'description':'Add ONE new condition row: expand exact tree parents, drag exact leaf to an observed logical target, set exact column controls. Use for condition builders instead of clicking leaves/And. Never saves. Refuses an existing row, changed session/URL, ambiguity or partial failure; do not retry automatically. Read parents/columns/choices from memory and current UI.',
+    'parameters':{'type':'object','additionalProperties':False,'properties':{
+        'source':{'type':'string','description':'Exact visible LEAF/ATTRIBUTE label to drag and resulting ROW label. NOT the tree name, category, header, backend key or a path. Example: source="Attribute A".'},
+        'target':{'type':'string','description':'Exact visible logical GROUP drop-target label, not a tree or column. For example the currently observed And group.'},
+        'parents':{'type':'array','maxItems':5,'items':{'type':'string'},'description':'Ordered visible CATEGORY labels to expand first. Categories belong HERE, never in source. Empty if the leaf is already visible.'},
+        'cells':{'type':'array','minItems':1,'maxItems':4,'items':{'type':'object','additionalProperties':False,
+            'properties':{'column':{'type':'string','description':'Exact column HEADER in the new row, e.g. Value or Operator. NEVER the attribute/row label from source.'},
+                'action':{'type':'string','enum':['fill','select'],'description':'select for a dropdown/combobox, fill for a text input.'},
+                'value':{'type':'string','description':'Exact observed option label or requested input text. An operator such as Wildcard is a separate cell with column Operator, not part of the Value text.'}},
+            'required':['column','action','value']}},
+        'session_id':{'type':'string'},'current_url':{'type':'string'}},
+        'required':['source','target','parents','cells','session_id','current_url']}}})
+
 # These mutation tools remain executable by the trusted runtime, but are not
 # advertised to the normal QA agent.  UQA exposes them only to Cleanup Manager
 # after it has resolved one exact resource from the persistent ledger.
@@ -2223,6 +2237,10 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_add_tree_row_semantic":
+        from tools.browser import _session
+        from tools.tree_row_controls import add_tree_row
+        return add_tree_row(_session, **arguments)
     if name == "api_inspect_contract_page":
         if set(arguments)-{'stand','method','path','reference_chain'}:
             from api_contract_projection import FLAGS

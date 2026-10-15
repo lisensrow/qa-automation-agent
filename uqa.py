@@ -2026,6 +2026,8 @@ def classify_tool_action(
         else {}
     )
 
+    if name == 'browser_add_tree_row_semantic':
+        return 'write'
     if name == "browser_table_cell_control_semantic":
         action = arguments.get("action", "inspect")
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
@@ -2433,7 +2435,7 @@ def tool_policy_check(
     if not read_only:
         return None
 
-    if name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe":
+    if name == 'browser_add_tree_row_semantic' or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
         return {"error":"tool_policy_blocked","status":"blocked_by_policy","tool":name,"executed":False,
                 "policy":"strict_read_only" if force_read_only else "read_only_request"}
 
@@ -14636,6 +14638,8 @@ def run_turn(
         )
 
     selected_model_tools = {required_observation["tool"]} if required_observation else set()
+    from product_knowledge_context import reviewed_tool_schema_hints
+    reviewed_schema_tools = reviewed_tool_schema_hints(navigation_task)
     contract_schema_tools = locked_contract_schema_tools(managed_agent_job, case_id)
     selected_model_tools |= contract_schema_tools
     form_support_tools = locked_form_support_tools(managed_agent_job, case_id)
@@ -14680,7 +14684,7 @@ def run_turn(
                 data = {"message": {"content": UQA_CHECKS_START + json.dumps(
                     {"checks": contract_check_templates}, ensure_ascii=False) + UQA_CHECKS_END}}
             else:
-                catalog = model_tool_catalog(selected_model_tools | required_names)
+                catalog = model_tool_catalog(selected_model_tools | required_names | reviewed_schema_tools)
                 if action_policy == 'confirm_mutations':
                     from ui_popup_context import menu_tool_catalog
                     catalog = menu_tool_catalog(catalog, messages[popup_context_start:])
