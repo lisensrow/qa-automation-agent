@@ -1,5 +1,25 @@
 # Inventory-плагины: проверка доставки и результатов
 
+## v385–388: реальные main discovery и полное постраничное preflight-чтение
+
+Normal Core/local qwen3:14b извлёк safe-plugin-discovery-v1 и выполнил основные задачи без повторной доставки:
+
+| ОС / plugin | Job / case | Runtime proof / own full proof | Итог |
+| --- | --- | --- | --- |
+| Windows checkAlive1.3.2 | 20261016-034709-2e12b33f / tc-f177ed78 | ev-8fb9f3ee4da5 / ev-745b5f121631 | execution verified |
+| Astra checkAlive1.3.2 | 20261016-034828-5c2b97bd / tc-809fbe41 | ev-5244f248b45f / ev-2e43456816d7 | execution verified |
+| Astra remoteConnections1.3.6 | 20261016-035111-06c5ca24 / tc-e66a907c | ev-e28a793c43d3 / ev-3e3379c5a21c | execution verified |
+| Windows remoteConnections1.3.6 | 20261016-034954-7bca9e5c / tc-2a3b3e15 | ev-0222402f717a | NOT_SENT, неполный список старых задач |
+
+CheckAlive own task IDs b6808b96-8936-49c0-a1a5-6c07d055afe5 и782ba059-6f26-49e8-a46a-d7876d078af9; ответы — object с3полями, 97JSONbytes, type census dict1/float1/str2. Разные SHA не означают ошибку фиксированного ответа: семантика полей ещё не установлена; literal и dynamic metadata не разделены. На каждой ОС модель пять раз прочитала pending ТУ ЖЕ task до результата, без нового POST. Astra remote task f61fcd23-919d-49a2-b21c-e7efc81b3a09: object1rootfield/775JSONbytes, bounded complete census; payload correct/completeness независимым oracle пока не подтверждены. Три новые операции verified; все полные source cases BLOCKED/business false. Operator readonly review385 подтвердил native trace/own proof/ledger, не выполнял задачи вместо модели. Scope/oracle/standing approvals и framework catalogue/payload/canonical rendering раскрыты; runtime hints0/operator product actions0.
+
+Windows main не отправлялся: op-5c6d2afbb31640079d41dd7dbb6b6907 имеет native NOT_SENT/dispatch_state=not_started, error complete_command_task_list_required. Teacher386 GET-only Job20261016-035220-5e02dabc/tc-70629829/ev-9cf6b1247ac1 обнаружил132terminal remoteConnections tasks: offset0/count100 иoffset100/count32, стабильный total132/unique IDs/точный agent/name/periodNone. Astra31terminal tasks после своего запуска. Это ограничение первой страницы, не неисправность плагина и не developer-confirmed bug. Задачи не удалены/не отменены.
+
+Исправление388: общий native GET-only task_page_preflight читает максимум10страниц/1000задач, проверяет exact offset/limit/count, стабильный total, canonical unique UUID, точные target/name/nonperiodic/terminal для КАЖДОЙ строки. После нескольких страниц повторно сверяет первую страницу; неполнота/duplicates/изменение head/total/pending/budget блокируют POST. В receipt/full evidence сохраняется только metadata completeness; recovery её проверяет. Это observed consistency window, НЕ atomic snapshot сервера. Не ослаблять старый oracle и не принимать первую страницу за полный список.
+
+Следующий Windows запуск — явно operator-prepared continuation после доказанного NOT_SENT, с отдельной ссылкой на старый Job; не uninterrupted autonomy и не rekey uncertain отправки. Старый Job/ошибка сохраняются. Требуются полный suite после изменения, обновлённый индексированный рецепт и отдельный новый own result; на этой редакции continuation ещё не выполнен. Техническая384 проверка264/264 и9SHA PASS,22Markdown valid; код384 commit01359764b0c76b6a4ad3e2765ba0ada4e6b3e5ed pushed. Проверки388 отдельно от этих исторических результатов. Jira/Zephyr неизменно read-only.
+
+
 ## v384: safe-plugin-discovery-v1 — наблюдение основной задачи без semantic PASS
 
 Отдельный closed профиль `safe-plugin-discovery-v1`, единственный этап `main_discovery`: только checkAlive1.3.2 или remoteConnections1.3.6 на dedicated Windows/Astra, core1.3.27. Это НЕ расширение preparation/legacy inventory/command профилей. Исходные версии — workbook SHA7fef498ba403c70a48dcdfb5f80ef84cde927b7f6e8d947d3740ccaeaa415f53, sheet1.3.27 B4/B25, teacher371; guide41bfa19668d6ac15500477fe78b4773f560c1c655dfd4f21df58b71e1fd1a5a6e объясняет назначение, но не даёт точный текущий literal checkAlive. RemoteConnections — аудит сервисов/портов/сессий, не открытие remote session.

@@ -13,6 +13,7 @@ from command_stage_native import context,read_json,refusal
 from command_probe_contract import validate_task_list
 from operation_journal import list_operations,_fingerprint
 from tools.agent_update import audit_result_is_fresh
+from task_page_preflight import complete_task_list
 
 CREATE='browser_create_closed_plugin_discovery_semantic'
 READ='browser_inspect_closed_plugin_discovery_semantic'
@@ -99,7 +100,7 @@ def create(session,name,plugin,stage_id,job_id,case_id):
         t,_,urls=context(session,name);ready=readiness(session,r)
         if (ready.get('ready') is not True or ready.get('load_error_empty_observed') is not True
             or ready['plugin_audit'].get('audit_fresh') is not True):raise ValueError('discovery_fresh_loaded_required')
-        validate_task_list(name,read_json(session,urls[0],{'name':plugin,'periodic':False,'limit':100,'offset':0}),plugin)
+        _,task_pages=complete_task_list(session,urls[0],name,plugin)
         if any(x.get('job_id')==job_id and x.get('case_id')==case_id for x in
             getattr(session,'_owned_plugin_discoveries',{}).values()):raise ValueError('discovery_already_sent')
         body={'name':plugin,'period':None,'ttl':None,'run_as_user':'','additional_params':{}}
@@ -118,7 +119,7 @@ def create(session,name,plugin,stage_id,job_id,case_id):
             'ci_id':r['ci_id'],'agent_id':r['agent_id'],'stage_id':stage_id,'task_name':plugin,'profile_id':PROFILE,
             'job_id':job_id,'case_id':case_id,'session_id':session.session_id,'request_origin':ORIGIN,
             'sent_at':sent,'received_at':received,'server_created_at':created['created_at'],
-            'operation_id':found[0]['operation_id'],'preflight_readiness':ready}
+            'operation_id':found[0]['operation_id'],'preflight_readiness':ready,'preflight_task_pages':task_pages}
         if not hasattr(session,'_owned_plugin_discoveries'):session._owned_plugin_discoveries={}
         session._owned_plugin_discoveries[created['id']]=own
         return {**own,'executed':True,'mutation_executed':True,'create_status':201,'business_pass':False}
@@ -181,6 +182,14 @@ def evaluate(job,op,evidence_id,contract):
             or not audit_result_is_fresh(created['sent_at'],created['received_at'],created['server_created_at'],readback['server_created_at'],readback['processed_at'])):
             raise ValueError('own_full_receipt')
         ready=created['preflight_readiness'];a=ready['plugin_audit'];cs=readback['response_shape']
+        pageproof=created['preflight_task_pages']
+        if (pageproof!=readback.get('preflight_task_pages') or pageproof.get('complete_enumeration') is not True
+            or pageproof.get('atomic_snapshot') is not False or type(pageproof.get('total')) is not int
+            or not 0<=pageproof['total']<=1000 or pageproof.get('unique_ids')!=pageproof['total']
+            or not isinstance(pageproof.get('pages'),list) or not 1<=len(pageproof['pages'])<=10
+            or sum(x['count'] for x in pageproof['pages'])!=pageproof['total']
+            or pageproof.get('head_rechecked') is not (len(pageproof['pages'])>1)):
+            raise ValueError('complete_task_pages_required')
         if (ready.get('ready') is not True or ready.get('load_error_empty_observed') is not True or a.get('audit_fresh') is not True
             or any(ready.get(k)!=v for k,v in {'ci_id':r['ci_id'],'agent_id':r['agent_id'],'core_version':CORE,
                 'agent_status':'online','plugin_name':r['plugin_name'],'plugin_version':r['plugin_version'],'session_id':created['session_id']}.items())

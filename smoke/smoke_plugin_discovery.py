@@ -55,7 +55,7 @@ for name in ['windows','astra']:
                 return Response(200,full)
             if url==base+'/tasks':
                 items=[x for x in tasks.values() if x['name']==params['name']]
-                return Response(200,{'items':items,'total':len(items),'offset':0})
+                return Response(200,{'items':items,'total':len(items),'count':len(items),'offset':0,'limit':100})
             raise AssertionError('unexpected GET')
         def post(url,data,timeout):
             assert url==base+'/tasks' and data=={'name':plugin,'period':None,'ttl':None,'run_as_user':'','additional_params':{}}
