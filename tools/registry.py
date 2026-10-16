@@ -166,7 +166,7 @@ from tools.browser import (
 )
 
 from knowledge_tool import knowledge_search
-from regression_source_reader import read_case as read_regression_case
+from regression_source_reader import read_case as read_regression_case,read_step_cell as read_regression_step_cell
 from api_contract_sources import inspect_registered_contract_page
 
 from ssh_worker import (
@@ -276,6 +276,17 @@ TOOLS = [
             "name": "knowledge_read_regression_case",
             "description": "Read a hash-pinned archived Windows/Astra regression source window (1..3 steps), including exact expected/test data. Source only, no execution/permission or current-state proof. Use next_step to read every required window; an oversized result is refused, never truncated.",
             "parameters": {"type":"object","additionalProperties":False,"properties":{"case_key":{"type":"string"},"first_step":{"type":"integer"},"step_count":{"type":"integer"}},"required":["case_key"]}
+        }
+    },
+    {
+        "type":"function",
+        "function":{
+            "name":"knowledge_read_regression_step_cell",
+            "description":"Read an explicit hash-pinned page of one archived step field when a complete source step exceeds its result budget. Use next_char_offset, join all pages and verify cell_sha256. A page/cell is not a complete step/case, current state or execution authority.",
+            "parameters":{"type":"object","additionalProperties":False,"required":["case_key","step_number","field"],
+                "properties":{"case_key":{"type":"string"},"step_number":{"type":"integer"},
+                    "field":{"type":"string","enum":["description_html","test_data_html","expected_html"]},
+                    "char_offset":{"type":"integer"},"char_count":{"type":"integer"}}}
         }
     },
     {
@@ -2482,6 +2493,10 @@ def execute_tool(name: str, arguments: dict):
         if set(arguments)-{'case_key','first_step','step_count'}:
             return {'error':'source_reader_arguments_invalid','executed':False}
         return read_regression_case(arguments.get('case_key'),arguments.get('first_step',1),arguments.get('step_count',1))
+    if name == "knowledge_read_regression_step_cell":
+        if set(arguments)-{'case_key','step_number','field','char_offset','char_count'}:
+            return {'error':'source_reader_arguments_invalid','executed':False}
+        return read_regression_step_cell(arguments.get('case_key'),arguments.get('step_number'),arguments.get('field'),arguments.get('char_offset',0),arguments.get('char_count',1500))
     if name == "knowledge_search":
         return knowledge_search(
             query=arguments["query"],

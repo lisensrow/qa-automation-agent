@@ -301,6 +301,7 @@ MODEL_BASE_TOOL_NAMES = {
     "browser_get_network_detail",
     "knowledge_search",
     "knowledge_read_regression_case",
+    "knowledge_read_regression_step_cell",
 }
 MODEL_CATALOG_TOOL_NAME = "tool_catalog_select"
 
@@ -2054,6 +2055,7 @@ def classify_tool_action(
         "api_inspect_contract_page",
         "knowledge_search",
         "knowledge_read_regression_case",
+        "knowledge_read_regression_step_cell",
         "ssh_docker_ps",
         "ssh_find_backend_request",
         "ssh_docker_logs",

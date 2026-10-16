@@ -28,6 +28,33 @@ def main():
             assert r.read_case('US-T116')['error']=='source_case_hash_mismatch'
             (root/'manifest.json').write_bytes(raw_manifest+b' ')
             assert r.read_case('US-T116')['error']=='source_manifest_hash_mismatch'
-    print('regression source reader: PASS')
+    with tempfile.TemporaryDirectory() as tmp:
+        root=Path(tmp);text='<p>Полный исторический expected\\n</p>'*300
+        obj={'key':'US-T102','steps':[{'number':1,'description_html':'drive','test_data_html':'','expected_html':text}],
+            'title':'Large case','updated_on':'2026-10-16','precondition_html':'source','objective_html':''}
+        raw=json.dumps(obj).encode();(root/'US-T102.json').write_bytes(raw)
+        manifest={'cycles':[{'key':'US-C347','cases':[{'key':'US-T102','number':2,'steps':1,'json_sha256':hashlib.sha256(raw).hexdigest()}]}]}
+        mr=json.dumps(manifest).encode();(root/'manifest.json').write_bytes(mr)
+        with patch.object(r,'ROOT',root),patch.object(r,'MANIFEST_SHA',hashlib.sha256(mr).hexdigest()):
+            assert r.read_case('US-T102')['status']=='blocked_source_window_budget'
+            offset=0;pages=[]
+            while True:
+                p=r.read_step_cell('US-T102',1,'expected_html',offset,1500)
+                assert p['status']=='source_cell_page_observed' and p['char_offset']==offset
+                assert p['source_only'] and not p['executed'] and not p['execution_permission_granted']
+                assert not p['truncated'] and not p['page_contains_full_step'] and not p['page_contains_full_case']
+                assert p['cell_sha256']==hashlib.sha256(text.encode()).hexdigest()
+                assert len(json.dumps(p,ensure_ascii=False))<=r.MAX_RESULT_CHARS
+                pages.append(p['content']);offset=p['next_char_offset']
+                if offset is None:break
+            assert ''.join(pages)==text and len(pages)>1
+            empty=r.read_step_cell('US-T102',1,'test_data_html');assert empty['page_contains_full_cell'] and empty['content']==''
+            for args in [('US-T102',1,'expected_html',True,100),('US-T102',1,'expected_html',0,2001),
+                         ('US-T102',True,'expected_html',0,100),('US-T102',1,'unknown',0,100),
+                         ('US-T102',1,'expected_html',len(text),100),('../secrets',1,'expected_html',0,100)]:
+                assert r.read_step_cell(*args).get('error')
+            (root/'US-T102.json').write_bytes(raw+b' ')
+            assert r.read_step_cell('US-T102',1,'expected_html')['error']=='source_case_hash_mismatch'
+    print('regression source reader: PASS (whole windows and lossless explicit cell pages)')
 
 if __name__=='__main__':main()
