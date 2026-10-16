@@ -206,6 +206,9 @@ TOOLS = [
       'description':'READ: exact locked target/core and fresh loaded displayMonitoring1.3.1/vncServer1.5.5, complete terminal prior task lists. No delivery or session.',
       'parameters':{'type':'object','additionalProperties':False,'required':['target'],
           'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
+    {'type':'function','function':{'name':'browser_compare_owned_drive_values_semantic',
+        'description':'OBSERVE exact locked owned Astra drive/OS observation pair. GET same hash-verified drive payload; compare mounted point/filesystem/numeric capacity against independent lsblk. No new tasks, units/serial/UID/full-case proof or replay authority.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['target'],'properties':{'target':{'type':'string','enum':['astra']}}}}},
     {'type':'function','function':{'name':'browser_review_plugin_result_semantic',
         'description':'OBSERVE locked historical audit, Windows VNC error, or supplied Tray start report-content invariants. Own source proof and full digest required; no reported users is not desktop success. Not current OS correctness/full case PASS/task creation/permission.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name'],
@@ -2432,6 +2435,8 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_compare_owned_drive_values_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_review_plugin_result_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "operation_read_attempt_history":
