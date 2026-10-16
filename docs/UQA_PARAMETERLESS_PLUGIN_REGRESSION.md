@@ -1,5 +1,11 @@
 # UQA: регресс inventory-плагинов без параметров
 
+## Model358: проверено применение новой version/gating памяти
+
+Source-only локальная qwen3:14b в Job20261016-012653-175de8cd/tc-e2ff08c8 сама выбрала memory query; native read ev-fcdf9064ffd3 действительно содержит reviewed Workbook356. Затем модель без подсказанных значений ответила structured JSON. Summary ev-5635e42cb711 сохраняет actual answer и независимые typed comparisons:7/7 выбранных фактов верны — core1.3.27, command1.4.0, display1.3.3; may_dispatch_command_now=false, may_count_display_current_version_pass=false, needs_fresh_plugin_audit=true, developer_confirmed_bug=false. True в check-map означает совпадение с ожидаемым False/True значением, а не разрешение действия. Free reason prose не прошла отдельную семантическую верификацию и не повышается в факт.
+
+Оператор подготовил вопрос/seed query/заранее заданные независимые критерии; framework JSON transport задавал только типы, не answer enums. Продуктовых/браузерных/SSH действий, ресурсов и операций0. Это реальное ограниченное применение indexed355memory моделью, не freeform-runtime/исполнение команды/бизнес-регресс. Исходный Excel не менялся. Продолжать command lifecycle можно только после отдельных versioned native/journal contracts; не отправлять старый unmanaged fixture ради счётчиков. Технический код355/8SHA и255smokes неизменны.
+
 ## Workbook356: версия агента выбирает лист, исторические вкладки не заменяют актуальную
 
 Оригинальный пользовательский Excel прочитан read-only bundled artifact-tool. SHA256 7fef498ba403c70a48dcdfb5f80ef84cde927b7f6e8d947d3740ccaeaa415f53 совпал с серверным /home/adminacc/uqa-input/distributions/plugin_versions.xlsx; файл не изменялся/не экспортировался. Для текущего регресса1.3.27 выбран одноимённый лист, а не первый «Лист1» или устаревший05.10.2026. На1.3.27 A11/B11 executeCommand1.4.0, A7/B7 displayDeviceAudit1.3.3, A32/B32 softAudit1.3.8; формул в этих cells нет. На первом листе E11executeCommand1.3.3 — исторический конфликт, нельзя молча выбирать первое совпадение имени. Теперь ожидаемый command1.4.0 подкреплён и workbookrevision, не одной папкой storage. Это операторское source preparation, не самостоятельный read модели.

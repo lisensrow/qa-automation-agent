@@ -1,5 +1,9 @@
 # История изменений UQA
 
+## v358–359 — применение новой памяти локальной моделью
+
+Prepared source-only model358012653-175de8cd/tc-e2ff08c8/ev-5635e42cb711 retrievedWorkbook356 and matched7/7typed facts without supplied answer enums: versions1.3.27/command1.4.0/display1.3.3, commanddispatchfalse/displayPASSfalse/freshauditrequired/no developerconfirmedbug.0operations/UC/browser/SSH. Question/query/checks/transport preparation disclosed, free reason not semantic-verified. New reviewed memory359 retains this bounded acceptance, not executable command capability. Code355/full255/8SHA unchanged.
+
 Final355255/255technicalPASS/8SHAunchanged/22MDvalid. Workbook356 original SHA7fef498ba403c70a48dcdfb5f80ef84cde927b7f6e8d947d3740ccaeaa415f53/servercopy match: лист1.3.27 command1.4.0,display1.3.3,soft1.3.8. Teacher356012227-e00c785a/ev-f10ef9db5d12 проверил UC displaystorage: только1.3.2. Старые display runs не приёмка1.3.3; не подменять version expectation/не переписывать прежние oracle. Это источник/metadata preparation,0команд и Jira writes.
 
 ## v354–355 — отдельный command readiness, без допуска выполнения

@@ -1,5 +1,7 @@
 # Архитектура QA-агента UQA
 
+Source application358/359: actual model retrieval of indexed Workbook356 +7independent typed facts passed; command dispatch and current display acceptance correctly remain false, no developer confirmation invented. Evidence ev-5635e42cb711/Job012653-175de8cd; prepared question/query/transport/checks explicit, no live actions. Code355unchanged, command executor/journal remains next implementation step, not claimed by this source-only check.
+
 ## v354–355: read-only command readiness и отдельный чистый контракт
 
 Native readiness поддерживает exact executeCommand1.4.0 только для target-bound GET; WRITE/delivery/parameterless9 неизменны. Prepared модель354 обеихОС выполнила5чтений/0operations; оба snapshots stale/старый1.2.25, готовность1.4.0 BLOCKED. Generic Pluginsclick353 корректно запрещён STRICT_READ_ONLY, не обходится. Новый command_probe_contract — pure validators fixed private marker/exact2CI/core/OS/arch/load/receipt/ownfull; сам ничего не выполняет, runtime/journal integration ещё отсутствует. Полные primary IDs/expected/actual/interventions: [recipe](UQA_PARAMETERLESS_PLUGIN_REGRESSION.md), раздел v353–355. Full354255technicalPASS до arch-fix, final355 отдельно; не продуктовый commandPASS.
