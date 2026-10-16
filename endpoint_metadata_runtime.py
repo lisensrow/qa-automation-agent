@@ -3,7 +3,7 @@ import json
 import time
 from copy import deepcopy
 import job_store as store
-from endpoint_metadata import CREATE,READ,READY,PROFILE,POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,validate_context
+from endpoint_metadata import CREATE,READ,READY,PROFILE,POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,validate_context
 from command_stage_runtime import bound
 from plugin_audit_runtime import phase_decision_schema,decode_phase_decision
 from operation_journal import list_operations,reconcile_operation
@@ -20,7 +20,7 @@ PROMPT=('You are UQA observing Tray/log metadata through one fixed dedicated Ast
 
 def catalog(trace,r):
     if not trace:
-        query=(r['profile_id'] if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS} else PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
+        query=(r['profile_id'] if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS} else PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
                POST_LOG if r['profile_id']==POST_LOG else r['profile_id']+' TightVNC ownership no uninstall')
         return [bound('knowledge_search',{'query':query,'limit':4})]
     if not any(x['tool']=='browser_open_page' for x in trace):return [bound('browser_open_page',{'url':'https://uc.lab.local/cmdb'})]
@@ -43,6 +43,13 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
         return {'started':False,'completed':False,'reason':str(e)}
     from windows_legacy_msi import PROFILE as MSI
     prompt=PROMPT
+    if r['profile_id']==GPUS:
+        prompt=('UQA: observe independent current GPU metadata on exact owned Windows/Astra through one fixed read-only executeCommand. '
+          'Retrieve the reviewed profile and exact readiness, select one Core WRITE/journal send, fetch own fresh full. '
+          'Win32_VideoController or local lspci PCI display-class metadata only. No drivers/settings/install/security/Jira changes. '
+          'Missing tool/denied/incomplete is BLOCKED, never zero GPUs. Complete enumeration is not plugin name/note correctness, '
+          'all-GPU completeness, rendering, desktop or full source-case PASS. Compare with own fresh gpuDeviceAudit separately under a declared mapping. '
+          'Pending same task GET; uncertainty STOP/no resend/rekey. Operator scope/oracle/fixed code/phases/standing approvals disclosed.')
     if r['profile_id']==DISKS:
         prompt=('UQA: read current OS disk metadata on exact owned Windows/Astra through one fixed read-only executeCommand probe. '
           'Read reviewed source and exact readiness, select one send through unchanged Core WRITE/journal, fetch own fresh full. '
@@ -81,7 +88,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
     try:
         from tools.browser import _session
         _session.reset_case_context()
-        for turn in range(40 if r['profile_id'] in {MSI,SESSIONS,DISKS} else 20):
+        for turn in range(40 if r['profile_id'] in {MSI,SESSIONS,DISKS,GPUS} else 20):
             options=catalog(trace,r)
             if not options:
                 last=trace[-1]['result'];ops=list_operations(jid)
@@ -98,6 +105,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
                   else ' Legacy identity observation never authorizes uninstall or proves absence.')
                 if r['profile_id']==SESSIONS:suffix=' Session observation only; never login/unlock or desktop proof.'
                 if r['profile_id']==DISKS:suffix=' OS disk enumeration only; no plugin comparison or full-case acceptance yet.'
+                if r['profile_id']==GPUS:suffix=' OS GPU metadata only; PCI scope/name database limits and no plugin comparison/full-case acceptance.'
                 answer=api.ask_ollama([{'role':'system','content':prompt+suffix},
                     {'role':'user','content':'Summarize only this canonical limited observation: '+json.dumps(report)}],
                     tools=[],response_schema=schema)['message'].get('content') or ''
@@ -123,7 +131,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
             trace.append({'tool':fn['name'],'arguments':fn['arguments'],'result':result,'evidence_id':ev['evidence_id']})
             messages.append({'role':'tool','tool_name':fn['name'],'content':json.dumps(api.tool_result_for_model(fn['name'],result))})
             if result.get('error'):
-                if fn['name']==READ and result['error']=='own_endpoint_result_not_ready' and pending_reads<(24 if r['profile_id'] in {MSI,SESSIONS,DISKS} else 8):
+                if fn['name']==READ and result['error']=='own_endpoint_result_not_ready' and pending_reads<(24 if r['profile_id'] in {MSI,SESSIONS,DISKS,GPUS} else 8):
                     pending_reads+=1;time.sleep(2);continue
                 raise ValueError('endpoint_tool_failed:'+str(result['error']))
             if fn['name']=='knowledge_search' and not any(x.get('source')==SOURCE and r['profile_id'] in str(x) for x in result.get('results',[])):
