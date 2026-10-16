@@ -1,5 +1,9 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## Checkpoint342: нормальный prepared source reader
+
+Native341 через обычный Core прочитал TaskFull+CommandAdditionalParams с памятью и защищённой структурой решений,0команд/операций, correct summary. Это закрытый профиль task-result-models-v1, не общий Swagger или свободная обработка любого prompt.337ошибка bare refs и338ошибка prototype catalogue сохранены,339prototype отдельно; source evidence/history/candidate342 сохраняются после final suite/codeSHA. Затем: безопасный ordinary source запрос без ручной подготовки case, обобщение чтения только на подтверждённые source goals; отдельный predeclared OS oracle/task contract до каких-либо команд. Source GET declarations не разрешают executeCommand и не подтверждают весь регресс. Все предыдущие inventory результаты/ограничения и запрет Jira writes остаются.
+
 ## Актуальный checkpoint333–336 и ближайшие шаги
 
 Ограниченная матрица9inventory plugins×Windows/Astra обработана18/18:16structure matches,2empty display mismatches; osAudit обеих ОС ранее отдельно. Все полные source cases BLOCKED до независимой полноты ОС/UI,18не процент полного регресса. Четыре ячейки с раздельными операторски подготовленными продолжениями, остальные bounded/strict-stage framework; update core1.3.27 ранее операторский. Не повторять готовые версии/Jobs. Jira/Zephyr никаких writes.

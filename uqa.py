@@ -14587,6 +14587,13 @@ def run_turn(
     if job_id and case_id:
         phase_job=get_job(job_id) or {}
         phase_case=next((c for c in phase_job.get('test_cases',[]) if c.get('case_id')==case_id),{})
+        if (phase_case.get('requirement') or {}).get('type')=='registered_schema_read':
+            import sys
+            from schema_read_runtime import run as run_schema_read
+            outcome=run_schema_read(sys.modules[__name__],messages,job_id,case_id,action_policy,force_read_only)
+            if not outcome.get('started'):
+                finalize_case_blocked(job_id,case_id,outcome.get('reason','schema_read_context_not_admitted'))
+            return outcome
         if (phase_case.get('requirement') or {}).get('type')=='pinned_agent_audit':
             import sys
             from agent_audit_runtime import run as run_agent_audit

@@ -1,5 +1,13 @@
 # История изменений UQA
 
+## v340–342 — bounded source reading в штатном Core
+
+Memory342 indexed once: source SHA4e75ab0202646319f0677d0bb04c748ff26803b27306355e40434ea3f651ce52a, snapshots обеихDB before-v342, integrity/dedup/retrievalPASS1223unrelated chunks unchanged. Native341 proof находится targeted search, рабочий QUERY всё ещё возвращает оба full refs после индексации. Scope feature registered_schema_read_task_result_models_v1/agentunknown/candidate document_review; source/API declaration не повышена в verified runtime fact.
+
+Final340252/252technical smoke PASS,6code SHA unchanged,22MD package valid; native341 source-only acceptance и post-run review завершены. Это не252бизнес-кейса. Следующий release checkpoint — reviewed memory342 snapshots/dedup/integrity/retrieval и commit только code/tests/docs/reviewed sources; raw Jobs/DB/logs не включать.
+
+Добавлен schema_read_runtime и строгий read-only typed dispatch, focused fixture/runner registration. Shared structured decision transport переиспользуется без изменения его admission; unique name catalogue устраняет ошибку временного338assembly. Native341235534-5f4cafc7/ev-fccbe3518076 completed4reads с recipe retrieval и TaskFull/CommandAdditionalParams,0operations; модельное explanation подтверждено ограниченной операторской review ev-906e64e22237. Source-only canonical/final не допускает businessPASS, schema recency не повышается.337и338failures/prototype339 сохранены отдельно. Scoped/phase/transport помощь и seed query оператора явно раскрыты; не ordinary freeform или весьSwagger. Новые source proofs сохраняются в reviewed memory342; full suite/code SHA/release проверяются перед commit.
+
 ## v336 — provenance ошибки source-чтения и обучающий recipe
 
 Memory336 candidate indexed once после обеих DB snapshots: source SHA8c9a4eb1e9b8ac1f93427c64c54e7d814f39ea5fff2b1e789e59a33b4293a66a, integrity/dedup/retrieval PASS,1223unrelated chunks unchanged. Targeted TaskFull/CommandAdditionalParams query вернул новую336главу. Отдельный concept schema_reading.command_task_models с feature_profile registered_api_contract_pages_v1, agent version unknown: декларацию API не привязываем к вымышленной версии агента.22MD validation PASS. Production reader/fixture baseline восстановлен, эксперимент335 не закоммичен.
