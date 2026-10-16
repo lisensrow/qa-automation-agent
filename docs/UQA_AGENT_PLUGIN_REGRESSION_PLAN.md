@@ -1,5 +1,11 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## v433–437: supplied displayMonitoring loaded, functional tests pending
+
+UQA normal run_turn434 prepared displayMonitoring1.3.1 on Windows083317-7f053043/ev-9c3f20641ebb and Astra083441-8f85fc3a/ev-69218abbcc4c, core1.3.27:6verified operations/6standing confirmations, own fresh loaded reads both. Full433269technicalPASS; original source429 pinned separately from workbook1.3.2, first checksum-copy typo rejected before dispatch and corrected against primary. Source435 indexed candidate with bothDB snapshots/integrity/dedup/retrieval/1223unrelated chunks preserved. Operator scope/oracle, framework phases/payload/report disclosed; no runtime hints/operator product actions, no repeated VNC delivery. Detailed immutable refs and limitations in recipe v434–437.
+
+VNC session, Tray desktop and actual log presence/write remain NOT executed/accepted. Installed VNC route creates two linked tasks but returns no own task receipt; safe journal/ownership/session verification remains implementation work, HTTP200/URL is not desktop PASS. Separate closed agent metadata contract for Tray/logs still needed, package declarations not endpoint proof. No downgrade/security/settings changes, Jira/Zephyr writes or automation resume. Old history/guards remain unchanged.
+
 ## v430: supplied-version functional test отдельно от workbook-version check
 
 displayMonitoring есть в оригинальном release archive как1.3.1; требование minimum1.3.2 для VNC не доказано. Проверять functional supplied version в отдельном immutable scope после contracts/tests, оставляя workbook1.3.2 discrepancy, не переименовывая/ослабляя прежний case. trayControl1.0.1 найден; его payload/session поведение ещё неизвестны. Package declared log path даёт source для будущего закрытого agent metadata probe; отдельный endpoint access пользователь не подтвердил. Источник429/роли/границы — recipe v429–430. Повторные VNC1.5.5 доставки/Jira writes запрещены прежним scope.

@@ -1,5 +1,11 @@
 # Архитектура QA-агента UQA
 
+## v433–437: supplied displayMonitoring loaded, functional tests pending
+
+UQA normal run_turn434 prepared displayMonitoring1.3.1 on Windows083317-7f053043/ev-9c3f20641ebb and Astra083441-8f85fc3a/ev-69218abbcc4c, core1.3.27:6verified operations/6standing confirmations, own fresh loaded reads both. Full433269technicalPASS; original source429 pinned separately from workbook1.3.2, first checksum-copy typo rejected before dispatch and corrected against primary. Source435 indexed candidate with bothDB snapshots/integrity/dedup/retrieval/1223unrelated chunks preserved. Operator scope/oracle, framework phases/payload/report disclosed; no runtime hints/operator product actions, no repeated VNC delivery. Detailed immutable refs and limitations in recipe v434–437.
+
+VNC session, Tray desktop and actual log presence/write remain NOT executed/accepted. Installed VNC route creates two linked tasks but returns no own task receipt; safe journal/ownership/session verification remains implementation work, HTTP200/URL is not desktop PASS. Separate closed agent metadata contract for Tray/logs still needed, package declarations not endpoint proof. No downgrade/security/settings changes, Jira/Zephyr writes or automation resume. Old history/guards remain unchanged.
+
 ## v430: version discrepancy не равна доказанному VNC minimum
 
 Source429080945-97356d77/ev-69afc9ba8a85: исходный release archive1999entries содержит displayMonitoring1.3.1 и trayControl1.0.1. Workbook1.3.2 — discrepancy, не доказанный minimum VNC; прежняя категоричная блокировка исправлена без изменения старого expected/history. Runtime совместимость1.3.1 не объявлена. Debian package даёт declared log directory/autostart entry, не endpoint proof. Через агентские задачи возможен будущий закрытый readonly probe; отдельный доступ пользователь не подтвердил. Код/guards не менялись. Подробности/роли — recipe v429–430.

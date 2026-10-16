@@ -1,5 +1,11 @@
 # История изменений UQA
 
+## v433–437: supplied displayMonitoring loaded, functional tests pending
+
+UQA normal run_turn434 prepared displayMonitoring1.3.1 on Windows083317-7f053043/ev-9c3f20641ebb and Astra083441-8f85fc3a/ev-69218abbcc4c, core1.3.27:6verified operations/6standing confirmations, own fresh loaded reads both. Full433269technicalPASS; original source429 pinned separately from workbook1.3.2, first checksum-copy typo rejected before dispatch and corrected against primary. Source435 indexed candidate with bothDB snapshots/integrity/dedup/retrieval/1223unrelated chunks preserved. Operator scope/oracle, framework phases/payload/report disclosed; no runtime hints/operator product actions, no repeated VNC delivery. Detailed immutable refs and limitations in recipe v434–437.
+
+VNC session, Tray desktop and actual log presence/write remain NOT executed/accepted. Installed VNC route creates two linked tasks but returns no own task receipt; safe journal/ownership/session verification remains implementation work, HTTP200/URL is not desktop PASS. Separate closed agent metadata contract for Tray/logs still needed, package declarations not endpoint proof. No downgrade/security/settings changes, Jira/Zephyr writes or automation resume. Old history/guards remain unchanged.
+
 ## v430 — исследована исходная поставка, исправлен чрезмерный version-blocker
 
 Operator429 прочитал полный tar.zst manifest1999entries, catalog и package metadata: displayMonitoring1.3.1 есть,1.3.2 не найдена, trayControl1.0.1 есть. Прежнее «VNC обязательно требует1.3.2» не доказано и superseded; workbook mismatch сохранён, функциональный1.3.1 эксперимент пока не выполнен. Declared log path/autostart не endpoint PASS. Code/9SHA unchanged, no tasks/settings/Jira. История/primary refs в recipe v429–430.

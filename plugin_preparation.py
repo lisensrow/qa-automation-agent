@@ -22,7 +22,11 @@ READY='browser_read_closed_plugin_preparation_semantic'
 PROFILE='safe-plugin-preparation-v1'
 VERSIONS={'checkAlive':('1.3.2','B4'),'remoteConnections':('1.3.6','B25'),
           'storageAudit':('1.3.4','B33'),'defaultNetworkDeviceAudit':('1.3.5','B6'),
-          'vncServer':('1.5.5','B44')}
+          'vncServer':('1.5.5','B44'),'displayMonitoring':('1.3.1',None)}
+RELEASE_JOB='20261016-080945-97356d77'
+RELEASE_EVIDENCE='ev-69afc9ba8a85'
+RELEASE_WITNESS_SHA='2818fd67e9c683b5b676707a634b7ee4a19ff27dd5a69d529c1b026cb7e77ba3'
+RELEASE_CATALOG_SHA='4d5ad21719bf57608a9537db24493302f1ca30d61029e9296ea97499beabe8f6'
 STAGES=(('initial_inventory','pluginAudit'),('delivery','managePlugin'),('post_inventory','pluginAudit'))
 
 def now():return datetime.now(timezone.utc).isoformat()
@@ -44,6 +48,13 @@ def requirement(name,plugin,campaign):
             'teacher_job':'20261016-051942-618b0a99' if plugin in {'storageAudit','defaultNetworkDeviceAudit'} else '20261016-024614-ccfd4c2e',
             'teacher_evidence':'ev-b541e59d632c' if plugin in {'storageAudit','defaultNetworkDeviceAudit'} else 'ev-cc0c022c1e08'},
         'expected_profile':{'fresh_loaded':True,'same_ci_agent_session':True,'plugin_case_executed':False,'business_pass':False}}
+    if plugin=='displayMonitoring':
+        # Different source authority, NOT a claim to satisfy workbook B8=1.3.2.
+        r['source_manifest']={'kind':'reviewed_supplied_release','release':'u-connect-2.8.1',
+            'catalog_sha256':RELEASE_CATALOG_SHA,'teacher_job':RELEASE_JOB,
+            'teacher_evidence':RELEASE_EVIDENCE,'teacher_value_sha256':RELEASE_WITNESS_SHA,
+            'workbook_target_version':'1.3.2','workbook_target_satisfied':False}
+        r['expected_profile'].update(supplied_release_only=True,workbook_target_satisfied=False)
     r['operation_stages']=[{'version':1,'workflow_id':PROFILE,'stage_id':sid,
         'resource_key':'agent-'+t['agent_id']+'-'+plugin+'-'+sid,'tool':CREATE,
         'arguments':{'target':name,'plugin_name':plugin,'stage_id':sid},
@@ -51,6 +62,25 @@ def requirement(name,plugin,campaign):
             'ci_id':t['ci_id'],'agent_id':t['agent_id'],'core_version':CORE,'plugin_name':plugin,
             'plugin_version':version,'task_name':task,'stage_id':sid}} for sid,task in STAGES]
     return r
+
+def validate_release_source(job):
+    if not isinstance(job,dict) or job.get('job_id')!=RELEASE_JOB or job.get('stand')!='lab':
+        raise ValueError('supplied_release_witness_required')
+    ev=next(e for c in job['test_cases'] for e in c['evidence'] if e['evidence_id']==RELEASE_EVIDENCE)
+    value=ev.get('value')
+    if (ev.get('source')!='operator_release_archive_catalog_package_review'
+        or ev.get('type')!='operator_complete_release_search' or ev.get('execution_status')!='observed'
+        or ev.get('usable_for_pass') is not False or ev.get('usable_for_verdict') is not False
+        or not isinstance(value,str) or len(value.encode())>65536
+        or hashlib.sha256(value.encode()).hexdigest()!=RELEASE_WITNESS_SHA):
+        raise ValueError('supplied_release_witness_changed')
+    body=json.loads(value)
+    if (body['facts']['supplied_directory_version']!='1.3.1'
+        or body['facts']['displayMonitoring_present_in_original_archive'] is not True
+        or body['facts']['vnc_minimum_1_3_2_proven'] is not False
+        or not body['sources']['catalog_hash']['stdout'].startswith(RELEASE_CATALOG_SHA+'  ')):
+        raise ValueError('supplied_release_source_scope_mismatch')
+    return True
 
 def validate_context(job,case_id,starting=False):
     if not isinstance(job,dict) or not isinstance(job.get('test_cases'),list) or len(job['test_cases'])!=1:
@@ -109,6 +139,7 @@ def create(session,name,plugin,stage_id,job_id,case_id):
         _,r=validate_context(job_store.get_job(job_id),case_id)
         if hashlib.sha256(Path('/home/adminacc/uqa-input/distributions/plugin_versions.xlsx').read_bytes()).hexdigest()!=BOOK_SHA:
             raise ValueError('preparation_workbook_changed')
+        if plugin=='displayMonitoring':validate_release_source(job_store.get_job(RELEASE_JOB))
         t,ci,urls=context(session,name);ready=readiness(session,r);task=stage['verification']['task_name']
         tasks=validate_task_list(name,read_json(session,urls[0],{'name':task,'periodic':False,'limit':100,'offset':0}),task)
         ownmap=getattr(session,'_owned_plugin_preparations',{})

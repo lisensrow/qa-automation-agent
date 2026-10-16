@@ -1,5 +1,11 @@
 # Inventory-плагины: проверка доставки и результатов
 
+## v433–437: supplied displayMonitoring loaded, functional tests pending
+
+UQA normal run_turn434 prepared displayMonitoring1.3.1 on Windows083317-7f053043/ev-9c3f20641ebb and Astra083441-8f85fc3a/ev-69218abbcc4c, core1.3.27:6verified operations/6standing confirmations, own fresh loaded reads both. Full433269technicalPASS; original source429 pinned separately from workbook1.3.2, first checksum-copy typo rejected before dispatch and corrected against primary. Source435 indexed candidate with bothDB snapshots/integrity/dedup/retrieval/1223unrelated chunks preserved. Operator scope/oracle, framework phases/payload/report disclosed; no runtime hints/operator product actions, no repeated VNC delivery. Detailed immutable refs and limitations in recipe v434–437.
+
+VNC session, Tray desktop and actual log presence/write remain NOT executed/accepted. Installed VNC route creates two linked tasks but returns no own task receipt; safe journal/ownership/session verification remains implementation work, HTTP200/URL is not desktop PASS. Separate closed agent metadata contract for Tray/logs still needed, package declarations not endpoint proof. No downgrade/security/settings changes, Jira/Zephyr writes or automation resume. Old history/guards remain unchanged.
+
 ## v430: не выводить minimum compatibility из строки workbook
 
 Original archive1999entries/catalog подтверждают supplied displayMonitoring1.3.1, не1.3.2; VNC source не pin1.3.2. Исправлен прежний чрезмерный blocker, но runtime1.3.1 ещё не принят. Точный workbook-version case остаётся discrepancy/BLOCKED, functional supplied-version case требует отдельного source-bound oracle и policy; без изменения старого expected. Package log directory/autostart — декларация, не endpoint presence/write. Primary429080945-97356d77/ev-69afc9ba8a85, полный erratum/границы в recipe v429–430. Нет новых tasks/session/Jira/code changes.

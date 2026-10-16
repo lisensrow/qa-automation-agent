@@ -76,6 +76,7 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_supplied_release_preparation.py",
     "smoke_plugin_result_review.py",
     "smoke_pinned_agent_update.py",
     "smoke_pinned_plugin_delivery.py",
