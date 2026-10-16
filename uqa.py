@@ -2033,6 +2033,10 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        'browser_inspect_closed_endpoint_metadata_semantic',
+        'browser_read_closed_endpoint_metadata_readiness_semantic',
+        'browser_inspect_closed_vnc_session_semantic',
+        'browser_read_closed_vnc_readiness_semantic',
         'operation_read_attempt_history',
         'browser_review_plugin_result_semantic',
         'browser_inspect_tray_catalog_semantic',
@@ -2310,7 +2314,7 @@ def classify_tool_action(
     }:
         return "destructive"
 
-    if name in {"browser_create_closed_plugin_discovery_semantic", "browser_create_closed_plugin_preparation_semantic", "browser_create_closed_command_stage_semantic", "browser_create_managed_agent_task_semantic", "browser_create_pinned_agent_update_semantic", "browser_deliver_pinned_agent_plugin_semantic", "browser_create_pinned_agent_audit_semantic"}:
+    if name in {"browser_start_closed_endpoint_metadata_semantic", "browser_start_closed_vnc_session_semantic", "browser_create_closed_plugin_discovery_semantic", "browser_create_closed_plugin_preparation_semantic", "browser_create_closed_command_stage_semantic", "browser_create_managed_agent_task_semantic", "browser_create_pinned_agent_update_semantic", "browser_deliver_pinned_agent_plugin_semantic", "browser_create_pinned_agent_audit_semantic"}:
         return "write"
 
     if name == "browser_fill_semantic":
@@ -2449,7 +2453,7 @@ def tool_policy_check(
     if not read_only:
         return None
 
-    if name in {'browser_create_closed_plugin_discovery_semantic', 'browser_create_closed_plugin_preparation_semantic', 'browser_create_closed_command_stage_semantic', 'browser_add_tree_row_semantic', 'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'} or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
+    if name in {'browser_start_closed_endpoint_metadata_semantic','browser_start_closed_vnc_session_semantic', 'browser_create_closed_plugin_discovery_semantic', 'browser_create_closed_plugin_preparation_semantic', 'browser_create_closed_command_stage_semantic', 'browser_add_tree_row_semantic', 'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'} or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
         return {"error":"tool_policy_blocked","status":"blocked_by_policy","tool":name,"executed":False,
                 "policy":"strict_read_only" if force_read_only else "read_only_request"}
 
@@ -4569,7 +4573,7 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
     """Stage identity does not grant permission; policy still evaluates first."""
     if not job_id or not case_id or action_class not in {"write", "destructive"}:
         return None
-    direct = {"browser_edit_owned_resource_roundtrip_semantic", "browser_delete_json_resource",
+    direct = {"browser_start_closed_endpoint_metadata_semantic", "browser_start_closed_vnc_session_semantic", "browser_edit_owned_resource_roundtrip_semantic", "browser_delete_json_resource",
               "browser_create_closed_command_stage_semantic",
               "browser_create_closed_plugin_discovery_semantic",
               "browser_create_closed_plugin_preparation_semantic",
@@ -4594,7 +4598,7 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
     if requirement.get("type") == "owned_resource_workflow":
         initialize_workflow(job_id, case_id)
     stage = current_stage(job_id, case_id) or requirement.get("operation_stage")
-    if requirement.get('type') in {'closed_plugin_discovery','closed_plugin_preparation','pinned_agent_audit','pinned_plugin_audit','closed_command_probe'} and requirement.get('operation_stages'):
+    if requirement.get('type') in {'closed_endpoint_metadata','closed_vnc_session','closed_plugin_discovery','closed_plugin_preparation','pinned_agent_audit','pinned_plugin_audit','closed_command_probe'} and requirement.get('operation_stages'):
         stage=next((s for s in requirement['operation_stages'] if s.get('tool')==name and s.get('arguments')==arguments),None)
         if commit and stage is None:
             raise ValueError('audit operation not declared')
@@ -4680,6 +4684,32 @@ def execute_tool_with_policy(
         except (ValueError,TypeError,KeyError,AttributeError):
             return {'error':'locked_plugin_discovery_scope_required','executed':False,
                 'action_class':action_class,'action_policy_status':'blocked_by_discovery_scope'}
+
+    if name in {'browser_start_closed_endpoint_metadata_semantic','browser_inspect_closed_endpoint_metadata_semantic','browser_read_closed_endpoint_metadata_readiness_semantic'}:
+        try:
+            from endpoint_metadata import CREATE,admit,validate_context
+            if not job_id or not case_id:raise ValueError('endpoint_job_case_required')
+            _,req=validate_context(get_job(job_id),case_id)
+            if arguments!={'target':req['target']}:raise ValueError('endpoint_exact_target_required')
+            if name==CREATE:
+                if action_policy!='confirm_mutations':raise ValueError('endpoint_managed_policy_required')
+                admit(get_job(job_id),case_id,arguments)
+        except (ValueError,TypeError,KeyError,AttributeError):
+            return {'error':'locked_endpoint_scope_required','executed':False,'action_class':action_class,
+                    'action_policy_status':'blocked_by_endpoint_scope'}
+
+    if name in {'browser_start_closed_vnc_session_semantic','browser_inspect_closed_vnc_session_semantic','browser_read_closed_vnc_readiness_semantic'}:
+        try:
+            from vnc_session import CREATE,admit,validate_context
+            if not job_id or not case_id:raise ValueError('vnc_job_case_required')
+            _,req=validate_context(get_job(job_id),case_id)
+            if arguments!={'target':req['target']}:raise ValueError('exact_vnc_target_required')
+            if name==CREATE:
+                if action_policy!='confirm_mutations':raise ValueError('vnc_managed_policy_required')
+                admit(get_job(job_id),case_id,arguments)
+        except (ValueError,TypeError,KeyError,AttributeError):
+            return {'error':'locked_vnc_scope_required','executed':False,'action_class':action_class,
+                    'action_policy_status':'blocked_by_vnc_scope'}
 
     if name in {'browser_create_closed_plugin_preparation_semantic','browser_inspect_closed_plugin_preparation_semantic','browser_read_closed_plugin_preparation_semantic'}:
         try:
@@ -5285,6 +5315,16 @@ def execute_tool_with_policy(
         if name==CREATE:invoke=lambda:create(_session,arguments['target'],arguments['plugin_name'],arguments['stage_id'],job_id,case_id)
         elif name==READ:invoke=lambda:read(_session,arguments['target'],arguments['plugin_name'],arguments['task_id'],job_id,case_id)
         else:invoke=lambda:read_ready(_session,arguments['target'],arguments['plugin_name'],job_id,case_id)
+    elif name in {'browser_start_closed_endpoint_metadata_semantic','browser_inspect_closed_endpoint_metadata_semantic','browser_read_closed_endpoint_metadata_readiness_semantic'}:
+        from tools.browser import _session
+        from endpoint_metadata import CREATE,READ,create,read,read_ready
+        fn=create if name==CREATE else read if name==READ else read_ready
+        invoke=lambda:fn(_session,arguments['target'],job_id,case_id)
+    elif name in {'browser_start_closed_vnc_session_semantic','browser_inspect_closed_vnc_session_semantic','browser_read_closed_vnc_readiness_semantic'}:
+        from tools.browser import _session
+        from vnc_session import CREATE,READ,create,read,read_ready
+        fn=create if name==CREATE else read if name==READ else read_ready
+        invoke=lambda:fn(_session,arguments['target'],job_id,case_id)
     elif name in {'browser_create_closed_plugin_preparation_semantic','browser_inspect_closed_plugin_preparation_semantic','browser_read_closed_plugin_preparation_semantic'}:
         from tools.browser import _session
         from plugin_preparation import CREATE,READ,create,read,read_ready
@@ -14730,6 +14770,18 @@ def run_turn(
             from plugin_discovery_runtime import run as run_plugin_discovery
             outcome=run_plugin_discovery(sys.modules[__name__],messages,job_id,case_id,action_policy,force_read_only)
             if not outcome.get('started'):finalize_case_blocked(job_id,case_id,outcome.get('reason','plugin_discovery_context_invalid'))
+            return outcome
+        if (phase_case.get('requirement') or {}).get('type')=='closed_endpoint_metadata':
+            import sys
+            from endpoint_metadata_runtime import run as run_endpoint_metadata
+            outcome=run_endpoint_metadata(sys.modules[__name__],messages,job_id,case_id,action_policy,force_read_only)
+            if not outcome.get('started'):finalize_case_blocked(job_id,case_id,outcome.get('reason','endpoint_context_invalid'))
+            return outcome
+        if (phase_case.get('requirement') or {}).get('type')=='closed_vnc_session':
+            import sys
+            from vnc_session_runtime import run as run_vnc_session
+            outcome=run_vnc_session(sys.modules[__name__],messages,job_id,case_id,action_policy,force_read_only)
+            if not outcome.get('started'):finalize_case_blocked(job_id,case_id,outcome.get('reason','vnc_context_invalid'))
             return outcome
         if (phase_case.get('requirement') or {}).get('type')=='closed_plugin_preparation':
             import sys

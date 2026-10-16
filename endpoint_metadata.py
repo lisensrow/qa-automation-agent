@@ -1,0 +1,225 @@
+"""Source-bound Astra metadata through executeCommand. No log contents/writes."""
+import hashlib,json
+from copy import deepcopy
+from uuid import UUID
+import job_store
+from command_probe_contract import target,validate_preflight,validate_target_state,validate_task_list,CORE,ORIGIN
+from command_stage_native import context,read_json,refusal
+from plugin_preparation import stamp,now,validate_release_source,RELEASE_JOB
+from operation_journal import list_operations,_fingerprint
+from tools.agent_update import audit_result_is_fresh
+CREATE='browser_start_closed_endpoint_metadata_semantic'
+READ='browser_inspect_closed_endpoint_metadata_semantic'
+READY='browser_read_closed_endpoint_metadata_readiness_semantic'
+PROFILE='agent-tray-log-metadata-v1'
+PROGRAM='/usr/bin/python3'
+CODE=r"""import os,stat,time,json,hashlib
+ROOT='/opt/usystem/usagent/var/log/usagent'
+def sample():
+ out={'status':'unknown','files':[],'bounded':True}
+ try:
+  fd=os.open(ROOT,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+  try:
+   names=os.listdir(fd)
+   if len(names)>1000:out['bounded']=False;names=names[:1000]
+   for name in names:
+    try:
+     s=os.stat(name,dir_fd=fd,follow_symlinks=False)
+     if stat.S_ISREG(s.st_mode):
+      out['files'].append({'id':hashlib.sha256(name.encode()).hexdigest(),'size':s.st_size,'mtime_ns':s.st_mtime_ns})
+    except OSError:out['status']='partial'
+   if out['status']!='partial':out['status']='ok'
+  finally:os.close(fd)
+ except FileNotFoundError:out['status']='missing'
+ except PermissionError:out['status']='denied'
+ except OSError:out['status']='error'
+ return out
+a=sample();time.sleep(5);b=sample()
+tray={'autostart_entry_present':os.path.isfile('/etc/xdg/autostart/usagenttray.desktop'),
+      'declared_script_present':os.path.isfile('/opt/usystem/usagent/usAgentTray.sh'),
+      'process_candidates':0,'process_scan_complete':True}
+try:
+ names=[x for x in os.listdir('/proc') if x.isdigit()]
+ if len(names)>10000:tray['process_scan_complete']=False;names=names[:10000]
+ for pid in names:
+  try:
+   with open('/proc/'+pid+'/comm') as f:name=f.read(64).strip().casefold()
+   if name in ('usagenttray','usagenttray.sh'):tray['process_candidates']+=1
+  except FileNotFoundError:pass
+  except OSError:tray['process_scan_complete']=False
+except OSError:tray['process_scan_complete']=False
+print(json.dumps({'probe_version':1,'sample_interval_seconds':5,'first':a,'second':b,'tray':tray},sort_keys=True))
+"""
+PAYLOAD={'name':'executeCommand','period':None,'ttl':None,'run_as_user':'',
+         'additional_params':{'programm':PROGRAM,'arguments':['-c',CODE]}}
+SHA=hashlib.sha256(CODE.encode()).hexdigest()
+def requirement(name,campaign):
+ t=target(name)
+ if not isinstance(campaign,str) or not 1<=len(campaign)<=80 or not campaign.replace('-','').isalnum():
+  raise ValueError('endpoint_campaign_required')
+ r={'type':'closed_endpoint_metadata','stand':'lab','locked':True,'action_profile':'write_resource',
+    'target':name,**{k:t[k] for k in ['ci_id','agent_id','ci_name']},'core_version':CORE,
+    'plugin_name':'executeCommand','plugin_version':'1.4.0','profile_id':PROFILE,'campaign_id':campaign,
+    'payload_sha256':SHA,'supported_os':'astra','source_release_job':RELEASE_JOB,
+    'expected_profile':{'log_files_present':True,'write_between_samples':True,
+      'tray_process_observation_only':True,'tray_desktop_verified':False,'log_contents_read':False,'file_writes':False}}
+ r['operation_stages']=[{'version':1,'workflow_id':PROFILE,'stage_id':'metadata',
+   'resource_key':'agent-'+t['agent_id']+'-tray-logs','tool':CREATE,'arguments':{'target':name},
+   'verification':{'version':1,'kind':'owned_endpoint_metadata','origin':ORIGIN,'target':name,
+     'ci_id':t['ci_id'],'agent_id':t['agent_id'],'profile_id':PROFILE,'payload_sha256':SHA}}]
+ return r
+def validate_context(job,cid,starting=False):
+ if not isinstance(job,dict) or len(job.get('test_cases',[]))!=1:raise ValueError('single_endpoint_case_required')
+ c=job['test_cases'][0];r=c.get('requirement') or {}
+ if (c.get('case_id')!=cid or r!=requirement(r.get('target'),r.get('campaign_id'))
+   or job.get('stand')!='lab' or job.get('status')!='running' or c.get('status')!='running'
+   or job.get('job_type') not in {'manual','regression'} or job.get('resources')):
+  raise ValueError('locked_endpoint_context_required')
+ if not all(r[k] in job.get('request','') for k in ['ci_id','agent_id','ci_name','profile_id','core_version']):
+  raise ValueError('original_endpoint_request_required')
+ if starting and any(e['type']=='endpoint_metadata_started' for e in c.get('evidence',[])):
+  raise ValueError('endpoint_no_runtime_replay')
+ return c,r
+def admit(job,cid,args):
+ _,r=validate_context(job,cid)
+ if args!={'target':r['target']}:raise ValueError('endpoint_exact_target_required')
+ return deepcopy(r['operation_stages'][0])
+def read_ready(session,name,jid,cid):
+ try:
+  _,r=validate_context(job_store.get_job(jid),cid)
+  if name!=r['target']:raise ValueError('endpoint_target_scope')
+  t,ci,urls=context(session,name);agent=read_json(session,urls[1]);validate_target_state(name,ci,agent)
+  tasks=read_json(session,urls[0],{'name':'executeCommand','periodic':False,'limit':100,'offset':0})
+  validate_task_list(name,tasks,'executeCommand')  # Includes Windows historical unresolved commands; never cancel them.
+  if name!='astra':raise ValueError('windows_metadata_payload_not_implemented')
+  validate_preflight(name,ci,agent,read_json(session,urls[2]),tasks)
+  return {'target':name,'ci_id':t['ci_id'],'agent_id':t['agent_id'],'core_version':CORE,
+    'ready':True,'payload_sha256':SHA,'read_at':now(),'session_id':session.session_id,'mutation_executed':False}
+ except Exception as e:
+  return {'error':str(e)[:150] if isinstance(e,ValueError) else 'endpoint_readiness_unavailable','mutation_executed':False}
+def summarize(body):
+ if not isinstance(body,dict) or set(body)!={'probe_version','sample_interval_seconds','first','second','tray'}:
+  raise ValueError('endpoint_json_shape')
+ if body['probe_version']!=1 or body['sample_interval_seconds']!=5:raise ValueError('endpoint_probe_version')
+ snapshots=[]
+ for key in ['first','second']:
+  s=body[key]
+  if (not isinstance(s,dict) or set(s)!={'status','files','bounded'} or s['status'] not in
+    {'unknown','ok','partial','missing','denied','error'} or type(s['bounded']) is not bool
+    or not isinstance(s['files'],list) or len(s['files'])>1000):raise ValueError('endpoint_log_snapshot')
+  found={}
+  for x in s['files']:
+   if (not isinstance(x,dict) or set(x)!={'id','size','mtime_ns'} or not isinstance(x['id'],str)
+       or len(x['id'])!=64 or any(c not in '0123456789abcdef' for c in x['id']) or x['id'] in found
+       or type(x['size']) is not int or x['size']<0 or type(x['mtime_ns']) is not int or x['mtime_ns']<0):
+    raise ValueError('endpoint_file_metadata_invalid')
+   found[x['id']]=x
+  snapshots.append(found)
+ tray=body['tray']
+ if (not isinstance(tray,dict) or set(tray)!={'autostart_entry_present','declared_script_present','process_candidates','process_scan_complete'}
+   or any(type(tray[k]) is not bool for k in ['autostart_entry_present','declared_script_present','process_scan_complete'])
+   or type(tray['process_candidates']) is not int or not 0<=tray['process_candidates']<=10000):
+  raise ValueError('endpoint_tray_metadata_invalid')
+ complete=all(body[k]['status']=='ok' and body[k]['bounded'] for k in ['first','second'])
+ changed=any(k in snapshots[0] and (x['size']>snapshots[0][k]['size'] or x['mtime_ns']>snapshots[0][k]['mtime_ns'])
+             for k,x in snapshots[1].items())
+ return {'log_observation_complete':complete,'log_files_present':bool(snapshots[1]) if complete else None,
+   'log_file_count':len(snapshots[1]) if complete else None,'log_root_status':body['second']['status'],
+   'write_between_samples':bool(changed) if complete else None,
+   'logging_status':'PASS' if complete and snapshots[1] and changed else 'BLOCKED',
+   'tray':tray,'tray_desktop_verified':False,'log_contents_read':False,'file_writes':False,
+   'independent_os_oracle':False,'business_pass':False}
+def create(session,name,jid,cid):
+ try:
+  stage=admit(job_store.get_job(jid),cid,{'target':name});ops=list_operations(jid)
+  candidates=[o for o in ops if o['status']=='sending' and o['case_id']==cid
+    and all(o.get(k)==stage[k] for k in ['workflow_id','stage_id','resource_key','tool'])
+    and o['arguments_fingerprint']==_fingerprint(stage['arguments'])
+    and o['verification_fingerprint']==_fingerprint(stage['verification'])]
+  if len(candidates)!=1:raise ValueError('endpoint_unique_core_intent_required')
+  if any(o['operation_id']!=candidates[0]['operation_id'] and o['status'] not in {'verified','not_sent'} for o in ops):
+   raise ValueError('endpoint_prior_operation_unresolved')
+  ready=read_ready(session,name,jid,cid)
+  if ready.get('ready') is not True:raise ValueError(ready.get('error') or 'endpoint_not_ready')
+  validate_release_source(job_store.get_job(RELEASE_JOB))
+  for j in job_store.list_jobs(limit=None):
+   if j['job_id']==jid:continue
+   if any((c.get('requirement') or {}).get('type')=='closed_endpoint_metadata'
+      and c['requirement'].get('target')==name for c in j.get('test_cases',[])):
+    if any(o['status'] not in {'not_sent','rejected'} for o in list_operations(j['job_id'])):
+     raise ValueError('endpoint_prior_attempt_no_rekey')
+  t,_,urls=context(session,name);opid=candidates[0]['operation_id']
+ except Exception as e:return refusal(str(e)[:150] if isinstance(e,ValueError) else 'endpoint_preflight_refused')
+ try:
+  sent=now();response=session.context.request.post(urls[0],data=deepcopy(PAYLOAD),timeout=15000);received=now()
+  if response.status!=201:raise ValueError('endpoint_create_status')
+  b=response.json();params=b.get('additional_params') or {}
+  if (str(UUID(b.get('id')))!=b['id'] or b.get('agent_id')!=t['agent_id'] or b.get('name')!='executeCommand'
+    or 'period' not in b or b['period'] is not None or 'ttl' not in b or b['ttl'] is not None
+    or b.get('run_as_user')!='' or params.get('programm')!=PROGRAM or params.get('arguments')!=PAYLOAD['additional_params']['arguments']
+    or set(params)-{'programm','arguments','command'} or params.get('command') is not None
+    or not -120<=(stamp(received)-stamp(b['created_at'])).total_seconds()<=300):
+   raise ValueError('endpoint_receipt_scope')
+  own={'target':name,'ci_id':t['ci_id'],'agent_id':t['agent_id'],'profile_id':PROFILE,'payload_sha256':SHA,
+    'job_id':jid,'case_id':cid,'task_id':b['id'],'task_name':'executeCommand','operation_id':opid,
+    'session_id':session.session_id,'sent_at':sent,'received_at':received,'server_created_at':b['created_at'],
+    'request_origin':ORIGIN}
+  if not hasattr(session,'_owned_endpoint_metadata'):session._owned_endpoint_metadata={}
+  session._owned_endpoint_metadata[(jid,cid)]=own
+  return {**own,'create_status':201,'executed':True,'mutation_executed':True,'business_pass':False}
+ except Exception:
+  return {'error':'endpoint_dispatch_uncertain_no_resend','executed':False,'dispatch_may_have_occurred':True,'resend_authorized':False}
+def read(session,name,jid,cid):
+ try:
+  _,r=validate_context(job_store.get_job(jid),cid);own=getattr(session,'_owned_endpoint_metadata',{}).get((jid,cid))
+  if not own or name!=r['target'] or own['target']!=name or own['session_id']!=session.session_id:
+   raise ValueError('own_endpoint_receipt_required')
+  t,_,urls=context(session,name);b=read_json(session,urls[0]+'/'+own['task_id']+'/full');env=b.get('result')
+  if not isinstance(env,dict):raise ValueError('own_endpoint_result_not_ready')
+  if (b.get('id')!=own['task_id'] or b.get('agent_id')!=t['agent_id'] or b.get('name')!='executeCommand'
+    or b.get('created_at')!=own['server_created_at'] or b.get('status')!='success' or env.get('machine_uid')!=t['ci_id']
+    or not audit_result_is_fresh(own['sent_at'],own['received_at'],own['server_created_at'],b.get('created_at'),env.get('processed_at'))):
+   raise ValueError('own_endpoint_identity_freshness')
+  data=env.get('data')
+  if isinstance(data,dict) and isinstance(data.get('stdout'),str):
+   if 'stderr' not in data:raise ValueError('endpoint_stderr_missing')
+   stdout,code,stderr=data['stdout'],data.get('errorlevel'),data['stderr']
+  else:stdout,code,stderr=env.get('result'),env.get('error_code'),env.get('error_msg')
+  if not isinstance(stdout,str) or len(stdout.encode())>262144 or code not in (0,'0') or stderr not in ('',None):
+   raise ValueError('endpoint_command_output_invalid')
+  summary=summarize(json.loads(stdout))
+  return {**own,'summary':summary,'result_sha256':hashlib.sha256(stdout.encode()).hexdigest(),
+    'native_result_verified':True,'read_at':now(),'processed_at':env['processed_at'],
+    'machine_uid':t['ci_id'],'task_status':'success','mutation_executed':False,'business_pass':False}
+ except Exception as e:
+  return {'error':str(e)[:160] if isinstance(e,ValueError) else 'endpoint_read_unavailable','mutation_executed':False}
+def evaluate(job,op,eid,contract):
+ try:
+  c,r=validate_context(job,op['case_id']);stage=r['operation_stages'][0]
+  if contract!=stage['verification'] or (op.get('receipt') or {}).get('acknowledged') is not True:raise ValueError('contract')
+  def native(e,tool):
+   if e.get('source')!='uqa_tool' or e.get('execution_status') not in {'observed','executed'}:raise ValueError('native')
+   b=json.loads(e['value'])
+   if b.get('tool')!=tool or b.get('arguments')!={'target':r['target']}:raise ValueError('scope')
+   return b['result']
+  ev=next(e for e in c['evidence'] if e['evidence_id']==eid);b=native(ev,READ)
+  creates=[(e,native(e,CREATE)) for e in c['evidence'] if e.get('type')==CREATE]
+  creates=[x for x in creates if x[1].get('operation_id')==op['operation_id']]
+  if len(creates)!=1:raise ValueError('unique')
+  ce,a=creates[0]
+  for k,v in {'target':r['target'],'ci_id':r['ci_id'],'agent_id':r['agent_id'],'job_id':job['job_id'],
+    'case_id':op['case_id'],'operation_id':op['operation_id'],'profile_id':PROFILE,'payload_sha256':SHA,
+    'request_origin':ORIGIN}.items():
+   if a.get(k)!=v or b.get(k)!=v:raise ValueError('identity')
+  if (a.get('executed') is not True or a.get('create_status')!=201 or a.get('error') or b.get('error')
+    or not a.get('task_id') or b.get('task_id')!=a['task_id'] or b.get('session_id')!=a.get('session_id')
+    or not a.get('session_id') or b.get('native_result_verified') is not True or b.get('machine_uid')!=r['ci_id']
+    or b.get('task_status')!='success' or not isinstance(b.get('summary'),dict) or not b.get('result_sha256')
+    or stamp(ce['created_at'])<stamp(op['created_at']) or stamp(ev['created_at'])<stamp(ce['created_at'])
+    or not -5<=(stamp(now())-stamp(ev['created_at'])).total_seconds()<=300):
+   raise ValueError('owned proof')
+  return {'verified':True,'evidence_id':eid,'receipt_evidence_id':ce['evidence_id'],
+    'identifier_value':a['task_id'],'postcondition_verified':True,'resend_authorized':False,
+    'verification_scope':'closed_readonly_endpoint_metadata_execution_not_tray_desktop','business_pass':False}
+ except (ValueError,TypeError,KeyError,AttributeError,StopIteration):
+  return {'verified':False,'reason':'endpoint_metadata_evidence_insufficient','resend_authorized':False}

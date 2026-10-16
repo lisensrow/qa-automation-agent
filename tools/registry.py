@@ -177,6 +177,30 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {'type':'function','function':{'name':'browser_start_closed_endpoint_metadata_semantic',
+      'description':'WRITE: locked one fixed Astra executeCommand metadata probe. Bounded log file stat twice and tray process/autostart metadata; no log contents, writes, settings or arbitrary command.',
+      'parameters':{'type':'object','additionalProperties':False,'required':['target'],
+          'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
+    {'type':'function','function':{'name':'browser_inspect_closed_endpoint_metadata_semantic',
+      'description':'READ: own same-session fixed endpoint probe full result only; metadata is not Tray desktop.',
+      'parameters':{'type':'object','additionalProperties':False,'required':['target'],
+          'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
+    {'type':'function','function':{'name':'browser_read_closed_endpoint_metadata_readiness_semantic',
+      'description':'READ: exact target/OS/core, loaded executeCommand1.4.0 and complete terminal command list. Never cancels historical Windows commands; no Windows payload implemented.',
+      'parameters':{'type':'object','additionalProperties':False,'required':['target'],
+          'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
+    {'type':'function','function':{'name':'browser_start_closed_vnc_session_semantic',
+      'description':'WRITE: one locked supplied-release VNC session on dedicated Windows/Astra/core1.3.27. Two linked own tasks and receive-only image channel. No input, delivery, settings or URL/token disclosure.',
+      'parameters':{'type':'object','additionalProperties':False,'required':['target'],
+          'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
+    {'type':'function','function':{'name':'browser_inspect_closed_vnc_session_semantic',
+      'description':'READ: own linked VNC tasks and captured decoded-image metadata only; no URL, input or restart.',
+      'parameters':{'type':'object','additionalProperties':False,'required':['target'],
+          'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
+    {'type':'function','function':{'name':'browser_read_closed_vnc_readiness_semantic',
+      'description':'READ: exact locked target/core and fresh loaded displayMonitoring1.3.1/vncServer1.5.5, complete terminal prior task lists. No delivery or session.',
+      'parameters':{'type':'object','additionalProperties':False,'required':['target'],
+          'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
     {'type':'function','function':{'name':'browser_review_plugin_result_semantic',
         'description':'OBSERVE locked historical storage/default-interface content invariants. Own source proof and digest required. Not current OS correctness, full case PASS, task creation or permission.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name'],
@@ -2395,6 +2419,18 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_inspect_closed_plugin_discovery_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_read_closed_plugin_discovery_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_start_closed_endpoint_metadata_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_inspect_closed_endpoint_metadata_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_read_closed_endpoint_metadata_readiness_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_start_closed_vnc_session_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_inspect_closed_vnc_session_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_read_closed_vnc_readiness_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_create_closed_plugin_preparation_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}

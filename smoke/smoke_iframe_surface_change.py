@@ -1,4 +1,7 @@
 import threading
+from pathlib import Path
+from unittest.mock import patch
+from playwright.sync_api import Locator
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from tools.browser import BrowserSession
@@ -45,10 +48,22 @@ try:
         f'<iframe title="Live frame" src="{origin}/live"></iframe>'
     )
     iframe = session.page.locator("iframe").element_handle().content_frame()
-    iframe.evaluate("window.changeFrame()")
-    changed = session.observe_iframe_surface_change_semantic(
-        "Live frame", f"{origin}/live", True, wait_ms=600,
-    )
+    # Fixture synchronization only: arm the 200ms paint AFTER the real baseline
+    # screenshot. Starting it before inspection races slower screenshot capture.
+    # Native screenshots/hashes, expected change and stable checks are unchanged.
+    original_capture = Locator.screenshot
+    armed = []
+    def capture_then_arm(locator, *args, **kwargs):
+        result = original_capture(locator, *args, **kwargs)
+        if Path(str(kwargs.get("path", ""))).name.startswith("iframe-before-"):
+            armed.append(True)
+            iframe.evaluate("window.changeFrame()")
+        return result
+    with patch.object(Locator, "screenshot", capture_then_arm):
+        changed = session.observe_iframe_surface_change_semantic(
+            "Live frame", f"{origin}/live", True, wait_ms=600,
+        )
+    assert armed == [True], "fixture must arm only after baseline capture"
     assert changed["surface_change_status"] == "verified", changed
     assert changed["surface_changed"] is True, changed
     assert changed["surface_before_sha256"] != changed["surface_after_sha256"], changed
