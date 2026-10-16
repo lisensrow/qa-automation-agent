@@ -1,5 +1,13 @@
 # План приёмки UQA: дневное продолжение
 
+## v426: выполненные дневные этапы и следующий gate
+
+Full421268PASS, actual424 обеОС строгий частный итог matched; VNC422 обеОС loaded1.5.5/6verified ops. Не повторять эти Jobs/доставки. Остались independent OS values, VNC session с required displayMonitoring1.3.2, Tray desktop и реальные log files/запись. Candidate metadata-only Astra endpoint probe ещё pending и требует отдельного закрытого payload, policy/journal/recovery/tests перед запуском; Windows8oldprogress не обходить. Primary425073028-55d7e6c3/ev-8debdfc5e5cd, ошибки/роли/границы в recipe v424–426. Jira/Zephyr без записей, автоматизация PAUSED.
+
+## v423: новое дневное разрешение, без возобновления ночного правила
+
+Продолжить по текущему прямому запросу: full421; actual424 content review Windows/Astra после исправления history projection; затем отдельная VNC1.5.5 preparation через прежнюю policy/ledger. Main VNC session BLOCKED до displayMonitoring1.3.2 и наблюдаемого desktop. Tray требует endpoint/session proof, logging — фактических актуальных файлов/записи, не settings. Не повторять уже успешные main/deliveries v410, не менять15исторических unresolved. Model419 strict summary FAIL сохранён. Роли и evidence в recipe v417–423; независимый OS oracle всё ещё не принят. Jira/Zephyr не трогать, automation uqa остаётся PAUSED.
+
 ## v415–416: полный bookkeeping census — не путать со статусом задач на КЕ
 
 Read-only snapshot415 16октября05:52:40UTC: Job20261016-055240-f800cfd5 / tc-93539e2c / ev-703125170ba7. Во всём UQA operation store найдено15исторических unresolved entries: sending0, uncertain2, awaiting_verification13. Ранее отдельно отслеживаемые2UI-операции — только подмножество, не глобальный итог. Полные job/case/operation IDs, updated_at и SHA соответствующих journal файлов сохранены в этом evidence. Это не15новых сбоев текущей кампании и не доказательство15работающих сейчас задач на агентах.

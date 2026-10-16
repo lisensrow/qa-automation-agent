@@ -1,5 +1,13 @@
 # Inventory-плагины: проверка доставки и результатов
 
+## v426: реальные ограничения подтверждены моделью
+
+Actual424 на обеих ОС: network intrinsicPASS4checks, storage5PASS2BLOCKED; модель правильно сохранила independent OS/full-case BLOCKED. Actual422 normal run_turn доставил vncServer1.5.5/fresh loaded обеОС,6verified operations, без main/session. Operator425 primary proof review не заменяет OS/desktop/logfile oracle; original419FAIL preserved. Full421268technicalPASS/9SHA unchanged. Подробные immutable evidence refs/роли в recipe v424–426. Следующий metadata-only endpoint probe пока план, не результат.
+
+## v423: внутренние свойства не равны независимому oracle ОС
+
+Reader historical-plugin-content-review-v1 сверяет own source linkage/digest перед внутренними проверками storage/default network. Counts/type/SHA, валидный IP/MAC или согласованное число разделов не доказывают правильность фактической ОС. Неизвестные byte units/parent-key semantics остаются BLOCKED. Перед итогом модель должна видеть частные статусы ОБОИХ чтений после compaction;419 strict summary FAIL сохранён,424 ещё требуется. VNC1.5.5 теперь preparation-only, main-discovery не допускает VNC; displayMonitoring1.3.2 missing в storage и bundle подтверждён source420. Tray/logging требуют endpoint desktop/files, не каталога/настроек. Подробные критерии, роли и evidence — ../.. recipe UQA_PARAMETERLESS_PLUGIN_REGRESSION.md v417–423. Jira/Zephyr без записей.
+
 ## v415–416: полный bookkeeping census — не путать со статусом задач на КЕ
 
 Read-only snapshot415 16октября05:52:40UTC: Job20261016-055240-f800cfd5 / tc-93539e2c / ev-703125170ba7. Во всём UQA operation store найдено15исторических unresolved entries: sending0, uncertain2, awaiting_verification13. Ранее отдельно отслеживаемые2UI-операции — только подмножество, не глобальный итог. Полные job/case/operation IDs, updated_at и SHA соответствующих journal файлов сохранены в этом evidence. Это не15новых сбоев текущей кампании и не доказательство15работающих сейчас задач на агентах.

@@ -2034,6 +2034,7 @@ def classify_tool_action(
 
     observe_tools = {
         'operation_read_attempt_history',
+        'browser_review_plugin_result_semantic',
         'browser_inspect_tray_catalog_semantic',
         'browser_read_closed_plugin_discovery_semantic',
         'browser_inspect_closed_plugin_discovery_semantic',
@@ -4637,6 +4638,14 @@ def execute_tool_with_policy(
                         'executed': False, 'action_class': action_class,
                         'action_policy_status': 'blocked_by_advisory_contract'}
 
+    if name=='browser_review_plugin_result_semantic':
+        try:
+            from plugin_result_review import validate_context
+            validate_context(get_job(job_id),case_id,arguments)
+        except (ValueError,TypeError,KeyError,AttributeError):
+            return {'error':'locked_result_review_scope_required','executed':False,
+                'action_class':action_class,'action_policy_status':'blocked_by_result_review_scope'}
+
     if name=='operation_read_attempt_history':
         try:
             from attempt_history import validate_context
@@ -5262,6 +5271,10 @@ def execute_tool_with_policy(
     if name=='operation_read_attempt_history':
         from attempt_history import inspect as inspect_attempt_history
         invoke=lambda:inspect_attempt_history(arguments,job_id,case_id)
+    elif name=='browser_review_plugin_result_semantic':
+        from tools.browser import _session
+        from plugin_result_review import inspect as inspect_plugin_result
+        invoke=lambda:inspect_plugin_result(_session,arguments['target'],arguments['plugin_name'],job_id,case_id)
     elif name=='browser_inspect_tray_catalog_semantic':
         from tools.browser import _session
         from tray_catalog import inspect as inspect_tray_catalog
@@ -6857,6 +6870,9 @@ def _historical_browser_result_summary(tool_name, content):
                             and ((name.endswith("_count") and type(value) is int and value >= 0)
                                  or (not name.endswith("_count") and type(value) is bool))}
     summary["tool"] = tool_name
+    if tool_name == 'browser_review_plugin_result_semantic':
+        from plugin_result_review import compact_review
+        summary = {'tool':tool_name, **compact_review(parsed)}
     if "control_location_hint" in parsed:
         from product_knowledge_context import compact_control_location_hint
         location = compact_control_location_hint(parsed["control_location_hint"])

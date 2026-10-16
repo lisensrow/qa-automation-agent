@@ -177,6 +177,10 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {'type':'function','function':{'name':'browser_review_plugin_result_semantic',
+        'description':'OBSERVE locked historical storage/default-interface content invariants. Own source proof and digest required. Not current OS correctness, full case PASS, task creation or permission.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name'],
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['storageAudit','defaultNetworkDeviceAudit']}}}}},
     {'type':'function','function':{'name':'operation_read_attempt_history',
         'description':'OBSERVE exact locked historical Job/case/operation native proof. request_sent true/false/null; never current PASS, retry permission or live verification. No writes or external requests.',
         'parameters':{'type':'object','additionalProperties':False,'required':['source_job_id','source_case_id','operation_id'],
@@ -198,18 +202,18 @@ TOOLS = [
         'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name'],
             'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections','storageAudit','defaultNetworkDeviceAudit']}}}}},
     {'type':'function','function':{'name':'browser_create_closed_plugin_preparation_semantic',
-        'description':'WRITE: только locked preparation checkAlive/remoteConnections/storageAudit/defaultNetworkDeviceAudit на dedicated Windows/Astra. Три этапа: inventory/delivery/post_inventory; Core intent/policy, OS-check/no-deletion. НЕ запуск основной задачи плагина.',
+        'description':'WRITE: locked preparation checkAlive/remoteConnections/storageAudit/defaultNetworkDeviceAudit/vncServer на dedicated Windows/Astra. Inventory/delivery/post_inventory; Core policy, OS-check/no-deletion. НЕ main task/VNC session.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name','stage_id'],
-            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections','storageAudit','defaultNetworkDeviceAudit']},
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections','storageAudit','defaultNetworkDeviceAudit','vncServer']},
                 'stage_id':{'type':'string','enum':['initial_inventory','delivery','post_inventory']}}}}},
     {'type':'function','function':{'name':'browser_inspect_closed_plugin_preparation_semantic',
         'description':'READ-only: full только own preparation receipt того же case/session. Download не loaded, fresh loaded не основной кейс.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name','task_id'],
-            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections','storageAudit','defaultNetworkDeviceAudit']},'task_id':{'type':'string'}}}}},
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections','storageAudit','defaultNetworkDeviceAudit','vncServer']},'task_id':{'type':'string'}}}}},
     {'type':'function','function':{'name':'browser_read_closed_plugin_preparation_semantic',
-        'description':'READ-only: fresh inventory/core/OS двух safe preparation plugins. Требует locked exact-target case. Никакого plugin main/task/VNC/command.',
+        'description':'READ-only: fresh inventory/core/OS pinned preparation plugins. Locked exact-target case. No main task/VNC session/command.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name'],
-            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections','storageAudit','defaultNetworkDeviceAudit']}}}}},
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections','storageAudit','defaultNetworkDeviceAudit','vncServer']}}}}},
     {"type":"function","function":{"name":"api_inspect_request_contract",
         "description":"OBSERVE: read a registered historical operation and its direct application/json request schema together. Exactly two source/pin-checked pages; no HTTP, recursive schema closure, defaults, enum values, payload validation or business PASS. Same stand/source selection and caller lock as api_inspect_contract_page. Use when the question needs required request fields, not just operation roots.",
         "parameters":{"type":"object","additionalProperties":False,"properties":{
@@ -2380,6 +2384,8 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_review_plugin_result_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "operation_read_attempt_history":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_inspect_tray_catalog_semantic":

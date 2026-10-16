@@ -32,6 +32,7 @@ PRODUCTION_FILES = [
     ROOT / "task_page_preflight.py",
     ROOT / "tray_catalog.py",
     ROOT / "attempt_history.py",
+    ROOT / "plugin_result_review.py",
     ROOT / "native_dispatch.py",
     ROOT / "request_event_census.py",
     ROOT / "advisory_contract.py",
@@ -75,6 +76,7 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_plugin_result_review.py",
     "smoke_pinned_agent_update.py",
     "smoke_pinned_plugin_delivery.py",
     "smoke_pinned_audit_task.py",

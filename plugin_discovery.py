@@ -8,7 +8,7 @@ from uuid import UUID
 import hashlib,json
 import job_store
 from plugin_preparation import (requirement as preparation_requirement, readiness, now,stamp,
-    VERSIONS,BOOK_SHA,CORE,ORIGIN)
+    VERSIONS as PREPARATION_VERSIONS,BOOK_SHA,CORE,ORIGIN)
 from command_stage_native import context,read_json,refusal
 from command_probe_contract import validate_task_list
 from operation_journal import list_operations,_fingerprint
@@ -19,8 +19,11 @@ CREATE='browser_create_closed_plugin_discovery_semantic'
 READ='browser_inspect_closed_plugin_discovery_semantic'
 READY='browser_read_closed_plugin_discovery_semantic'
 PROFILE='safe-plugin-discovery-v1'
+VERSIONS={p:v for p,v in PREPARATION_VERSIONS.items() if p in
+          {'checkAlive','remoteConnections','storageAudit','defaultNetworkDeviceAudit'}}
 
 def requirement(name,plugin,campaign):
+    if plugin not in VERSIONS:raise ValueError('safe_main_discovery_plugin_required')
     r=preparation_requirement(name,plugin,campaign)
     r.update(type='closed_plugin_discovery',profile_id=PROFILE,
         expected_profile={'own_fresh_successful_execution':True,'bounded_shape_observed':True,

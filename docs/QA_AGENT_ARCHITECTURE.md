@@ -1,5 +1,13 @@
 # Архитектура QA-агента UQA
 
+## v426: actual424/422 приняты в ограниченном scope
+
+Модель на Windows/Astra строго различила network intrinsicPASS/storage intrinsicBLOCKED и independent OS/full-case BLOCKED после исправления compaction. Через normal run_turn подготовила vncServer1.5.5 на обеих ОС:6verified ops,6standing confirmations, no sessions/hints/operator product actions. Teacher425073028-55d7e6c3/ev-8debdfc5e5cd сверил primary proofs/fresh loaded. Full421268technicalPASS/9SHA unchanged. Подробные IDs/роли/ограничения в recipe v424–426. Tray/log files/независимые OS values ещё не приняты; metadata-only endpoint probe только следующий план. Старые15unresolved неизменны.
+
+## v418–423: read-only content review и VNC preparation-only
+
+Закрытый reader исторических storage/default full проверяет source/own receipt/digest и внутренние инварианты, но сохраняет independent OS/full source-case BLOCKED. Специальная bounded history projection не теряет частный статус предыдущего чтения. Actual419 strict summary FAIL сохранён; исправление framework пока требует actual424. Preparation допускает vncServer1.5.5/B44, main-discovery явно остаётся четырьмя безопасными аудитами без VNC. Код установленного сервера связывает VNC с displayMonitoring, требуемой1.3.2 нет в storage/bundle. Полные критерии, первичные proof refs и границы ролей: docs/UQA_PARAMETERLESS_PLUGIN_REGRESSION.md, раздел v417–423. Полный421 и реальные новые VNC Jobs ещё проверяются; не заявлять PASS заранее.
+
 ## v415–416: полный bookkeeping census — не путать со статусом задач на КЕ
 
 Read-only snapshot415 16октября05:52:40UTC: Job20261016-055240-f800cfd5 / tc-93539e2c / ev-703125170ba7. Во всём UQA operation store найдено15исторических unresolved entries: sending0, uncertain2, awaiting_verification13. Ранее отдельно отслеживаемые2UI-операции — только подмножество, не глобальный итог. Полные job/case/operation IDs, updated_at и SHA соответствующих journal файлов сохранены в этом evidence. Это не15новых сбоев текущей кампании и не доказательство15работающих сейчас задач на агентах.

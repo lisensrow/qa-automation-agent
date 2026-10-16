@@ -1,5 +1,13 @@
 # История изменений UQA
 
+## v426 — реальные дневные результаты
+
+Actual424 Windows/Astra: собственные чтения и строгие частные итоги matched, без новых agent tasks. Actual422: UQA normal run_turn доставила/подтвердила loaded vncServer1.5.5 обеОС,6verified ops/6delegated confirmations/no sessions. Teacher425 primary review PASS только execution bookkeeping, full source cases BLOCKED. Full421268/268technicalPASS/9SHA unchanged; оригинальный419 strictFAIL сохранён. Все доказательства/роли в recipe v424–426. Jira/Zephyr неизменно без записей.
+
+## v417–423 — дневное продолжение по новому запросу пользователя
+
+Добавлены historical-plugin-content-review-v1 и негативные/native fixture проверки. Actual419 выбрала чтения, но strict summary FAIL; выявлена потеря частного статуса при history compaction, добавлена bounded source-linked projection. Прямой вызов reader вне Core заблокирован после registry test. VNC1.5.5 разрешён только в preparation, не main discovery/session; missing displayMonitoring1.3.2 подтверждён также в bundle. Источники417/420, роли и ограничения сохранены в общем reviewed recipe. Full418-final268PASS — технический результат, actual424/VNC acceptance на этой редакции ещё pending. Jira/Zephyr без изменений.
+
 ## v415–416: полный bookkeeping census — не путать со статусом задач на КЕ
 
 Read-only snapshot415 16октября05:52:40UTC: Job20261016-055240-f800cfd5 / tc-93539e2c / ev-703125170ba7. Во всём UQA operation store найдено15исторических unresolved entries: sending0, uncertain2, awaiting_verification13. Ранее отдельно отслеживаемые2UI-операции — только подмножество, не глобальный итог. Полные job/case/operation IDs, updated_at и SHA соответствующих journal файлов сохранены в этом evidence. Это не15новых сбоев текущей кампании и не доказательство15работающих сейчас задач на агентах.

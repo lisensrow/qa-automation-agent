@@ -1,4 +1,4 @@
-"""Closed preparation ONLY for four safe audit plugins, not plugin task execution.
+"""Closed preparation for four audit plugins and the pinned VNC distribution.
 
 No legacy inventory profile extension, commands, VNC/session/settings or deletion.
 Core owns policy and durable claim. A loaded plugin is not a completed test case.
@@ -21,7 +21,8 @@ READ='browser_inspect_closed_plugin_preparation_semantic'
 READY='browser_read_closed_plugin_preparation_semantic'
 PROFILE='safe-plugin-preparation-v1'
 VERSIONS={'checkAlive':('1.3.2','B4'),'remoteConnections':('1.3.6','B25'),
-          'storageAudit':('1.3.4','B33'),'defaultNetworkDeviceAudit':('1.3.5','B6')}
+          'storageAudit':('1.3.4','B33'),'defaultNetworkDeviceAudit':('1.3.5','B6'),
+          'vncServer':('1.5.5','B44')}
 STAGES=(('initial_inventory','pluginAudit'),('delivery','managePlugin'),('post_inventory','pluginAudit'))
 
 def now():return datetime.now(timezone.utc).isoformat()

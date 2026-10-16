@@ -1,5 +1,13 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## v426: продолжение после реальной подготовки VNC
+
+Content424 и VNC preparation422 на Windows/Astra завершены, primary425 reviewed; не повторять. Правильность всей ОС/всех ранее пройденных plugins ещё не доказана. Следующий безопасный шаг — отдельная metadata-only observability dedicated Astra (закрытый read-only OS command через прежнюю policy/journal), если контракт/путь/own-result валидированы. Пока не реализовано. Windows8oldprogress остаётся blocker, VNC session требует missing displayMonitoring1.3.2, Tray — desktop, logging — реальные файлы/запись. IDs/границы ролей в recipe v424–426; никакого Jira/Zephyr.
+
+## v423: содержательная проверка и текущие блокеры
+
+Сначала actual424: модель читает оба уже полученных full на каждой ОС, различает intrinsic PASS/BLOCKED и независимое OS/full-case BLOCKED. Предыдущий419 не принят из-за потери статуса в history compaction; причина исправлена отдельно, исходный FAIL сохранён. После full421 — точная preparation vncServer1.5.5 без сеанса, без повторных успешных доставок. VNC endpoint требует displayMonitoring;1.3.2 отсутствует и в storage, и в bundle. Tray endpoint presence/desktop и актуальные logging files остаются отдельными обязательными проверками; catalogue/config не заменяют их. Новая память candidate, Jira/Zephyr без записей. Детали/primary refs — recipe v417–423.
+
 ## v415–416: полный bookkeeping census — не путать со статусом задач на КЕ
 
 Read-only snapshot415 16октября05:52:40UTC: Job20261016-055240-f800cfd5 / tc-93539e2c / ev-703125170ba7. Во всём UQA operation store найдено15исторических unresolved entries: sending0, uncertain2, awaiting_verification13. Ранее отдельно отслеживаемые2UI-операции — только подмножество, не глобальный итог. Полные job/case/operation IDs, updated_at и SHA соответствующих journal файлов сохранены в этом evidence. Это не15новых сбоев текущей кампании и не доказательство15работающих сейчас задач на агентах.

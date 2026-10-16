@@ -7,9 +7,10 @@ from operation_journal import list_operations,reconcile_operation
 from command_stage_runtime import bound
 from plugin_audit_runtime import phase_decision_schema,decode_phase_decision
 
-QUERY='safe-plugin-preparation-v1 checkAlive remoteConnections storageAudit defaultNetworkDeviceAudit initial_inventory post_inventory'
+QUERY='safe-plugin-preparation-v1 checkAlive remoteConnections storageAudit defaultNetworkDeviceAudit vncServer initial_inventory post_inventory'
 SOURCE='UQA-experience/UQA_PARAMETERLESS_PLUGIN_REGRESSION.md'
-PROMPT=('You are UQA preparing one immutable safe audit plugin on one dedicated lab target. '
+PROMPT=('You are UQA preparing one immutable pinned plugin distribution on one dedicated lab target. '
+    'VNC distribution preparation NEVER starts a remote connection or proves a desktop/session. '
     'Select only admitted phase JSON name/arguments; no actions are automatic. Read reviewed memory, '
     'navigate exact CI, inspect readiness. If stale refresh inventory; if an older/absent version requires '
     'delivery, verify your own managePlugin full then fresh post_inventory and loaded version. '

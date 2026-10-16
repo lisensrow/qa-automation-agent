@@ -32,7 +32,7 @@ for name in ['windows','astra']:
         j=store.create_job(request,stand='lab',job_type='manual');jid=j['job_id']
         c=store.add_test_case(jid,'Preparation fixture',requirement=r);cid=c['case_id']
         store.set_job_status(jid,'running');store.update_test_case(jid,cid,status='running')
-        rejected(p.requirement,name,'executeCommand','fixture');rejected(p.requirement,name,'vncServer','fixture')
+        rejected(p.requirement,name,'executeCommand','fixture');rejected(p.requirement,name,'displayMonitoring','fixture')
         rejected(p.requirement,'ubuntu',plugin,'fixture')
         args={'target':name,'plugin_name':plugin,'stage_id':'initial_inventory'}
         rejected(p.admitted_write,store.get_job(jid),cid,{**args,'version':'0.0.0'})
@@ -85,7 +85,7 @@ for name in ['windows','astra']:
         messages=[{'role':'user','content':request}];ctx={'job_id':jid,'case_id':cid,'action_policy':'confirm_mutations'}
         assert uqa.execute_tool_with_policy(p.CREATE,args,messages,force_read_only=True,**ctx).get('error')=='tool_policy_blocked'
         assert not posts and not list_operations(jid)
-        assert uqa.execute_tool_with_policy(p.CREATE,{**args,'plugin_name':'vncServer'},messages,**ctx).get('error')=='locked_plugin_preparation_scope_required'
+        assert uqa.execute_tool_with_policy(p.CREATE,{**args,'plugin_name':'displayMonitoring'},messages,**ctx).get('error')=='locked_plugin_preparation_scope_required'
         stack.enter_context(patch.object(uqa,'managed_action_policy_decision',return_value={'allow':True,'status':'fixture_only'}))
         for sid in ['initial_inventory','delivery','post_inventory']:
             args={'target':name,'plugin_name':plugin,'stage_id':sid}
