@@ -1,5 +1,13 @@
 # План приёмки UQA: дневное продолжение
 
+## v454: current environment repair is not endpoint acceptance
+
+Bounded source transfer455 Job20261016-102750-c661e286/ev-500e3754ac89 matched6/6 withheld facts after model-selected retrieval454,0agent tasks. Operator query/schema/oracle disclosed. Read-only recall is not migration execution, presence proof, VNC/Tray/log-write acceptance or whole-regression PASS; recipe456 retains boundaries and original449 failure.
+
+Operator Guacamole internal URL repair verified healthy/authenticated without rights/security changes, review453 Job20261016-101836-d1357955/ev-b5d50f390bc1. Old442 intents remain uncertain; audited exact-target continuation and fresh native task absence are required before a new VNC attempt. Private UC overlay preserves existing live environment; base-only redeploy is unsafe without reviewing source drift. No new frame/session, Tray desktop or log-write PASS.
+
+Add legacy TightVNC migration before accepting new plugin VNC: UQA identifies actual standalone installation separately from vncServer, uses only verified supported uninstall with normal destructive policy/journal and own result, proves absence and fresh plugin/session readiness. User authorized this dedicated Windows/Astra migration; presence unknown/removal not performed. No blind deletion, guessed command, Windows old-command guard bypass or Jira/Zephyr changes. Recipe v454 retains user-source vs runtime evidence distinction.
+
 Final450:271/271technicalPASS /tmp/v450-final-smoke.log after fixture-only synchronization; original timing failure and449recallFAIL retained. No active new runtime/technical workers. Actual VNC/Windows/Tray/log-write blockers below unchanged, no full business PASS/Jira writes/settings changes. Source448 and final450 memory revisions preserve phase/target/receipt distinctions; technical PASS does not repair model recall.
 
 ## v449–450: memory-transfer limitation retained

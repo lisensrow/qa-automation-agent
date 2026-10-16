@@ -1,5 +1,13 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## v454: VNC migration order and current continuation boundary
+
+Model-only source transfer455 Job20261016-102750-c661e286/ev-500e3754ac89 retrieved454,6/6 withheld facts matched,0agent tasks. Operator query/schema/oracle disclosed; recipe456 preserves receipt. Next runtime migration still needs identity observation and exact supported uninstall contract; source recall is not autonomous execution or closure of original449 failure.
+
+Internal Guacamole URL repaired by operator with explicit authority; same images/environment/security preserved, backend healthy and existing API credentials authenticated. Review453 Job20261016-101836-d1357955/ev-b5d50f390bc1 confirms no tasks in old442 windows, not retry authorization or VNC PASS; retain old uncertain ledger. New audited exact-target continuation must not merely rekey the campaign. Details and private deployment overlay caveat: recipe v454.
+
+User adds migration prerequisite: UQA read-only identifies legacy standalone TightVNC (package/version/service/executable ownership); do not confuse plugin-managed vncServer. Then exact supported uninstall through existing destructive policy/journal/own result, verify legacy absence, fresh loaded plugin and actual VNC. Both legacy presences unknown, neither uninstall executed. Windows historical command guard unchanged. After guarded session acceptance, continue Tray desktop and logging observations; retain existing metadata-only results. No Jira/Zephyr writes or complete regression claim.
+
 Final450:271/271technicalPASS /tmp/v450-final-smoke.log after fixture-only synchronization; original timing failure and449recallFAIL retained. No active new runtime/technical workers. Actual VNC/Windows/Tray/log-write blockers below unchanged, no full business PASS/Jira writes/settings changes. Source448 and final450 memory revisions preserve phase/target/receipt distinctions; technical PASS does not repair model recall.
 
 ## v449–450: memory-transfer limitation retained

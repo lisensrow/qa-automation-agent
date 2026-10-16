@@ -1,5 +1,13 @@
 # Inventory-плагины: проверка доставки и результатов
 
+## v454: legacy VNC migration and operator environment repair
+
+Source-only455 Job20261016-102750-c661e286/ev-500e3754ac89 retrieved454 and matched6/6 withheld migration/role facts,0endpoint tasks. Operator query/schema/oracle vs model retrieval/answer retained in recipe456. This does not prove runtime uninstall/session/Tray/log-write acceptance or eliminate original449 recall failure.
+
+Source/user requirement: remove identified old standalone TightVNC when migrating to supplied plugins; never install it from obsolete examples or remove current plugin binaries. UQA must identify package/service/executable ownership first, then exact supported uninstall under normal destructive policy/journal, own fetch, absence check and fresh plugin/session verification. Dedicated Windows/Astra only; presence unknown, no removal or migration PASS. Existing Windows command guard cannot be bypassed.
+
+Operator repaired internal Guacamole API trailing slash only, public/auth/security unchanged; same images/live env preserved via private UC overlay, health/auth passed. Review453 Job20261016-101836-d1357955/ev-b5d50f390bc1 proves no old442-window tasks, not a remote frame. Old uncertain operations retained; audited continuation still pending. Server500 before dispatch does not establish TightVNC conflict. Recipe v454 contains hashes, roles and deployment caveat. Jira/Zephyr unchanged; no developer-confirmed product fix.
+
 Final450:271/271technicalPASS /tmp/v450-final-smoke.log after fixture-only synchronization; original timing failure and449recallFAIL retained. No active new runtime/technical workers. Actual VNC/Windows/Tray/log-write blockers below unchanged, no full business PASS/Jira writes/settings changes. Source448 and final450 memory revisions preserve phase/target/receipt distinctions; technical PASS does not repair model recall.
 
 ## v449–450: memory-transfer limitation retained

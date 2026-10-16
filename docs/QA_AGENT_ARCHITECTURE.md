@@ -1,5 +1,13 @@
 # Архитектура QA-агента UQA
 
+## v451–454: authorized environment repair; legacy migration prerequisite
+
+Source-only455 Job20261016-102750-c661e286/ev-500e3754ac89 retrieved454 and matched6/6 withheld migration/role booleans. Operator query/schema/oracle disclosed, model selected retrieval/answer,0new agent tasks. Recipe v456 preserves this bounded recall, not autonomous uninstall/VNC acceptance; original449 failure unchanged.
+
+Operator-only Guacamole internal API trailing slash repaired on backend/worker, public URL/auth/security unchanged. Source/live environment drift preserved using a private root-only UC overlay; only those two services recreated, same image IDs, empty queues twice, backend healthy and existing credentials authenticated. See recipe v454 for before/after hashes and deployment caveat. Review453 Job20261016-101836-d1357955/ev-b5d50f390bc1 found no old442-window tasks on either exact target, but old uncertain intents remain unchanged. New guarded continuation still required; no fresh VNC frame or autonomy claim.
+
+User-declared TightVNC migration is a new prerequisite: identify legacy standalone package/service ownership, distinguish current plugin-managed vncServer, then supported exact uninstall through unchanged destructive policy/journal and own verification. No generic shell/delete escape or Windows command-guard bypass. Legacy presence unknown, removal not executed. This source-only requirement is not runtime acceptance or developer confirmation; Jira/Zephyr unchanged.
+
 Final450:271/271technicalPASS /tmp/v450-final-smoke.log after fixture-only synchronization; original timing failure and449recallFAIL retained. No active new runtime/technical workers. Actual VNC/Windows/Tray/log-write blockers below unchanged, no full business PASS/Jira writes/settings changes. Source448 and final450 memory revisions preserve phase/target/receipt distinctions; technical PASS does not repair model recall.
 
 ## v449–450: memory-transfer limitation retained

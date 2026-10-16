@@ -1,5 +1,13 @@
 # История изменений UQA
 
+## v451–454 — internal Guacamole URL repair and legacy TightVNC requirement
+
+Read-only local model455 Job20261016-102750-c661e286/ev-500e3754ac89 retrieved454 and matched6/6 withheld migration/role facts;0agent tasks. Operator query/schema/oracle, model retrieval/answer disclosed; not uninstall acceptance or repair of original449 recall failure. Indexed follow-up source456 preserves proof and initial454 pre-ingest metadata rejection without relaxing validators.
+
+With explicit user authority, operator repaired only internal API path /guacamole/ for backend+worker; public path, credentials, rights and security unchanged. Same-image scoped recreate after empty queues; exact live environment (including preexisting source drift) preserved with private UC overlay, health/auth checks passed. Review453 Job20261016-101836-d1357955/ev-b5d50f390bc1: no old442-window tasks; old uncertain ledger not rewritten. This is environment work, not model/session PASS. Full provenance and private-overlay caveat in recipe v454.
+
+User clarified standalone TightVNC must be removed in plugin migration. Recorded as user requirement with read-only identity first, exact supported uninstall under existing destructive policy/journal, then absence/plugin/session verification. Presence still unknown, nothing removed; no new endpoint tasks, code bypasses, Jira/Zephyr writes or developer-confirmed fix. Autonomous migration/runtime acceptance remains pending.
+
 Final450:271/271technicalPASS /tmp/v450-final-smoke.log after fixture-only synchronization; original timing failure and449recallFAIL retained. No active new runtime/technical workers. Actual VNC/Windows/Tray/log-write blockers below unchanged, no full business PASS/Jira writes/settings changes. Source448 and final450 memory revisions preserve phase/target/receipt distinctions; technical PASS does not repair model recall.
 
 ## v449–450: memory-transfer limitation retained
