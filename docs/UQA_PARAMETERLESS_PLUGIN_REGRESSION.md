@@ -1,5 +1,25 @@
 # UQA: регресс inventory-плагинов без параметров
 
+## v398: tray-support-catalog-read-v1 — GET catalog versions dependencies
+
+Профиль `tray-support-catalog-read-v1` и read-only tool `browser_inspect_tray_catalog_semantic(target, kind)` предназначены ТОЛЬКО для каталога доступных Tray-версий/зависимостей. kind: `versions` или `dependencies`; exact dedicated Windows/Astra context/core1.3.27/OS/64bit, same HTTPS origin и native GET. Нет download, установки, заданий, VNC POST или Jira writes. Каталог глобальный серверный, а target нужен для защищённой привязки контекста; чтение с Windows не является проверкой установленного Tray на Windows/Astra.
+
+Источники: свежий операторский GET установленного OpenAPI395 16октября04:27UTC,1093969bytes/SHA292242e76b9e8c40208e39d9841ffbc0cefcba96bc7ab688a67f53895f33acbb, точно совпал с зарегистрированным260. Профиль7agent operations/9rootmodels SHA0bd5ba1424d48ff19bea129cc6f118980e34095c2caa77d6333a1e9900d13aee. Teacher397 Job20261016-043137-67a2b218/tc-a6936a75/fresh witness ev-33c0d54a3d5d/summary ev-0a9df8b3173a прочитал11защищённых source pages; agent tasks/sessioncalls0. Protected reader260 сохраняет historical/recency unknown; отдельная operator hash recheck не превращает его автоматически в runtime freshness/permission.
+
+| Декларация | Наблюдённая структура |
+| --- | --- |
+| GET /api/v1/agents/tray/versions | AgentTrayVersion[]; required version,trays_info; AgentTrayInfo required os |
+| GET /api/v1/agents/tray/version/dependency | AgentTrayDependency[]; required trays_version,dependency; AgentTrayDependencyInfo required os,files(string[]) |
+| POST /api/v1/agents/{uid}/remote/vnc | required UUID path uid; optional query remote_user_session(string); requestBody не наблюдён; response200 VNCConnection required url,info |
+| VNCConnectionInfo | optional display_info: DisplayInfo или null; DisplayInfo глубже не прочитан, не полный closure |
+
+Task creation отдельно: POST /api/v1/agents/{agent_id}/tasks → CreateTaskRequest, required только name; additional_params и context_params generic object/null. Это НЕ валидатор конкретного plugin payload и не разрешение произвольных задач. Декларация VNC endpoint без body не означает read-only: реальный POST может создавать сеанс; здесь он НЕ выполнялся. URL результата сеанса/секреты не сохранять в shared knowledge. Общий BaseModel пустой object не восполняет отсутствующие plugin contracts.
+
+Новый catalog reader проверяет exact immutable case/source pins и operator witness (не старше1часа), target/core/OS/context; наблюдает массив целиком с бюджетами128versions/32OS/128files/64KiB. Строгие поля/уникальные версии и OS, ограниченные строки, URLs/credential-like значения блокируются; schema change/incomplete/unknown не даёт «совместимо». Результат различает available_catalog_only=true, installation_verified=false, core_plugin_compatibility_verified=false, remote_session_executed=false, task_executed=false, business_pass=false. Даже пустой корректный массив — наблюдение отсутствующих catalog entries, не успешная установка и не доказанная ошибка продукта.
+
+Fixture проверки изолированные. Следующий399 прогон должен дать локальной модели самой выбрать порядок двух GET-read kinds и прочитать actual catalog через unchanged Core policy; scope/query/phase transport операторски подготовлены, это не normal freeform/run_turn orchestration и не source-case PASS. В момент этой редакции реальных catalog GET ещё не было; результаты399 сохранять отдельной revision, не подставлять ожидаемые версии. Jira/Zephyr полностью read-only.
+
+
 ## v393–394: ограничение recall истории подтверждено, повтор подсказок остановлен
 
 Source-only393 Job20261016-041752-44211cff/tc-55de15b3/ev-d6faecd2b419 (retrieval ev-b924d46c25f7) прочитал typed ledger392 и390. Те же12вопросов и expected391 проверены побайтно (кроме технического номера прогона). Снова11/12: модель смешала первоначальную Windows попытку с продолжением, хотя объяснение упомянуло NOT_SENT. Это **повторный FAIL**, не исправление памяти и не бизнес-регресс. Никаких новых agent tasks/operations/Jira writes.

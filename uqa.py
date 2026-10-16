@@ -2033,6 +2033,7 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        'browser_inspect_tray_catalog_semantic',
         'browser_read_closed_plugin_discovery_semantic',
         'browser_inspect_closed_plugin_discovery_semantic',
         'browser_read_closed_plugin_preparation_semantic',
@@ -4635,6 +4636,14 @@ def execute_tool_with_policy(
                         'executed': False, 'action_class': action_class,
                         'action_policy_status': 'blocked_by_advisory_contract'}
 
+    if name=='browser_inspect_tray_catalog_semantic':
+        try:
+            from tray_catalog import validate_context
+            validate_context(get_job(job_id),case_id,arguments)
+        except (ValueError,TypeError,KeyError,AttributeError):
+            return {'error':'locked_tray_catalog_scope_required','executed':False,
+                'action_class':action_class,'action_policy_status':'blocked_by_catalog_scope'}
+
     if name in {'browser_create_closed_plugin_discovery_semantic','browser_inspect_closed_plugin_discovery_semantic','browser_read_closed_plugin_discovery_semantic'}:
         try:
             from plugin_discovery import CREATE,READ,admitted_write,validate_context
@@ -5241,7 +5250,11 @@ def execute_tool_with_policy(
             resource_arguments["external_id"] = None
             ignored_external_id = proposed_external_id
 
-    if name in {'browser_create_closed_plugin_discovery_semantic','browser_inspect_closed_plugin_discovery_semantic','browser_read_closed_plugin_discovery_semantic'}:
+    if name=='browser_inspect_tray_catalog_semantic':
+        from tools.browser import _session
+        from tray_catalog import inspect as inspect_tray_catalog
+        invoke=lambda:inspect_tray_catalog(_session,arguments['target'],arguments['kind'],job_id,case_id)
+    elif name in {'browser_create_closed_plugin_discovery_semantic','browser_inspect_closed_plugin_discovery_semantic','browser_read_closed_plugin_discovery_semantic'}:
         from tools.browser import _session
         from plugin_discovery import CREATE,READ,create,read,read_ready
         if name==CREATE:invoke=lambda:create(_session,arguments['target'],arguments['plugin_name'],arguments['stage_id'],job_id,case_id)

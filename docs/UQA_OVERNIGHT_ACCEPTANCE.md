@@ -1,5 +1,12 @@
 # План приёмки UQA: дневное продолжение
 
+## v395–398: свежая схема и ограниченный Tray catalog reader
+
+Operator395 прочитал установленный OpenAPI:1093969bytes/SHA292242e76b9e8c40208e39d9841ffbc0cefcba96bc7ab688a67f53895f33acbb совпадает с260. Teacher397 Job20261016-043137-67a2b218/tc-a6936a75/ev-0a9df8b3173a +fresh witness ev-33c0d54a3d5d прочитал11protected pages Tray/VNC; задач/сеансов0. Версии Tray и dependencies — отдельные GET, VNC-создание — отдельный POST с required path uid и optional query remote_user_session; session не запускался. CreateTaskRequest.additional_params generic object/null, не контракт всех плагинов.
+
+Новый tray-support-catalog-read-v1/browser_inspect_tray_catalog_semantic(target,kind=versions|dependencies) допускает только bounded same-origin GET каталога на exact Windows/Astra context/core1.3.27 с проверкой источника. Не скачивает/не устанавливает/не создаёт задачи или сеанс; available не значит installed/compatible/PASS. Далее399 prepared local-model read-only acceptance, ещё не выполнена; fixture tests не считать реальными кейсами. История и прежние blockers сохранены; Jira/Zephyr без изменений.
+
+
 ## v393–394: historical recall остаётся ограничением
 
 Source-only393 Job20261016-041752-44211cff/tc-55de15b3/ev-d6faecd2b419 повторил11/12 при тех же вопросах/expected391: прежняя Windows NOT_SENT попытка снова смешана с успешным продолжением. Ledger392 действительно был в retrieved context. FAIL сохранён, live tasks/ops0; больше одинаковых подсказок/прогонов нет. Четыре реальных main execution/0full cases не меняются, native replay journal не зависит от этого ошибочного ответа.

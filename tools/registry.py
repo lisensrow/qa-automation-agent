@@ -177,6 +177,10 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {'type':'function','function':{'name':'browser_inspect_tray_catalog_semantic',
+        'description':'OBSERVE: closed same-origin Tray versions or dependency GET for an exact locked dedicated lab case. Available files/versions are NOT installed/compatible/session PASS. No file downloads or task creation.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['target','kind'],
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'kind':{'type':'string','enum':['versions','dependencies']}}}}},
     {'type':'function','function':{'name':'browser_create_closed_plugin_discovery_semantic',
         'description':'WRITE: locked one-shot benign checkAlive/remoteConnections main discovery only. Exact two lab targets; Core policy/journal. No delivery, commands or remote sessions. Not semantic PASS.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name','stage_id'],
@@ -2372,6 +2376,8 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_inspect_tray_catalog_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_create_closed_plugin_discovery_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_inspect_closed_plugin_discovery_semantic":
