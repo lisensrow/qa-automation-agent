@@ -1,5 +1,19 @@
 # История изменений UQA
 
+Final480: fresh model479 Job20261016-120215-63bbc4bd/ev-8f4fb0d41aab/report ev-7567b39813bb verified TightVNC2.8.85.0 PRESENT and MSI ProductCode via strict non-executing projection. Earlier metadata-unavailable wording superseded (projection omission); no uninstall. Operator readonly481 Job20261016-120725-6258a420/ev-c39e9bcffe3f confirms8old Windows commands still progress; no cancellation/bypass. Latest full479276technicalPASS. Tray loaded both only; VNC/client-task mapping, desktop and current log write remain BLOCKED.477decision FAIL retained, no full regression/autonomy claim. See recipe480 for primary IDs/roles/limitations; Jira/Zephyr untouched.
+
+## v457–476 — bounded migration diagnosis and actual model continuations
+
+Final478 retained actual source-only477115020-50fe9aba/ev-7f5d1859f28c strict FAIL: incorrect ALREADY_REMOVED next-step decision despite uninstall_completed=false; other6fields matched,0tasks. No hints/retry/promotion. Corrected four prose citation typos against primary Jobs without changing source oracles; history/backups retained. Full276technicalPASS/22MD checks do not override model failure. Global20unresolved(0sending/5uncertain/15awaiting), not running task count; old17unchanged. Detailed positive outcomes/roles/blockers in recipe476/478; no Jira writes or uninstall/session completion.
+
+Final476: supplied trayControl1.0.1 fresh loaded BOTH OS. Windows473114050-7ba0d89e/ev-4b846cdb1f32 completed2verified operations. Astra475114519-c8302051/ev-88da1b342380 completed1verified inventory-only continuation, no duplicate delivery; original473delivery awaiting retained. Final474276technicalPASS,22MD valid. Details in recipe476; no startup/desktop/VNC/full-source PASS. Memory476 candidate indexed with snapshots/dedup/integrity/retrieval/1223unrelated chunks preserved; role/failure history retained.
+
+Added fixed Astra legacy identity diagnostic and TightVNC-only softAudit projection. Model463 found Windows TightVNC2.8.85.0, no executable/uninstall ownership; Astra package/process/software lookups empty, not global absence. No uninstall or Windows command-guard bypass. Real VNC462 after authorized URL repair failed HTTP400: init task plugin not loaded and display active client not connected. Operator464/465 evidence retained, no UC routing/security patch or developer-confirmed bug. Pin-copy typo460 correctly refused before POST;64hex regression added.
+
+Added separate post-event log-baseline observation and protected native receipt rebind; historical results cannot pass unchanged5min freshness/reconcile old execution. Model470 read SAME468 task without resend:2logs/unchanged last write, Tray files only, original incomplete trace and awaiting intent retained. Fixed exact source-query selection and bounded poll pacing, with failed originals preserved. Source-only/model-led/framework/operator boundaries documented.
+
+Supplied trayControl1.0.1 preparation added to normal Core/registry/source validators, no main startup/control action. Windows473 completed2verified delivery/post-inventory operations; Astra delivery partial, inventory-only continuation pending, no duplicate delivery. Focused fixtures cover source/platform ownership, policy, delayed same-ID reads, forged recovery and stale rejection; full technical results tracked separately, not source-case counts. Deep memory457/466/472 indexed with snapshots/dedup/integrity/retrieval and1223unrelated chunks preserved. Jira/Zephyr untouched.
+
 ## v451–454 — internal Guacamole URL repair and legacy TightVNC requirement
 
 Read-only local model455 Job20261016-102750-c661e286/ev-500e3754ac89 retrieved454 and matched6/6 withheld migration/role facts;0agent tasks. Operator query/schema/oracle, model retrieval/answer disclosed; not uninstall acceptance or repair of original449 recall failure. Indexed follow-up source456 preserves proof and initial454 pre-ingest metadata rejection without relaxing validators.

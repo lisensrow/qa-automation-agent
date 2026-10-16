@@ -1,5 +1,21 @@
 # Inventory-плагины: проверка доставки и результатов
 
+Final480: fresh model479 Job20261016-120215-63bbc4bd/ev-8f4fb0d41aab/report ev-7567b39813bb verified TightVNC2.8.85.0 PRESENT and MSI ProductCode via strict non-executing projection. Earlier metadata-unavailable wording superseded (projection omission); no uninstall. Operator readonly481 Job20261016-120725-6258a420/ev-c39e9bcffe3f confirms8old Windows commands still progress; no cancellation/bypass. Latest full479276technicalPASS. Tray loaded both only; VNC/client-task mapping, desktop and current log write remain BLOCKED.477decision FAIL retained, no full regression/autonomy claim. See recipe480 for primary IDs/roles/limitations; Jira/Zephyr untouched.
+
+## v476: migration and partial runtime results
+
+Final478: source-only477115020-50fe9aba/ev-7f5d1859f28c strict decision FAIL,0tasks: ALREADY_REMOVED next step contradicted uninstall_completed=false;6other fields matched. Permission/preparation do not prove uninstall execution or absence. No corrective replay/promotion; loaded Tray and276technicalPASS remain bounded, not free-planning/source-case acceptance. Primary citation metadata corrected, history/oracles intact. Global20unresolved(0sending/5uncertain/15awaiting) is ledger bookkeeping, not current task count; recipe478 holds proofs/limits. Jira/Zephyr untouched.
+
+Final476 update: both OS fresh loaded trayControl1.0.1. Windows473114050-7ba0d89e/ev-4b846cdb1f32 completed2verified ops; Astra475114519-c8302051/ev-88da1b342380 completed1inventory-only continuation, no redelivery or old473intent promotion. No startup/desktop/VNC/source-case PASS. Final474276/276technical smoke and22Markdown checks passed separately; source476 candidate indexed with provenance and unchanged unrelated memory. Detailed primary refs in recipe476.
+
+UQA463 fresh software audit found Windows TightVNC2.8.85.0, empty path/no supported uninstall ownership; no removal. Astra package/process/software0matches is not global filesystem absence. Old Windows executeCommand guard remains. Closed identity and bounded TightVNC-only projection never expose unrelated inventory/uninstallString or grant removal authority.
+
+Actual VNC462 Astra after operator URL repair: HTTP400, display task success with active-client error, initRemoteDesktopConnection error/plugin not loaded. Operator464/465 native/source diagnosis, no frame/confirmed bug/UC routing or security patch. New exact review continuation preserves old uncertainty; pin typo460NOT_SENT retained and64hex check added.
+
+Model470 read same468 log task after premature polling stop:2logs/unchanged mtime and Tray files only. Protected receipt rebind allows truthful historical reads, not current postcondition/execution promotion;5min freshness and old5s oracle unchanged, old intent awaiting, no repeat command. Source lookup/native polling fixes are disclosed framework assistance.
+
+Windows473 supplied trayControl1.0.1 delivery+fresh load verified in2operations; Astra delivery partial, separate inventory-only continuation pending. No main start/stop, desktop/icon or full source-case PASS. Core policy/source/OS-check/no-deletion/journal unchanged, source429 authority verified for bothOS. Exact Job/evidence refs and later Astra outcome in recipe/plan; Jira/Zephyr untouched. Technical fixtures/suite are not regression percentages.
+
 ## v454: legacy VNC migration and operator environment repair
 
 Source-only455 Job20261016-102750-c661e286/ev-500e3754ac89 retrieved454 and matched6/6 withheld migration/role facts,0endpoint tasks. Operator query/schema/oracle vs model retrieval/answer retained in recipe456. This does not prove runtime uninstall/session/Tray/log-write acceptance or eliminate original449 recall failure.

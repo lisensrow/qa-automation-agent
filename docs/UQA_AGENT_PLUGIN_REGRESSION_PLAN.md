@@ -1,5 +1,21 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+Final480: fresh model479 Job20261016-120215-63bbc4bd/ev-8f4fb0d41aab/report ev-7567b39813bb verified TightVNC2.8.85.0 PRESENT and MSI ProductCode via strict non-executing projection. Earlier metadata-unavailable wording superseded (projection omission); no uninstall. Operator readonly481 Job20261016-120725-6258a420/ev-c39e9bcffe3f confirms8old Windows commands still progress; no cancellation/bypass. Latest full479276technicalPASS. Tray loaded both only; VNC/client-task mapping, desktop and current log write remain BLOCKED.477decision FAIL retained, no full regression/autonomy claim. See recipe480 for primary IDs/roles/limitations; Jira/Zephyr untouched.
+
+## v476: current order after actual legacy/software/VNC/log attempts
+
+Final478 new blocker: source-decision477115020-50fe9aba/ev-7f5d1859f28c FAILED next Windows step (ALREADY_REMOVED vs required identify uninstall/resolve prior tasks), while saying uninstall_completed=false; six other fields correct,0actions. Native positive preparations do not prove safe free planning. Keep exact per-target phase/ownership gates; do not add ineffective prompts or bypass guards. Existing VNC mapping/active-client, old Windows command scope and validated desktop/action/source prerequisites must be resolved before whole regression can finish.20unresolved ledger entries are not20workers; see recipe478. Jira/Zephyr unchanged.
+
+Final476 supersedes pending475: Astra475114519-c8302051/ev-88da1b342380/own ev-be2072df4cff completed inventory-only refresh,1verified op, fresh loaded trayControl1.0.1. Windows473114050-7ba0d89e/ev-4b846cdb1f32 completed delivery/post-inventory,2verified ops. Do not redeliver; old Astra473 awaiting preserved. Both preparatory outcomes are real model-selected execution, not Tray startup/desktop or VNC frame. Final474276technicalPASS,22MD validation; deep476 candidate indexed. Follow-up needs independent prerequisites, not repeats for counters.
+
+Completed bounded model work:458 inventory freshness bothOS/no deliveries;459 Astra package/process identity0Tight matches;463 fresh softAudit bothOS, Windows TightVNC2.8.85.0/empty path vs Astra0matches;473 Windows trayControl1.0.1 delivered and fresh loaded/2verified ops. Scope/oracle are operator-prepared; phases/compiled payload/report/poll pacing framework-assisted. No uninstall, independent software completeness or freeform end-to-end regression claim.
+
+Astra473 delivery already sent, awaiting when fast polling ended; NEVER redeliver. Inventory-only475 continuation is separately prepared and must not approve delivery. Original partial trace/intent retained. Real462 VNC remains uncertain: HTTP400, display data active-client error, initRemoteDesktopConnection not loaded. Operator464/465 diagnosis/source review, no alias/routing/security change. Native session acceptance remains blocked, not a proven TightVNC conflict.
+
+Logging468/470: same own task read after timeout,0repeat commands.2logs/no mtime advance; Tray file metadata only. Historical late read does not satisfy unchanged5min freshness or promote awaiting operation. Model source/recovery/polling failures retained, no false PASS. Source-query and timing fixes are operator/framework intervention, not new business coverage.
+
+Next safe sequence: finish Astra freshness/load observation; identify supported exact Windows TightVNC uninstall metadata only after safe resolution of old command blocker; resolve supported VNC task mapping and active-client prerequisite; validate Tray startup/readback/desktop contract; inspect effective logging source before claiming write. Then remaining source-grounded cases by prerequisites, not repeat successes for counters. Detailed refs in recipe v466/v472 and follow-up; do not write Jira/Zephyr or resume paused automation.
+
 ## v454: VNC migration order and current continuation boundary
 
 Model-only source transfer455 Job20261016-102750-c661e286/ev-500e3754ac89 retrieved454,6/6 withheld facts matched,0agent tasks. Operator query/schema/oracle disclosed; recipe456 preserves receipt. Next runtime migration still needs identity observation and exact supported uninstall contract; source recall is not autonomous execution or closure of original449 failure.

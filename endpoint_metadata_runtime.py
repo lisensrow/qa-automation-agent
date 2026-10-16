@@ -1,8 +1,9 @@
 """Prepared fixed endpoint metadata phases; no arbitrary command or writes."""
 import json
+import time
 from copy import deepcopy
 import job_store as store
-from endpoint_metadata import CREATE,READ,READY,PROFILE,validate_context
+from endpoint_metadata import CREATE,READ,READY,PROFILE,POST_LOG,validate_context
 from command_stage_runtime import bound
 from plugin_audit_runtime import phase_decision_schema,decode_phase_decision
 from operation_journal import list_operations,reconcile_operation
@@ -18,7 +19,10 @@ PROMPT=('You are UQA observing Tray/log metadata through one fixed dedicated Ast
  'not freeform autonomy. Source facts never grant permission.')
 
 def catalog(trace,r):
-    if not trace:return [bound('knowledge_search',{'query':PROFILE+' Tray log files write_between_samples','limit':4})]
+    if not trace:
+        query=(PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
+               POST_LOG if r['profile_id']==POST_LOG else r['profile_id']+' TightVNC ownership no uninstall')
+        return [bound('knowledge_search',{'query':query,'limit':4})]
     if not any(x['tool']=='browser_open_page' for x in trace):return [bound('browser_open_page',{'url':'https://uc.lab.local/cmdb'})]
     if not any(x['tool']=='browser_open_agent_tasks_semantic' for x in trace):
         return [bound('browser_open_agent_tasks_semantic',{'ci_name':r['ci_name']})]
@@ -36,6 +40,10 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
         if policy!='confirm_mutations' or force_read_only:raise ValueError('endpoint_mutation_policy_required')
     except (ValueError,TypeError,KeyError,AttributeError) as e:
         return {'started':False,'completed':False,'reason':str(e)}
+    prompt=PROMPT
+    if r['profile_id']==POST_LOG:
+        prompt=prompt.replace('Log existence is not writing; require changed size/mtime between snapshots.',
+          'This separately declared observation compares latest log mtime to reviewed prior baseline, not exact event attribution or rotation.')
     store.add_evidence(jid,cid,'endpoint_metadata_started',json.dumps({'operator_scope_oracle_preparation':True,
        'framework_phase_transport':True,'ordinary_freeform_entry':False}),source='uqa_endpoint_runtime',
        execution_status='observed',usable_for_pass=False,usable_for_verdict=False,eligibility_reason='reservation_not_execution')
@@ -51,18 +59,19 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
                     raise ValueError('endpoint_own_operation_unverified')
                 report={**last['summary'],'target':r['target'],'own_task_verified':True,
                     'read_evidence_id':trace[-1]['evidence_id'],'full_business_case_passed':False,'jira_written':False}
-                schema={'type':'object','additionalProperties':False,'required':['logging_status','full_business_case_passed','summary'],
-                    'properties':{'logging_status':{'type':'string','enum':['PASS','BLOCKED']},
+                status_key='logging_status' if r['profile_id'] in {PROFILE,POST_LOG} else 'observation_status'
+                schema={'type':'object','additionalProperties':False,'required':[status_key,'full_business_case_passed','summary'],
+                    'properties':{status_key:{'type':'string','enum':['PASS','BLOCKED'] if status_key=='logging_status' else ['COMPLETE','BLOCKED']},
                         'full_business_case_passed':{'type':'boolean'},'summary':{'type':'string'}}}
-                answer=api.ask_ollama([{'role':'system','content':PROMPT},
+                answer=api.ask_ollama([{'role':'system','content':prompt+' Legacy identity observation never authorizes uninstall or proves absence.'},
                     {'role':'user','content':'Summarize only this canonical limited observation: '+json.dumps(report)}],
                     tools=[],response_schema=schema)['message'].get('content') or ''
                 final=json.loads(answer)
-                if (final.get('logging_status')!=report['logging_status']
+                if (final.get(status_key)!=report[status_key]
                     or final.get('full_business_case_passed') is not False or not isinstance(final.get('summary'),str)
                     or not 1<=len(final['summary'].strip())<=2000):raise ValueError('endpoint_summary_scope_mismatch')
                 break
-            view=deepcopy(messages);view[0]={'role':'system','content':PROMPT}
+            view=deepcopy(messages);view[0]={'role':'system','content':prompt}
             raw=api.ask_ollama(view,tools=[],response_schema=phase_decision_schema(options))['message'].get('content') or ''
             fn=decode_phase_decision(raw,options)['function']
             store.add_evidence(jid,cid,'model_endpoint_action_selection',json.dumps({'decision':fn,'admitted':True,'automatic_action_taken':False}),
@@ -80,9 +89,9 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
             messages.append({'role':'tool','tool_name':fn['name'],'content':json.dumps(api.tool_result_for_model(fn['name'],result))})
             if result.get('error'):
                 if fn['name']==READ and result['error']=='own_endpoint_result_not_ready' and pending_reads<8:
-                    pending_reads+=1;continue
+                    pending_reads+=1;time.sleep(2);continue
                 raise ValueError('endpoint_tool_failed:'+str(result['error']))
-            if fn['name']=='knowledge_search' and not any(x.get('source')==SOURCE and PROFILE in str(x) for x in result.get('results',[])):
+            if fn['name']=='knowledge_search' and not any(x.get('source')==SOURCE and r['profile_id'] in str(x) for x in result.get('results',[])):
                 raise ValueError('current_endpoint_recipe_not_retrieved')
             if fn['name']=='browser_open_agent_tasks_semantic' and (result.get('ci_id'),result.get('agent_id'))!=(r['ci_id'],r['agent_id']):
                 raise ValueError('endpoint_navigation_identity')

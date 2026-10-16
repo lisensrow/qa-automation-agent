@@ -1,6 +1,7 @@
 """Prepared model-selected preparation, not a source plugin test or freeform plan."""
 from copy import deepcopy
 import json
+import time
 import job_store as store
 from plugin_preparation import validate_context,CREATE,READ,READY
 from operation_journal import list_operations,reconcile_operation
@@ -109,7 +110,7 @@ def run(api,messages,job_id,case_id,action_policy,force_read_only=False):
             if result.get('error'):
                 if name==READ and result['error']=='own_preparation_result_not_ready':
                     polls[args['task_id']]=polls.get(args['task_id'],0)+1
-                    if polls[args['task_id']]<=8:continue
+                    if polls[args['task_id']]<=8:time.sleep(2);continue
                 raise ValueError('preparation_tool_failed:'+str(result['error']))
             if name=='knowledge_search':
                 recipe=any(x.get('source')==SOURCE and all(k in str(x) for k in ['safe-plugin-preparation-v1','post_inventory']) for x in result.get('results',[]))

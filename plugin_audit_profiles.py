@@ -2,7 +2,9 @@
 import hashlib
 import json
 import math
+import re
 from copy import deepcopy
+from uuid import UUID
 
 PROFILES={
  'driveDeviceAudit':('1.3.5',1,{'fsType':'str','mountPoint':'str','serialNumber':'str','size':'number','type':'str','uid':'str'}),
@@ -44,10 +46,31 @@ def summarize(name,data):
                 counts[key]+=int(key in row and types[kind](row[key]))
     checks['object_rows']=malformed==0 and checks['container']
     for key,count in counts.items(): checks['field.'+key]=bool(rows) and count==len(rows) and checks['container'] and checks['bounded']
-    return {'container':container,'item_count':len(rows) if checks['container'] else None,
+    result={'container':container,'item_count':len(rows) if checks['container'] else None,
         'checks':checks,'field_valid_counts':counts,'structure_subset_matched':all(checks.values()),
         'data_sha256':hashlib.sha256(json.dumps(data,sort_keys=True,ensure_ascii=False).encode()).hexdigest(),
         'full_case_passed':False,'value_completeness_verified':False}
+    if name=='softAudit':
+        matches=[]
+        if checks['container'] and checks['bounded']:
+            for row in rows:
+                label=row.get('name') if isinstance(row,dict) else None
+                if isinstance(label,str) and len(label)<=256 and re.match(r'^tightvnc(?:\b|[ _-])',label,re.I):
+                    item={k:row[k] for k in ['name','version','exePath']
+                        if isinstance(row.get(k),str) and len(row[k])<=4096}
+                    uninstall=row.get('uninstallString')
+                    if isinstance(uninstall,str) and len(uninstall)<=512:
+                        m=re.fullmatch(r'(?i)\s*"?msiexec(?:\.exe)?"?\s+/([ix])\s*(\{[0-9a-f-]{36}\})\s*',uninstall)
+                        if m:
+                            try:product='{'+str(UUID(m[2][1:-1])).upper()+'}'
+                            except ValueError:product=None
+                            if product:item['msi_metadata']={'product_code':product,'observed_switch':'/'+m[1].upper(),
+                                'uninstall_executed':False,'raw_command_disclosed':False}
+                    matches.append(item)
+        result['legacy_vnc_software_observation']={'matches':matches[:100],
+            'bounded':checks['bounded'] and len(matches)<=100,'package_ownership_verified':False,
+            'absence_proved':False,'uninstall_authorized':False}
+    return result
 
 def scopes(req):
     s=req['pinned_audit_task'];p=profile(s['task_name'])

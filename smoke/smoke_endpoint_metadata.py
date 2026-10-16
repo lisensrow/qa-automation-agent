@@ -81,10 +81,24 @@ for name in ['windows','astra']:
    assert out['executed'] is False and not posts and list_operations(jid)[0]['status']=='not_sent'
    continue
   out=uqa.execute_tool_with_policy(p.CREATE,args,messages,**ctx);assert out.get('executed') is True,out
-  uqa.record_tool_evidence(jid,cid,p.CREATE,args,out)
+  ce=uqa.record_tool_evidence(jid,cid,p.CREATE,args,out)
+  session.session_id='fixture-read-recovery';session._owned_endpoint_metadata={}
+  rebound=p.rebind_owned_receipt(session,name,jid,cid)
+  assert rebound['rebound'] and not rebound['mutation_executed'] and len(posts)==1
+  reject(p.rebind_owned_receipt,session,name,jid,cid)
   wrong[0]=True;assert p.read(session,name,jid,cid)['error']=='own_endpoint_identity_freshness';wrong[0]=False
+  with patch.object(p,'audit_result_is_fresh',return_value=False):
+   historic=p.read(session,name,jid,cid)
+   assert historic['historical_result_verified'] and not historic['native_result_verified']
+   assert historic['summary']['logging_status']=='BLOCKED'
+   he=uqa.record_tool_evidence(jid,cid,p.READ,args,historic)
+   assert not p.evaluate(store.get_job(jid),list_operations(jid)[0],he['evidence_id'],r['operation_stages'][0]['verification'])['verified']
   result=uqa.execute_tool_with_policy(p.READ,args,messages,**ctx);assert result.get('native_result_verified') is True,result
   ev=uqa.record_tool_evidence(jid,cid,p.READ,args,result)
+  op=list_operations(jid)[0]
+  bad={**result,'recovery_receipt_sha256':'0'*64}
+  fake=uqa.record_tool_evidence(jid,cid,p.READ,args,bad)
+  assert not p.evaluate(store.get_job(jid),op,fake['evidence_id'],r['operation_stages'][0]['verification'])['verified']
   op=list_operations(jid)[0];assert reconcile_operation(jid,op['operation_id'],ev['evidence_id'])['verified']
   assert result['summary']['logging_status']=='PASS' and not result['summary']['tray_desktop_verified']
   assert len(posts)==1

@@ -15,8 +15,10 @@ READY='browser_read_closed_vnc_readiness_semantic'
 PROFILE='supplied-vnc-receive-session-v1'
 TASKS=('displayMonitoring','initRemoteDesktopConnection')
 PLUGIN_VERSIONS={'displayMonitoring':'1.3.1','vncServer':'1.5.5'}
+REPAIR_REVIEW={'job_id':'20261016-101836-d1357955','evidence_id':'ev-b5d50f390bc1',
+ 'sha256':'66d13feadda926930ddc096a92d6b9658fa70c6d4707968365197a1911afe319'}
 
-def requirement(name,campaign):
+def requirement(name,campaign,repair_review=None):
     t=target(name)
     if not isinstance(campaign,str) or not 1<=len(campaign)<=80 or not campaign.replace('-','').isalnum():
         raise ValueError('closed_vnc_campaign_required')
@@ -30,12 +32,15 @@ def requirement(name,campaign):
       'resource_key':'agent-'+t['agent_id']+'-vnc-session','tool':CREATE,'arguments':{'target':name},
       'verification':{'version':1,'kind':'owned_vnc_session','origin':ORIGIN,'target':name,
           'ci_id':t['ci_id'],'agent_id':t['agent_id'],'profile_id':PROFILE}}]
+    if repair_review is not None:
+        if repair_review!=REPAIR_REVIEW:raise ValueError('exact_authorized_vnc_repair_review_required')
+        r['prior_attempt_review']=deepcopy(repair_review)
     return r
 
 def validate_context(job,cid,starting=False):
     if not isinstance(job,dict) or len(job.get('test_cases',[]))!=1:raise ValueError('single_vnc_case_required')
     c=job['test_cases'][0];r=c.get('requirement') or {}
-    if (c.get('case_id')!=cid or r!=requirement(r.get('target'),r.get('campaign_id'))
+    if (c.get('case_id')!=cid or r!=requirement(r.get('target'),r.get('campaign_id'),r.get('prior_attempt_review'))
         or job.get('stand')!='lab' or job.get('status')!='running' or c.get('status')!='running'
         or job.get('job_type') not in {'manual','regression'} or job.get('resources')):
         raise ValueError('locked_vnc_context_required')
@@ -156,6 +161,44 @@ def validate_url(url):
         raise ValueError('same_origin_private_vnc_tunnel_required')
     return True
 
+def reviewed_attempt_allows(r,old,case,operations,before):
+    """One exact operator-reviewed pre-dispatch failure, never general resend authority."""
+    try:
+        if r.get('prior_attempt_review')!=REPAIR_REVIEW:return False
+        review=job_store.get_job(REPAIR_REVIEW['job_id'])
+        evs=[e for c in review['test_cases'] for e in c.get('evidence',[]) if e['evidence_id']==REPAIR_REVIEW['evidence_id']]
+        if len(evs)!=1:return False
+        e=evs[0]
+        if (e.get('source')!='operator_authorized_environment_repair_review'
+            or e.get('type')!='operator_guacamole_repair_review' or e.get('execution_status')!='observed'
+            or e.get('usable_for_pass') is not False or e.get('usable_for_verdict') is not False
+            or hashlib.sha256(e['value'].encode()).hexdigest()!=REPAIR_REVIEW['sha256']):return False
+        b=json.loads(e['value'])
+        if (b.get('schema')!='uqa.authorized-vnc-url-repair-review.v1'
+            or any(b.get(k) is not True for k in ['user_authorized_url_repair_and_continuation','old_ledger_unchanged',
+              'public_DSN_unchanged','exact_live_environment_preserved_except_internal_url',
+              'images_security_mounts_ports_unchanged','backend_healthy','guacamole_api_authenticated',
+              'operator_prepared_continuation_not_uninterrupted_autonomy'])
+            or b.get('internal_API_path')!='/guacamole/'
+            or b.get('configuration_after_sha256')!='ac67fc2f2bb98b98b3c896d8d142fee9dd5272cd336300c4769938444f92151d'
+            or b.get('continuation_scope')!='one_new_attempt_per_exact_target_after_fresh_native_absence_check'
+            or b.get('new_agent_tasks')!=0 or b.get('business_pass') is not False):return False
+        rows=[x for x in b['rows'] if x['target']==r['target']]
+        if len(rows)!=1 or len(operations)!=1:return False
+        row=rows[0];op=operations[0]
+        if (row['prior_job_id']!=old['job_id'] or row['prior_case_id']!=case['case_id']
+            or row['prior_operation_id']!=op['operation_id'] or op['case_id']!=case['case_id']
+            or op['tool']!=CREATE or op['status']!='uncertain' or row['prior_operation_status']!='uncertain'
+            or row['prior_created_at']!=op['created_at'] or row['no_tasks_in_prior_window'] is not True
+            or any(row[k]!=r[k] for k in ['agent_id','ci_id'])
+            or case['requirement']!=requirement(r['target'],'uqa-vnc-v442')):return False
+        at=stamp(op['created_at'])
+        for task in TASKS:
+            if any(-120<=(stamp(x['created_at'])-at).total_seconds()<=180
+                for x in complete_tasks(r['target'],before[task],task)):return False
+        return True
+    except (ValueError,TypeError,KeyError,AttributeError,IndexError):return False
+
 def frame_ok(frame):
     return (isinstance(frame,dict) and frame.get('desktop_input') is False and frame.get('syncs',0)>0
       and any(type(x.get('width')) is int and 0<x['width']<=16384 and type(x.get('height')) is int
@@ -167,6 +210,7 @@ def frame_ok(frame):
 
 def create(session,name,jid,cid):
     try:
+        _,current_requirement=validate_context(job_store.get_job(jid),cid)
         stage=admit(job_store.get_job(jid),cid,{'target':name})
         ops=list_operations(jid)
         own=[o for o in ops if o['case_id']==cid and o['status']=='sending'
@@ -189,7 +233,8 @@ def create(session,name,jid,cid):
             for c in old.get('test_cases',[]):
                 r=c.get('requirement') or {}
                 if r.get('type')=='closed_vnc_session' and r.get('target')==name:
-                    if any(o['status'] not in {'not_sent','rejected'} for o in list_operations(old['job_id'])):
+                    oldops=list_operations(old['job_id'])
+                    if any(o['status'] not in {'not_sent','rejected'} for o in oldops) and not reviewed_attempt_allows(current_requirement,old,c,oldops,before):
                         raise ValueError('prior_vnc_attempt_requires_review_no_rekey')
         opid=own[0]['operation_id']
     except Exception as e:return refusal(str(e)[:140] if isinstance(e,ValueError) else 'vnc_preflight_refused')

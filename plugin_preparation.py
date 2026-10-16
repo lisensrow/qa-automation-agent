@@ -8,6 +8,7 @@ from datetime import datetime,timezone
 from pathlib import Path
 from uuid import UUID
 import hashlib,json,re
+from time import sleep
 import job_store
 from command_probe_contract import target,validate_target_state,validate_task_list,CORE,ORIGIN
 from command_stage_native import context,read_json,refusal
@@ -22,7 +23,7 @@ READY='browser_read_closed_plugin_preparation_semantic'
 PROFILE='safe-plugin-preparation-v1'
 VERSIONS={'checkAlive':('1.3.2','B4'),'remoteConnections':('1.3.6','B25'),
           'storageAudit':('1.3.4','B33'),'defaultNetworkDeviceAudit':('1.3.5','B6'),
-          'vncServer':('1.5.5','B44'),'displayMonitoring':('1.3.1',None)}
+          'vncServer':('1.5.5','B44'),'displayMonitoring':('1.3.1',None),'trayControl':('1.0.1',None)}
 RELEASE_JOB='20261016-080945-97356d77'
 RELEASE_EVIDENCE='ev-69afc9ba8a85'
 RELEASE_WITNESS_SHA='2818fd67e9c683b5b676707a634b7ee4a19ff27dd5a69d529c1b026cb7e77ba3'
@@ -55,6 +56,12 @@ def requirement(name,plugin,campaign):
             'teacher_evidence':RELEASE_EVIDENCE,'teacher_value_sha256':RELEASE_WITNESS_SHA,
             'workbook_target_version':'1.3.2','workbook_target_satisfied':False}
         r['expected_profile'].update(supplied_release_only=True,workbook_target_satisfied=False)
+    if plugin=='trayControl':
+        r['source_manifest']={'kind':'reviewed_supplied_release','release':'u-connect-2.8.1',
+            'catalog_sha256':RELEASE_CATALOG_SHA,'teacher_job':RELEASE_JOB,
+            'teacher_evidence':RELEASE_EVIDENCE,'teacher_value_sha256':RELEASE_WITNESS_SHA,
+            'workbook_target_version':'unknown','workbook_target_satisfied':False}
+        r['expected_profile'].update(supplied_release_only=True,workbook_target_satisfied=False)
     r['operation_stages']=[{'version':1,'workflow_id':PROFILE,'stage_id':sid,
         'resource_key':'agent-'+t['agent_id']+'-'+plugin+'-'+sid,'tool':CREATE,
         'arguments':{'target':name,'plugin_name':plugin,'stage_id':sid},
@@ -80,6 +87,18 @@ def validate_release_source(job):
         or body['facts']['vnc_minimum_1_3_2_proven'] is not False
         or not body['sources']['catalog_hash']['stdout'].startswith(RELEASE_CATALOG_SHA+'  ')):
         raise ValueError('supplied_release_source_scope_mismatch')
+    return True
+
+def validate_tray_release_source(job):
+    validate_release_source(job)
+    e=next(e for c in job['test_cases'] for e in c['evidence'] if e['evidence_id']==RELEASE_EVIDENCE)
+    b=json.loads(e['value'])
+    if b['facts'].get('trayControl_supplied_version')!='1.0.1':raise ValueError('supplied_tray_version_required')
+    files=json.loads(b['sources']['release_catalog']['stdout'])['files']
+    for platform in ['windows_x64','debian_x64']:
+        rows=[x for x in files if x.get('plugin')=='trayControl' and x.get('version')=='1.0.1' and x.get('platform')==platform]
+        if (len(rows)!=1 or rows[0].get('vendor_checksum_matches') is not True
+            or not re.fullmatch('[0-9a-f]{64}',rows[0].get('sha256',''))):raise ValueError('supplied_tray_platform_required')
     return True
 
 def validate_context(job,case_id,starting=False):
@@ -140,6 +159,7 @@ def create(session,name,plugin,stage_id,job_id,case_id):
         if hashlib.sha256(Path('/home/adminacc/uqa-input/distributions/plugin_versions.xlsx').read_bytes()).hexdigest()!=BOOK_SHA:
             raise ValueError('preparation_workbook_changed')
         if plugin=='displayMonitoring':validate_release_source(job_store.get_job(RELEASE_JOB))
+        if plugin=='trayControl':validate_tray_release_source(job_store.get_job(RELEASE_JOB))
         t,ci,urls=context(session,name);ready=readiness(session,r);task=stage['verification']['task_name']
         tasks=validate_task_list(name,read_json(session,urls[0],{'name':task,'periodic':False,'limit':100,'offset':0}),task)
         ownmap=getattr(session,'_owned_plugin_preparations',{})
@@ -200,7 +220,12 @@ def read(session,name,plugin,task_id,job_id,case_id):
         own=getattr(session,'_owned_plugin_preparations',{}).get(task_id)
         if not own or any(own.get(k)!=v for k,v in {'job_id':job_id,'case_id':case_id,'session_id':session.session_id,
             'target':name,'plugin_name':plugin}.items()):raise ValueError('own_preparation_receipt_required')
-        t,_,urls=context(session,name);full=read_json(session,urls[0]+'/'+task_id+'/full');envelope=full.get('result')
+        t,_,urls=context(session,name);full={}
+        for attempt in range(6):
+            full=read_json(session,urls[0]+'/'+task_id+'/full')
+            if isinstance(full.get('result'),dict):break
+            if attempt<5:sleep(1)
+        envelope=full.get('result')
         if not isinstance(envelope,dict):raise ValueError('own_preparation_result_not_ready')
         if (full.get('id')!=task_id or full.get('agent_id')!=t['agent_id'] or full.get('name')!=own['task_name']
             or 'period' not in full or full['period'] is not None or full.get('status')!='success'

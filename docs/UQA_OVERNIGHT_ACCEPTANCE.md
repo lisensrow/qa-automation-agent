@@ -1,5 +1,19 @@
 # План приёмки UQA: дневное продолжение
 
+Final480: fresh model479 Job20261016-120215-63bbc4bd/ev-8f4fb0d41aab/report ev-7567b39813bb verified TightVNC2.8.85.0 PRESENT and MSI ProductCode via strict non-executing projection. Earlier metadata-unavailable wording superseded (projection omission); no uninstall. Operator readonly481 Job20261016-120725-6258a420/ev-c39e9bcffe3f confirms8old Windows commands still progress; no cancellation/bypass. Latest full479276technicalPASS. Tray loaded both only; VNC/client-task mapping, desktop and current log write remain BLOCKED.477decision FAIL retained, no full regression/autonomy claim. See recipe480 for primary IDs/roles/limitations; Jira/Zephyr untouched.
+
+## v476: current runtime acceptance boundary
+
+Final478: model source-decision477115020-50fe9aba/ev-7f5d1859f28c FAILED on Windows next-step ALREADY_REMOVED, contradicting its own uninstall_completed=false; other6fields correct,0tasks. Do not promote free planning or repeat prompted answers. Before any uninstall require supported exact metadata, resolved command prerequisites, own result and independent absence. Current20unresolved ledger entries(0sending/5uncertain/15awaiting) are not active tasks; original17unchanged. Technical276PASS and loaded Tray both OS do not close this failure or full regression. Recipe478 preserves exact evidence/history.
+
+Final476: trayControl1.0.1 preparation now proven both OS; Windows473114050-7ba0d89e/ev-4b846cdb1f32 two verified operations, Astra475114519-c8302051/ev-88da1b342380 one verified inventory-only continuation. Original partial Astra473 delivery not replayed/promoted. Final474276/276technicalPASS and22MD checks are not business counts. Current source476 indexed candidate; next action gates below remain, not full-case acceptance.
+
+Actual model fresh software463: Windows TightVNC2.8.85.0 found, no supported uninstall metadata/removal; Astra0matches across package/process/software observations, not global absence. Historical Windows command guard unchanged. VNC462 Astra created failed native pair after URL repair: active client not connected and initRemoteDesktopConnection plugin not loaded. No frame, developer confirmation, guessed alias, security change or UC product patch; operator diagnosis separate from model actions.
+
+Original468 log workflow timed out; prepared model470 read-only continuation fetched same task, preserving failed trace/awaiting intent.2logs but unchanged mtime, Tray autostart/script not desktop; late historical data rejected for current PASS under unchanged5min freshness. No duplicate command. Poll/source-query framework fixes are not model autonomy or product fixes.
+
+Windows473 trayControl1.0.1 delivery/load verified through UQA,2operations; Astra delivery partial, separate inventory-only continuation pending. Preparation does not start Tray or prove a session. Next gates: exact legacy uninstall ownership and safe old-command resolution; actual active client and supported VNC task mapping; validated Tray control contract/desktop observation; effective current log observation. Read only existing source cases, never invent missing prerequisites/expected or perform auth/reboot/deletion/network-isolation scenarios. Recipe/plan hold exact proofs and later continuation. Jira/Zephyr unchanged; whole regression still incomplete.
+
 ## v454: current environment repair is not endpoint acceptance
 
 Bounded source transfer455 Job20261016-102750-c661e286/ev-500e3754ac89 matched6/6 withheld facts after model-selected retrieval454,0agent tasks. Operator query/schema/oracle disclosed. Read-only recall is not migration execution, presence proof, VNC/Tray/log-write acceptance or whole-regression PASS; recipe456 retains boundaries and original449 failure.
