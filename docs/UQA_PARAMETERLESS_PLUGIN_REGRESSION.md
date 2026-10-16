@@ -1,5 +1,71 @@
 # UQA: регресс inventory-плагинов без параметров
 
+## v393–394: ограничение recall истории подтверждено, повтор подсказок остановлен
+
+Source-only393 Job20261016-041752-44211cff/tc-55de15b3/ev-d6faecd2b419 (retrieval ev-b924d46c25f7) прочитал typed ledger392 и390. Те же12вопросов и expected391 проверены побайтно (кроме технического номера прогона). Снова11/12: модель смешала первоначальную Windows попытку с продолжением, хотя объяснение упомянуло NOT_SENT. Это **повторный FAIL**, не исправление памяти и не бизнес-регресс. Никаких новых agent tasks/operations/Jira writes.
+
+Read-only разбор retrieved context подтвердил: JSON ledger с обоими request_sent и ранним operation ID действительно присутствовал. Значит, отсутствие источника не объясняет ошибку; причинность/механизм model misinterpretation пока неизвестны. Дальнейшие одинаковые LLM retries и подсказки не запускаются. Неверные исходные ответы остаются в Jobs391/393, не становятся фактами продукта.
+
+Результаты двух реальных этапов не меняются: четыре main execution cells подтверждены, полных source cases0; исходный Windows remote Job034954-7bca9e5c НЕ отправил задачу, поздний040027-eeb562f2 отправил другую. Исторический request_sent должен выводиться из конкретных native receipt/pre-dispatch refusal + durable operation и точного attempt_key; словесный ответ LLM и retrieved memory сами по себе не разрешают отправку/replay и не меняют журнал. Core/current canonical reports уже используют typed native proofs, а не это ошибочное recollection.
+
+Следующий технический этап для истории — bounded read-only projection канонического состояния конкретной попытки из Jobs/ledger с request_sent=true/false/unknown, без LLM-переписывания исходного факта; пока это **план**, не новая работающая функция. Для текущего регресса следующий независимый этап — source-bound API/параметры оставшихся плагинов либо отдельный независимый oracle для содержимого ответов. Не обходить Windows8historical command progress и отсутствие displayDeviceAudit1.3.3/displayMonitoring1.3.2, не объявлять VNC/tray/logging/весь Zephyr matrix пройденными. Старые failed traces/uncertain ops сохранены.
+
+
+## v392: история отправки — request_sent привязан к attempt_key
+
+Source-only391 Job20261016-040928-3ea23ed4/tc-6e9418ba/ev-2ace1e2c8a00 (retrieval ev-4ebf11391991) нашёл390 и правильно ответил на11из12строгих вопросов. Ошибка: prior_windows_attempt_sent=true. Реальный первоначальный Windows remote Job034954-7bca9e5c остался NOT_SENT; последующий040027-eeb562f2 действительно отправил другую задачу. Нельзя ретроспективно исправлять прежний статус из-за успешного продолжения. Никаких live действий/новых ops в391не было, исходный FAIL сохраняется. Не добавлять разрешение отправки из словесного ответа модели.
+
+Для истории попыток используется отдельный идентификатор **attempt_key = job_id + case_id + operation_id**, а не plugin_name/название функции. Ниже source-grounded typed ledger именно двух Windows попыток, не новых продуктовых действий и не машинное разрешение:
+
+```json
+{
+  "schema": "uqa.attempt-history.v1",
+  "attempts": [
+    {
+      "job_id": "20261016-034954-7bca9e5c",
+      "case_id": "tc-2a3b3e15",
+      "operation_id": "op-5c6d2afbb31640079d41dd7dbb6b6907",
+      "target": "windows",
+      "plugin_name": "remoteConnections",
+      "plugin_version": "1.3.6",
+      "request_sent": false,
+      "native_dispatch_state": "not_started",
+      "operation_status": "not_sent",
+      "own_task_id": null,
+      "runtime_evidence_id": "ev-0222402f717a"
+    },
+    {
+      "job_id": "20261016-040027-eeb562f2",
+      "case_id": "tc-51254348",
+      "operation_id": "op-5caf2b74b6f043b482a55bf99e941e80",
+      "target": "windows",
+      "plugin_name": "remoteConnections",
+      "plugin_version": "1.3.6",
+      "request_sent": true,
+      "operation_status": "verified",
+      "own_task_id": "7e544929-1fce-4936-961d-761fafffa272",
+      "runtime_evidence_id": "ev-e795d2b3df40",
+      "own_full_evidence_id": "ev-390aabd3f8b5"
+    }
+  ],
+  "relation": {
+    "earlier_job_id": "20261016-034954-7bca9e5c",
+    "later_job_id": "20261016-040027-eeb562f2",
+    "operator_prepared_continuation": true,
+    "retroactively_changes_earlier_attempt": false
+  },
+  "business_pass": false,
+  "permission_granted": false
+}
+```
+
+В uncertain/sending без подтверждения request_sent должен быть unknown/null, а не автоматически false. Значение false выше опирается именно на native pre-dispatch refusal и durable NOT_SENT; true поздней попытки — на own receipt/full и independent verified operation. Это историческая reviewed запись, не проверка текущей готовности и не замена replay journal. Хранить полные трассы в Jobs, в продуктовой памяти — переносимый принцип и компактные ссылки/состояния; не дублировать все task logs или назначать новую «истину» одной функции на все прошлые версии/ОС.
+
+Следующая source-only393 проверка должна сохранить те же12вопросов и expected391, но прочитать typed ledger вместе с390. Это изменение представления источника, не подстановка answer enums/переименование FAIL в PASS; результат ещё не получен. Четыре main execution/ноль full cases из390 остаются без изменений. Новые runtime actions, developer confirmations и Jira writes не следуют из этой записи.
+
+Техническая запись390 сначала была отклонена лимитом statement1024 до ingest. Она сокращена до912символов, оба live DB logical dumps сверены с исходными390snapshot (не переписаны), затем ingest/index прошёл с1223unrelated chunks без изменений. Лимит/валидатор не повышались; не повторять390 event или специальное resume после успешной записи.
+
+
 ## v389–390: main discovery обеих ОС завершены; schema результата — ещё не oracle
 
 Итог текущей ограниченной матрицы safe-plugin-discovery-v1: **4 успешных main execution cells**, **0 подтверждённых полных source cases**. CheckAlive1.3.2 Windows/Astra и remoteConnections1.3.6 Windows/Astra выполнены локальной моделью через Core, own full свежи на момент выполнения, четыре новые main операции verified. Preparation доставки не повторялись. Это не весь регресс и не ordinary freeform автономность.

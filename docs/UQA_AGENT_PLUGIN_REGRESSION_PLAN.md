@@ -1,5 +1,19 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## v393–394: historical recall остаётся ограничением
+
+Source-only393 Job20261016-041752-44211cff/tc-55de15b3/ev-d6faecd2b419 повторил11/12 при тех же вопросах/expected391: прежняя Windows NOT_SENT попытка снова смешана с успешным продолжением. Ledger392 действительно был в retrieved context. FAIL сохранён, live tasks/ops0; больше одинаковых подсказок/прогонов нет. Четыре реальных main execution/0full cases не меняются, native replay journal не зависит от этого ошибочного ответа.
+
+Историческую отправку следует выводить из exact attempt_key и native receipt/refusal + operation ledger, не из recollection модели. Bounded read-only canonical attempt projection — следующий планируемый технический этап, ещё не новая capability. Далее — независимый oracle/актуальные параметры следующих плагинов; не повторять завершённые доставки и не выдавать весь регресс за PASS. Jira/Zephyr не менялись.
+
+
+## v392: история попыток без смешивания статусов
+
+Source-only391 Job20261016-040928-3ea23ed4/tc-6e9418ba/ev-2ace1e2c8a00:11/12facts matched, но prior_windows_attempt_sent ошибочно true. Оригинальный034954-7bca9e5c остался native NOT_SENT; continuation040027-eeb562f2 отправил другую own задачу. FAIL сохранён, live ops0. Общий main итог4execution/0full cases не меняется.
+
+В [рецепте истории попыток](UQA_PARAMETERLESS_PLUGIN_REGRESSION.md) добавлен typed ledger с ключом job_id/case_id/operation_id, отдельными request_sent=false/true и ссылками на обе первичные проверки. Success поздней попытки не переписывает ранний отказ; uncertain нельзя интерпретировать как not_sent. Полные логи остаются в Jobs, знания — компактное правило/ссылки. Следующая393 проверка: те же12вопросов/expected, новый source representation, без answer enums или live tasks. Это ещё не доказанный успех модели. Валидатор statement1024 сохранён;390 pre-ingest length failure восстановлен после проверки неизменности обеих DB и сохранения snapshots, не слепым replay.
+
+
 ## v389–390: main discovery обеих ОС завершены; schema результата — ещё не oracle
 
 Итог текущей ограниченной матрицы safe-plugin-discovery-v1: **4 успешных main execution cells**, **0 подтверждённых полных source cases**. CheckAlive1.3.2 Windows/Astra и remoteConnections1.3.6 Windows/Astra выполнены локальной моделью через Core, own full свежи на момент выполнения, четыре новые main операции verified. Preparation доставки не повторялись. Это не весь регресс и не ordinary freeform автономность.
