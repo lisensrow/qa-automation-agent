@@ -1,5 +1,9 @@
 # История изменений UQA
 
+## v428 — проверка повторного использования новой памяти
+
+Actual source-only427: retrieval426 и8/8строгих boolean фактов matched, без agent tasks/operations/Jira writes. Runtime/full-case границы сохранены, прежние ошибки не переоценены. Code4260803f90 pushed,9SHA/full421268PASS unchanged. Детали/remaining blockers в recipe v427–428; новый endpoint metadata probe пока не реализован.
+
 ## v426 — реальные дневные результаты
 
 Actual424 Windows/Astra: собственные чтения и строгие частные итоги matched, без новых agent tasks. Actual422: UQA normal run_turn доставила/подтвердила loaded vncServer1.5.5 обеОС,6verified ops/6delegated confirmations/no sessions. Teacher425 primary review PASS только execution bookkeeping, full source cases BLOCKED. Full421268/268technicalPASS/9SHA unchanged; оригинальный419 strictFAIL сохранён. Все доказательства/роли в recipe v424–426. Jira/Zephyr неизменно без записей.

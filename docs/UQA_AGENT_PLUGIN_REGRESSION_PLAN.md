@@ -1,5 +1,9 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## v428: remaining prerequisites после проверки памяти
+
+Новая память426 применена моделью427/8строгих фактов matched,0agent tasks. Следующий runtime: нужный displayMonitoring1.3.2 + VNC session; независимый endpoint channel/закрытый metadata-only probe для Tray/files/OS. Канал и место требуемого дистрибутива уточняются. Не считать config/catalogue/intrinsic checks заменой ОС/desktop/logfiles. Старые blockers и Jira/Zephyr границы неизменны; refs в recipe v427–428.
+
 ## v426: продолжение после реальной подготовки VNC
 
 Content424 и VNC preparation422 на Windows/Astra завершены, primary425 reviewed; не повторять. Правильность всей ОС/всех ранее пройденных plugins ещё не доказана. Следующий безопасный шаг — отдельная metadata-only observability dedicated Astra (закрытый read-only OS command через прежнюю policy/journal), если контракт/путь/own-result валидированы. Пока не реализовано. Windows8oldprogress остаётся blocker, VNC session требует missing displayMonitoring1.3.2, Tray — desktop, logging — реальные файлы/запись. IDs/границы ролей в recipe v424–426; никакого Jira/Zephyr.

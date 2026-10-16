@@ -1,5 +1,9 @@
 # Inventory-плагины: проверка доставки и результатов
 
+## v428: повторный retrieval не повышает уровень доказательства
+
+Local model427073752-6a8150aa/ev-9eaba65bff2d/retrievalev-cf8c7c4fe05e правильно воспроизвёл8boolean фактов нового опыта, сохранив BLOCKED session/OS/Tray/files. Это source-only recall, не новый бизнес-кейс и не разрешение повторной доставки. Code4260803f90/full421268PASS/9SHA unchanged. Runtime evidence422/424 и новые ограничения не расширены. Детали и remaining prerequisites — recipe v427–428.
+
 ## v426: реальные ограничения подтверждены моделью
 
 Actual424 на обеих ОС: network intrinsicPASS4checks, storage5PASS2BLOCKED; модель правильно сохранила independent OS/full-case BLOCKED. Actual422 normal run_turn доставил vncServer1.5.5/fresh loaded обеОС,6verified operations, без main/session. Operator425 primary proof review не заменяет OS/desktop/logfile oracle; original419FAIL preserved. Full421268technicalPASS/9SHA unchanged. Подробные immutable evidence refs/роли в recipe v424–426. Следующий metadata-only endpoint probe пока план, не результат.

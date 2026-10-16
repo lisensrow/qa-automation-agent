@@ -1,5 +1,9 @@
 # Архитектура QA-агента UQA
 
+## v428: source-only transfer отдельно от live acceptance
+
+Model427073752-6a8150aa/ev-9eaba65bff2d извлёк426 черезev-cf8c7c4fe05e и строго сопоставил8boolean фактов; не заявляет session/OS/Tray/logfile proof или повторную доставку. Это не новая runtime capability/регресс и не отмена старых recall FAIL. Code4260803f90 pushed/full421268PASS/9SHA unchanged. Подробные refs и remaining prerequisites — recipe v427–428; независимое endpoint observation ещё не реализовано/не принято.
+
 ## v426: actual424/422 приняты в ограниченном scope
 
 Модель на Windows/Astra строго различила network intrinsicPASS/storage intrinsicBLOCKED и independent OS/full-case BLOCKED после исправления compaction. Через normal run_turn подготовила vncServer1.5.5 на обеих ОС:6verified ops,6standing confirmations, no sessions/hints/operator product actions. Teacher425073028-55d7e6c3/ev-8debdfc5e5cd сверил primary proofs/fresh loaded. Full421268technicalPASS/9SHA unchanged. Подробные IDs/роли/ограничения в recipe v424–426. Tray/log files/независимые OS values ещё не приняты; metadata-only endpoint probe только следующий план. Старые15unresolved неизменны.

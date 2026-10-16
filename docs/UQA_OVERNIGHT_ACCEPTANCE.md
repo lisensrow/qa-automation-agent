@@ -1,5 +1,9 @@
 # План приёмки UQA: дневное продолжение
 
+## v428: факты памяти подтверждены, внешние предусловия уточняются
+
+Actual427 source-only8/8matched, не runtime/full-regress PASS. VNC422 и content424 завершены в ограниченном scope; не повторять. Для VNC session нужен required displayMonitoring1.3.2, для Tray/logfiles/правильности ОС — независимое endpoint observation. Запрошены место дистрибутива и существующий канал доступа без раскрытия паролей; metadata-only probe ещё план. Не обходить Windows8progress/15historical unresolved. Jira/Zephyr readonly, automation PAUSED. Primary refs в recipe v427–428.
+
 ## v426: выполненные дневные этапы и следующий gate
 
 Full421268PASS, actual424 обеОС строгий частный итог matched; VNC422 обеОС loaded1.5.5/6verified ops. Не повторять эти Jobs/доставки. Остались independent OS values, VNC session с required displayMonitoring1.3.2, Tray desktop и реальные log files/запись. Candidate metadata-only Astra endpoint probe ещё pending и требует отдельного закрытого payload, policy/journal/recovery/tests перед запуском; Windows8oldprogress не обходить. Primary425073028-55d7e6c3/ev-8debdfc5e5cd, ошибки/роли/границы в recipe v424–426. Jira/Zephyr без записей, автоматизация PAUSED.

@@ -1,5 +1,13 @@
 # UQA: регресс inventory-плагинов без параметров
 
+## v427–428: новая память извлечена и понята в отдельном source-only тесте
+
+Job20261016-073752-6a8150aa/tc-a7c38af6/runtimeev-9eaba65bff2d/retrievalev-cf8c7c4fe05e: локальная UQA выбрала knowledge_search и дала строгие8/8boolean фактов из v424–426. Загруженный vncServer на обеих ОС — true; подтверждённый VNC session, независимая правильность ОС, desktop Tray, реальные log files, разрешение повторной доставки — false; сохранённый исходный419FAIL и раскрытое операторское framework-исправление — true. Expected не передавался модели и не менялся после ответа. Запрос/каталог подготовлены оператором; это source-only transfer,0новых agent tasks/operations, не новый регресс и не устранение прежних391/393/401 recall FAIL на других вопросах. Факты runtime422/424 не расширены.
+
+Code/docs426 committed/pushed0803f9084b1a8035f182edc6dc5b492545e27fb1, HEAD==origin/main;9sourceSHA unchanged, full421268technicalPASS. Memory423 SHA9a257dbb63a25c6b58f58e2fbbee96c34a68debf072704c179d7bbe90020905c и426 SHA3d22db4336aad468eea5d8b4d41d0850082d96e3e1c102071654e896b866765e9 уже indexed/snapshotted/dedup/integrity/retrieval PASS/1223unrelatedchunks unchanged. Не повторять ingestion423/426 или завершённые доставки422.
+
+Оставшиеся блокеры не скрыты: required displayMonitoring1.3.2 отсутствует в проверенных storage/bundle; доступный server Tray catalogue не является desktop/endpoint proof; текущие logging schema/guide не являются log files. Нужен существующий канал независимого наблюдения ОС/desktop/files либо отдельно реализованный закрытый metadata-only endpoint probe (ещё не выполнен). Запрошены местонахождение требуемого дистрибутива и уже настроенный канал доступа к dedicated Windows/Astra, без паролей в чате. Никаких обходов Windows8oldprogress, смены auth/прав/settings или Jira/Zephyr writes. Автоматизация остаётся PAUSED, фоновая работа после окончания ответа не обещана.
+
 ## v424–426: модель различила частный итог и подготовила VNC на обеих ОС
 
 Этот раздел заменяет pending actual424/VNC в v423, не меняет исходный419 FAIL. Full421268/268technicalPASS `/tmp/v421-full-smoke.log`,9deployed source SHA `/tmp/v421-code.sha256` совпали. Supervisor422 pure fixture2targets×3stages PASS без процессов/HTTP/подтверждений; реальная policy не заменялась.
