@@ -1,5 +1,22 @@
 # История изменений UQA
 
+## v381–383: реальные preparation cycles обеих ОС — 9 verified операций
+
+Normal UQA run_turn/local qwen3:14b последовательно завершил четыре закрытых цикла safe-plugin-preparation-v1. Native own create/full, independent recovery и ledger перепроверены оператором read-only; fresh loaded/no observed error подтверждены. Это обновление и подготовка плагинов, НЕ исполнение их основных задач или целого Zephyr-кейса.
+
+| ОС | Плагин | Job / case | Runtime proof / post-inventory proof | Verified operations |
+| --- | --- | --- | --- | --- |
+| Windows | checkAlive1.3.2 | 20261016-032045-888c7aa5 / tc-55450bed | ev-080e5cb4d28d / ev-ee3d8563d31f | 3 |
+| Astra | checkAlive1.3.2 | 20261016-032221-fd9d0b26 / tc-91d21d49 | ev-c5b9ad815ed4 / ev-fd7122d31e64 | 2 |
+| Windows | remoteConnections1.3.6 | 20261016-032330-14786059 / tc-38a401a2 | ev-c0c3c19b8423 / ev-a600b257caa2 | 2 |
+| Astra | remoteConnections1.3.6 | 20261016-032439-4b71ed0a / tc-f9ee84dd | ev-1b27de5abe76 / ev-a1d7ffb6d25d | 2 |
+
+Windows checkAlive: initial stale audit действительно обновлён, old1.2.25 обнаружен до delivery, затем own post_inventory подтвердил1.3.2. На остальных трёх клетках свежая initial inventory использована без лишнего refresh; по одной delivery и post_inventory. Windows remoteConnections потребовал один pending-result poll: модель прочитала ТУ ЖЕ task, повторного POST нет. Все9операций verified, uncertain/awaiting среди этих новых операций нет. Core1.3.27/online, Windows64/Astrax86_64, post-audit03:21–03:25UTC16октября; product/server/frontend versions unknown. Контроль OS-check/no-deletion, sourceSHA, no-downgrade и no-rekey сохранён; старые uncertain/Windows8progress не менялись.
+
+Execution mode: оператор подготовил exact scope/oracle и ограниченный supervisor делегировал уже разрешённые WRITE prompts по свежему persisted model-selection evidence. Модель извлекла индексированный рецепт и выбирала single admitted action/собственные task IDs; framework вычислял допустимую фазу, компилировал fixed payload, независимо сверял результат и формировал canonical report. Runtime hints0/operator product actions0; operator primary review отдельно. Preparation PASS/plugin_case BLOCKED/not_executed во всех4cases. Это не ordinary freeform planning и не9пройденных исходных кейсов. Технический код379262/262PASS/10SHA без изменений; commit f798adad85bde91bf3305265665ba7540aac8053 уже pushed.
+
+Следующий вопрос — фактический ответ safe plugin task. Teacher382 Job20261016-032618-3d7213ab/tc-17eda28e/ev-7fbd3c0cd339 выполнил Windows GET-only historical checkAlive shape lookup: page_total=0, исторического примера нет, новых задач0. Это НЕ отсутствие плагина и не подтверждение ошибки; после доставки он fresh loaded. Руководство говорит о fixed reply, но точный литерал/форма текущего ответа ещё не установлены. Следующий безопасный этап — отдельный closed journal-bound discovery task checkAlive/remoteConnections с пустыми параметрами, own fresh full и сохранением структуры/ограничений БЕЗ business-PASS, либо источник текущего payload/result. Не использовать preparation profile для main task и не придумать expected по одному observed ответу. Independent oracle/метаморфные свойства фиксировать до нового теста. Jira/Zephyr не менялись, VNC/display distribution blockers прежние.
+
 FINAL379: полный technical suite262/262 PASS (/tmp/v379-full-smoke.log),10code SHA неизменны /tmp/v379-code.sha256,22Markdown valid. Предыдущий377 упал только на статическом regex реестра: новые legacy-deny branches были сгруппированы/в одинарных кавычках; исправлены в три явных double-quoted if без изменения запрета, policy или самого теста. Промежуточный378 технический runner остановлен оператором, продуктовые задачи/агенты не останавливались. Это не262продуктовых кейса и ещё не живые preparation cycles.
 
 Teacher380 Job20261016-031722-bb75b084/tc-422f1dde/ev-3cb2635c53f7 подтвердил16binary/checksum файлов двух точных версий checkAlive1.3.2/remoteConnections1.3.6 в platform dirs debian_x64/windows_x64/windows_x86/rhel_x64; metadata SHA268acdfc5b74ff6a699b0676dea6f63341d71f812bf38dd905526f27468c35d10. Ранний shallow379 Job031547-8c677e58 не увидел файлы, потому что они вложены в platform directories: пустой результат верхнего уровня НЕ отсутствие дистрибутива. Только операторское metadata-чтение, без binary signature/OS compatibility/execution proof; server OS-check остаётся обязательным.
