@@ -16,12 +16,15 @@ from plugin_discovery import shape
 TOOL = 'browser_review_plugin_result_semantic'
 PROFILE = 'historical-plugin-content-review-v1'
 VNC_PROFILE='historical-vnc-start-content-review-v1'
+TRAY_PROFILE='historical-tray-start-content-review-v1'
 REFS = {
  ('windows','storageAudit'): ('20261016-053350-c9bd531c','tc-54ef84e3','1.3.4'),
  ('astra','storageAudit'): ('20261016-053528-ef0debfc','tc-1a855850','1.3.4'),
  ('windows','defaultNetworkDeviceAudit'): ('20261016-053703-1a9a7b72','tc-c03a6d9b','1.3.5'),
  ('astra','defaultNetworkDeviceAudit'): ('20261016-053853-3e5bc458','tc-2ca30eca','1.3.5'),
- ('windows','vncServer'): ('20261016-154154-eb0465d0','tc-e316ea6c','1.5.5')}
+ ('windows','vncServer'): ('20261016-154154-eb0465d0','tc-e316ea6c','1.5.5'),
+ ('windows','trayControl'): ('20261016-170447-1897a798','tc-bee66593','1.0.1'),
+ ('astra','trayControl'): ('20261016-171602-d1f8cb9e','tc-47c91b6e','1.0.1')}
 RULES = {
  'storageAudit': ['nonempty_devices','unique_device_ids','positive_integer_capacity',
    'partition_count_matches','nonnegative_integer_partition_lengths','partition_sum_within_capacity',
@@ -30,12 +33,14 @@ RULES = {
    'nonempty_valid_unique_ip_addresses']}
 
 VNC_RULES=['self_reported_version_matches_catalogue','native_plugin_error_not_reported','native_plugin_error_empty']
-def rules_for(plugin):return VNC_RULES if plugin=='vncServer' else RULES[plugin]
+TRAY_RULES=['start_action_echo_matches','reported_user_lists_well_formed','at_least_one_user_reported_started_or_running']
+TRAY_REPLAY_GATE={'same_start_admitted':False,'reason':'owned_start_already_dispatched','framework_policy_replaced':False}
+def rules_for(plugin):return TRAY_RULES if plugin=='trayControl' else VNC_RULES if plugin=='vncServer' else RULES[plugin]
 
 def requirement(name, campaign,profile=PROFILE):
     t=target(name)
-    if profile not in {PROFILE,VNC_PROFILE} or profile==VNC_PROFILE and name!='windows':raise ValueError('review_profile_scope_required')
-    selected={'vncServer':VNC_RULES} if profile==VNC_PROFILE else RULES
+    if profile not in {PROFILE,VNC_PROFILE,TRAY_PROFILE} or profile==VNC_PROFILE and name!='windows':raise ValueError('review_profile_scope_required')
+    selected={'trayControl':TRAY_RULES} if profile==TRAY_PROFILE else {'vncServer':VNC_RULES} if profile==VNC_PROFILE else RULES
     if not isinstance(campaign,str) or not re.fullmatch(r'[a-z0-9-]{1,80}',campaign):
         raise ValueError('review_campaign_required')
     return {'type':'historical_plugin_content_review','locked':True,'stand':'lab',
@@ -112,6 +117,15 @@ def content_checks(plugin,data):
         checks.append({'rule':'native_plugin_error_not_reported',
             'status':'FAIL' if isinstance(data,dict) and data.get('result')=='error' else 'BLOCKED'})
         add('native_plugin_error_empty',lambda:data['error'] in ('',None))
+    elif plugin=='trayControl':
+        add('start_action_echo_matches',lambda:data['action']=='start')
+        def lists():
+            return all(isinstance(data[k],list) and len(data[k])<=10000 for k in ['started','already_running'])
+        add('reported_user_lists_well_formed',lists)
+        def any_user():
+            if not lists():raise ValueError('reported_user_lists_required')
+            return bool(data['started'] or data['already_running'])
+        add('at_least_one_user_reported_started_or_running',any_user)
     else:raise ValueError('review_plugin_not_admitted')
     assert [c['rule'] for c in checks]==rules_for(plugin)
     return {'checks':checks,'intrinsic_status':'FAIL' if any(c['status']=='FAIL' for c in checks) else
@@ -134,7 +148,11 @@ def compact_review(parsed):
     expected='FAIL' if any(x['status']=='FAIL' for x in checks) else 'BLOCKED' if any(x['status']=='BLOCKED' for x in checks) else 'PASS'
     if (parsed.get('intrinsic_status')!=expected or parsed.get('independent_os_correctness')!='BLOCKED'
         or parsed.get('full_source_case_status')!='BLOCKED'):return {}
-    return {'target':name,'plugin_name':plugin,'plugin_version':version,'source_job_id':sj,'source_case_id':sc,
+    extra={}
+    if plugin=='trayControl':
+        if parsed.get('replay_gate')!=TRAY_REPLAY_GATE:return {}
+        extra['replay_gate']=deepcopy(TRAY_REPLAY_GATE)
+    return {**extra,'target':name,'plugin_name':plugin,'plugin_version':version,'source_job_id':sj,'source_case_id':sc,
       'checks':[{'rule':x['rule'],'status':x['status']} for x in checks],
       'intrinsic_status':expected,'independent_os_correctness':'BLOCKED','full_source_case_status':'BLOCKED',
       'historical_only':True,'business_pass':False,'historical_projection_not_permission':True}
@@ -150,6 +168,7 @@ def inspect(session,name,plugin,jid,cid):
         if len(cycles)!=1:raise ValueError('unique_source_runtime_required')
         cycle=json.loads(cycles[0]['value']);report=cycle['canonical_report'];ops=list_operations(source_jid)
         if cycle.get('completed') is not True or len(ops)!=1 or ops[0]['status']!='verified':raise ValueError('verified_source_required')
+        if plugin=='trayControl' and req.get('profile_id')!='supplied-tray-plugin-start-v1':raise ValueError('tray_start_replay_scope_required')
         task=report['task_id']
         if ops[0]['verification']['identifier_value']!=task or ops[0]['verification']['evidence_id']!=report['read_evidence_id']:
             raise ValueError('source_own_receipt_link_required')
@@ -162,6 +181,10 @@ def inspect(session,name,plugin,jid,cid):
         census=shape(env['data'])
         if census!=report['response_shape']:raise ValueError('historical_result_changed')
         result=content_checks(plugin,env['data'])
+        if plugin=='trayControl':
+            # Source is an already-dispatched owned start. Its existing create
+            # guard rejects another campaign; expose that gate, do not grant it.
+            result['replay_gate']=deepcopy(TRAY_REPLAY_GATE)
         return {**result,'target':name,'plugin_name':plugin,'plugin_version':version,'core_version':CORE,
           'source_job_id':source_jid,'source_case_id':source_cid,'source_runtime_evidence_id':cycles[0]['evidence_id'],
           'source_full_evidence_id':report['read_evidence_id'],'task_id':task,'processed_at':env.get('processed_at'),

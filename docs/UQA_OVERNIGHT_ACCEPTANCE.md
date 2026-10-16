@@ -1,5 +1,11 @@
 # План приёмки UQA: дневное продолжение
 
+Final530: final529284technicalPASS checked; both source cases remain BLOCKED despite correct bounded529interpretation. Next prerequisites unchanged; earlier pending-suite text is historical.
+
+v530: actual4new Tray inventory/start operations verified/no delivery; neither OS reports started users. Historical content interpretation5296/6bothOS after disclosed negative-gate context correction, original527errors preserved. Not desktop/VNC/consent/full-case PASS. Full526284technicalPASS/final529pending. Next read-only GUI-session prerequisite and complete40case source after Jira login; no broadening security/destructive scope or Jira writes.
+
+v523: user explicitly continued full two-cycle regression now, no automation resume. Read actual21+19source cases, keep Jira/Zephyr read-only; complete steps currently unavailable after observed expired login. Continue independent supported safe stages, never invented title-only payloads. New exact Tray start candidate has source/hash/no-rekey/Core fixtures; final283suite→model fresh inventory-only→one start/own full per target→native error/desktop limits→memory. Scope/oracle/framework and model execution distinct; no full-case acceptance by ACK/shape. Detailed backlog and blockers in plan523.
+
 v522: source-only learning gate8/8 completed by local model521 with own memory retrieval; not runtime setting/session acceptance. Continue official agent-side consent control discovery before any new session; no per-step human confirmation required inside exact authorized scope. Primary evidence in recipe522.
 
 v520 next gate: supported agent-side VNC consent control; user now explicitly permits no-confirmation default on confirmed owned local stands. Existing Windows/Astra allowlist only; consent-specific case enables request and restores default afterward. No agent setting changed yet. Require before/own fresh after evidence and real decoded session separately; backend policy is audit-derived, not a setter. Windows provisioning and Astra client/consent prerequisites remain. Automation stays PAUSED; Jira/Zephyr no writes. Detailed recipe520 is authoritative for this scoped update.

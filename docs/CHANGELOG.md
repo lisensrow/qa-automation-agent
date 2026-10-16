@@ -1,5 +1,11 @@
 # История изменений UQA
 
+Final530: final529284/284technical suite PASS; actual5296/6eachOS evidence preserved, no full Tray/source-case PASS. Supersedes pending-suite status below.
+
+v530 — real Tray start discovery completed on Windows/Astra with own fresh results; empty reported-user arrays prevent functional acceptance. Preserved Astra pre-dispatch65hex-source typo failure; corrected primary-source64hex pin, added regression check. New own historical Tray content reader plus typed negative replay-gate projection; prior model5275/6 failures retained, controlled5296/6bothOS after disclosed framework context correction. No new endpoint tasks in interpretation trials or Jira writes. Full526284technicalPASS, final529pending; actual full Zephyr cases remain unaccepted.
+
+v523 — added narrowly guarded supplied Tray start discovery on Windows/Astra and explicit nested-error projection; no complete desktop-case oracle or consent setter. Source502/dual binary hash, exact params and no-rekey enforced through existing Core/journal. Added both-OS native/Core/source/replay fixtures, final283suite pending. Plan now explicitly tracks all40known cycle IDs and complete-step source prerequisite; Edge works but Jira session expired. No Jira writes; actual runtime still pending at this revision.
+
 v522 — local model521 retrieved the indexed lab-consent rule and correctly resolved8/8 positive/negative scope and actual-state questions. Own retrieval and final evidence saved; prepared source/oracle/phase disclosed. No agent setting applied, no VNC or whole regression PASS. Prior model failures preserved. Recipe522 separates learned rule from blocked execution.
 
 v520 — recorded newly authorized lab-only VNC consent default and exact Windows/Astra scope; added before/after verification and consent-case restoration recipe. Read-only guide/backend review separates audit-derived policy from an actual setter. No effective setting change, new agent task, session PASS or production-code alteration. Deep-memory/source learning is not runtime acceptance; Jira/Zephyr untouched.

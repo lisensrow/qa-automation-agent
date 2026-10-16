@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(os.getenv("UQA_SMOKE_ROOT", "/opt/uqa")).resolve()
 SMOKE_DIR = ROOT / "smoke"
 PRODUCTION_FILES = [
+    ROOT / "tray_start_source.py",
     ROOT / "windows_vnc_start_source.py",
     ROOT / "configured_vnc_session.py",
     ROOT / "historical_command_retirement.py",
@@ -88,6 +89,8 @@ PRODUCTION_FILES = [
 SMOKES = [
     "smoke_vnc_start_content.py",
     "smoke_vnc_start_profile.py",
+    "smoke_tray_start_profile.py",
+    "smoke_tray_result_content.py",
     "smoke_configured_vnc_session.py",
     "smoke_endpoint_metadata.py",
     "smoke_legacy_vnc_identity.py",

@@ -21,13 +21,15 @@ READ='browser_inspect_closed_plugin_discovery_semantic'
 READY='browser_read_closed_plugin_discovery_semantic'
 PROFILE='safe-plugin-discovery-v1'
 VNC_START='supplied-vnc-plugin-start-v1'
+TRAY_START='supplied-tray-plugin-start-v1'
 VERSIONS={p:v for p,v in PREPARATION_VERSIONS.items() if p in
           {'checkAlive','remoteConnections','storageAudit','defaultNetworkDeviceAudit'}}
 
 def requirement(name,plugin,campaign,profile=PROFILE):
-    if profile not in {PROFILE,VNC_START}:raise ValueError('closed_discovery_profile_required')
+    if profile not in {PROFILE,VNC_START,TRAY_START}:raise ValueError('closed_discovery_profile_required')
     if profile==PROFILE and plugin not in VERSIONS:raise ValueError('safe_main_discovery_plugin_required')
     if profile==VNC_START and (plugin!='vncServer' or name!='windows'):raise ValueError('exact_windows_vnc_start_required')
+    if profile==TRAY_START and plugin!='trayControl':raise ValueError('exact_supplied_tray_start_required')
     r=preparation_requirement(name,plugin,campaign)
     r.update(type='closed_plugin_discovery',profile_id=profile,
         expected_profile={'own_fresh_successful_execution':True,'bounded_shape_observed':True,
@@ -43,7 +45,9 @@ def requirement(name,plugin,campaign,profile=PROFILE):
 
 def task_name(r):return r['operation_stages'][0]['verification']['task_name']
 
-def compiled_params(r):return {'command':'start'} if r['profile_id']==VNC_START else {}
+def compiled_params(r):
+    if r['profile_id']==TRAY_START:return {'action':'start'}
+    return {'command':'start'} if r['profile_id']==VNC_START else {}
 
 def validate_context(job,case_id,starting=False):
     if not isinstance(job,dict) or len(job.get('test_cases',[]))!=1:raise ValueError('single_discovery_case_required')
@@ -112,6 +116,9 @@ def create(session,name,plugin,stage_id,job_id,case_id):
         if (ready.get('ready') is not True or ready.get('load_error_empty_observed') is not True
             or ready['plugin_audit'].get('audit_fresh') is not True):raise ValueError('discovery_fresh_loaded_required')
         _,task_pages=complete_task_list(session,urls[0],name,task_name(r))
+        if r['profile_id']==TRAY_START:
+            from tray_start_source import validate_start_prerequisites
+            validate_start_prerequisites(r,job_id)
         if r['profile_id']==VNC_START:
             from windows_vnc_start_source import validate_start_prerequisites
             validate_start_prerequisites(session,r)
@@ -160,7 +167,11 @@ def read(session,name,plugin,task_id,job_id,case_id):
             or 'data' not in env or not audit_result_is_fresh(own['sent_at'],own['received_at'],own['server_created_at'],
                 full.get('created_at'),env.get('processed_at'))):raise ValueError('discovery_full_identity_freshness_required')
         census=shape(env['data'])
-        return {**own,'response_shape':census,'native_result_verified':True,'identity_verified':True,'fresh_result':True,
+        extra={}
+        if r['profile_id']==TRAY_START:
+            from tray_start_source import outcome
+            extra['tray_start_observation']=outcome(env['data'])
+        return {**own,**extra,'response_shape':census,'native_result_verified':True,'identity_verified':True,'fresh_result':True,
             'machine_uid':t['ci_id'],'task_status':'success','processed_at':env['processed_at'],'read_at':now(),
             'business_pass':False,'mutation_executed':False}
     except Exception as e:return {'error':str(e)[:160] if isinstance(e,ValueError) else 'discovery_result_unavailable',
