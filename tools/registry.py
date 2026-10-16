@@ -177,6 +177,10 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {'type':'function','function':{'name':'operation_read_attempt_history',
+        'description':'OBSERVE exact locked historical Job/case/operation native proof. request_sent true/false/null; never current PASS, retry permission or live verification. No writes or external requests.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['source_job_id','source_case_id','operation_id'],
+            'properties':{'source_job_id':{'type':'string'},'source_case_id':{'type':'string'},'operation_id':{'type':'string'}}}}},
     {'type':'function','function':{'name':'browser_inspect_tray_catalog_semantic',
         'description':'OBSERVE: closed same-origin Tray versions or dependency GET for an exact locked dedicated lab case. Available files/versions are NOT installed/compatible/session PASS. No file downloads or task creation.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target','kind'],
@@ -2376,6 +2380,8 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "operation_read_attempt_history":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_inspect_tray_catalog_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_create_closed_plugin_discovery_semantic":

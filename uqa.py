@@ -2033,6 +2033,7 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        'operation_read_attempt_history',
         'browser_inspect_tray_catalog_semantic',
         'browser_read_closed_plugin_discovery_semantic',
         'browser_inspect_closed_plugin_discovery_semantic',
@@ -4636,6 +4637,14 @@ def execute_tool_with_policy(
                         'executed': False, 'action_class': action_class,
                         'action_policy_status': 'blocked_by_advisory_contract'}
 
+    if name=='operation_read_attempt_history':
+        try:
+            from attempt_history import validate_context
+            validate_context(get_job(job_id),case_id,arguments)
+        except (ValueError,TypeError,KeyError,AttributeError):
+            return {'error':'locked_attempt_history_scope_required','executed':False,
+                'action_class':action_class,'action_policy_status':'blocked_by_history_scope'}
+
     if name=='browser_inspect_tray_catalog_semantic':
         try:
             from tray_catalog import validate_context
@@ -5250,7 +5259,10 @@ def execute_tool_with_policy(
             resource_arguments["external_id"] = None
             ignored_external_id = proposed_external_id
 
-    if name=='browser_inspect_tray_catalog_semantic':
+    if name=='operation_read_attempt_history':
+        from attempt_history import inspect as inspect_attempt_history
+        invoke=lambda:inspect_attempt_history(arguments,job_id,case_id)
+    elif name=='browser_inspect_tray_catalog_semantic':
         from tools.browser import _session
         from tray_catalog import inspect as inspect_tray_catalog
         invoke=lambda:inspect_tray_catalog(_session,arguments['target'],arguments['kind'],job_id,case_id)
