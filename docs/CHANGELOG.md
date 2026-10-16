@@ -1,5 +1,19 @@
 # История изменений UQA
 
+## v366–367: повторное применение новой памяти
+
+Prepared source-only model Job20261016-022832-f00ffcee / tc-04f97f6f / ev-1b5c5f208c81 прочитал индексированный v365 (read ev-732b90a36424). Шесть из семи точных typed comparisons совпали: Astra technical completed=true, full regression=false, Windows new command=false, redelivery=false, cancel old tasks=false, developer confirmation=false. Поле plugin_version вернуло `executeCommand1.4.0` вместо требуемой голой строки `1.4.0`; этот exact-format check НЕ пройден и не нормализован задним числом. Источник найден; ответ не задан enum/оператором, но query/questions/checks подготовлены оператором. Live operations0/Jira writes0; свободное reason не имеет независимой семантической верификации. Не заявлять all-facts PASS или новую продуктовую приёмку. При будущем typed version extraction требовать отдельное имя и строгий version-only формат до использования в dispatch, не извлекать версию эвристикой из prose.
+
+## v363–365: реальный ограниченный command lifecycle
+
+На Astra normal Core/local qwen3:14b завершил закрытый сценарий executeCommand1.4.0 на ядре1.3.27: initial_inventory → deliver_command_plugin → post_delivery_inventory → execute_command → собственный full → canonical expected/actual. Job20261016-022335-a3a8b0f1 / tc-9532d620 / ev-2147cc926059; main task6cb5c683-022e-4df2-9fa4-9da328d59bc2, native proof ev-44f36fe74bde. Все4операции verified; точный приватный marker, exit0 и наблюдённый пустой stderr. Technical microcase PASS, полный исходный кейс BLOCKED.
+
+Windows Job20261016-021724-b60ca8bc / tc-51a63348 / ev-34ef087afa5d: первые3этапа verified, executeCommand1.4.0 fresh loaded; command stage not_sent. Причина — восемь исторических непериодических executeCommand со статусом progress от29сентября (проверено операторским read-only GET, всего12задач). Их не отменяли/не удаляли; защита не ослаблена, повторных доставок нет. Это отдельное ограничение среды/предусловий, не developer-confirmed bug.
+
+Режим: оператор подготовил immutable scope/oracle; модель выбирает только единственное действие допустимой фазы и собственные task IDs через normal typed run_turn. Framework задаёт закрытый каталог/JSON, компилирует fixed marker payload, независимо проверяет результат и строит canonical report. Разрешённые WRITE подтверждает ограниченный supervisor, привязанный к свежему persisted model-selection evidence и действующей v069 policy; это не самостоятельный свободный планировщик. Runtime hints0, operator product actions0; операторская диагностика Windows отдельно. Общий технический suite364:259/259,13SHA неизменны; fixtures не считаются продуктовыми кейсами. Role TOOL сохраняет исходный human request; observed pagination query не переносится в новые URLs. STEP/AUTO/journal/replay/locked oracle сохранены. Jira/Zephyr без изменений.
+
+Дальше: закрепить опыт в обоих индексах с snapshot/dedup/integrity/retrieval и проверить применение моделью. Не повторять эти campaign Jobs/доставки; Windows остаётся BLOCKED, пока безопасно не разрешено историческое состояние. Другие исходные сценарии/плагины и независимая полнота не объявлены пройденными. displayDeviceAudit1.3.3 всё ещё отсутствует в проверенном хранилище; старый1.3.2 не заменяет его. Старые uncertain/awaiting operations не менять.
+
 FINAL362: конечный361suite258/258technicalPASS /tmp/v361-full-smoke.log,13codeSHA unchanged /tmp/v361-code.sha256,22Markdown valid. Это изолированные контракты/native/Core/recovery, не258кейсов UC и не модельный command lifecycle.0новых реальных команд/доставок; следующая приёмка — именно normal Core/local model обеихОС, после reviewed memory362/release.
 
 ## v360–362 — journal-bound command adapter без объявления live PASS

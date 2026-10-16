@@ -39,10 +39,12 @@ def context(session,name):
     ci,_,observed_url,error=session._observed_agent_task_context(t['ci_name'])
     if error:raise ValueError('observed_command_target_context_required')
     source=urlsplit(observed_url);path=source.path.rstrip('/')
-    if (source.scheme!='https' or source.netloc!=urlsplit(ORIGIN).netloc or source.query
+    if (source.scheme!='https' or source.netloc!=urlsplit(ORIGIN).netloc
         or not path.endswith('/agents/'+t['agent_id']+'/tasks')
         or ci.get('id')!=t['ci_id'] or ci.get('agent_id')!=t['agent_id'] or ci.get('name')!=t['ci_name']):
         raise ValueError('command_origin_target_mismatch')
+    # Observed list GETs can carry pagination/filter queries. Like the existing
+    # pinned adapters, derive new URLs from the verified PATH, never forward query.
     urls=[session._same_https_origin_url(observed_url,p) for p in [path,path[:-6],path[:-6]+'/plugin']]
     if not all(urls):raise ValueError('command_origin_target_mismatch')
     return t,ci,urls

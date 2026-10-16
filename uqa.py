@@ -14627,6 +14627,13 @@ def run_turn(
             if not outcome.get('started'):
                 finalize_case_blocked(job_id,case_id,outcome.get('reason','schema_read_context_not_admitted'))
             return outcome
+        if (phase_case.get('requirement') or {}).get('type')=='closed_command_probe':
+            import sys
+            from command_stage_runtime import run as run_command_stage
+            outcome=run_command_stage(sys.modules[__name__],messages,job_id,case_id,action_policy,force_read_only)
+            if not outcome.get('started'):
+                finalize_case_blocked(job_id,case_id,outcome.get('reason','closed_command_context_invalid'))
+            return outcome
         if (phase_case.get('requirement') or {}).get('type')=='pinned_agent_audit':
             import sys
             from agent_audit_runtime import run as run_agent_audit

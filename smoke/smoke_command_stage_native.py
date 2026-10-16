@@ -53,7 +53,7 @@ for name in ['windows','astra']:
         if bad_receipt[0] and body.get('name')=='executeCommand':body['additional_params']['programm']='sh'
         created[tid]=body;return Response(202 if url.endswith('/update') else 201,body)
     session=SimpleNamespace(session_id='fixture-session',_ensure_started=lambda:None,
-        _observed_agent_task_context=lambda ci_name:(ci,{},'https://uc.lab.local/api/v1/agents/'+t['agent_id']+'/tasks',None),
+        _observed_agent_task_context=lambda ci_name:(ci,{},'https://uc.lab.local/api/v1/agents/'+t['agent_id']+'/tasks?limit=25&offset=0',None),
         _same_https_origin_url=lambda observed,path:'https://uc.lab.local'+path,
         context=SimpleNamespace(request=SimpleNamespace(get=get,post=post)))
     def ready(*args):
@@ -88,6 +88,7 @@ for name in ['windows','astra']:
             assert out.get('executed') is True,(s,out)
             assert 'expected_marker' not in out
             assert len(posts)==i+1
+            assert '?' not in posts[-1][0] and posts[-1][0].startswith('https://uc.lab.local/')
             tid=out['task_id'];op['status']='awaiting_verification'
             assert not n.inspect_stage(session,name,'unknown',jid,caseid)['native_result_verified']
             periodic_full[0]=True
