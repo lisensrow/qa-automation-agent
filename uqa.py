@@ -2033,6 +2033,7 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        "browser_inspect_lab_plugin_inventory_semantic",
         "browser_inspect_closed_command_stage_semantic",
         "browser_inspect_pinned_agent_audit_semantic",
         "browser_inspect_pinned_agent_readiness_semantic",

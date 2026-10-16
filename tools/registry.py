@@ -2124,6 +2124,15 @@ TOOLS = [
     {
         "type":"function",
         "function":{
+            "name": "browser_inspect_lab_plugin_inventory_semantic",
+            "description": "Read-only: шесть известных имён VNC/remoteConnections/checkAlive из руководства и исторического server catalogue только на выделенных Windows/Astra/core1.3.27. Только текущий GET; не открывает remote session, не доставляет и не запускает задачи. Наличие не PASS, expected versions unknown; guide action name не равен binary plugin name.",
+            "parameters":{"type":"object","additionalProperties":False,"required":["target"],
+                "properties":{"target":{"type":"string","enum":["windows","astra"]}}}
+        }
+    },
+    {
+        "type":"function",
+        "function":{
             "name": "browser_inspect_pinned_agent_readiness_semantic",
             "description": "Read-only: текущие core/online и свежая загрузка закреплённого плагина на точной КЕ. Без plugin_name/plugin_version проверяет osAudit1.3.4. ready не означает выполнение теста.",
             "parameters": {"type": "object", "additionalProperties": False, "properties": {
@@ -2802,6 +2811,12 @@ def execute_tool(name: str, arguments: dict):
 
     if name == "browser_inspect_closed_command_stage_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
+
+    if name == "browser_inspect_lab_plugin_inventory_semantic":
+        if set(arguments)!={'target'}:return {'error':'exact_lab_inventory_arguments_required','mutation_executed':False}
+        from tools.browser import _session
+        from lab_plugin_inventory import inspect
+        return inspect(_session,arguments['target'])
 
     if name == "browser_inspect_pinned_agent_readiness_semantic":
         from tools.browser import _session
