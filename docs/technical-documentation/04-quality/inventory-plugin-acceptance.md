@@ -1,5 +1,21 @@
 # Inventory-плагины: проверка доставки и результатов
 
+## v401–402: source-only применение — границы сохранены, строгий формат не пройден
+
+Job20261016-045314-33676912 / tc-74e60ec6 / ev-3a80c7c5925d (retrieval ev-c94202bf3b92) действительно прочитал400. Девять boolean-границ верны: нет доказанной установки Windows/Astra, совместимости Astra/core, наблюдённых файлов, сеанса, normal_run_turn, полного PASS или Jira writes. Но строгая проверка12полей дала9/12: job_id ответил с префиксом Job, available_version с префиксом Tray, catalog_scope как global вместо server_global. Expected не передавался модели и не менялся после ответа. Эти три ошибки формата не следует выдавать ни за новые продуктовые факты, ни за исправление прежнего historical recall391/393. Исходный actual сохранён, итог строгого теста FAIL; успешное понимание девяти ограничений — только source-only наблюдение, не регресс. Agent operations0, Jira writes0. Одинаковый прогон не повторять ради PASS; при дальнейшем typed transport требуются source-bound идентификаторы и заранее объявленная нормализация, не постфактум.
+
+## v399–400: модель прочитала живой каталог Tray; установка не проверена
+
+Job20261016-044228-68b5cab0 / tc-74b79966 / runtime ev-5f37616dc438: локальная модель прочитала рецепт398, открыла exact CMDB/Windows agent context core1.3.27, выбрала версии, затем зависимости. Native GET proofs: versions ev-471b18e055e5 (04:43:05UTC16октября), dependencies ev-6880487a836d (04:43:06UTC). completed=true означает завершение двух наблюдений каталога, не бизнес-кейса. Журнал операций пуст; новых задач, установок, загрузок файлов, VNC sessions и Jira writes0.
+
+Actual: серверный глобальный каталог предлагает Tray1.4.7 и dependency record1.4.7. OS labels сохранены буквально: debian_x64, rhel_x64, windows_x32, windows_x64, windows_x86. Windows_x64 dependency names включают Qt5Core/Gui/Widgets.dll, libcrypto-3-x64.dll и libssl-3-x64.dll; x32/x86 используют имена libcrypto-3.dll/libssl-3.dll. Linux-записи включают Qt5/OpenSSL3/curl/ICU63 и Qt plugins. Это перечни требуемых файлов каталога, НЕ наблюдение наличия/отсутствия файлов на агентах. Не нормализовать aliases, не выбирать32bit для64bit и не выводить поддержку Astra из одной метки Debian. Версия каталога не доказывает совместимость с core1.3.27.
+
+Роли: scope/query/phase transport подготовлены оператором; normal Core/policy tools выполняли пять выбранных моделью read-actions, runtime hints0/operator product actions0. Это НЕ вход через normal uqa.run_turn и НЕ свободное планирование полного регресса. installation_verified/core_plugin_compatibility_verified/remote_session_executed/task_executed/business_pass=false; полный source case BLOCKED. Не повторять399 или прежние доставки ради счётчика.
+
+В Edge около04:49UTC оператор повторно открыл существующий Windows cycle US-C346 и сделал один read-only reload: ERR_CONNECTION_TIMED_OUT сохранился. Полные шаги Tray/VNC/logging всё ещё недоступны; не придумывать oracle по названиям, не менять сеть/права/Jira. Новая попытка доступа не считается выполнением кейсов.
+
+Code398 c30cb13 committed/pushed; full398266/266 technical smoke PASS, пять deployed source SHA совпали,22technical Markdown valid. Это технические проверки, не процент бизнес-регресса. Результат399 и ограничения сохраняются отдельной reviewed memory revision400, candidate/document_review без verified promotion. Следующий независимый этап: каноническое read-only состояние попытки из Jobs/ledger либо source-complete безопасный сценарий; прежняя recall ошибка391/393 остаётся FAIL.
+
 ## v395–398: свежая схема и ограниченный Tray catalog reader
 
 Operator395 прочитал установленный OpenAPI:1093969bytes/SHA292242e76b9e8c40208e39d9841ffbc0cefcba96bc7ab688a67f53895f33acbb совпадает с260. Teacher397 Job20261016-043137-67a2b218/tc-a6936a75/ev-0a9df8b3173a +fresh witness ev-33c0d54a3d5d прочитал11protected pages Tray/VNC; задач/сеансов0. Версии Tray и dependencies — отдельные GET, VNC-создание — отдельный POST с required path uid и optional query remote_user_session; session не запускался. CreateTaskRequest.additional_params generic object/null, не контракт всех плагинов.
