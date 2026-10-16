@@ -1,5 +1,7 @@
 # Inventory-плагины: проверка доставки и результатов
 
+Checkpoint355: модель прочитала exact Windows/Astra command-plugin metadata, обе cores1.3.27online. Старый audit1.2.25 stale~2h не признан готовностью1.4.0. Native getter расширен только для чтения; pure fixed-marker contracts+fixtures ничего не отправляют. Task/delivery policy и9parameterlessprofiles прежние, generic click353 заблокирован read-only. Нужны отдельные runtime/journal/own-result acceptance; не реальный command или полный source-case PASS. Primary evidence и режимы помощи перечислены в общем recipe/плане.
+
 ## v350–352: главный CLI, canonical alias и приёмка без live fallback
 
 Внутренний run_regression_job346 был принят раньше, чем главный CLI. Реальный main349 обнаружил разрыв: extract_known_stand возвращает canonical uc.lab.local, закрытый source profile ожидает lab. Mocked alias скрывал это в первом fixture; фраза без слова «регресс» попала в generic browser mode. Оператор остановил собственный helper; в сохранённой трассе были навигация/чтение, в том числе за пределами целевых Windows/Astra, но отправка задач/создание ресурсов не наблюдались. Этот запуск не принят. Автоматическая защита отклонила его неизменный повтор. Private trace сохранён на сервере /tmp/v349-main-source.private.log, без переноса capability URLs/сырых ответов в память.

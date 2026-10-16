@@ -1,5 +1,11 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+Version gate356: originalExcel/servercopyhashmatch, выбирать именно sheet1.3.27. executeCommand1.4.0 подтверждён B11; displayDeviceAudit1.3.3 в B7 против tested/storage1.3.2. Актуальный display отложен до настоящего1.3.3/уточнения, не отправлять прежнюю версию как актуальную. Старые structure results остаются history/nonPASS. soft1.3.8 подтверждён B32. Источники/metadata/proofIDs в recipe; spreadsheet notes не developer confirmation.
+
+## Следующий рубеж после prepared metadata354
+
+Windows/Astra core1.3.27 online подтверждены моделью; executeCommand snapshots1.2.25 stale~2h, никакой новой delivery/main не было. Metadata storage1.4.0 не freshload/Excel proof. Read-only getter и pure fixed-marker contracts подготовлены, но executable runtime/journal ещё отсутствуют. Не добавлять command в parameterless9. Сначала narrow owned command workflow с ledger/OS-check/no-deletions/fresh pluginAudit и readiness, потом один безопасный echo/printf и собственный fresh full/canonical expected-actual. Это технический microcase, не обещанный полный Zephyrрегресс.355release требует fullsuite/SHA/memory before nextcode. Подробные receipts/помощь: [recipe](UQA_PARAMETERLESS_PLUGIN_REGRESSION.md).
+
 ## v350–352: главный CLI, canonical alias и приёмка без live fallback
 
 Внутренний run_regression_job346 был принят раньше, чем главный CLI. Реальный main349 обнаружил разрыв: extract_known_stand возвращает canonical uc.lab.local, закрытый source profile ожидает lab. Mocked alias скрывал это в первом fixture; фраза без слова «регресс» попала в generic browser mode. Оператор остановил собственный helper; в сохранённой трассе были навигация/чтение, в том числе за пределами целевых Windows/Astra, но отправка задач/создание ресурсов не наблюдались. Этот запуск не принят. Автоматическая защита отклонила его неизменный повтор. Private trace сохранён на сервере /tmp/v349-main-source.private.log, без переноса capability URLs/сырых ответов в память.

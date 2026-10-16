@@ -2654,7 +2654,10 @@ class BrowserSession:
                 raise ValueError('read unavailable')
             agent = a.json()
             from plugin_audit_profiles import version_allowed
-            if not ((plugin_name=='osAudit' and plugin_version=='1.3.4') or version_allowed(plugin_name,plugin_version)):
+            # Declaration-only readiness extension. Does NOT admit command
+            # delivery, empty-parameter audit tasks, or executable commands.
+            command_read_only=(plugin_name=='executeCommand' and plugin_version=='1.4.0')
+            if not ((plugin_name=='osAudit' and plugin_version=='1.3.4') or command_read_only or version_allowed(plugin_name,plugin_version)):
                 return {'error':'readiness_plugin_profile_invalid','ready':False}
             audit = summarize_plugin_audit(ci, p.json(), plugin_name, plugin_version)
             ready = (agent.get('id') == agent_id and agent.get('version') == '1.3.27'
@@ -2664,7 +2667,7 @@ class BrowserSession:
                     'plugin_name':plugin_name,'plugin_version':plugin_version,
                     'core_version': agent.get('version'), 'agent_status': agent.get('status'),
                     'plugin_audit': audit, 'ready': bool(ready), 'mutation_executed': False,
-                    'scope': 'core1.3.27_osAudit1.3.4_readiness_only_not_execution_PASS'}
+                    'scope': 'core1.3.27_'+plugin_name+plugin_version+'_readiness_only_not_execution_PASS'}
         except Exception:
             return {'error': 'readiness_read_unavailable', 'ready': False}
 

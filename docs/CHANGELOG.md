@@ -1,5 +1,11 @@
 # История изменений UQA
 
+Final355255/255technicalPASS/8SHAunchanged/22MDvalid. Workbook356 original SHA7fef498ba403c70a48dcdfb5f80ef84cde927b7f6e8d947d3740ccaeaa415f53/servercopy match: лист1.3.27 command1.4.0,display1.3.3,soft1.3.8. Teacher356012227-e00c785a/ev-f10ef9db5d12 проверил UC displaystorage: только1.3.2. Старые display runs не приёмка1.3.3; не подменять version expectation/не переписывать прежние oracle. Это источник/metadata preparation,0команд и Jira writes.
+
+## v354–355 — отдельный command readiness, без допуска выполнения
+
+Prepared model-read354 Windows011214-d9b6b415/Astra011351-2cfd5a1f completed/0operations: core1.3.27 online, но audit executeCommand1.2.25 stale~2h. Только read-only readiness tuple1.4.0 добавлен к metadata getter; прежняя policy блокирует generic tab click353, task/delivery allowlists не расширены. Pure command_probe_contract+изолированный fixture добавлены без runtime dispatch: exact target/core/OS/arch/load/marker/ownreceipt/ownfull/exit/freshness. Full354255/255technicalPASS, final355 ещё проверяется. Все ограничения/подготовка/отказы сохранены; не command/whole regression PASS.
+
 FINAL352: конечный350 suite254/254technical PASS (/tmp/v350-full-smoke.log),8code SHA unchanged;22Markdown docs validation PASS. Native main351 proof ev-fd09ab4e590f и additive operator/harness review ev-6b9d6b643e48 относятся к Job20261016-010007-df2814da/tc-f32a5bcb. Business execution/full source regression ими не доказаны. Ни исходные failed traces, ни locked expected не переписаны.
 
 ## v350–352 — main source route и canonical lab alias

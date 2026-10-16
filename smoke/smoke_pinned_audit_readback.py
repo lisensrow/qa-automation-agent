@@ -60,4 +60,19 @@ assert s.inspect_pinned_agent_readiness_semantic('example','agent')['ready'] is 
 ready_agent['version']='1.3.27';ready_audit['detail'][0]['load_error']='failed'
 assert s.inspect_pinned_agent_readiness_semantic('example','agent')['ready'] is False
 assert classify_tool_action('browser_inspect_pinned_agent_readiness_semantic', {})=='observe'
+ready_audit['detail']=[{'plugin_name':'executeCommand','plugin_version':'1.4.0','load_status':True,'load_error':''}]
+assert s.inspect_pinned_agent_readiness_semantic('example','agent','executeCommand','1.4.0')['ready'] is True
+assert s.inspect_pinned_agent_readiness_semantic('example','agent','executeCommand','1.4.1')['ready'] is False
+ready_audit['detail'][0]['load_error']='failed'
+assert s.inspect_pinned_agent_readiness_semantic('example','agent','executeCommand','1.4.0')['ready'] is False
+ready_audit['detail'][0]['load_error']=''
+ready_audit['last_audit_at']=(now-timedelta(hours=2)).isoformat()
+assert s.inspect_pinned_agent_readiness_semantic('example','agent','executeCommand','1.4.0')['ready'] is False
+# Readiness must not leak into parameterless execution or delivery allowlists.
+from tools.agent_update import pinned_audit_payload,pinned_plugin_payload
+for compiler,args in [(pinned_audit_payload,('executeCommand',ready_audit,'executeCommand','1.4.0')),
+                      (pinned_plugin_payload,('executeCommand','1.4.0'))]:
+    try:compiler({'id':'ci','agent_id':'agent'},ready_agent,{'total':0,'items':[]},'agent','1.3.27',*args)
+    except ValueError:pass
+    else:raise AssertionError('Read-only declaration must not admit command delivery or execution')
 print('pinned_audit_readback: PASS (fixture only, no autonomous runtime acceptance)')

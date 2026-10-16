@@ -1,5 +1,9 @@
 # Архитектура QA-агента UQA
 
+## v354–355: read-only command readiness и отдельный чистый контракт
+
+Native readiness поддерживает exact executeCommand1.4.0 только для target-bound GET; WRITE/delivery/parameterless9 неизменны. Prepared модель354 обеихОС выполнила5чтений/0operations; оба snapshots stale/старый1.2.25, готовность1.4.0 BLOCKED. Generic Pluginsclick353 корректно запрещён STRICT_READ_ONLY, не обходится. Новый command_probe_contract — pure validators fixed private marker/exact2CI/core/OS/arch/load/receipt/ownfull; сам ничего не выполняет, runtime/journal integration ещё отсутствует. Полные primary IDs/expected/actual/interventions: [recipe](UQA_PARAMETERLESS_PLUGIN_REGRESSION.md), раздел v353–355. Full354255technicalPASS до arch-fix, final355 отдельно; не продуктовый commandPASS.
+
 ## v350–352: главный CLI, canonical alias и приёмка без live fallback
 
 Внутренний run_regression_job346 был принят раньше, чем главный CLI. Реальный main349 обнаружил разрыв: extract_known_stand возвращает canonical uc.lab.local, закрытый source profile ожидает lab. Mocked alias скрывал это в первом fixture; фраза без слова «регресс» попала в generic browser mode. Оператор остановил собственный helper; в сохранённой трассе были навигация/чтение, в том числе за пределами целевых Windows/Astra, но отправка задач/создание ресурсов не наблюдались. Этот запуск не принят. Автоматическая защита отклонила его неизменный повтор. Private trace сохранён на сервере /tmp/v349-main-source.private.log, без переноса capability URLs/сырых ответов в память.
