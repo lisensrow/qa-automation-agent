@@ -177,6 +177,19 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {'type':'function','function':{'name':'browser_create_closed_plugin_preparation_semantic',
+        'description':'WRITE: только locked preparation checkAlive/remoteConnections на dedicated Windows/Astra. Три этапа: inventory/delivery/post_inventory; Core intent/policy, OS-check/no-deletion. НЕ запуск основной задачи плагина.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name','stage_id'],
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections']},
+                'stage_id':{'type':'string','enum':['initial_inventory','delivery','post_inventory']}}}}},
+    {'type':'function','function':{'name':'browser_inspect_closed_plugin_preparation_semantic',
+        'description':'READ-only: full только own preparation receipt того же case/session. Download не loaded, fresh loaded не основной кейс.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name','task_id'],
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections']},'task_id':{'type':'string'}}}}},
+    {'type':'function','function':{'name':'browser_read_closed_plugin_preparation_semantic',
+        'description':'READ-only: fresh inventory/core/OS двух safe preparation plugins. Требует locked exact-target case. Никакого plugin main/task/VNC/command.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name'],
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections']}}}}},
     {"type":"function","function":{"name":"api_inspect_request_contract",
         "description":"OBSERVE: read a registered historical operation and its direct application/json request schema together. Exactly two source/pin-checked pages; no HTTP, recursive schema closure, defaults, enum values, payload validation or business PASS. Same stand/source selection and caller lock as api_inspect_contract_page. Use when the question needs required request fields, not just operation roots.",
         "parameters":{"type":"object","additionalProperties":False,"properties":{
@@ -2347,6 +2360,12 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_create_closed_plugin_preparation_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_inspect_closed_plugin_preparation_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_read_closed_plugin_preparation_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == 'api_inspect_request_contract':
         from api_contract_sources import inspect_registered_request_contract
         if set(arguments)-{'stand','method','path','source_id'}:
