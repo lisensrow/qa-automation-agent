@@ -1,4 +1,4 @@
-"""Closed preparation ONLY for two safe audit plugins, not plugin task execution.
+"""Closed preparation ONLY for four safe audit plugins, not plugin task execution.
 
 No legacy inventory profile extension, commands, VNC/session/settings or deletion.
 Core owns policy and durable claim. A loaded plugin is not a completed test case.
@@ -20,7 +20,8 @@ CREATE='browser_create_closed_plugin_preparation_semantic'
 READ='browser_inspect_closed_plugin_preparation_semantic'
 READY='browser_read_closed_plugin_preparation_semantic'
 PROFILE='safe-plugin-preparation-v1'
-VERSIONS={'checkAlive':('1.3.2','B4'),'remoteConnections':('1.3.6','B25')}
+VERSIONS={'checkAlive':('1.3.2','B4'),'remoteConnections':('1.3.6','B25'),
+          'storageAudit':('1.3.4','B33'),'defaultNetworkDeviceAudit':('1.3.5','B6')}
 STAGES=(('initial_inventory','pluginAudit'),('delivery','managePlugin'),('post_inventory','pluginAudit'))
 
 def now():return datetime.now(timezone.utc).isoformat()
@@ -39,7 +40,8 @@ def requirement(name,plugin,campaign):
         'target':name,'ci_id':t['ci_id'],'agent_id':t['agent_id'],'ci_name':t['ci_name'],
         'core_version':CORE,'plugin_name':plugin,'plugin_version':version,'profile_id':PROFILE,'campaign_id':campaign,
         'source_manifest':{'sha256':BOOK_SHA,'sheet':'1.3.27','version_cell':cell,
-            'teacher_job':'20261016-024614-ccfd4c2e','teacher_evidence':'ev-cc0c022c1e08'},
+            'teacher_job':'20261016-051942-618b0a99' if plugin in {'storageAudit','defaultNetworkDeviceAudit'} else '20261016-024614-ccfd4c2e',
+            'teacher_evidence':'ev-b541e59d632c' if plugin in {'storageAudit','defaultNetworkDeviceAudit'} else 'ev-cc0c022c1e08'},
         'expected_profile':{'fresh_loaded':True,'same_ci_agent_session':True,'plugin_case_executed':False,'business_pass':False}}
     r['operation_stages']=[{'version':1,'workflow_id':PROFILE,'stage_id':sid,
         'resource_key':'agent-'+t['agent_id']+'-'+plugin+'-'+sid,'tool':CREATE,

@@ -130,4 +130,4 @@ for name in ['windows','astra']:
         again=uqa.execute_tool_with_policy(p.CREATE,args,messages,**ctx2)
         assert again.get('executed') is False and len(posts)==before+1
         assert list_operations(jid2)[0]['status']=='uncertain'
-print('PASS preparation native/Core/recovery: exact2targets/2plugins/3stages, unchanged policy, durable intents, own results and loaded only')
+print(f'PASS preparation native/Core/recovery: exact2targets/{len(p.VERSIONS)}plugins/3stages, unchanged policy, durable intents, own results and loaded only')

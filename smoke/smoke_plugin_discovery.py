@@ -113,4 +113,4 @@ for name in ['windows','astra']:
         assert uqa.execute_tool_with_policy(p.CREATE,args,messages,**ctx2).get('executed') is False and len(posts)==2
 assert p.shape({'x':[1,True,None]})['complete_census'] is True
 rejected(p.shape,float('nan'));rejected(p.shape,'x'*1048577)
-print('PASS closed main discovery fixture: four scopes, exact POST, own full, independent recovery, no replay, no semantic PASS, redacted census')
+print(f'PASS closed main discovery fixture: {2*len(p.VERSIONS)} target-plugin scopes, exact POST, own full, independent recovery, no replay, no semantic PASS, redacted census')

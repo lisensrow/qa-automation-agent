@@ -7,7 +7,7 @@ from operation_journal import list_operations,reconcile_operation
 from command_stage_runtime import bound
 from plugin_audit_runtime import phase_decision_schema,decode_phase_decision
 
-QUERY='safe-plugin-preparation-v1 checkAlive remoteConnections initial_inventory post_inventory'
+QUERY='safe-plugin-preparation-v1 checkAlive remoteConnections storageAudit defaultNetworkDeviceAudit initial_inventory post_inventory'
 SOURCE='UQA-experience/UQA_PARAMETERLESS_PLUGIN_REGRESSION.md'
 PROMPT=('You are UQA preparing one immutable safe audit plugin on one dedicated lab target. '
     'Select only admitted phase JSON name/arguments; no actions are automatic. Read reviewed memory, '

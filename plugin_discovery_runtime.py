@@ -7,7 +7,7 @@ from operation_journal import list_operations,reconcile_operation
 from command_stage_runtime import bound
 from plugin_audit_runtime import phase_decision_schema,decode_phase_decision
 
-QUERY='safe-plugin-discovery-v1 main_discovery checkAlive remoteConnections'
+QUERY='safe-plugin-discovery-v1 main_discovery checkAlive remoteConnections storageAudit defaultNetworkDeviceAudit'
 SOURCE='UQA-experience/UQA_PARAMETERLESS_PLUGIN_REGRESSION.md'
 PROMPT=('You are UQA observing one benign main task on one immutable dedicated lab target. '
     'Select only admitted phase JSON name/arguments. Read memory, navigate exact CI/Tasks, '

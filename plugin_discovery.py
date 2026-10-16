@@ -1,6 +1,6 @@
 """Closed benign main-task discovery. Execution proof is NOT a product oracle.
 
-Only checkAlive and remoteConnections, no delivery/commands/remote sessions.
+Only four source-grounded benign audits, no delivery/commands/remote sessions.
 """
 from copy import deepcopy
 from pathlib import Path
