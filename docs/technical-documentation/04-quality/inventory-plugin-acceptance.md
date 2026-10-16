@@ -1,5 +1,24 @@
 # Inventory-плагины: проверка доставки и результатов
 
+## v410–412: два новых аудита выполнены моделью на обеих ОС
+
+storageAudit1.3.4 и defaultNetworkDeviceAudit1.3.5 на dedicated Windows/Astra core1.3.27: четыре preparation Jobs и четыре main discovery Jobs completed=true. Все14операций verified:10подготовки (включая4точные доставки и fresh loaded proof),4основных задания. Windows/Astra storage вернули list1/list2 (2339/1662bytes); default interface — dict6keys на обеих ОС (185/172bytes). Числа и digest — наблюдения этой выборки, НЕ будущий literal oracle.
+
+| ОС / плагин | Preparation Job / runtime proof | Main Job / runtime proof | Собственный main full |
+| --- | --- | --- | --- |
+| Windows storageAudit1.3.4 | 20261016-053144-5ad5e867 / ev-a913d462179f | 20261016-053350-c9bd531c / ev-113c87b02be0 | ev-ae9624536654; task661363d3-db0a-463c-9af4-c17bd49ce1f7 |
+| Astra storageAudit1.3.4 | 20261016-053433-3fed2280 / ev-15abebcfeed1 | 20261016-053528-ef0debfc / ev-18c4c0de56a5 | ev-d052e1080241; task301cce41-f758-42f0-ba6e-5117d9d15d83 |
+| Windows defaultNetworkDeviceAudit1.3.5 | 20261016-053610-f196bbea / ev-c37bad036925 | 20261016-053703-1a9a7b72 / ev-3e44fc026a55 | ev-e0833e95604d; taskf3137d8f-3dcb-43e4-b2d8-faee1898a5a3 |
+| Astra defaultNetworkDeviceAudit1.3.5 | 20261016-053745-e0da624d / ev-8e1cba455055 | 20261016-053853-3e5bc458 / ev-e5d338589886 | ev-d741d2d19492; taskd7a7f474-1582-4e41-adf5-5d7ade706338 |
+
+Исходный409 Windows preparation Job20261016-052827-d7ca5560/tc-a807ac89/runtimeev-93387247c982 остановился ДО отправки: nativeev-5291b965ae35 tool_policy_blocked/read_only_request/executed=false/operations0. Причина — противоречивый операторский текст «read-only readiness», включавший глобальное чтение для всего workflow. Core действовал правильно. Новый410 request явно выражает ранее разрешённое точечное обновление; прежний Job/request сохранён, отсутствие отправки проверено и ссылка на отказ записана в scope continuation. Это исправление оператора, НЕ самостоятельное исправление моделью и не изменение policy. Одинаковый неуспешный запрос не повторялся.
+
+Действия модели: memory retrieval → exact CMDB/Tasks → fresh readiness → нужные delivery/own full/pluginAudit/fresh loaded в preparation; затем отдельный main Job → own fresh full → canonical report. Это normal UQA run_turn в typed route, но scope/oracle/разделение Jobs приготовлены оператором, каталог фаз/payload compilation/канонический отчёт заданы framework,14standing confirmations делегированы по прежней v069. Runtime hints0/operator product actions0. Последовательная queue не выбирает новый scope и проверяет cutoff перед следующим case. Не называть эти8подготовленных Jobs свободным NL planner или одним непрерывным автономным lifecycle.
+
+Teacher411 Job20261016-054047-b31fed02/tc-1fc116b4/ev-a58897d6f535 отдельно сверил primary runtime/ledger и GET каждого из4own task/full: census/digest точно совпали. Это read-only проверка оператора,0новых задач, не действие модели и не независимый OS oracle. Все source cases остаются BLOCKED/business_pass=false: физическая полнота storage и корректность default route/интерфейса независимо с ОС/UI ещё не сверены. storage не заменяет drive/filesystem audit; default interface не заменяет полный network audit.
+
+Code408243bfcea972f01380f55437148be207399ed8318 committed/pushed, full408267/267technicalPASS,7SHA /tmp/v408-code.sha256 повторно совпали;22technicalMarkdown valid. Jira/Zephyr без записей. Прежние displayDeviceAudit1.3.3/displayMonitoring1.3.2 missing-source blockers, Windows8historical executeCommand progress и2старых uncertain/awaiting operations сохранены, не обходились. Новые знания412 сохраняются reviewed candidate с историей и точными proof refs, без verified promotion или выдуманного developer confirmation.
+
 ## v406–408: следующие два безопасных аудита и исправление ссылки на руководство
 
 Teacher406 Job20261016-051942-618b0a99 / tc-92fdee3c / ev-b541e59d632c — операторская read-only подготовка, не действие модели. Неизменённый workbook SHA7fef498ba403c70a48dcdfb5f80ef84cde927b7f6e8d947d3740ccaeaa415f53, sheet1.3.27: B33 storageAudit1.3.4; B6 defaultNetworkDeviceAudit1.3.5. Bundled Artifact Tool прочитал локальный исходник и importer серверную копию; значения и отсутствие формул совпали, исходники не пересчитывались/не экспортировались/не менялись. Каталоги UC storage содержат именно1.3.4/1.3.5, metadata projection SHA868e1f004a9d0689233631e76c995e4b5bd7282ae1297c191dff9bbe714f1110a. Это не binary signature/OS compatibility proof.
