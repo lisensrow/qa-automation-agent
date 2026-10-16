@@ -166,6 +166,7 @@ from tools.browser import (
 )
 
 from knowledge_tool import knowledge_search
+from regression_source_reader import read_case as read_regression_case
 from api_contract_sources import inspect_registered_contract_page
 
 from ssh_worker import (
@@ -267,6 +268,14 @@ TOOLS = [
                 "type": "object",
                 "properties": {}
             }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "knowledge_read_regression_case",
+            "description": "Read a hash-pinned archived Windows/Astra regression source window (1..3 steps), including exact expected/test data. Source only, no execution/permission or current-state proof. Use next_step to read every required window; an oversized result is refused, never truncated.",
+            "parameters": {"type":"object","additionalProperties":False,"properties":{"case_key":{"type":"string"},"first_step":{"type":"integer"},"step_count":{"type":"integer"}},"required":["case_key"]}
         }
     },
     {
@@ -2469,6 +2478,10 @@ def execute_tool(name: str, arguments: dict):
         from tools.browser import _session
         from tools.table_cell_controls import operate
         return operate(_session, **arguments)
+    if name == "knowledge_read_regression_case":
+        if set(arguments)-{'case_key','first_step','step_count'}:
+            return {'error':'source_reader_arguments_invalid','executed':False}
+        return read_regression_case(arguments.get('case_key'),arguments.get('first_step',1),arguments.get('step_count',1))
     if name == "knowledge_search":
         return knowledge_search(
             query=arguments["query"],

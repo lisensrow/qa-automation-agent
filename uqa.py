@@ -300,6 +300,7 @@ MODEL_BASE_TOOL_NAMES = {
     "browser_inspect_table_semantic", "browser_inspect_table_row",
     "browser_get_network_detail",
     "knowledge_search",
+    "knowledge_read_regression_case",
 }
 MODEL_CATALOG_TOOL_NAME = "tool_catalog_select"
 
@@ -2052,6 +2053,7 @@ def classify_tool_action(
         "browser_inspect_labeled_grid_values_semantic",
         "api_inspect_contract_page",
         "knowledge_search",
+        "knowledge_read_regression_case",
         "ssh_docker_ps",
         "ssh_find_backend_request",
         "ssh_docker_logs",
