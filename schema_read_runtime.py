@@ -109,10 +109,10 @@ def source_report(canonical,complete,evidence_id,error):
         lines+=['TaskFull.result обязателен: '+('да' if canonical['task_result_required'] else 'нет')+'.',
             'Схема TaskFull.result: '+json.dumps(canonical['task_result_schema'],ensure_ascii=False,sort_keys=True)+'.']
     if error:lines.append('Ограничение чтения: '+str(error)+'.')
-    lines+=['','HTTP/команды/задачи на КЕ не запускались. Это справка о декларации, не бизнес-PASS.',
+    lines+=['','HTTP-запросы к UC, команды и задачи на КЕ не запускались. Это справка о декларации, не бизнес-PASS.',
             'BLOCKED в общем QA-статусе не означает неудачу завершённого справочного чтения.',
             'Доказательство: '+evidence_id+'.']
-    return '\n'.join(lines)
+    return '\n\n'.join(line for line in lines if line)
 
 def run(api,messages,job_id,case_id,action_policy,force_read_only=False):
     try:req=validate_context(api.get_job(job_id),case_id)

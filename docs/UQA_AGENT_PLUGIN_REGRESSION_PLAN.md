@@ -1,5 +1,14 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## v350–352: главный CLI, canonical alias и приёмка без live fallback
+
+Внутренний run_regression_job346 был принят раньше, чем главный CLI. Реальный main349 обнаружил разрыв: extract_known_stand возвращает canonical uc.lab.local, закрытый source profile ожидает lab. Mocked alias скрывал это в первом fixture; фраза без слова «регресс» попала в generic browser mode. Оператор остановил собственный helper; в сохранённой трассе были навигация/чтение, в том числе за пределами целевых Windows/Astra, но отправка задач/создание ресурсов не наблюдались. Этот запуск не принят. Автоматическая защита отклонила его неизменный повтор. Private trace сохранён на сервере /tmp/v349-main-source.private.log, без переноса capability URLs/сырых ответов в память.
+
+v350 сопоставляет только зарегистрированный canonical lab hostname с alias lab перед прежним whole-request validator; другие стенды не нормализуются. Новый fixture использует настоящее извлечение слов с явным resolver fixture, а не mock extract_known_stand. Ошибки source ветки не падают в generic executor. Не смешивать эту коррекцию с неизменной бизнес-policy, browser permissions или разрешением других машин.
+
+Реальный main351: Job20261016-010007-df2814da / tc-f32a5bcb / trace ev-fd09ab4e590f, completed=true, recipe_retrieved=true, ordinary_request_entry=true; canonical пользовательский ответ содержит programm и unknown recency. Модель сама выбрала memory/source reads; ручного case/выбора страниц0, UC operations/resources0, бизнес-исполнение false. Operator harness подавал только исходную фразу, предложенный AUTO и /exit; дополнительно fail-closed tripwires запрещали generic turn без валидного source case, инструменты кроме knowledge_search/api_inspect_contract_page, browser reset и SSH. Это явная приёмочная страховка, не незаявленная автономия. Production source runtime сохраняет force_read_only и независимые native source guards. Exact closed grammar, source/profile/query/frontier/structured transport остаются framework assistance; произвольные промпты, весь Swagger, текущая свежесть API и command payload execution не доказаны. Предварительный348254/254 technical PASS был до alias correction; конечный350 suite и SHA проверяются отдельно. Никаких Jira/Zephyr writes или повторов plugin delivery/main audit.
+
+
 ## Checkpoint346: source prompt без ручной подготовки case
 
 Обычная фраза про «параметры командной задачи и формат полного результата» при явном source-only/не запускать scope теперь сама создаёт1защищённый case; native346completed, поля видны в result, актуальностьunknown. Это точная закрытая грамматика, не общий freeformAPI/командный executor. Final345253/253technicalPASS/8SHAunchanged, source history/negative lessons сохраняютсявmemory346. Все18inventory cells и полнота/дисплеиBLOCKED остаются.

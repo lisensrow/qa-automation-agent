@@ -1,5 +1,11 @@
 # История изменений UQA
 
+FINAL352: конечный350 suite254/254technical PASS (/tmp/v350-full-smoke.log),8code SHA unchanged;22Markdown docs validation PASS. Native main351 proof ev-fd09ab4e590f и additive operator/harness review ev-6b9d6b643e48 относятся к Job20261016-010007-df2814da/tc-f32a5bcb. Business execution/full source regression ими не доказаны. Ни исходные failed traces, ни locked expected не переписаны.
+
+## v350–352 — main source route и canonical lab alias
+
+Main dispatcher теперь направляет exact source-only фразу до generic/live probes, canonical uc.lab.local сверяется с registered lab alias. Первый349helper ошибочно попал в generic navigation; остановлен, исходная трасса сохранена, неизменный replay отклонён автоматической защитой. Resolver-aware fixture заменяет скрывавший mismatch mock. Native main351 Job010007-df2814da/tc-f32a5bcb/ev-fd09ab4e590f completed/recipe retrieved,0UCoperations/resources; explicit input/AUTO driver и no-live fallback tripwires раскрыты. Canonical answer/unknown сохранены; не command execution, не full business regression. Final350 technical suite/SHA и reviewed memory352 фиксируются после завершения отдельно.
+
 ## v343–346 — ordinary source-only entry и unknown вместо неподтверждённого outdated
 
 Memory346 indexed once, SHA5b103bcb83df547b9ef489f8dfcd572442d41292c3e8f75421abe5bbb04b2db46; обеDB snapshots before-v346, integrity/dedup/retrievalPASS1223unrelated chunks unchanged, targeted ordinary proof найден и runtimeQUERY сохраняетfullrefs.253/253final345/8SHAOK/22MDvalid. Приёмкаordinary346 была через обычный run_regression_job, не весь main CLI: верхний dispatcher пока выбирает regression только по слову «регресс». Исправление/отдельная main приёмка — следующий шаг перед command POST, не выдавать внутренний вызов за уже проверенный весь CLI.

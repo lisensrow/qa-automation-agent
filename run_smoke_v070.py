@@ -73,6 +73,7 @@ SMOKES = [
     "smoke_api_request_contracts.py",
     "smoke_schema_read_runtime.py",
     "smoke_schema_request_adapter.py",
+    "smoke_schema_cli_route.py",
     "smoke_table_horizontal_viewport.py",
     "smoke_procedure_graph.py",
     "smoke_api_contract_projection.py",

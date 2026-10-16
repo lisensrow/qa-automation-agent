@@ -16728,6 +16728,31 @@ def main():
 
             continue
 
+        # Exact source-only requests must not enter live stand SSH/version
+        # probing or depend on the generic "regression" keyword classifier.
+        from schema_request_adapter import request_requirement as source_request_requirement
+        source_stand_candidate = extract_known_stand(user_input) or current_stand
+        # General resolver returns the canonical hostname, whereas this closed
+        # source profile uses its registered lab alias. Never normalize other stands.
+        if source_stand_candidate == resolve_stand('lab'):
+            source_stand_candidate = 'lab'
+        if source_request_requirement(user_input,source_stand_candidate) is not None:
+            try:
+                ensure_ollama_ready()
+                source_job_id=run_regression_job(original_request=user_input,
+                    safe_request=redact_credentials(user_input),current_stand=source_stand_candidate,
+                    stand_identity=None)
+                source_job=get_job(source_job_id) or {}
+                source_cases=source_job.get('test_cases',[])
+                if (len(source_cases)==1 and source_cases[0].get('requirement')==
+                        source_request_requirement(source_job.get('request'),source_stand_candidate)
+                        and source_cases[0].get('result')):
+                    console.print(Markdown(source_cases[0]['result']))
+            except Exception as exc:
+                console.print('Source-only request error: '+type(exc).__name__)
+            compact_completed_history(messages)
+            continue
+
         explicit_stand_candidate = (
             extract_explicit_stand_candidate(
                 user_input
