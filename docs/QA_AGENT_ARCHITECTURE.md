@@ -1,5 +1,9 @@
 # Архитектура QA-агента UQA
 
+## v430: version discrepancy не равна доказанному VNC minimum
+
+Source429080945-97356d77/ev-69afc9ba8a85: исходный release archive1999entries содержит displayMonitoring1.3.1 и trayControl1.0.1. Workbook1.3.2 — discrepancy, не доказанный minimum VNC; прежняя категоричная блокировка исправлена без изменения старого expected/history. Runtime совместимость1.3.1 не объявлена. Debian package даёт declared log directory/autostart entry, не endpoint proof. Через агентские задачи возможен будущий закрытый readonly probe; отдельный доступ пользователь не подтвердил. Код/guards не менялись. Подробности/роли — recipe v429–430.
+
 ## v428: source-only transfer отдельно от live acceptance
 
 Model427073752-6a8150aa/ev-9eaba65bff2d извлёк426 черезev-cf8c7c4fe05e и строго сопоставил8boolean фактов; не заявляет session/OS/Tray/logfile proof или повторную доставку. Это не новая runtime capability/регресс и не отмена старых recall FAIL. Code4260803f90 pushed/full421268PASS/9SHA unchanged. Подробные refs и remaining prerequisites — recipe v427–428; независимое endpoint observation ещё не реализовано/не принято.

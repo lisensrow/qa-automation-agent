@@ -1,5 +1,9 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## v430: supplied-version functional test отдельно от workbook-version check
+
+displayMonitoring есть в оригинальном release archive как1.3.1; требование minimum1.3.2 для VNC не доказано. Проверять functional supplied version в отдельном immutable scope после contracts/tests, оставляя workbook1.3.2 discrepancy, не переименовывая/ослабляя прежний case. trayControl1.0.1 найден; его payload/session поведение ещё неизвестны. Package declared log path даёт source для будущего закрытого agent metadata probe; отдельный endpoint access пользователь не подтвердил. Источник429/роли/границы — recipe v429–430. Повторные VNC1.5.5 доставки/Jira writes запрещены прежним scope.
+
 ## v428: remaining prerequisites после проверки памяти
 
 Новая память426 применена моделью427/8строгих фактов matched,0agent tasks. Следующий runtime: нужный displayMonitoring1.3.2 + VNC session; независимый endpoint channel/закрытый metadata-only probe для Tray/files/OS. Канал и место требуемого дистрибутива уточняются. Не считать config/catalogue/intrinsic checks заменой ОС/desktop/logfiles. Старые blockers и Jira/Zephyr границы неизменны; refs в recipe v427–428.

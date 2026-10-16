@@ -1,5 +1,9 @@
 # История изменений UQA
 
+## v430 — исследована исходная поставка, исправлен чрезмерный version-blocker
+
+Operator429 прочитал полный tar.zst manifest1999entries, catalog и package metadata: displayMonitoring1.3.1 есть,1.3.2 не найдена, trayControl1.0.1 есть. Прежнее «VNC обязательно требует1.3.2» не доказано и superseded; workbook mismatch сохранён, функциональный1.3.1 эксперимент пока не выполнен. Declared log path/autostart не endpoint PASS. Code/9SHA unchanged, no tasks/settings/Jira. История/primary refs в recipe v429–430.
+
 ## v428 — проверка повторного использования новой памяти
 
 Actual source-only427: retrieval426 и8/8строгих boolean фактов matched, без agent tasks/operations/Jira writes. Runtime/full-case границы сохранены, прежние ошибки не переоценены. Code4260803f90 pushed,9SHA/full421268PASS unchanged. Детали/remaining blockers в recipe v427–428; новый endpoint metadata probe пока не реализован.

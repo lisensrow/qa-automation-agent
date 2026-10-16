@@ -1,5 +1,9 @@
 # Inventory-плагины: проверка доставки и результатов
 
+## v430: не выводить minimum compatibility из строки workbook
+
+Original archive1999entries/catalog подтверждают supplied displayMonitoring1.3.1, не1.3.2; VNC source не pin1.3.2. Исправлен прежний чрезмерный blocker, но runtime1.3.1 ещё не принят. Точный workbook-version case остаётся discrepancy/BLOCKED, functional supplied-version case требует отдельного source-bound oracle и policy; без изменения старого expected. Package log directory/autostart — декларация, не endpoint presence/write. Primary429080945-97356d77/ev-69afc9ba8a85, полный erratum/границы в recipe v429–430. Нет новых tasks/session/Jira/code changes.
+
 ## v428: повторный retrieval не повышает уровень доказательства
 
 Local model427073752-6a8150aa/ev-9eaba65bff2d/retrievalev-cf8c7c4fe05e правильно воспроизвёл8boolean фактов нового опыта, сохранив BLOCKED session/OS/Tray/files. Это source-only recall, не новый бизнес-кейс и не разрешение повторной доставки. Code4260803f90/full421268PASS/9SHA unchanged. Runtime evidence422/424 и новые ограничения не расширены. Детали и remaining prerequisites — recipe v427–428.

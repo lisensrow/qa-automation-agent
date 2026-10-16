@@ -1,5 +1,9 @@
 # План приёмки UQA: дневное продолжение
 
+## v430: уточнён следующий gate по фактической поставке
+
+Не ждать от пользователя несуществующий в проверенной поставке1.3.2 как доказанный VNC minimum. Source429 показывает supplied displayMonitoring1.3.1; workbook mismatch сохраняется отдельно. Следующий безопасный этап: явно source-bound functional1.3.1/VNC contract, не downgrade/подмена expected. Для Tray/logs развивать закрытое наблюдение через агент; package declared log directory не реальное наличие/запись. Отдельный OS/desktop access пользователь не подтвердил, credentials не угадывать. Никаких task/session/settings/Jira writes429, старые guards неизменны; recipe v429–430.
+
 ## v428: факты памяти подтверждены, внешние предусловия уточняются
 
 Actual427 source-only8/8matched, не runtime/full-regress PASS. VNC422 и content424 завершены в ограниченном scope; не повторять. Для VNC session нужен required displayMonitoring1.3.2, для Tray/logfiles/правильности ОС — независимое endpoint observation. Запрошены место дистрибутива и существующий канал доступа без раскрытия паролей; metadata-only probe ещё план. Не обходить Windows8progress/15historical unresolved. Jira/Zephyr readonly, automation PAUSED. Primary refs в recipe v427–428.
