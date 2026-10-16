@@ -1,5 +1,20 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## v389–390: main discovery обеих ОС завершены; schema результата — ещё не oracle
+
+Итог текущей ограниченной матрицы safe-plugin-discovery-v1: **4 успешных main execution cells**, **0 подтверждённых полных source cases**. CheckAlive1.3.2 Windows/Astra и remoteConnections1.3.6 Windows/Astra выполнены локальной моделью через Core, own full свежи на момент выполнения, четыре новые main операции verified. Preparation доставки не повторялись. Это не весь регресс и не ordinary freeform автономность.
+
+Windows remoteConnections continuation Job20261016-040027-eeb562f2/tc-51254348/runtime ev-e795d2b3df40, own full ev-390aabd3f8b5, task7e544929-1fce-4936-961d-761fafffa272/op-5caf2b74b6f043b482a55bf99e941e80 verified. Новый POST один, после native чтения всех132старых задач в двух страницах100+32 и head recheck; metadata preflight complete, не atomic snapshot. Ответ object1/1007JSONbytes. Continuation подготовлен оператором после доказанного NOT_SENT прежнего Job034954-7bca9e5c; прежняя ошибка не переписана. Поэтому весь путь Windows remote НЕ uninterrupted autonomous lifecycle. Для остальных трёх main proof IDs см. предыдущий раздел; operator scope/oracle/standing approvals и framework singleton phases/fixed payload/canonical rendering сохранены, runtime hints0/operator product actions0.
+
+Teacher389 **только перечитал** четыре уже завершённых own full: Job20261016-040233-14d548a6/tc-e8ec0562/ev-acd7255fe6c0, новых задач0. Все четыре payload SHA совпали с исходными runtime census; это schema review, не новый execution или бизнес-эталон. Core1.3.27, Windows64/Astra x86_64, plugin versions выше; server/frontend/product release unknown. Сырые пользовательские/портовые/конфигурационные значения не публиковались.
+
+Нюансы текущего checkAlive: data имеет duration_seconds(float), result(str9), task_id(str36). Хеш result одинаков на двух ОС:4ddb3e96801a1ee2b77dc5247c0db478d5f97a93b90e7cdb09f5f51d43764b08; exact literal руководством не задан и здесь не утверждается. task_id field SHA совпадает с SHA своего внешнего task ID на каждой ОС (независимое вычисление по известным ID); разные полные SHA обусловлены как минимум разными task_id, duration metadata тоже нельзя объявлять фиксированной. Не сравнивать whole JSON как «фиксированный ответ» и не изобретать developer-confirmed bug. Для нового теста заранее отделить identity/duration и fixed semantic result; наблюдённый пример сам по себе не становится независимым oracle.
+
+Нюансы remoteConnections: data.data содержит rdp/ssh/vnc. Для протокола имеются is_default_port_opened(bool), is_installed(bool), is_running(object), is_used(array), user_access_policy(array). В rdp/ssh is_running.port наблюдался str или null, run — bool; VNC is_running вместо общего port содержит instances(array) и run(bool). В instance видны bind/display/export_type/port/process/server_config/session, но более глубокая teacher schema ограничена depth5; не объявлять её полным контрактом. User-access arrays содержали строки на Windows и были пусты на Astra; не переносить эти количества как эталон. Наличие schema VNC instance не доказывает установленный vncServer, работающий сеанс или VNC-case PASS. Не инициировались remote sessions/установка TightVNC/изменения OS или прав.
+
+Финальная техническая388 проверка265/265PASS,11SHA unchanged,22Markdown valid, supervisor predicate PASS; code/docs388 commit8d0c67ad2f6de3f355e5ab2fc3bc3dc42eecd820 pushed. Следом проверить, что модель повторно извлекает именно эту память и правильно различает execution/полный кейс/операторское продолжение; source-only check не считать новым регрессом. Затем отдельный независимый expected для содержательных тестов или актуальные schema/параметры следующих плагинов. Не повторять успешные доставки/main только ради счётчика. Jira/Zephyr не менялись; старые uncertainty и Windows historical command progress не отменялись.
+
+
 ## v385–388: реальные main discovery и полное постраничное preflight-чтение
 
 Normal Core/local qwen3:14b извлёк safe-plugin-discovery-v1 и выполнил основные задачи без повторной доставки:
