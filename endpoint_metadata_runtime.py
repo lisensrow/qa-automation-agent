@@ -1,9 +1,9 @@
-"""Prepared fixed endpoint metadata phases; no arbitrary command or writes."""
+"""Prepared fixed endpoint phases; optional exact MSI is explicitly destructive."""
 import json
 import time
 from copy import deepcopy
 import job_store as store
-from endpoint_metadata import CREATE,READ,READY,PROFILE,POST_LOG,validate_context
+from endpoint_metadata import CREATE,READ,READY,PROFILE,POST_LOG,MSI,POST_MSI,validate_context
 from command_stage_runtime import bound
 from plugin_audit_runtime import phase_decision_schema,decode_phase_decision
 from operation_journal import list_operations,reconcile_operation
@@ -20,7 +20,7 @@ PROMPT=('You are UQA observing Tray/log metadata through one fixed dedicated Ast
 
 def catalog(trace,r):
     if not trace:
-        query=(PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
+        query=(r['profile_id'] if r['profile_id'] in {MSI,POST_MSI} else PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
                POST_LOG if r['profile_id']==POST_LOG else r['profile_id']+' TightVNC ownership no uninstall')
         return [bound('knowledge_search',{'query':query,'limit':4})]
     if not any(x['tool']=='browser_open_page' for x in trace):return [bound('browser_open_page',{'url':'https://uc.lab.local/cmdb'})]
@@ -30,7 +30,8 @@ def catalog(trace,r):
     if not any(x['tool']==READY for x in trace):return [bound(READY,args)]
     ready=next(x['result'] for x in trace if x['tool']==READY)
     if ready.get('ready') is not True:raise ValueError('endpoint_prerequisites_not_ready')
-    if not any(x['tool']==CREATE for x in trace):return [bound(CREATE,args)]
+    create_tool=r['operation_stages'][0]['tool']
+    if not any(x['tool']==create_tool for x in trace):return [bound(create_tool,args)]
     if not any(x['tool']==READ and x['result'].get('native_result_verified') is True for x in trace):return [bound(READ,args)]
     return []
 
@@ -40,7 +41,23 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
         if policy!='confirm_mutations' or force_read_only:raise ValueError('endpoint_mutation_policy_required')
     except (ValueError,TypeError,KeyError,AttributeError) as e:
         return {'started':False,'completed':False,'reason':str(e)}
+    from windows_legacy_msi import PROFILE as MSI
     prompt=PROMPT
+    if r['profile_id']==POST_MSI:
+        prompt=('You are UQA checking current absence of one exact legacy TightVNC product on dedicated Windows/core1.3.27. '
+          'This is a separately prepared READ-ONLY agent probe after the original uninstall result validator failed. '
+          'Select only admitted actions through Core policy/journal. No MSI invocation, reinstall, deletion, plugin or security change. '
+          'Read your own fresh result and compare exact registry/service/legacy-process absence, not status success alone. '
+          'Unknown/denied/error BLOCKED. Pending same task read; uncertain STOP/no resend. '
+          'Keep original workflow failure and operator confirmation/diagnosis separate, not one autonomous lifecycle or full regression. Jira/Zephyr forbidden.')
+    if r['profile_id']==MSI:
+        prompt=('You are UQA in one human-authorized, operator-prepared exact legacy TightVNC MSI removal on dedicated Windows/core1.3.27. '
+          'Select only admitted actions; Core v069 DESTRUCTIVE confirmation, immutable scope, OS/readiness, journal and replay checks remain. '
+          'Fixed agent-side identity preflight must match the exact MSI product/version before /x /qn /norestart. No arbitrary command, '
+          'registry command evaluation, manual deletion, plugin removal, reboot or auth/security change. '
+          'Pending means own same task read, never another send. Uncertain means stop, no resend/rekey. '
+          'Use canonical removal_status; exit code alone is not absence. Registry/service/process absence and no required reboot are separate checks. '
+          'Operator source/oracle/retirement and framework phases/compiled payload disclosed; not freeform autonomy or full regression. Jira/Zephyr forbidden.')
     if r['profile_id']==POST_LOG:
         prompt=prompt.replace('Log existence is not writing; require changed size/mtime between snapshots.',
           'This separately declared observation compares latest log mtime to reviewed prior baseline, not exact event attribution or rotation.')
@@ -51,7 +68,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
     try:
         from tools.browser import _session
         _session.reset_case_context()
-        for turn in range(20):
+        for turn in range(40 if r['profile_id']==MSI else 20):
             options=catalog(trace,r)
             if not options:
                 last=trace[-1]['result'];ops=list_operations(jid)
@@ -59,11 +76,14 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
                     raise ValueError('endpoint_own_operation_unverified')
                 report={**last['summary'],'target':r['target'],'own_task_verified':True,
                     'read_evidence_id':trace[-1]['evidence_id'],'full_business_case_passed':False,'jira_written':False}
-                status_key='logging_status' if r['profile_id'] in {PROFILE,POST_LOG} else 'observation_status'
+                status_key='absence_status' if r['profile_id']==POST_MSI else 'removal_status' if r['profile_id']==MSI else 'logging_status' if r['profile_id'] in {PROFILE,POST_LOG} else 'observation_status'
                 schema={'type':'object','additionalProperties':False,'required':[status_key,'full_business_case_passed','summary'],
-                    'properties':{status_key:{'type':'string','enum':['PASS','BLOCKED'] if status_key=='logging_status' else ['COMPLETE','BLOCKED']},
+                    'properties':{status_key:{'type':'string','enum':['PASS','BLOCKED'] if status_key in {'logging_status','removal_status','absence_status'} else ['COMPLETE','BLOCKED']},
                         'full_business_case_passed':{'type':'boolean'},'summary':{'type':'string'}}}
-                answer=api.ask_ollama([{'role':'system','content':prompt+' Legacy identity observation never authorizes uninstall or proves absence.'},
+                suffix=(' Only the exact authorized MSI is in scope; full regression is not proved.' if r['profile_id']==MSI
+                  else ' Only current exact absence is checked, not the original uninterrupted lifecycle or full regression.' if r['profile_id']==POST_MSI
+                  else ' Legacy identity observation never authorizes uninstall or proves absence.')
+                answer=api.ask_ollama([{'role':'system','content':prompt+suffix},
                     {'role':'user','content':'Summarize only this canonical limited observation: '+json.dumps(report)}],
                     tools=[],response_schema=schema)['message'].get('content') or ''
                 final=json.loads(answer)
@@ -88,7 +108,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
             trace.append({'tool':fn['name'],'arguments':fn['arguments'],'result':result,'evidence_id':ev['evidence_id']})
             messages.append({'role':'tool','tool_name':fn['name'],'content':json.dumps(api.tool_result_for_model(fn['name'],result))})
             if result.get('error'):
-                if fn['name']==READ and result['error']=='own_endpoint_result_not_ready' and pending_reads<8:
+                if fn['name']==READ and result['error']=='own_endpoint_result_not_ready' and pending_reads<(24 if r['profile_id']==MSI else 8):
                     pending_reads+=1;time.sleep(2);continue
                 raise ValueError('endpoint_tool_failed:'+str(result['error']))
             if fn['name']=='knowledge_search' and not any(x.get('source')==SOURCE and r['profile_id'] in str(x) for x in result.get('results',[])):
@@ -100,11 +120,12 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
     finally:
         complete=bool(report and final and not error)
         body={'completed':complete,'error':error,'trace':trace,'canonical_report':report,'model_final':final,
+            'profile_id':r['profile_id'],'exact_authorized_msi_removal_case':r['profile_id']==MSI,
             'operator_case_oracle_preparation':True,'framework_phase_transport':True,'ordinary_freeform_entry':False,
             'operator_runtime_hints':0,'operator_product_actions':0,'desktop_input':False,'business_pass':False,'jira_written':False}
         ev=store.add_evidence(jid,cid,'model_endpoint_metadata_cycle',json.dumps(body),source='uqa_endpoint_runtime',
             execution_status='observed',usable_for_pass=False,usable_for_verdict=False,
-            eligibility_reason='metadata_only_not_tray_desktop_or_full_logging_case')
+            eligibility_reason=('exact_msi_result_not_full_source_regression' if r['profile_id']==MSI else 'metadata_only_not_tray_desktop_or_full_logging_case'))
         store.update_test_case(jid,cid,status='blocked',result=json.dumps(report) if report else 'Endpoint metadata incomplete; no automatic retry.')
         store.set_job_status(jid,'blocked')
         from tools.browser import _session

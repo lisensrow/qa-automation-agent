@@ -177,6 +177,10 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {'type':'function','function':{'name':'browser_remove_exact_legacy_msi_semantic',
+      'description':'DESTRUCTIVE: only locked human-authorized Windows legacy TightVNC2.8.85.0 exact MSI product. Fresh native identity preflight, no arbitrary command/manual deletion/reboot/plugin changes; Core context/policy/journal required.',
+      'parameters':{'type':'object','additionalProperties':False,'required':['target'],
+          'properties':{'target':{'type':'string','enum':['windows']}}}}},
     {'type':'function','function':{'name':'browser_start_closed_endpoint_metadata_semantic',
       'description':'WRITE: locked one fixed Astra executeCommand metadata probe. Bounded log file stat twice and tray process/autostart metadata; no log contents, writes, settings or arbitrary command.',
       'parameters':{'type':'object','additionalProperties':False,'required':['target'],
@@ -186,7 +190,7 @@ TOOLS = [
       'parameters':{'type':'object','additionalProperties':False,'required':['target'],
           'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
     {'type':'function','function':{'name':'browser_read_closed_endpoint_metadata_readiness_semantic',
-      'description':'READ: exact target/OS/core, loaded executeCommand1.4.0 and complete terminal command list. Never cancels historical Windows commands; no Windows payload implemented.',
+      'description':'READ: exact target/OS/core, loaded executeCommand1.4.0 and complete safe command list. Unknown unresolved tasks block. Windows supported only in the separately locked exact-MSI profile; does not cancel tasks or grant permission.',
       'parameters':{'type':'object','additionalProperties':False,'required':['target'],
           'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
     {'type':'function','function':{'name':'browser_start_closed_vnc_session_semantic',
@@ -2419,6 +2423,8 @@ def execute_tool(name: str, arguments: dict):
     if name == "browser_inspect_closed_plugin_discovery_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_read_closed_plugin_discovery_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_remove_exact_legacy_msi_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_start_closed_endpoint_metadata_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}

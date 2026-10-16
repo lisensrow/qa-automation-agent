@@ -61,8 +61,12 @@ def validate_task_list(name,tasks,task_name):
         or tasks.get('offset',0)!=0 or len(items)>10000):raise ValueError('complete_command_task_list_required')
     for item in items:
         if (not isinstance(item,dict) or item.get('agent_id')!=t['agent_id'] or item.get('name')!=task_name
-            or item.get('period') is not None or item.get('status') not in {'success','error','timeout'}):
+            or item.get('period') is not None):
             raise ValueError('existing_command_task_unresolved_or_scope_mismatch')
+        if item.get('status') not in {'success','error','timeout','terminated'}:
+            from historical_command_retirement import validate_retired_item
+            if not validate_retired_item(name,item):
+                raise ValueError('existing_command_task_unresolved_or_scope_mismatch')
     return items
 
 def validate_preflight(name,ci,agent,audit,tasks,now=None):

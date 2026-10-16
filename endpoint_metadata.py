@@ -1,4 +1,8 @@
-"""Source-bound Astra metadata through executeCommand. No log contents/writes."""
+"""Closed endpoint profiles: read-only Astra metadata or exact authorized MSI.
+
+Destructive Windows removal has a distinct tool/profile and v069 policy class;
+the default metadata tool cannot invoke it. No arbitrary payload or log writes.
+"""
 import hashlib,json
 from copy import deepcopy
 from uuid import UUID
@@ -12,6 +16,7 @@ CREATE='browser_start_closed_endpoint_metadata_semantic'
 READ='browser_inspect_closed_endpoint_metadata_semantic'
 READY='browser_read_closed_endpoint_metadata_readiness_semantic'
 PROFILE='agent-tray-log-metadata-v1'
+from windows_legacy_msi import PROFILE as MSI,REMOVE,POST_PROFILE as POST_MSI
 PROGRAM='/usr/bin/python3'
 CODE=r"""import os,stat,time,json,hashlib
 ROOT='/opt/usystem/usagent/var/log/usagent'
@@ -72,7 +77,7 @@ def validate_log_baseline():
  if len(oldops)!=1 or oldops[0]['status']!='verified':raise ValueError('log_baseline_execution_required')
  return True
 def requirement(name,campaign,profile=PROFILE):
- if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG}:raise ValueError('endpoint_profile_required')
+ if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG,MSI,POST_MSI}:raise ValueError('endpoint_profile_required')
  from legacy_vnc_identity import PROFILE as LEGACY,SHA as LSHA
  t=target(name)
  if not isinstance(campaign,str) or not 1<=len(campaign)<=80 or not campaign.replace('-','').isalnum():
@@ -98,6 +103,24 @@ def requirement(name,campaign,profile=PROFILE):
    'tray_desktop_verified':False,'log_contents_read':False,'file_writes':False})
   s=r['operation_stages'][0];s.update(workflow_id=POST_LOG,resource_key='agent-'+t['agent_id']+'-post-vnc-log-observation')
   s['verification'].update(profile_id=POST_LOG)
+ if profile==MSI:
+  from windows_legacy_msi import SHA as MSHA,PRODUCT,VERSION as MVERSION
+  if name!='windows':raise ValueError('legacy_msi_windows_only')
+  r.update(profile_id=MSI,payload_sha256=MSHA,supported_os='windows',action_profile='destructive',
+   expected_profile={'product_code':PRODUCT,'version':MVERSION,'identity_verified':True,
+    'uninstall_started':True,'msi_exit_code':0,'registry_absent':True,'legacy_service_absent':True,
+    'legacy_process_absent':True,'reboot_required':False,'full_source_case_passed':False})
+  s=r['operation_stages'][0];s.update(workflow_id=MSI,tool=REMOVE,
+   resource_key='agent-'+t['agent_id']+'-legacy-msi-removal')
+  s['verification'].update(profile_id=MSI,payload_sha256=MSHA)
+ if profile==POST_MSI:
+  from windows_legacy_msi import POST_SHA,PRODUCT
+  if name!='windows':raise ValueError('legacy_absence_windows_only')
+  r.update(profile_id=POST_MSI,payload_sha256=POST_SHA,supported_os='windows',expected_profile={
+   'product_code':PRODUCT,'registry_absent':True,'legacy_service_absent':True,'legacy_process_absent':True,
+   'uninstall_performed':False,'full_source_case_passed':False})
+  s=r['operation_stages'][0];s.update(workflow_id=POST_MSI,resource_key='agent-'+t['agent_id']+'-legacy-msi-absence')
+  s['verification'].update(profile_id=POST_MSI,payload_sha256=POST_SHA)
  return r
 def validate_context(job,cid,starting=False):
  if not isinstance(job,dict) or len(job.get('test_cases',[]))!=1:raise ValueError('single_endpoint_case_required')
@@ -122,7 +145,7 @@ def read_ready(session,name,jid,cid):
   t,ci,urls=context(session,name);agent=read_json(session,urls[1]);validate_target_state(name,ci,agent)
   tasks=read_json(session,urls[0],{'name':'executeCommand','periodic':False,'limit':100,'offset':0})
   validate_task_list(name,tasks,'executeCommand')  # Includes Windows historical unresolved commands; never cancel them.
-  if name!='astra':raise ValueError('windows_metadata_payload_not_implemented')
+  if name!='astra' and not (name=='windows' and r['profile_id'] in {MSI,POST_MSI}):raise ValueError('windows_metadata_payload_not_implemented')
   validate_preflight(name,ci,agent,read_json(session,urls[2]),tasks)
   return {'target':name,'ci_id':t['ci_id'],'agent_id':t['agent_id'],'core_version':CORE,
     'ready':True,'payload_sha256':r['payload_sha256'],'read_at':now(),'session_id':session.session_id,'mutation_executed':False}
@@ -195,7 +218,8 @@ def create(session,name,jid,cid):
  try:
   _,r=validate_context(job_store.get_job(jid),cid)
   from legacy_vnc_identity import PROFILE as LEGACY,PAYLOAD as LPAYLOAD
-  payload=LPAYLOAD if r['profile_id']==LEGACY else PAYLOAD
+  from windows_legacy_msi import PAYLOAD as MPAYLOAD,POST_PAYLOAD
+  payload=POST_PAYLOAD if r['profile_id']==POST_MSI else MPAYLOAD if r['profile_id']==MSI else LPAYLOAD if r['profile_id']==LEGACY else PAYLOAD
   program=payload['additional_params']['programm']
   sent=now();response=session.context.request.post(urls[0],data=deepcopy(payload),timeout=15000);received=now()
   if response.status!=201:raise ValueError('endpoint_create_status')
@@ -225,11 +249,12 @@ def rebind_owned_receipt(session,name,jid,cid):
    or ops[0]['arguments_fingerprint']!=_fingerprint(stage['arguments'])
    or ops[0]['verification_fingerprint']!=_fingerprint(stage['verification'])):
   raise ValueError('endpoint_recovery_exact_awaiting_intent_required')
- creates=[e for e in c.get('evidence',[]) if e['type']==CREATE and e.get('source')=='uqa_tool'
+ create_tool=stage['tool']
+ creates=[e for e in c.get('evidence',[]) if e['type']==create_tool and e.get('source')=='uqa_tool'
    and e.get('execution_status') in {'executed','observed'}]
  if len(creates)!=1:raise ValueError('endpoint_recovery_native_receipt_required')
  ce=creates[0];env=json.loads(ce['value']);a=env['result'];op=ops[0]
- if (env.get('tool')!=CREATE or env.get('arguments')!={'target':name}
+ if (env.get('tool')!=create_tool or env.get('arguments')!={'target':name}
    or a.get('executed') is not True or a.get('mutation_executed') is not True or a.get('create_status')!=201
    or a.get('error') or not a.get('session_id') or str(UUID(a.get('task_id')))!=a['task_id']
    or any(a.get(k)!=v for k,v in {'job_id':jid,'case_id':cid,'target':name,'ci_id':r['ci_id'],
@@ -263,16 +288,20 @@ def read(session,name,jid,cid):
    if 'stderr' not in data:raise ValueError('endpoint_stderr_missing')
    stdout,code,stderr=data['stdout'],data.get('errorlevel'),data['stderr']
   else:stdout,code,stderr=env.get('result'),env.get('error_code'),env.get('error_msg')
-  if not isinstance(stdout,str) or len(stdout.encode())>262144 or code not in (0,'0') or stderr not in ('',None):
+  from powershell_streams import inspect_stderr
+  streams=inspect_stderr(stderr) if r['profile_id'] in {MSI,POST_MSI} else {'kind':'empty' if stderr in ('',None) else 'unrecognized','progress_records':0}
+  if not isinstance(stdout,str) or len(stdout.encode())>262144 or code not in (0,'0') or streams['kind'] not in {'empty','progress_only'}:
    raise ValueError('endpoint_command_output_invalid')
   from legacy_vnc_identity import PROFILE as LEGACY,summarize as summarize_legacy
-  summary=(summarize_legacy if r['profile_id']==LEGACY else summarize)(json.loads(stdout))
+  from windows_legacy_msi import summarize as summarize_msi,summarize_absence
+  if r['profile_id'] in {MSI,POST_MSI} and historical:raise ValueError('msi_current_postcondition_freshness_required')
+  summary=(summarize_absence if r['profile_id']==POST_MSI else summarize_msi if r['profile_id']==MSI else summarize_legacy if r['profile_id']==LEGACY else summarize)(json.loads(stdout.lstrip('\ufeff')))
   if r['profile_id']==POST_LOG:
    validate_log_baseline();summary=summarize_post_logs(json.loads(stdout))
   if historical:
    summary={**summary,'historical_logging_status':summary.get('logging_status'),
      'logging_status':'BLOCKED','current_postcondition_verified':False,'historical_result_only':True}
-  return {**own,'summary':summary,'result_sha256':hashlib.sha256(stdout.encode()).hexdigest(),
+  return {**own,'summary':summary,'native_stderr_kind':streams['kind'],'native_progress_records':streams['progress_records'],'result_sha256':hashlib.sha256(stdout.encode()).hexdigest(),
     'native_result_verified':bool(fresh),'historical_result_verified':bool(historical),'read_at':now(),'processed_at':env['processed_at'],
     'machine_uid':t['ci_id'],'task_status':'success','mutation_executed':False,'business_pass':False}
  except Exception as e:
@@ -287,7 +316,8 @@ def evaluate(job,op,eid,contract):
    if b.get('tool')!=tool or b.get('arguments')!={'target':r['target']}:raise ValueError('scope')
    return b['result']
   ev=next(e for e in c['evidence'] if e['evidence_id']==eid);b=native(ev,READ)
-  creates=[(e,native(e,CREATE)) for e in c['evidence'] if e.get('type')==CREATE]
+  create_tool=stage['tool']
+  creates=[(e,native(e,create_tool)) for e in c['evidence'] if e.get('type')==create_tool]
   creates=[x for x in creates if x[1].get('operation_id')==op['operation_id']]
   if len(creates)!=1:raise ValueError('unique')
   ce,a=creates[0]
@@ -309,6 +339,7 @@ def evaluate(job,op,eid,contract):
     raise ValueError('native_recovery_receipt_link_required')
   return {'verified':True,'evidence_id':eid,'receipt_evidence_id':ce['evidence_id'],
     'identifier_value':a['task_id'],'postcondition_verified':True,'resend_authorized':False,
-    'verification_scope':'closed_readonly_endpoint_metadata_execution_not_tray_desktop','business_pass':False}
+    'verification_scope':('closed_exact_msi_execution_not_full_source_regression' if r['profile_id']==MSI
+      else 'closed_readonly_endpoint_metadata_execution_not_tray_desktop'),'business_pass':False}
  except (ValueError,TypeError,KeyError,AttributeError,StopIteration):
   return {'verified':False,'reason':'endpoint_metadata_evidence_insufficient','resend_authorized':False}

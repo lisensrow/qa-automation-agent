@@ -2311,6 +2311,7 @@ def classify_tool_action(
         "browser_delete_json_resource",
         "browser_archive_json_resource",
         "browser_disable_agent_task_semantic",
+        "browser_remove_exact_legacy_msi_semantic",
     }:
         return "destructive"
 
@@ -2453,7 +2454,7 @@ def tool_policy_check(
     if not read_only:
         return None
 
-    if name in {'browser_start_closed_endpoint_metadata_semantic','browser_start_closed_vnc_session_semantic', 'browser_create_closed_plugin_discovery_semantic', 'browser_create_closed_plugin_preparation_semantic', 'browser_create_closed_command_stage_semantic', 'browser_add_tree_row_semantic', 'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'} or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
+    if name in {'browser_remove_exact_legacy_msi_semantic','browser_start_closed_endpoint_metadata_semantic','browser_start_closed_vnc_session_semantic', 'browser_create_closed_plugin_discovery_semantic', 'browser_create_closed_plugin_preparation_semantic', 'browser_create_closed_command_stage_semantic', 'browser_add_tree_row_semantic', 'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'} or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
         return {"error":"tool_policy_blocked","status":"blocked_by_policy","tool":name,"executed":False,
                 "policy":"strict_read_only" if force_read_only else "read_only_request"}
 
@@ -4573,7 +4574,7 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
     """Stage identity does not grant permission; policy still evaluates first."""
     if not job_id or not case_id or action_class not in {"write", "destructive"}:
         return None
-    direct = {"browser_start_closed_endpoint_metadata_semantic", "browser_start_closed_vnc_session_semantic", "browser_edit_owned_resource_roundtrip_semantic", "browser_delete_json_resource",
+    direct = {"browser_remove_exact_legacy_msi_semantic", "browser_start_closed_endpoint_metadata_semantic", "browser_start_closed_vnc_session_semantic", "browser_edit_owned_resource_roundtrip_semantic", "browser_delete_json_resource",
               "browser_create_closed_command_stage_semantic",
               "browser_create_closed_plugin_discovery_semantic",
               "browser_create_closed_plugin_preparation_semantic",
@@ -4685,14 +4686,15 @@ def execute_tool_with_policy(
             return {'error':'locked_plugin_discovery_scope_required','executed':False,
                 'action_class':action_class,'action_policy_status':'blocked_by_discovery_scope'}
 
-    if name in {'browser_start_closed_endpoint_metadata_semantic','browser_inspect_closed_endpoint_metadata_semantic','browser_read_closed_endpoint_metadata_readiness_semantic'}:
+    if name in {'browser_remove_exact_legacy_msi_semantic','browser_start_closed_endpoint_metadata_semantic','browser_inspect_closed_endpoint_metadata_semantic','browser_read_closed_endpoint_metadata_readiness_semantic'}:
         try:
-            from endpoint_metadata import CREATE,admit,validate_context
+            from endpoint_metadata import CREATE,REMOVE,admit,validate_context
             if not job_id or not case_id:raise ValueError('endpoint_job_case_required')
             _,req=validate_context(get_job(job_id),case_id)
             if arguments!={'target':req['target']}:raise ValueError('endpoint_exact_target_required')
-            if name==CREATE:
+            if name in {CREATE,REMOVE}:
                 if action_policy!='confirm_mutations':raise ValueError('endpoint_managed_policy_required')
+                if name!=req['operation_stages'][0]['tool']:raise ValueError('endpoint_exact_mutation_tool_required')
                 admit(get_job(job_id),case_id,arguments)
         except (ValueError,TypeError,KeyError,AttributeError):
             return {'error':'locked_endpoint_scope_required','executed':False,'action_class':action_class,
@@ -5315,10 +5317,10 @@ def execute_tool_with_policy(
         if name==CREATE:invoke=lambda:create(_session,arguments['target'],arguments['plugin_name'],arguments['stage_id'],job_id,case_id)
         elif name==READ:invoke=lambda:read(_session,arguments['target'],arguments['plugin_name'],arguments['task_id'],job_id,case_id)
         else:invoke=lambda:read_ready(_session,arguments['target'],arguments['plugin_name'],job_id,case_id)
-    elif name in {'browser_start_closed_endpoint_metadata_semantic','browser_inspect_closed_endpoint_metadata_semantic','browser_read_closed_endpoint_metadata_readiness_semantic'}:
+    elif name in {'browser_remove_exact_legacy_msi_semantic','browser_start_closed_endpoint_metadata_semantic','browser_inspect_closed_endpoint_metadata_semantic','browser_read_closed_endpoint_metadata_readiness_semantic'}:
         from tools.browser import _session
-        from endpoint_metadata import CREATE,READ,create,read,read_ready
-        fn=create if name==CREATE else read if name==READ else read_ready
+        from endpoint_metadata import CREATE,REMOVE,READ,create,read,read_ready
+        fn=create if name in {CREATE,REMOVE} else read if name==READ else read_ready
         invoke=lambda:fn(_session,arguments['target'],job_id,case_id)
     elif name in {'browser_start_closed_vnc_session_semantic','browser_inspect_closed_vnc_session_semantic','browser_read_closed_vnc_readiness_semantic'}:
         from tools.browser import _session
