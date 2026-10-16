@@ -13493,7 +13493,9 @@ def run_regression_job(
 
     from condition_request_adapter import regression_plan as condition_request_plan
     condition_entry_plan = condition_request_plan(planning_request, current_stand)
-    explicit_plan = condition_entry_plan or (
+    from schema_request_adapter import regression_plan as schema_request_plan
+    schema_entry_plan = schema_request_plan(planning_request, current_stand)
+    explicit_plan = condition_entry_plan or schema_entry_plan or (
         extract_explicit_regression_cases(
             planning_request
         )
@@ -13668,7 +13670,7 @@ def run_regression_job(
     # Compile deterministic locked requirements before
     # any test case exists. Explicit numbered scope also
     # passes here without invoking the LLM Planner.
-    if condition_entry_plan is None:
+    if condition_entry_plan is None and schema_entry_plan is None:
         prepare_locked_requirements(
             plan
         )
@@ -13794,7 +13796,13 @@ def run_regression_job(
                     reset_case_context,
                 )
 
-                reset_case_context()
+                if (case.get('requirement') or {}).get('type')=='registered_schema_read':
+                    # Local registered snapshots need no browser. Validate before
+                    # skipping reset; invalid source bindings never enter execution.
+                    from schema_read_runtime import validate_context as validate_schema_context
+                    validate_schema_context(get_job(job_id),case_id)
+                else:
+                    reset_case_context()
 
             except Exception as exc:
                 finalize_case_blocked(

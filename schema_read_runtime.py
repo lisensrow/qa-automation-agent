@@ -30,14 +30,20 @@ def validate_context(job,case_id):
     if len(cases)!=1:raise ValueError('schema_read_context_not_admitted')
     case=cases[0]
     req=case.get('requirement') or {}
+    base_keys={'type','locked','stand','action_profile','api_contract_source_id','source_read_profile'}
     if ((job or {}).get('stand')!='lab' or job.get('job_type') not in {'manual','regression'}
         or job.get('status')!='running' or job.get('resources')!=[] or case.get('status')!='running'
-        or set(req)!={'type','locked','stand','action_profile','api_contract_source_id','source_read_profile'}
+        or set(req) not in (base_keys,base_keys|{'schema_request_binding'})
         or req.get('type')!='registered_schema_read' or req.get('locked') is not True
         or req.get('stand')!='lab' or req.get('action_profile')!='read_only'
         or req.get('api_contract_source_id')!=SOURCE or req.get('source_read_profile')!=PROFILE
-        or not isinstance(job.get('request'),str)
-        or not all(value in job['request'] for value in [PATH,SOURCE,'TaskFull','CommandAdditionalParams'])):
+        or not isinstance(job.get('request'),str)):
+        raise ValueError('schema_read_context_not_admitted')
+    if 'schema_request_binding' in req:
+        from schema_request_adapter import request_requirement
+        expected=request_requirement(job['request'],job['stand'])
+        if expected is None or req!=expected:raise ValueError('schema_original_request_binding_invalid')
+    elif not all(value in job['request'] for value in [PATH,SOURCE,'TaskFull','CommandAdditionalParams']):
         raise ValueError('schema_read_context_not_admitted')
     return req
 
@@ -73,24 +79,43 @@ def canonical_declarations(models,pin):
         'command_properties':command.get('properties',{}),
         'task_result_schema':full.get('properties',{}).get('result'),
         'task_result_required':'result' in full.get('required',[]),
+        'snapshot_recency':'unknown',
         'current_schema_recency_verified':False,'command_execution_verified':False,'business_pass':False}
 
 def final_schema():
-    return {'type':'object','additionalProperties':False,'required':['source_id','observed_models','business_pass','explanation'],
+    return {'type':'object','additionalProperties':False,'required':['source_id','observed_models','snapshot_recency','business_pass','explanation'],
         'properties':{'source_id':{'enum':[SOURCE]},'observed_models':{'enum':[sorted(WANTED)]},
-            'business_pass':{'enum':[False]},'explanation':{'type':'string'}}}
+            'snapshot_recency':{'enum':['unknown']},'business_pass':{'enum':[False]},'explanation':{'type':'string'}}}
 
 def validate_final(content):
     result=json.loads(content)
-    if (not isinstance(result,dict) or set(result)!={'source_id','observed_models','business_pass','explanation'}
+    if (not isinstance(result,dict) or set(result)!={'source_id','observed_models','snapshot_recency','business_pass','explanation'}
         or result['source_id']!=SOURCE or result['observed_models']!=sorted(WANTED)
-        or result['business_pass'] is not False or not isinstance(result['explanation'],str)
+        or result['snapshot_recency']!='unknown' or result['business_pass'] is not False or not isinstance(result['explanation'],str)
         or not 1<=len(result['explanation'].strip())<=2000):
         raise ValueError('invalid_source_only_final')
     return result
 
+def source_report(canonical,complete,evidence_id,error):
+    """User-visible facts from guarded source pages, not unverified model prose."""
+    lines=['# Справка зарегистрированного снимка API','',
+        'Чтение: '+('завершено' if complete else 'неполное')+'.',
+        'Источник: '+SOURCE+'.',
+        'Актуальность снимка: не проверена (unknown); устаревание не доказано.']
+    if canonical:
+        lines+=['','Обязательные поля командных параметров: '+', '.join(canonical['command_required_fields'])+'.']
+        for name,value in canonical['command_properties'].items():
+            lines.append('Схема '+name+': '+json.dumps(value,ensure_ascii=False,sort_keys=True)+'.')
+        lines+=['TaskFull.result обязателен: '+('да' if canonical['task_result_required'] else 'нет')+'.',
+            'Схема TaskFull.result: '+json.dumps(canonical['task_result_schema'],ensure_ascii=False,sort_keys=True)+'.']
+    if error:lines.append('Ограничение чтения: '+str(error)+'.')
+    lines+=['','HTTP/команды/задачи на КЕ не запускались. Это справка о декларации, не бизнес-PASS.',
+            'BLOCKED в общем QA-статусе не означает неудачу завершённого справочного чтения.',
+            'Доказательство: '+evidence_id+'.']
+    return '\n'.join(lines)
+
 def run(api,messages,job_id,case_id,action_policy,force_read_only=False):
-    try:validate_context(api.get_job(job_id),case_id)
+    try:req=validate_context(api.get_job(job_id),case_id)
     except (ValueError,TypeError,AttributeError):return {'started':False,'completed':False,'reason':'schema_read_context_not_admitted'}
     frontier=[[]];visited=set();models={};trace=[];recipe=False;pin=None;canonical=None;final=None;error=None
     try:
@@ -143,13 +168,18 @@ def run(api,messages,job_id,case_id,action_policy,force_read_only=False):
     body={'profile':PROFILE,'completed':complete,'error_type':error,'trace':trace,
         'canonical_declarations':canonical,'model_summary':final,'recipe_retrieved':recipe,
         'framework_structured_transport':True,'framework_exposed_frontier':True,
-        'operator_prepared_scope_and_query':True,'normal_core_entry':True,'ordinary_freeform_entry':False,
+        'operator_prepared_scope_and_query':'schema_request_binding' not in req,
+        'framework_seeded_source_and_query':True,'normal_core_entry':True,'ordinary_freeform_entry':False,
+        'ordinary_request_entry':'schema_request_binding' in req,
+        'framework_whole_request_adapter':'schema_request_binding' in req,
         'force_read_only':True,'current_schema_recency_verified':False,'business_execution_verified':False}
+    body['canonical_report_authoritative']=True
+    body['model_explanation_semantically_verified']=False
     if list_operations(job_id):raise ValueError('source_read_operation_scope_violated')
     proof=api.add_evidence(job_id,case_id,'bounded_schema_model_trace',json.dumps(body,ensure_ascii=False),
         source='uqa_schema_model_runtime',usable_for_pass=False,usable_for_verdict=False,
         execution_status='observed',eligibility_reason='bounded_historical_source_read_not_product_execution')
-    api.update_test_case(job_id,case_id,status='blocked',result='Historical source reading '+('completed' if complete else 'incomplete')+'; not command execution or business PASS.')
+    api.update_test_case(job_id,case_id,status='blocked',result=source_report(canonical,complete,proof['evidence_id'],error))
     api.set_job_status(job_id,'blocked')
     return {'started':True,'completed':complete,'scope':'registered_source_models_only',
         'trace_evidence_id':proof['evidence_id'],'business_execution_verified':False,'error_type':error}

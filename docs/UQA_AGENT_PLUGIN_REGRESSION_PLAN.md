@@ -1,5 +1,11 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## Checkpoint346: source prompt без ручной подготовки case
+
+Обычная фраза про «параметры командной задачи и формат полного результата» при явном source-only/не запускать scope теперь сама создаёт1защищённый case; native346completed, поля видны в result, актуальностьunknown. Это точная закрытая грамматика, не общий freeformAPI/командный executor. Final345253/253technicalPASS/8SHAunchanged, source history/negative lessons сохраняютсявmemory346. Все18inventory cells и полнота/дисплеиBLOCKED остаются.
+
+Далее параметризованная задача: teacher metadata347 показала executeCommand1.4.0 в серверном storage, но это не installed/loaded/Excel-current proof. Перед любой доставкой/маркером — exact2CI/core1.3.27/OS/plugin preflight, fresh pluginAudit и отдельный closed task/verification/ownership contract. Реиспользовать только fixed trusted echo/printf marker идеи, не произвольные команды/правки безопасности, не пустыеparams через inventoryprofile и не старые неопределённые journal operations. Поддержанный microcase маркировать техническим, не fullZephyrPASS. Если контракт/совместимость не установлены — продолжить безопасные read-only проверки, не форсировать POST.
+
 ## Checkpoint342: нормальный prepared source reader
 
 Native341 через обычный Core прочитал TaskFull+CommandAdditionalParams с памятью и защищённой структурой решений,0команд/операций, correct summary. Это закрытый профиль task-result-models-v1, не общий Swagger или свободная обработка любого prompt.337ошибка bare refs и338ошибка prototype catalogue сохранены,339prototype отдельно; source evidence/history/candidate342 сохраняются после final suite/codeSHA. Затем: безопасный ordinary source запрос без ручной подготовки case, обобщение чтения только на подтверждённые source goals; отдельный predeclared OS oracle/task contract до каких-либо команд. Source GET declarations не разрешают executeCommand и не подтверждают весь регресс. Все предыдущие inventory результаты/ограничения и запрет Jira writes остаются.

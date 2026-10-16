@@ -1,5 +1,11 @@
 # Архитектура QA-агента UQA
 
+## v343–346: обычный закрытый source запрос и канонический ответ
+
+schema_request_adapter распознаёт весь явный human source-only request, создаёт1read-only plan через обычный run_regression_job и связывает original request SHA; runtime независимо повторяет parse+сравнение всего factory requirement. Нельзя отбрасывать extra actions/версии/стенды. STEP/AUTO и v069 сохранены; валидный source-only case пропускает browser reset без live HTTP/UC действий. Ordinary346002307-cd76855c/tc-d373da5b/ev-605692fb702b completed, memory+source pages, operator manual case preparation0; только delegated AUTO choice отдельно. Framework profile/source/query/transport/frontier помощь не скрывается; это не общий freeform planner.
+
+Source report теперь содержит canonical required fields/property schemas/result shape/proof. False recency verification означает unknown, не outdated: final schema явно фиксирует unknown, а пользовательскому ответу не передаётся непроверенная модельная проза. Старый344result/неподтверждённое recency explanation сохранены; бизнес-PASS не повышен. Final345253/253technical smoke PASS,8SHA unchanged. Следующий этап command probe требует отдельного closed parameterized/ownership/journal контракта; каталог347обнаружил только storage1.4.0, не runtime readiness. Все9inventory профилей/STEP/AUTO/старые journal статусы сохранены.
+
 ## v340–342: штатный source-only профиль
 
 Final340:252/252technical tests PASS,6codeSHA unchanged;22MD valid. Реальная prepared model acceptance341 и ограниченная проверка source explanation завершены. Runtime не исполняет команды и не повышает source recency/business trust. Memory342/release provenance фиксируются отдельно после snapshot/index/checks.

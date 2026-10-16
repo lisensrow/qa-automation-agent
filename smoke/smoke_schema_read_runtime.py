@@ -43,9 +43,11 @@ for key,value in [('name','browser_create_pinned_agent_audit_semantic'),('chain'
     try:runtime.decode_phase_decision(json.dumps(bad),catalog)
     except ValueError:pass
     else:raise AssertionError(key)
-final={'source_id':runtime.SOURCE,'observed_models':sorted(runtime.WANTED),'business_pass':False,'explanation':'Historical only'}
+final={'source_id':runtime.SOURCE,'observed_models':sorted(runtime.WANTED),'snapshot_recency':'unknown',
+       'business_pass':False,'explanation':'Historical only'}
 assert runtime.validate_final(json.dumps(final))==final
-for key,value in [('source_id','other'),('business_pass',True),('explanation',''),('explanation','x'*2001),('extra',1)]:
+for key,value in [('source_id','other'),('snapshot_recency','outdated'),('snapshot_recency','current'),
+                  ('business_pass',True),('explanation',''),('explanation','x'*2001),('extra',1)]:
     bad={**final,key:value}
     try:runtime.validate_final(json.dumps(bad))
     except ValueError:pass
@@ -93,6 +95,11 @@ outcome,saved,calls=execute_fixture()
 assert outcome['completed'] and len(calls)==4 and saved[0]['normal_core_entry']
 assert saved[0]['canonical_declarations']['command_required_fields']==['programm']
 assert saved[0]['canonical_declarations']['task_result_schema']=={} and not saved[0]['business_execution_verified']
+assert saved[0]['canonical_declarations']['snapshot_recency']=='unknown'
+report=runtime.source_report(saved[0]['canonical_declarations'],True,'fixture-trace',None)
+assert 'programm' in report and 'не проверена (unknown); устаревание не доказано' in report
+assert 'Схема TaskFull.result: {}' in report and 'не бизнес-PASS' in report
+assert 'Чтение: неполное' in runtime.source_report(None,False,'fixture-trace','ValueError')
 outcome,saved,calls=execute_fixture(change_pin=True)
 assert not outcome['completed'] and outcome['error_type']=='ValueError' and len(calls)==3
 import uqa

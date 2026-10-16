@@ -1,5 +1,11 @@
 # История изменений UQA
 
+## v343–346 — ordinary source-only entry и unknown вместо неподтверждённого outdated
+
+Memory346 indexed once, SHA5b103bcb83df547b9ef489f8dfcd572442d41292c3e8f75421abe5bbb04b2db46; обеDB snapshots before-v346, integrity/dedup/retrievalPASS1223unrelated chunks unchanged, targeted ordinary proof найден и runtimeQUERY сохраняетfullrefs.253/253final345/8SHAOK/22MDvalid. Приёмкаordinary346 была через обычный run_regression_job, не весь main CLI: верхний dispatcher пока выбирает regression только по слову «регресс». Исправление/отдельная main приёмка — следующий шаг перед command POST, не выдавать внутренний вызов за уже проверенный весь CLI.
+
+Closed schema_request_adapter +independent original-request reparse/SHA, обычный regression entry1case/STEP-AUTO/v069, no browser init для валидного source-only scope. Native ordinary344и346 completed с0operations; последний proof ev-605692fb702b. Source result renderer показывает canonical поля и unknown; unsupported model freshness prose не принимается за факт, final enum current/outdated отвергается. Старые ответы сохранены. Focused fixtures PASS; intermediate343253/253, final345253/253/8SHAOK. Read-only347metadata executeCommand1.4.0 сохранена как подготовка, не доставка или исполнение. Следующий command механизм не ослабляет parameterless allowlist, oracle или replay protection.
+
 ## v340–342 — bounded source reading в штатном Core
 
 Memory342 indexed once: source SHA4e75ab0202646319f0677d0bb04c748ff26803b27306355e40434ea3f651ce52a, snapshots обеихDB before-v342, integrity/dedup/retrievalPASS1223unrelated chunks unchanged. Native341 proof находится targeted search, рабочий QUERY всё ещё возвращает оба full refs после индексации. Scope feature registered_schema_read_task_result_models_v1/agentunknown/candidate document_review; source/API declaration не повышена в verified runtime fact.
