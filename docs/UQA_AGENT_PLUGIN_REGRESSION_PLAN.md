@@ -1,5 +1,13 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## v413–414: текущий GET не делает старый audit свежим oracle
+
+Operator source prerequisite413 Job20261016-054627-da5927c6 / tc-e9c51e9b / ev-b3cc800fbc2a прочитал только схемы/время четырёх существующих full, без значений IP/MAC/имён интерфейсов, новых задач или сравнения. defaultNetworkDeviceAudit current main: Windows processed_at2026-10-16T05:37:41.165Z; Astra05:39:35.353Z. Найдено по одному периодическому networkDeviceAudit (period86400,statussuccess), но сохранённые данные Windows processed_at2026-10-15T21:32:58.259Z; Astra21:28:55.037Z. На момент чтения16октября05:46UTC это старые результаты, несмотря на успешный свежий HTTP GET. Они НЕ пригодны как независимый текущий baseline нового default-interface audit; cross-comparison verdict не выносился.
+
+Наблюдённые default поля: humanReadableName(str),ipAddresses(list),isDefault(bool),macAddress(str),name(str),type(str). В network audit default flag назван is_default(bool). Разные названия не нормализовать молча; одинаковое назначение ещё требует явно объявленного mapping/oracle. Не утверждать совпадение значений по совпавшим схемам и не объявлять это подтверждённым багом.
+
+Следующий безопасный технический сценарий: заранее объявить допустимую временную близость/свежесть и правила сопоставления, получить согласованные свежие данные на exact Windows/Astra через прежнюю policy, затем поручить модели проверку и собственный fetch. Это план, не реализованная/пройденная capability. Кросс-плагинная согласованность не заменяет независимую ОС/UI-проверку маршрута. Полный source-case PASS и процент всего регресса по этой metadata-подготовке не прибавляются. Реальные4новые main executions410 и их доказательства остаются действительными; повторять доставку не нужно. Jira/Zephyr без записей.
+
 ## v410–412: два новых аудита выполнены моделью на обеих ОС
 
 storageAudit1.3.4 и defaultNetworkDeviceAudit1.3.5 на dedicated Windows/Astra core1.3.27: четыре preparation Jobs и четыре main discovery Jobs completed=true. Все14операций verified:10подготовки (включая4точные доставки и fresh loaded proof),4основных задания. Windows/Astra storage вернули list1/list2 (2339/1662bytes); default interface — dict6keys на обеих ОС (185/172bytes). Числа и digest — наблюдения этой выборки, НЕ будущий literal oracle.
