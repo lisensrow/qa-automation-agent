@@ -1,5 +1,11 @@
 # История изменений UQA
 
+FINAL362: конечный361suite258/258technicalPASS /tmp/v361-full-smoke.log,13codeSHA unchanged /tmp/v361-code.sha256,22Markdown valid. Это изолированные контракты/native/Core/recovery, не258кейсов UC и не модельный command lifecycle.0новых реальных команд/доставок; следующая приёмка — именно normal Core/local model обеихОС, после reviewed memory362/release.
+
+## v360–362 — journal-bound command adapter без объявления live PASS
+
+Новый4-stage immutable profile/native adapter/independent recovery; guarded Core injection/explicit write-observe classification/registry refusal без trusted context. Все dispatch требуют exact source SHA/CI/core/OS/64bit/tasks and one sending intent. No deletion/downgrade/sameversion replay; private marker/exact stdout/explicit stderr/exit0, samecase/session/period/time. Наблюдённый ID при невалидном receipt quarantined, uncertain blocks second send. Предварительный360258/258technicalPASS, конечный361послеhardening отдельно. Focused fake-native/recovery/Core/legacy9 PASS; реальных model/plugin actions0. Следомnormalruntime+guarded approvals+двеОС, не считать fixtures пользовательской автономией.
+
 ## v358–359 — применение новой памяти локальной моделью
 
 Prepared source-only model358012653-175de8cd/tc-e2ff08c8/ev-5635e42cb711 retrievedWorkbook356 and matched7/7typed facts without supplied answer enums: versions1.3.27/command1.4.0/display1.3.3, commanddispatchfalse/displayPASSfalse/freshauditrequired/no developerconfirmedbug.0operations/UC/browser/SSH. Question/query/checks/transport preparation disclosed, free reason not semantic-verified. New reviewed memory359 retains this bounded acceptance, not executable command capability. Code355/full255/8SHA unchanged.

@@ -1,5 +1,9 @@
 # Архитектура QA-агента UQA
 
+## v360–362: защищённый command-stage transport
+
+command_stage_profile задаёт4unique stage_id/immutable source-oracle, command_stage_native требует Core sending intent и actual scope/source/version preflight, command_stage_recovery независимо проверяет own create/full receipts. Core+registry+operation journal подключены без изменения v069/STEP-AUTO; прямой dispatcher не выполняет новые инструменты. READ-only блокирует WRITE, uncertain не переоформляется, quarantined ID не owned receipt. Fixed private marker/explicit period=None/наблюдённый stderr/exit0/hash проверяются отдельно. Все текущие проверки изолированные,0livePOST; normal model runtime/approval supervisor ещё отсутствуют. Подробности и границы — [recipe](UQA_PARAMETERLESS_PLUGIN_REGRESSION.md), Closed command transport360–362.
+
 Source application358/359: actual model retrieval of indexed Workbook356 +7independent typed facts passed; command dispatch and current display acceptance correctly remain false, no developer confirmation invented. Evidence ev-5635e42cb711/Job012653-175de8cd; prepared question/query/transport/checks explicit, no live actions. Code355unchanged, command executor/journal remains next implementation step, not claimed by this source-only check.
 
 ## v354–355: read-only command readiness и отдельный чистый контракт

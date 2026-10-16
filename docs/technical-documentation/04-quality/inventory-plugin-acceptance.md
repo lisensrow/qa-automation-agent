@@ -1,5 +1,7 @@
 # Inventory-плагины: проверка доставки и результатов
 
+Command transport360–362 отделён от9inventory profiles. Четыре неизменяемых этапа связываются с Core policy и журналом до native POST; чтение результата подтверждает собственные task/CI/session/time, freshload и приватный marker/exit0 без передачи stdout модели. Разные stage_id исключают путаницу двух inventory refresh. Неопределённая отправка блокирует повтор, невалидный receipt не становится owned. Technical fixtures не являются live/model регрессом; следующий рубеж — normal typed UQA workflow обеихОС с отдельно указанной подготовкой/approvals.
+
 Checkpoint355: модель прочитала exact Windows/Astra command-plugin metadata, обе cores1.3.27online. Старый audit1.2.25 stale~2h не признан готовностью1.4.0. Native getter расширен только для чтения; pure fixed-marker contracts+fixtures ничего не отправляют. Task/delivery policy и9parameterlessprofiles прежние, generic click353 заблокирован read-only. Нужны отдельные runtime/journal/own-result acceptance; не реальный command или полный source-case PASS. Primary evidence и режимы помощи перечислены в общем recipe/плане.
 
 ## v350–352: главный CLI, canonical alias и приёмка без live fallback

@@ -2033,6 +2033,7 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        "browser_inspect_closed_command_stage_semantic",
         "browser_inspect_pinned_agent_audit_semantic",
         "browser_inspect_pinned_agent_readiness_semantic",
         "api_inspect_request_contract",
@@ -2301,7 +2302,7 @@ def classify_tool_action(
     }:
         return "destructive"
 
-    if name in {"browser_create_managed_agent_task_semantic", "browser_create_pinned_agent_update_semantic", "browser_deliver_pinned_agent_plugin_semantic", "browser_create_pinned_agent_audit_semantic"}:
+    if name in {"browser_create_closed_command_stage_semantic", "browser_create_managed_agent_task_semantic", "browser_create_pinned_agent_update_semantic", "browser_deliver_pinned_agent_plugin_semantic", "browser_create_pinned_agent_audit_semantic"}:
         return "write"
 
     if name == "browser_fill_semantic":
@@ -2440,7 +2441,7 @@ def tool_policy_check(
     if not read_only:
         return None
 
-    if name in {'browser_add_tree_row_semantic', 'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'} or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
+    if name in {'browser_create_closed_command_stage_semantic', 'browser_add_tree_row_semantic', 'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'} or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
         return {"error":"tool_policy_blocked","status":"blocked_by_policy","tool":name,"executed":False,
                 "policy":"strict_read_only" if force_read_only else "read_only_request"}
 
@@ -4561,6 +4562,7 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
     if not job_id or not case_id or action_class not in {"write", "destructive"}:
         return None
     direct = {"browser_edit_owned_resource_roundtrip_semantic", "browser_delete_json_resource",
+              "browser_create_closed_command_stage_semantic",
               "browser_archive_json_resource", "browser_create_managed_agent_task_semantic",
               "browser_disable_agent_task_semantic", "browser_create_pinned_agent_update_semantic", "browser_deliver_pinned_agent_plugin_semantic", "browser_create_pinned_agent_audit_semantic"}
     verb = str(arguments.get("name") or "").strip().casefold().split(" ")[0]
@@ -4582,7 +4584,7 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
     if requirement.get("type") == "owned_resource_workflow":
         initialize_workflow(job_id, case_id)
     stage = current_stage(job_id, case_id) or requirement.get("operation_stage")
-    if requirement.get('type') in {'pinned_agent_audit','pinned_plugin_audit'} and requirement.get('operation_stages'):
+    if requirement.get('type') in {'pinned_agent_audit','pinned_plugin_audit','closed_command_probe'} and requirement.get('operation_stages'):
         stage=next((s for s in requirement['operation_stages'] if s.get('tool')==name and s.get('arguments')==arguments),None)
         if commit and stage is None:
             raise ValueError('audit operation not declared')
@@ -4625,6 +4627,22 @@ def execute_tool_with_policy(
                 return {'error': 'advisory_tool_not_allowed', 'status': 'blocked_by_policy',
                         'executed': False, 'action_class': action_class,
                         'action_policy_status': 'blocked_by_advisory_contract'}
+
+    if name in {'browser_create_closed_command_stage_semantic','browser_inspect_closed_command_stage_semantic'}:
+        try:
+            from command_stage_profile import admitted_write,validate_context
+            if not job_id or not case_id:raise ValueError('command_job_case_required')
+            if name=='browser_create_closed_command_stage_semantic':
+                if action_policy!='confirm_mutations':raise ValueError('managed_policy_required')
+                admitted_write(get_job(job_id),case_id,arguments)
+            else:
+                _,req=validate_context(get_job(job_id),case_id)
+                from uuid import UUID
+                if (set(arguments)!={'target','task_id'} or arguments['target']!=req['target']
+                    or str(UUID(arguments['task_id']))!=arguments['task_id']):raise ValueError('own_command_read_scope_required')
+        except (ValueError,TypeError,KeyError,AttributeError):
+            return {'error':'locked_closed_command_scope_required','executed':False,
+                'action_class':action_class,'action_policy_status':'blocked_by_command_scope'}
 
     if name in {'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'}:
         from tools.agent_update import validate_locked_update_scope
@@ -5178,7 +5196,14 @@ def execute_tool_with_policy(
             resource_arguments["external_id"] = None
             ignored_external_id = proposed_external_id
 
-    if name == 'agent_build_pinned_audit_report':
+    if name in {'browser_create_closed_command_stage_semantic','browser_inspect_closed_command_stage_semantic'}:
+        from tools.browser import _session
+        from command_stage_native import create_stage,inspect_stage
+        if name=='browser_create_closed_command_stage_semantic':
+            invoke=lambda:create_stage(_session,arguments['target'],arguments['stage_id'],job_id,case_id)
+        else:
+            invoke=lambda:inspect_stage(_session,arguments['target'],arguments['task_id'],job_id,case_id)
+    elif name == 'agent_build_pinned_audit_report':
         from tools.agent_update import build_pinned_audit_report
         if set(arguments) != {'task_id'}:
             return {'error':'audit_report_arguments_invalid','executed':False}

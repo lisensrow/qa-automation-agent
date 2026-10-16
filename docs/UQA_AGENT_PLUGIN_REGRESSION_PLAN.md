@@ -1,5 +1,7 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+Command transport360–362 реализован и проверяется технически (Core policy/journal/native/own receipt/recovery), но normal model runtime/guarded confirmations и живой цикл на обеихОС ещё не приняты. Не запускать старый unmanaged fixture вместо нового пути. Сначала final361full/SHA/reviewedmemory362/release, затем отдельная bounded model приёмка с actual delivery only if needed. При невалидном receipt/неопределённой отправке STOP без нового Job/rekey; quarantined observed ID только для расследования. Full business/source cases по-прежнему отдельно, display1.3.3distributionBLOCKED.
+
 Version gate356: originalExcel/servercopyhashmatch, выбирать именно sheet1.3.27. executeCommand1.4.0 подтверждён B11; displayDeviceAudit1.3.3 в B7 против tested/storage1.3.2. Актуальный display отложен до настоящего1.3.3/уточнения, не отправлять прежнюю версию как актуальную. Старые structure results остаются history/nonPASS. soft1.3.8 подтверждён B32. Источники/metadata/proofIDs в recipe; spreadsheet notes не developer confirmation.
 
 ## Следующий рубеж после prepared metadata354

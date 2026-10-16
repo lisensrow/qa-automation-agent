@@ -66,15 +66,19 @@ for name in ['windows','astra']:
     for key,value in [('machine_uid','other'),('processed_at',stamp(-1000))]:
         bad=deepcopy(full);bad['result'][key]=value;reject(c.verify_result,own,bad,'fixture-session',now=now)
     for key,value in [('stdout','prefix'+marker),('stdout',marker+'suffix'),('stdout',marker+' '),
-        ('stdout',marker+'\n\n\n'),('stdout',''),('stderr','warning'),('errorlevel',False),('errorlevel',0.0),
+        ('stdout',marker+'\n\n\n'),('stdout',marker+'\r\r'),('stdout',marker+'\n\n'),('stdout',''),
+        ('stderr','warning'),('stderr',None),('errorlevel',False),('errorlevel',0.0),
         ('errorlevel',1),('errorlevel','00')]:
         bad=deepcopy(full);bad['result']['data'][key]=value;reject(c.verify_result,own,bad,'fixture-session',now=now)
     reject(c.verify_result,own,full,'other-session',now=now)
+    missing=deepcopy(full);missing['result']['data'].pop('stderr')
+    reject(c.verify_result,own,missing,'fixture-session',now=now)
     for key,value in [('ci_id','other'),('request_origin','https://other.test'),('expected_marker_sha256','0'*64)]:
         reject(c.verify_result,{**own,key:value},full,'fixture-session',now=now)
     reject(c.verify_result,own,full,'fixture-session',now=now+timedelta(seconds=301))
     legacy=deepcopy(full);legacy['result'].pop('data')
     legacy['result'].update(result=marker,error_code='0',error_msg=None)
     assert c.verify_result(own,legacy,'fixture-session',now=now)['result_shape']=='legacy_result_error_code'
+    legacy['result'].pop('error_msg');reject(c.verify_result,own,legacy,'fixture-session',now=now)
 print('PASS pure closed command contracts: two dedicated targets, fresh pinned load, fixed marker only, '
       'new own receipt, exact stdout/exit/session/CI/time, no dispatch/permission authority or real model acceptance')

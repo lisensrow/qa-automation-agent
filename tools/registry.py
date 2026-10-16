@@ -2105,6 +2105,25 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_create_closed_command_stage_semantic",
+            "description": "WRITE: закрытый этап command microcase на одной выделенной Windows/Astra КЕ. Версия, payload и private marker не переопределяются. Только locked typed case, прежняя policy и durable journal; не общий command executor.",
+            "parameters": {"type":"object","additionalProperties":False,"required":["target","stage_id"],
+                "properties":{"target":{"type":"string","enum":["windows","astra"]},
+                    "stage_id":{"type":"string","enum":["initial_inventory","deliver_command_plugin","post_delivery_inventory","execute_command"]}}}
+        }
+    },
+    {
+        "type":"function",
+        "function":{
+            "name":"browser_inspect_closed_command_stage_semantic",
+            "description":"Read-only: только собственный новый command-stage task того же case/session. Проверяет identity/freshness/private marker; не возвращает raw stdout.",
+            "parameters":{"type":"object","additionalProperties":False,"required":["target","task_id"],
+                "properties":{"target":{"type":"string","enum":["windows","astra"]},"task_id":{"type":"string"}}}
+        }
+    },
+    {
+        "type":"function",
+        "function":{
             "name": "browser_inspect_pinned_agent_readiness_semantic",
             "description": "Read-only: текущие core/online и свежая загрузка закреплённого плагина на точной КЕ. Без plugin_name/plugin_version проверяет osAudit1.3.4. ready не означает выполнение теста.",
             "parameters": {"type": "object", "additionalProperties": False, "properties": {
@@ -2777,6 +2796,12 @@ def execute_tool(name: str, arguments: dict):
             arguments.get("expected_text"), arguments.get("expected_error_code"),
             arguments.get("verify_periodic", False),
         )
+
+    if name == "browser_create_closed_command_stage_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+
+    if name == "browser_inspect_closed_command_stage_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
 
     if name == "browser_inspect_pinned_agent_readiness_semantic":
         from tools.browser import _session

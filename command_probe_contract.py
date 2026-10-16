@@ -38,30 +38,40 @@ def payload(name,marker):
     return {'name':PLUGIN,'period':None,'ttl':None,'run_as_user':'',
         'additional_params':{'programm':t['program'],'arguments':[*t['prefix'],marker]}}
 
-def validate_preflight(name,ci,agent,audit,tasks,now=None):
-    """Caller must supply actual native same-origin GETs, not model declarations."""
+def validate_target_state(name,ci,agent):
+    """Identity/core/OS/architecture prerequisite shared by every closed stage."""
     t=target(name)
     if (not isinstance(ci,dict) or not isinstance(agent,dict) or
         (ci.get('id'),ci.get('name'),ci.get('agent_id'))!=(t['ci_id'],t['ci_name'],t['agent_id']) or
         (agent.get('id'),agent.get('version'),agent.get('status'))!=(t['agent_id'],CORE,'online')):
         raise ValueError('dedicated_core_target_not_ready')
-    os_name=ci.get('os_name')
-    if not isinstance(os_name,str) or not any(x in os_name.casefold() for x in t['os_tokens']):
-        raise ValueError('command_os_not_observed')
     detail=ci.get('detail')
     os_info=detail.get('os') if isinstance(detail,dict) else None
     if not isinstance(os_info,dict) or os_info.get('architecture') not in {'64','x86_64','amd64'}:
         raise ValueError('command_architecture_not_observed')
-    checked=summarize_plugin_audit(ci,audit,PLUGIN,VERSION,observed_at=now,max_age_seconds=3600)
-    if (checked['observation_result']!='PASS' or len(checked['matched_plugins'])!=1 or
-        checked['matched_plugins'][0]['load_error_present']):raise ValueError('fresh_command_plugin_not_loaded')
+    names=[n for n in [ci.get('os_name'),os_info.get('name')] if n is not None]
+    if not names or any(not isinstance(n,str) or not any(x in n.casefold() for x in t['os_tokens']) for n in names):
+        raise ValueError('command_os_not_observed')
+    return t
+
+def validate_task_list(name,tasks,task_name):
+    t=target(name)
     items=tasks.get('items') if isinstance(tasks,dict) else None
     if (not isinstance(items,list) or type(tasks.get('total')) is not int or tasks['total']!=len(items)
         or tasks.get('offset',0)!=0 or len(items)>10000):raise ValueError('complete_command_task_list_required')
     for item in items:
-        if (not isinstance(item,dict) or item.get('agent_id')!=t['agent_id'] or item.get('name')!=PLUGIN
+        if (not isinstance(item,dict) or item.get('agent_id')!=t['agent_id'] or item.get('name')!=task_name
             or item.get('period') is not None or item.get('status') not in {'success','error','timeout'}):
             raise ValueError('existing_command_task_unresolved_or_scope_mismatch')
+    return items
+
+def validate_preflight(name,ci,agent,audit,tasks,now=None):
+    """Caller must supply actual native same-origin GETs, not model declarations."""
+    validate_target_state(name,ci,agent)
+    checked=summarize_plugin_audit(ci,audit,PLUGIN,VERSION,observed_at=now,max_age_seconds=3600)
+    if (checked['observation_result']!='PASS' or len(checked['matched_plugins'])!=1 or
+        checked['matched_plugins'][0]['load_error_present']):raise ValueError('fresh_command_plugin_not_loaded')
+    validate_task_list(name,tasks,PLUGIN)
     return {'profile_id':PROFILE_ID,'target':name,'core_version':CORE,'plugin_version':VERSION,
         'ready':True,'execution_verified':False,'business_pass':False}
 
@@ -115,13 +125,15 @@ def verify_result(own,full,session_id,now=None):
         full.get('created_at'),envelope.get('processed_at'),now=now):raise ValueError('own_command_result_not_fresh')
     data=envelope.get('data')
     if isinstance(data,dict) and isinstance(data.get('stdout'),str):
+        if 'stderr' not in data or not isinstance(data['stderr'],str):raise ValueError('command_stderr_not_observed')
         stdout,code,stderr=data['stdout'],data.get('errorlevel'),data.get('stderr')
         shape='data_stdout_errorlevel'
     else:
+        if 'error_msg' not in envelope:raise ValueError('command_legacy_stderr_not_observed')
         stdout,code,stderr=envelope.get('result'),envelope.get('error_code'),envelope.get('error_msg')
         shape='legacy_result_error_code'
     # Exact stripped newline framing, not substring: extra output is a mismatch.
-    if not isinstance(stdout,str) or len(stdout)>len(marker)+2 or stdout.rstrip('\r\n')!=marker:
+    if not isinstance(stdout,str) or stdout not in {marker,marker+'\n',marker+'\r\n'}:
         raise ValueError('command_marker_exact_output_mismatch')
     if (type(code) is not int or code!=0) and not (isinstance(code,str) and code=='0'):
         raise ValueError('command_exit_code_mismatch')
