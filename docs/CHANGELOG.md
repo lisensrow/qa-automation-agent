@@ -1,5 +1,9 @@
 # История изменений UQA
 
+v534 — UQA completed local WTS/logind candidate census via agent on Windows/Astra:3/1registered sessions,0active candidates each,2verified operations. No login/unlock/consent/security changes. Preserved initial Windows retrieval-only failure and disclosed operator query-routing correction; no command replay. Full533285/285technicalPASS. Recorded installed frontend static VNC install/status helper and log-level override limitation without product bug/fix claim or new VNC task. Full Zephyr source requires user Jira login, UI cases active desktop; no Jira writes or full-case PASS.
+
+v531 — added fixed local registered-session prerequisite query for Windows/Astra through the existing protected endpoint lifecycle. Incomplete/denied is unknown, names not emitted, no session or security mutations. WTS/logind engineering references recorded; focused fixtures and PowerShell syntax passed, full285/actual532pending. Not Tray/desktop/regression acceptance; Jira unchanged.
+
 Final530: final529284/284technical suite PASS; actual5296/6eachOS evidence preserved, no full Tray/source-case PASS. Supersedes pending-suite status below.
 
 v530 — real Tray start discovery completed on Windows/Astra with own fresh results; empty reported-user arrays prevent functional acceptance. Preserved Astra pre-dispatch65hex-source typo failure; corrected primary-source64hex pin, added regression check. New own historical Tray content reader plus typed negative replay-gate projection; prior model5275/6 failures retained, controlled5296/6bothOS after disclosed framework context correction. No new endpoint tasks in interpretation trials or Jira writes. Full526284technicalPASS, final529pending; actual full Zephyr cases remain unaccepted.

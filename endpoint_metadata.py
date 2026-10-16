@@ -17,6 +17,7 @@ READ='browser_inspect_closed_endpoint_metadata_semantic'
 READY='browser_read_closed_endpoint_metadata_readiness_semantic'
 PROFILE='agent-tray-log-metadata-v1'
 from windows_legacy_msi import PROFILE as MSI,REMOVE,POST_PROFILE as POST_MSI
+from user_session_census import PROFILE as SESSIONS
 PROGRAM='/usr/bin/python3'
 CODE=r"""import os,stat,time,json,hashlib
 ROOT='/opt/usystem/usagent/var/log/usagent'
@@ -77,7 +78,7 @@ def validate_log_baseline():
  if len(oldops)!=1 or oldops[0]['status']!='verified':raise ValueError('log_baseline_execution_required')
  return True
 def requirement(name,campaign,profile=PROFILE):
- if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG,MSI,POST_MSI}:raise ValueError('endpoint_profile_required')
+ if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG,MSI,POST_MSI,SESSIONS}:raise ValueError('endpoint_profile_required')
  from legacy_vnc_identity import PROFILE as LEGACY,SHA as LSHA
  t=target(name)
  if not isinstance(campaign,str) or not 1<=len(campaign)<=80 or not campaign.replace('-','').isalnum():
@@ -121,6 +122,13 @@ def requirement(name,campaign,profile=PROFILE):
    'uninstall_performed':False,'full_source_case_passed':False})
   s=r['operation_stages'][0];s.update(workflow_id=POST_MSI,resource_key='agent-'+t['agent_id']+'-legacy-msi-absence')
   s['verification'].update(profile_id=POST_MSI,payload_sha256=POST_SHA)
+ if profile==SESSIONS:
+  from user_session_census import sha
+  r.update(profile_id=SESSIONS,payload_sha256=sha(name),supported_os=name,expected_profile={
+   'registered_session_query_only':True,'usernames_emitted':False,'desktop_verified':False,
+   'login_or_unlock_performed':False,'consent_setting_changed':False,'business_pass':False})
+  s=r['operation_stages'][0];s.update(workflow_id=SESSIONS,resource_key='agent-'+t['agent_id']+'-user-session-census')
+  s['verification'].update(profile_id=SESSIONS,payload_sha256=sha(name))
  return r
 def validate_context(job,cid,starting=False):
  if not isinstance(job,dict) or len(job.get('test_cases',[]))!=1:raise ValueError('single_endpoint_case_required')
@@ -145,7 +153,7 @@ def read_ready(session,name,jid,cid):
   t,ci,urls=context(session,name);agent=read_json(session,urls[1]);validate_target_state(name,ci,agent)
   tasks=read_json(session,urls[0],{'name':'executeCommand','periodic':False,'limit':100,'offset':0})
   validate_task_list(name,tasks,'executeCommand')  # Includes Windows historical unresolved commands; never cancel them.
-  if name!='astra' and not (name=='windows' and r['profile_id'] in {MSI,POST_MSI}):raise ValueError('windows_metadata_payload_not_implemented')
+  if name!='astra' and not (name=='windows' and r['profile_id'] in {MSI,POST_MSI,SESSIONS}):raise ValueError('windows_metadata_payload_not_implemented')
   validate_preflight(name,ci,agent,read_json(session,urls[2]),tasks)
   return {'target':name,'ci_id':t['ci_id'],'agent_id':t['agent_id'],'core_version':CORE,
     'ready':True,'payload_sha256':r['payload_sha256'],'read_at':now(),'session_id':session.session_id,'mutation_executed':False}
@@ -220,6 +228,9 @@ def create(session,name,jid,cid):
   from legacy_vnc_identity import PROFILE as LEGACY,PAYLOAD as LPAYLOAD
   from windows_legacy_msi import PAYLOAD as MPAYLOAD,POST_PAYLOAD
   payload=POST_PAYLOAD if r['profile_id']==POST_MSI else MPAYLOAD if r['profile_id']==MSI else LPAYLOAD if r['profile_id']==LEGACY else PAYLOAD
+  if r['profile_id']==SESSIONS:
+   from user_session_census import payload as session_payload
+   payload=session_payload(name)
   program=payload['additional_params']['programm']
   sent=now();response=session.context.request.post(urls[0],data=deepcopy(payload),timeout=15000);received=now()
   if response.status!=201:raise ValueError('endpoint_create_status')
@@ -289,13 +300,18 @@ def read(session,name,jid,cid):
    stdout,code,stderr=data['stdout'],data.get('errorlevel'),data['stderr']
   else:stdout,code,stderr=env.get('result'),env.get('error_code'),env.get('error_msg')
   from powershell_streams import inspect_stderr
-  streams=inspect_stderr(stderr) if r['profile_id'] in {MSI,POST_MSI} else {'kind':'empty' if stderr in ('',None) else 'unrecognized','progress_records':0}
+  streams=inspect_stderr(stderr) if r['profile_id'] in {MSI,POST_MSI,SESSIONS} else {'kind':'empty' if stderr in ('',None) else 'unrecognized','progress_records':0}
   if not isinstance(stdout,str) or len(stdout.encode())>262144 or code not in (0,'0') or streams['kind'] not in {'empty','progress_only'}:
    raise ValueError('endpoint_command_output_invalid')
   from legacy_vnc_identity import PROFILE as LEGACY,summarize as summarize_legacy
   from windows_legacy_msi import summarize as summarize_msi,summarize_absence
   if r['profile_id'] in {MSI,POST_MSI} and historical:raise ValueError('msi_current_postcondition_freshness_required')
-  summary=(summarize_absence if r['profile_id']==POST_MSI else summarize_msi if r['profile_id']==MSI else summarize_legacy if r['profile_id']==LEGACY else summarize)(json.loads(stdout.lstrip('\ufeff')))
+  if r['profile_id']==SESSIONS:
+   if historical:raise ValueError('session_current_observation_freshness_required')
+   from user_session_census import summarize as summarize_sessions
+   summary=summarize_sessions(json.loads(stdout.lstrip('\ufeff')),name)
+  else:
+   summary=(summarize_absence if r['profile_id']==POST_MSI else summarize_msi if r['profile_id']==MSI else summarize_legacy if r['profile_id']==LEGACY else summarize)(json.loads(stdout.lstrip('\ufeff')))
   if r['profile_id']==POST_LOG:
    validate_log_baseline();summary=summarize_post_logs(json.loads(stdout))
   if historical:

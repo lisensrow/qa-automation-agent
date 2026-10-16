@@ -1,5 +1,9 @@
 # План приёмки UQA: дневное продолжение
 
+v534: real UQA census stage COMPLETE on both OS; no active user-session candidates reported, not desktop/source-case PASS. Full533285technicalPASS. Source Jira login and active owned desktops require user external action; do not force authentication or infer source steps from titles. Next after prerequisites: full source read and native per-case contracts, then own execution/checks. Static VNC status/install helper observation not task execution. No Jira/Zephyr writes or automation resume.
+
+v531: independent session prerequisite observation through UQA on both OS next, not repeated Tray/VNC start. Fixed local WTS/logind metadata, no login/unlock or security changes; complete/incomplete and candidate count separate from desktop. Full285/actual532pending; full source steps need restored Jira session. No Jira/Zephyr writes, automation PAUSED.
+
 Final530: final529284technicalPASS checked; both source cases remain BLOCKED despite correct bounded529interpretation. Next prerequisites unchanged; earlier pending-suite text is historical.
 
 v530: actual4new Tray inventory/start operations verified/no delivery; neither OS reports started users. Historical content interpretation5296/6bothOS after disclosed negative-gate context correction, original527errors preserved. Not desktop/VNC/consent/full-case PASS. Full526284technicalPASS/final529pending. Next read-only GUI-session prerequisite and complete40case source after Jira login; no broadening security/destructive scope or Jira writes.
