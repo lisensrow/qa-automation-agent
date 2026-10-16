@@ -177,6 +177,18 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {'type':'function','function':{'name':'browser_create_closed_plugin_discovery_semantic',
+        'description':'WRITE: locked one-shot benign checkAlive/remoteConnections main discovery only. Exact two lab targets; Core policy/journal. No delivery, commands or remote sessions. Not semantic PASS.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name','stage_id'],
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections']},'stage_id':{'type':'string','enum':['main_discovery']}}}}},
+    {'type':'function','function':{'name':'browser_inspect_closed_plugin_discovery_semantic',
+        'description':'OBSERVE own same-case/session discovery full result; bounded type census and digest, not semantic oracle.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name','task_id'],
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections']},'task_id':{'type':'string'}}}}},
+    {'type':'function','function':{'name':'browser_read_closed_plugin_discovery_semantic',
+        'description':'OBSERVE exact locked discovery target readiness/core/OS/version. No tasks or delivery.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name'],
+            'properties':{'target':{'type':'string','enum':['windows','astra']},'plugin_name':{'type':'string','enum':['checkAlive','remoteConnections']}}}}},
     {'type':'function','function':{'name':'browser_create_closed_plugin_preparation_semantic',
         'description':'WRITE: только locked preparation checkAlive/remoteConnections на dedicated Windows/Astra. Три этапа: inventory/delivery/post_inventory; Core intent/policy, OS-check/no-deletion. НЕ запуск основной задачи плагина.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target','plugin_name','stage_id'],
@@ -2360,6 +2372,12 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_create_closed_plugin_discovery_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_inspect_closed_plugin_discovery_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_read_closed_plugin_discovery_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_create_closed_plugin_preparation_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_inspect_closed_plugin_preparation_semantic":

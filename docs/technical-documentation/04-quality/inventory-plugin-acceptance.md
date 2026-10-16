@@ -1,5 +1,16 @@
 # Inventory-плагины: проверка доставки и результатов
 
+## v384: safe-plugin-discovery-v1 — наблюдение основной задачи без semantic PASS
+
+Отдельный closed профиль `safe-plugin-discovery-v1`, единственный этап `main_discovery`: только checkAlive1.3.2 или remoteConnections1.3.6 на dedicated Windows/Astra, core1.3.27. Это НЕ расширение preparation/legacy inventory/command профилей. Исходные версии — workbook SHA7fef498ba403c70a48dcdfb5f80ef84cde927b7f6e8d947d3740ccaeaa415f53, sheet1.3.27 B4/B25, teacher371; guide41bfa19668d6ac15500477fe78b4773f560c1c655dfd4f21df58b71e1fd1a5a6e объясняет назначение, но не даёт точный текущий literal checkAlive. RemoteConnections — аудит сервисов/портов/сессий, не открытие remote session.
+
+До отправки нужны immutable target/source/expected, exact observed Tasks context/HTTPS origin, fresh loaded exact version с явно наблюдённым пустым/null load_error, core/OS/architecture/online и полный список terminal однократных задач этого имени. Core сохраняет v069 policy и durable SENDING intent. Payload фиксирован: native agent tasks POST с именем выбранного safe plugin, period/ttl null, run_as_user пустой, additional_params пустой объект. Одна новая own receipt201; full читается только по own ID того же Job/case/session/CI/agent и свежим timestamps. Pending — читать ту же задачу; uncertain — STOP/no resend/no rekey. Нет доставки, command/settings/security/VNC session или Jira writes.
+
+Oracle заранее ограничен фактом fresh successful execution и bounded response census/digest. Ответ не становится собственным бизнес-эталоном. Типы/кардинальности и SHA полного JSON сохраняются без сырых имён пользователей/хостов/портовых значений; бюджеты1MiB/20000nodes/depth20, превышение BLOCKED. Independent recovery проверяет native create/full, identity/session/time/preflight/source-bound contract; не подтверждает семантическую правильность содержимого. Canonical execution PASS допускается только после verified ledger; весь source case BLOCKED, semantic_oracle_known=false, business_pass=false.
+
+Модель через normal run_turn должна извлечь этот рецепт, выбрать каждую закрытую фазу и собственный fetch. Operator scope/oracle и evidence-bound standing approvals, framework singleton catalogue/fixed payload/canonical rendering явно отделены; это не ordinary freeform планирование и не полный регресс. Fixture native/Core/recovery/model tests технические, не живые продуктовые результаты. На момент записи контракта новые discovery Jobs ещё не запускались. После фактических запусков нужны отдельные evidence/версии/ограничения и новая дедуплицированная запись памяти; прежние preparation доставки не повторять.
+
+
 ## v381–383: реальные preparation cycles обеих ОС — 9 verified операций
 
 Normal UQA run_turn/local qwen3:14b последовательно завершил четыре закрытых цикла safe-plugin-preparation-v1. Native own create/full, independent recovery и ledger перепроверены оператором read-only; fresh loaded/no observed error подтверждены. Это обновление и подготовка плагинов, НЕ исполнение их основных задач или целого Zephyr-кейса.

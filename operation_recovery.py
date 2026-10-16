@@ -69,6 +69,9 @@ def _read(case, evidence_id, contract, before=None, after=None):
 
 def evaluate_recovery(job, operation, evidence_id, contract):
     """Requires explicit locked immutable oracle + complete before/after GETs."""
+    if isinstance(contract,dict) and contract.get('kind')=='owned_plugin_discovery':
+        from plugin_discovery import evaluate
+        return evaluate(job,operation,evidence_id,contract)
     if isinstance(contract,dict) and contract.get('kind')=='owned_plugin_preparation':
         from plugin_preparation_recovery import evaluate
         return evaluate(job,operation,evidence_id,contract)
