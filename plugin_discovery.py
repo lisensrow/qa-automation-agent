@@ -1,6 +1,7 @@
-"""Closed benign main-task discovery. Execution proof is NOT a product oracle.
+"""Closed main execution observation. Execution proof is NOT a product oracle.
 
-Only four source-grounded benign audits, no delivery/commands/remote sessions.
+Four benign audits, or explicit separately guarded Windows supplied VNC startup.
+No delivery, arbitrary shell payloads or remote-session creation in this module.
 """
 from copy import deepcopy
 from pathlib import Path
@@ -19,28 +20,35 @@ CREATE='browser_create_closed_plugin_discovery_semantic'
 READ='browser_inspect_closed_plugin_discovery_semantic'
 READY='browser_read_closed_plugin_discovery_semantic'
 PROFILE='safe-plugin-discovery-v1'
+VNC_START='supplied-vnc-plugin-start-v1'
 VERSIONS={p:v for p,v in PREPARATION_VERSIONS.items() if p in
           {'checkAlive','remoteConnections','storageAudit','defaultNetworkDeviceAudit'}}
 
-def requirement(name,plugin,campaign):
-    if plugin not in VERSIONS:raise ValueError('safe_main_discovery_plugin_required')
+def requirement(name,plugin,campaign,profile=PROFILE):
+    if profile not in {PROFILE,VNC_START}:raise ValueError('closed_discovery_profile_required')
+    if profile==PROFILE and plugin not in VERSIONS:raise ValueError('safe_main_discovery_plugin_required')
+    if profile==VNC_START and (plugin!='vncServer' or name!='windows'):raise ValueError('exact_windows_vnc_start_required')
     r=preparation_requirement(name,plugin,campaign)
-    r.update(type='closed_plugin_discovery',profile_id=PROFILE,
+    r.update(type='closed_plugin_discovery',profile_id=profile,
         expected_profile={'own_fresh_successful_execution':True,'bounded_shape_observed':True,
             'semantic_oracle_known':False,'business_pass':False})
-    r['operation_stages']=[{'version':1,'workflow_id':PROFILE,'stage_id':'main_discovery',
+    r['operation_stages']=[{'version':1,'workflow_id':profile,'stage_id':'main_discovery',
         'resource_key':'agent-'+r['agent_id']+'-'+plugin+'-main-discovery','tool':CREATE,
         'arguments':{'target':name,'plugin_name':plugin,'stage_id':'main_discovery'},
         'verification':{'version':1,'kind':'owned_plugin_discovery','origin':ORIGIN,
             'target':name,'ci_id':r['ci_id'],'agent_id':r['agent_id'],'core_version':CORE,
-            'plugin_name':plugin,'plugin_version':r['plugin_version'],'task_name':plugin,
+            'plugin_name':plugin,'plugin_version':r['plugin_version'],'task_name':'VncServer' if profile==VNC_START else plugin,
             'stage_id':'main_discovery'}}]
     return r
+
+def task_name(r):return r['operation_stages'][0]['verification']['task_name']
+
+def compiled_params(r):return {'command':'start'} if r['profile_id']==VNC_START else {}
 
 def validate_context(job,case_id,starting=False):
     if not isinstance(job,dict) or len(job.get('test_cases',[]))!=1:raise ValueError('single_discovery_case_required')
     c=job['test_cases'][0];r=c.get('requirement') or {}
-    if (c.get('case_id')!=case_id or r!=requirement(r.get('target'),r.get('plugin_name'),r.get('campaign_id'))
+    if (c.get('case_id')!=case_id or r!=requirement(r.get('target'),r.get('plugin_name'),r.get('campaign_id'),r.get('profile_id'))
         or job.get('stand')!='lab' or job.get('job_type') not in {'manual','regression'}
         or job.get('status')!='running' or c.get('status')!='running' or job.get('resources')):
         raise ValueError('locked_discovery_profile_required')
@@ -103,23 +111,31 @@ def create(session,name,plugin,stage_id,job_id,case_id):
         t,_,urls=context(session,name);ready=readiness(session,r)
         if (ready.get('ready') is not True or ready.get('load_error_empty_observed') is not True
             or ready['plugin_audit'].get('audit_fresh') is not True):raise ValueError('discovery_fresh_loaded_required')
-        _,task_pages=complete_task_list(session,urls[0],name,plugin)
+        _,task_pages=complete_task_list(session,urls[0],name,task_name(r))
+        if r['profile_id']==VNC_START:
+            from windows_vnc_start_source import validate_start_prerequisites
+            validate_start_prerequisites(session,r)
+            for old in job_store.list_jobs(limit=None):
+                if old['job_id']==job_id:continue
+                if any((c.get('requirement') or {}).get('profile_id')==VNC_START for c in old.get('test_cases',[])):
+                    if any(o['status'] not in {'not_sent','rejected'} for o in list_operations(old['job_id'])):
+                        raise ValueError('vnc_start_prior_attempt_no_rekey')
         if any(x.get('job_id')==job_id and x.get('case_id')==case_id for x in
             getattr(session,'_owned_plugin_discoveries',{}).values()):raise ValueError('discovery_already_sent')
-        body={'name':plugin,'period':None,'ttl':None,'run_as_user':'','additional_params':{}}
+        body={'name':task_name(r),'period':None,'ttl':None,'run_as_user':'','additional_params':compiled_params(r)}
     except Exception as e:return refusal(str(e)[:160] if isinstance(e,ValueError) else 'discovery_preflight_refused')
     observed_id=None
     try:
         sent=now();response=session.context.request.post(urls[0],data=body,timeout=15000);received=now()
         created=response.json() if response.status==201 else None
         if not isinstance(created,dict) or str(UUID(created.get('id')))!=created['id']:raise ValueError('receipt_id')
-        if (created.get('agent_id')!=t['agent_id'] or created.get('name')!=plugin or 'period' not in created
+        if (created.get('agent_id')!=t['agent_id'] or created.get('name')!=task_name(r) or 'period' not in created
             or created['period'] is not None):raise ValueError('receipt_scope')
         observed_id=created['id']
-        if created.get('additional_params')!={} or not -120<=(stamp(received)-stamp(created.get('created_at'))).total_seconds()<=300:
+        if created.get('additional_params')!=compiled_params(r) or not -120<=(stamp(received)-stamp(created.get('created_at'))).total_seconds()<=300:
             raise ValueError('receipt_params_clock')
         own={'task_id':created['id'],'target':name,'plugin_name':plugin,'plugin_version':r['plugin_version'],
-            'ci_id':r['ci_id'],'agent_id':r['agent_id'],'stage_id':stage_id,'task_name':plugin,'profile_id':PROFILE,
+            'ci_id':r['ci_id'],'agent_id':r['agent_id'],'stage_id':stage_id,'task_name':task_name(r),'profile_id':r['profile_id'],
             'job_id':job_id,'case_id':case_id,'session_id':session.session_id,'request_origin':ORIGIN,
             'sent_at':sent,'received_at':received,'server_created_at':created['created_at'],
             'operation_id':found[0]['operation_id'],'preflight_readiness':ready,'preflight_task_pages':task_pages}
@@ -138,9 +154,9 @@ def read(session,name,plugin,task_id,job_id,case_id):
             raise ValueError('own_discovery_receipt_required')
         t,_,urls=context(session,name);full=read_json(session,urls[0]+'/'+task_id+'/full');env=full.get('result')
         if not isinstance(env,dict):raise ValueError('own_discovery_result_not_ready')
-        if (full.get('id')!=task_id or full.get('agent_id')!=r['agent_id'] or full.get('name')!=plugin
+        if (full.get('id')!=task_id or full.get('agent_id')!=r['agent_id'] or full.get('name')!=task_name(r)
             or 'period' not in full or full['period'] is not None or full.get('status')!='success'
-            or full.get('additional_params')!={} or env.get('machine_uid')!=r['ci_id'] or env.get('result')!='success'
+            or full.get('additional_params')!=compiled_params(r) or env.get('machine_uid')!=r['ci_id'] or env.get('result')!='success'
             or 'data' not in env or not audit_result_is_fresh(own['sent_at'],own['received_at'],own['server_created_at'],
                 full.get('created_at'),env.get('processed_at'))):raise ValueError('discovery_full_identity_freshness_required')
         census=shape(env['data'])
@@ -174,7 +190,7 @@ def evaluate(job,op,evidence_id,contract):
             or created.get('create_status')!=201 or created.get('executed') is not True or created.get('mutation_executed') is not True
             or created.get('error') or readback.get('error') or any(created.get(k)!=v or readback.get(k)!=v for k,v in
                 {'target':r['target'],'ci_id':r['ci_id'],'agent_id':r['agent_id'],'plugin_name':r['plugin_name'],
-                 'plugin_version':r['plugin_version'],'profile_id':PROFILE,'stage_id':'main_discovery','task_name':r['plugin_name'],
+                 'plugin_version':r['plugin_version'],'profile_id':r['profile_id'],'stage_id':'main_discovery','task_name':task_name(r),
                  'job_id':job['job_id'],'case_id':op['case_id'],'operation_id':op['operation_id'],'request_origin':ORIGIN}.items())
             or not created.get('task_id') or readback.get('task_id')!=created['task_id'] or not created.get('session_id')
             or readback.get('session_id')!=created['session_id'] or readback.get('machine_uid')!=r['ci_id']

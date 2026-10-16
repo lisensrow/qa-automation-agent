@@ -15,11 +15,13 @@ from plugin_discovery import shape
 
 TOOL = 'browser_review_plugin_result_semantic'
 PROFILE = 'historical-plugin-content-review-v1'
+VNC_PROFILE='historical-vnc-start-content-review-v1'
 REFS = {
  ('windows','storageAudit'): ('20261016-053350-c9bd531c','tc-54ef84e3','1.3.4'),
  ('astra','storageAudit'): ('20261016-053528-ef0debfc','tc-1a855850','1.3.4'),
  ('windows','defaultNetworkDeviceAudit'): ('20261016-053703-1a9a7b72','tc-c03a6d9b','1.3.5'),
- ('astra','defaultNetworkDeviceAudit'): ('20261016-053853-3e5bc458','tc-2ca30eca','1.3.5')}
+ ('astra','defaultNetworkDeviceAudit'): ('20261016-053853-3e5bc458','tc-2ca30eca','1.3.5'),
+ ('windows','vncServer'): ('20261016-154154-eb0465d0','tc-e316ea6c','1.5.5')}
 RULES = {
  'storageAudit': ['nonempty_devices','unique_device_ids','positive_integer_capacity',
    'partition_count_matches','nonnegative_integer_partition_lengths','partition_sum_within_capacity',
@@ -27,25 +29,30 @@ RULES = {
  'defaultNetworkDeviceAudit': ['default_flag_true','interface_name_nonempty','mac_syntax_valid',
    'nonempty_valid_unique_ip_addresses']}
 
-def requirement(name, campaign):
+VNC_RULES=['self_reported_version_matches_catalogue','native_plugin_error_not_reported','native_plugin_error_empty']
+def rules_for(plugin):return VNC_RULES if plugin=='vncServer' else RULES[plugin]
+
+def requirement(name, campaign,profile=PROFILE):
     t=target(name)
+    if profile not in {PROFILE,VNC_PROFILE} or profile==VNC_PROFILE and name!='windows':raise ValueError('review_profile_scope_required')
+    selected={'vncServer':VNC_RULES} if profile==VNC_PROFILE else RULES
     if not isinstance(campaign,str) or not re.fullmatch(r'[a-z0-9-]{1,80}',campaign):
         raise ValueError('review_campaign_required')
     return {'type':'historical_plugin_content_review','locked':True,'stand':'lab',
       'action_profile':'read_only','target':name,'ci_id':t['ci_id'],'agent_id':t['agent_id'],
-      'ci_name':t['ci_name'],'core_version':CORE,'profile_id':PROFILE,'campaign_id':campaign,
-      'source_refs':{p:list(REFS[name,p]) for p in RULES},
-      'expected_invariants':deepcopy(RULES),'independent_os_oracle':False,
+      'ci_name':t['ci_name'],'core_version':CORE,'profile_id':profile,'campaign_id':campaign,
+      'source_refs':{p:list(REFS[name,p]) for p in selected},
+      'expected_invariants':deepcopy(selected),'independent_os_oracle':False,
       'historical_only':True,'business_pass':False}
 
 def validate_context(job,cid,args):
     if not isinstance(job,dict) or len(job.get('test_cases',[]))!=1:raise ValueError('single_review_case_required')
     c=job['test_cases'][0];r=c.get('requirement') or {}
-    if (c.get('case_id')!=cid or r!=requirement(r.get('target'),r.get('campaign_id'))
+    if (c.get('case_id')!=cid or r!=requirement(r.get('target'),r.get('campaign_id'),r.get('profile_id'))
         or job.get('stand')!='lab' or job.get('job_type') not in {'manual','regression'}
         or job.get('status')!='running' or c.get('status')!='running'
         or job.get('resources') or not isinstance(args,dict) or set(args)!={'target','plugin_name'}
-        or args.get('target')!=r['target'] or args.get('plugin_name') not in RULES):
+        or args.get('target')!=r['target'] or args.get('plugin_name') not in r['expected_invariants']):
         raise ValueError('locked_result_review_required')
     if not isinstance(job.get('request'),str) or not all(r[k] in job['request'] for k in
             ['ci_id','agent_id','ci_name','profile_id']):raise ValueError('original_review_request_required')
@@ -98,8 +105,15 @@ def content_checks(plugin,data):
         # Preserve these desired checks as explicitly BLOCKED until source/OS proof.
         checks.extend({'rule':rule,'status':'BLOCKED'} for rule in
                       ['partition_sum_within_capacity','partition_parent_links_match'])
+    elif plugin=='vncServer':
+        add('self_reported_version_matches_catalogue',lambda:data['plugin']=='VncServer' and data['version']=='1.5.5')
+        # Only the observed explicit error representation is grounded here.
+        # Other result tokens are not invented positive-success contracts.
+        checks.append({'rule':'native_plugin_error_not_reported',
+            'status':'FAIL' if isinstance(data,dict) and data.get('result')=='error' else 'BLOCKED'})
+        add('native_plugin_error_empty',lambda:data['error'] in ('',None))
     else:raise ValueError('review_plugin_not_admitted')
-    assert [c['rule'] for c in checks]==RULES[plugin]
+    assert [c['rule'] for c in checks]==rules_for(plugin)
     return {'checks':checks,'intrinsic_status':'FAIL' if any(c['status']=='FAIL' for c in checks) else
         'BLOCKED' if any(c['status']=='BLOCKED' for c in checks) else 'PASS',
         'independent_os_correctness':'BLOCKED','full_source_case_status':'BLOCKED',
@@ -114,8 +128,8 @@ def compact_review(parsed):
     if (parsed.get('source_job_id'),parsed.get('source_case_id'),parsed.get('plugin_version'))!=(sj,sc,version):return {}
     if any(parsed.get(k) is not v for k,v in {'business_pass':False,'historical_only':True,'same_recorded_payload':True}.items()):return {}
     checks=parsed.get('checks')
-    if not isinstance(checks,list) or len(checks)!=len(RULES[plugin]):return {}
-    if [x.get('rule') for x in checks if isinstance(x,dict)]!=RULES[plugin]:return {}
+    if not isinstance(checks,list) or len(checks)!=len(rules_for(plugin)):return {}
+    if [x.get('rule') for x in checks if isinstance(x,dict)]!=rules_for(plugin):return {}
     if any(x.get('status') not in {'PASS','FAIL','BLOCKED'} for x in checks):return {}
     expected='FAIL' if any(x['status']=='FAIL' for x in checks) else 'BLOCKED' if any(x['status']=='BLOCKED' for x in checks) else 'PASS'
     if (parsed.get('intrinsic_status')!=expected or parsed.get('independent_os_correctness')!='BLOCKED'
@@ -141,7 +155,8 @@ def inspect(session,name,plugin,jid,cid):
             raise ValueError('source_own_receipt_link_required')
         t,ci,urls=context(session,name);validate_target_state(name,ci,read_json(session,urls[1]))
         full=read_json(session,urls[0]+'/'+task+'/full');env=full.get('result')
-        if (full.get('id'),full.get('agent_id'),full.get('name'),full.get('status'))!=(task,r['agent_id'],plugin,'success'):
+        task_name='VncServer' if plugin=='vncServer' else plugin
+        if (full.get('id'),full.get('agent_id'),full.get('name'),full.get('status'))!=(task,r['agent_id'],task_name,'success'):
             raise ValueError('historical_full_identity_required')
         if not isinstance(env,dict) or env.get('machine_uid')!=r['ci_id'] or env.get('result')!='success':raise ValueError('historical_envelope_required')
         census=shape(env['data'])

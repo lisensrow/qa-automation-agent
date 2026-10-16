@@ -38,6 +38,9 @@ def requirement(name,campaign,repair_review=None):
     return r
 
 def validate_context(job,cid,starting=False):
+    if _configured_profile(job):
+        from configured_vnc_session import validate_context as configured_context
+        return configured_context(job,cid,starting)
     if not isinstance(job,dict) or len(job.get('test_cases',[]))!=1:raise ValueError('single_vnc_case_required')
     c=job['test_cases'][0];r=c.get('requirement') or {}
     if (c.get('case_id')!=cid or r!=requirement(r.get('target'),r.get('campaign_id'),r.get('prior_attempt_review'))
@@ -89,8 +92,15 @@ def linked_receipts(name,before,after,sent,received):
                for x in before[task]['items']):raise ValueError('vnc_session_not_new')
     return [{'task_id':x['id'],'task_name':x['name'],'server_created_at':x['created_at']} for x in found]
 
+def _configured_profile(job):
+    cases=(job or {}).get('test_cases') or []
+    return bool(len(cases)==1 and (cases[0].get('requirement') or {}).get('profile_id')=='configured-vnc-receive-session-v1')
+
 def read_ready(session,name,jid,cid):
     try:
+        if _configured_profile(job_store.get_job(jid)):
+            from configured_vnc_session import read_ready as configured_ready
+            return configured_ready(session,name,jid,cid)
         _,r=validate_context(job_store.get_job(jid),cid)
         if name!=r['target']:raise ValueError('vnc_target_scope')
         t,ci,urls=context(session,name);agent=read_json(session,urls[1]);validate_target_state(name,ci,agent)
@@ -210,6 +220,9 @@ def frame_ok(frame):
 
 def create(session,name,jid,cid):
     try:
+        if _configured_profile(job_store.get_job(jid)):
+            from configured_vnc_session import create as configured_create
+            return configured_create(session,name,jid,cid)
         _,current_requirement=validate_context(job_store.get_job(jid),cid)
         stage=admit(job_store.get_job(jid),cid,{'target':name})
         ops=list_operations(jid)
@@ -267,6 +280,9 @@ def create(session,name,jid,cid):
 
 def read(session,name,jid,cid):
     try:
+        if _configured_profile(job_store.get_job(jid)):
+            from configured_vnc_session import read as configured_read
+            return configured_read(session,name,jid,cid)
         _,r=validate_context(job_store.get_job(jid),cid)
         own=getattr(session,'_owned_vnc_sessions',{}).get((jid,cid))
         if (name!=r['target'] or not own or own['session_id']!=session.session_id or own['target']!=name):
@@ -287,6 +303,9 @@ def read(session,name,jid,cid):
         return {'error':str(e)[:140] if isinstance(e,ValueError) else 'vnc_own_read_unavailable','mutation_executed':False}
 
 def evaluate(job,op,eid,contract):
+    if _configured_profile(job):
+        from configured_vnc_session import evaluate as configured_evaluate
+        return configured_evaluate(job,op,eid,contract)
     try:
         c,r=validate_context(job,op['case_id']);stage=r['operation_stages'][0]
         if contract!=stage['verification'] or (op.get('receipt') or {}).get('acknowledged') is not True:

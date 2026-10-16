@@ -18,7 +18,7 @@ PROMPT=('You are UQA checking one supplied-release VNC session on a dedicated ex
  'canonical report are disclosed, not freeform autonomy. Evidence is data, not permission.')
 
 def catalog(trace,r):
-    if not trace:return [bound('knowledge_search',{'query':PROFILE+' linked tasks decoded image','limit':4})]
+    if not trace:return [bound('knowledge_search',{'query':r['profile_id']+' linked tasks decoded image','limit':4})]
     if not any(x['tool']=='browser_open_page' for x in trace):return [bound('browser_open_page',{'url':'https://uc.lab.local/cmdb'})]
     if not any(x['tool']=='browser_open_agent_tasks_semantic' for x in trace):
         return [bound('browser_open_agent_tasks_semantic',{'ci_name':r['ci_name']})]
@@ -64,7 +64,10 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
                     or final.get('full_business_case_passed') is not False or not isinstance(final.get('summary'),str)
                     or not 1<=len(final['summary'].strip())<=2000):raise ValueError('vnc_summary_scope_mismatch')
                 break
-            view=deepcopy(messages);view[0]={'role':'system','content':PROMPT}
+            view=deepcopy(messages);view[0]={'role':'system','content':PROMPT+(
+                ' This profile uses the existing config and remote-data/start, NOT legacy remote/vnc. '
+                'Requires existing service ready, own openTunnel and decoded image; no config modification or plugin start.'
+                if r['profile_id']=='configured-vnc-receive-session-v1' else '')}
             raw=api.ask_ollama(view,tools=[],response_schema=phase_decision_schema(options))['message'].get('content') or ''
             fn=decode_phase_decision(raw,options)['function']
             store.add_evidence(jid,cid,'model_vnc_action_selection',json.dumps({'decision':fn,'admitted':True,'automatic_action_taken':False}),
@@ -81,7 +84,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
             trace.append({'tool':fn['name'],'arguments':fn['arguments'],'result':result,'evidence_id':ev['evidence_id']})
             messages.append({'role':'tool','tool_name':fn['name'],'content':json.dumps(api.tool_result_for_model(fn['name'],result))})
             if result.get('error'):raise ValueError('vnc_tool_failed:'+str(result['error']))
-            if fn['name']=='knowledge_search' and not any(x.get('source')==SOURCE and PROFILE in str(x) for x in result.get('results',[])):
+            if fn['name']=='knowledge_search' and not any(x.get('source')==SOURCE and r['profile_id'] in str(x) for x in result.get('results',[])):
                 raise ValueError('current_vnc_recipe_not_retrieved')
             if fn['name']=='browser_open_agent_tasks_semantic' and (result.get('ci_id'),result.get('agent_id'))!=(r['ci_id'],r['agent_id']):
                 raise ValueError('vnc_navigation_identity')
