@@ -25,6 +25,22 @@ from os_identity_baseline import PROFILE as OS_IDENTITY
 from smbios_os_baseline import PROFILE as DMI_IDENTITY
 from agent_log_presence import PROFILE as LOG_PRESENCE
 from windows_agent_log_presence_v2 import PROFILE as LOG_PRESENCE_V2
+from service_recovery_dry_run import PROFILES as RECOVERY_DRY_V1
+from service_recovery_dry_v2 import PROFILES as RECOVERY_DRY_V2
+from service_recovery_dry_v3 import PROFILES as RECOVERY_DRY_V3
+from service_recovery_dry_v4 import PROFILES as RECOVERY_DRY_V4
+from service_recovery_diagnostic import PROFILES as RECOVERY_DRY_DIAGNOSTIC
+from service_recovery_observer_v5 import PROFILES as RECOVERY_DRY_OBSERVER_V5
+RECOVERY_DRY_PROFILES=RECOVERY_DRY_V1|RECOVERY_DRY_V2|RECOVERY_DRY_V3|RECOVERY_DRY_V4|RECOVERY_DRY_DIAGNOSTIC|RECOVERY_DRY_OBSERVER_V5
+RETIRED_RECOVERY_PROFILES=RECOVERY_DRY_V1|RECOVERY_DRY_V2|RECOVERY_DRY_V3|RECOVERY_DRY_V4|RECOVERY_DRY_DIAGNOSTIC
+def recovery_module(profile):
+ if profile in RECOVERY_DRY_OBSERVER_V5:import service_recovery_observer_v5 as recovery
+ elif profile in RECOVERY_DRY_DIAGNOSTIC:import service_recovery_diagnostic as recovery
+ elif profile in RECOVERY_DRY_V4:import service_recovery_dry_v4 as recovery
+ elif profile in RECOVERY_DRY_V3:import service_recovery_dry_v3 as recovery
+ elif profile in RECOVERY_DRY_V2:import service_recovery_dry_v2 as recovery
+ else:import service_recovery_dry_run as recovery
+ return recovery
 from software_change_fixture import PROFILE as SOFTWARE_CHANGE
 from software_change_fixture_v2 import PROFILE as SOFTWARE_CHANGE_V2
 PROGRAM='/usr/bin/python3'
@@ -87,7 +103,7 @@ def validate_log_baseline():
  if len(oldops)!=1 or oldops[0]['status']!='verified':raise ValueError('log_baseline_execution_required')
  return True
 def requirement(name,campaign,profile=PROFILE,observation_renewal=None):
- if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2,SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:raise ValueError('endpoint_profile_required')
+ if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2,SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}|RECOVERY_DRY_PROFILES:raise ValueError('endpoint_profile_required')
  from legacy_vnc_identity import PROFILE as LEGACY,SHA as LSHA
  t=target(name)
  if not isinstance(campaign,str) or not 1<=len(campaign)<=80 or not campaign.replace('-','').isalnum():
@@ -173,6 +189,14 @@ def requirement(name,campaign,profile=PROFILE,observation_renewal=None):
   s=r['operation_stages'][0];s.update(workflow_id=profile,
     resource_key='agent-'+t['agent_id']+'-owned-software-change-20261017'+('-v2' if profile==SOFTWARE_CHANGE_V2 else ''))
   s['verification'].update(profile_id=profile,payload_sha256=CHANGE_SHA)
+ if profile in RECOVERY_DRY_PROFILES:
+  recovery=recovery_module(profile)
+  r.update(profile_id=profile,payload_sha256=recovery.sha(name,profile),supported_os=name,
+   expected_profile={'dry_registration_or_observation_only':True,'stop_or_restart_executed':False,
+    'existing_system_identity_required':True,'auth_rights_or_service_settings_changed':False,
+    'actual_stopped_agent_recovery_verified':False,'full_case_passed':False})
+  s=r['operation_stages'][0];s.update(workflow_id=profile,resource_key='agent-'+t['agent_id']+'-'+profile)
+  s['verification'].update(profile_id=profile,payload_sha256=recovery.sha(name,profile))
  if observation_renewal is not None:
   from session_observation_renewal import declaration
   r['observation_renewal']=declaration(observation_renewal,profile)
@@ -194,6 +218,10 @@ def admit(job,cid,args):
  _,r=validate_context(job,cid)
  if args!={'target':r['target']}:raise ValueError('endpoint_exact_target_required')
  if r['profile_id']==SOFTWARE_CHANGE:raise ValueError('fixture_v1_retired_history_only_use_v2')
+ if r['profile_id'] in RETIRED_RECOVERY_PROFILES:raise ValueError('dry_recovery_attempt_retired_history_only_no_new_command')
+ if r['profile_id'] in RECOVERY_DRY_PROFILES:
+  recovery=recovery_module(r['profile_id'])
+  if r['profile_id']==recovery.OBSERVE:recovery.require_own_registration(r['target'])
  return deepcopy(r['operation_stages'][0])
 def read_ready(session,name,jid,cid):
  try:
@@ -202,7 +230,7 @@ def read_ready(session,name,jid,cid):
   t,ci,urls=context(session,name);agent=read_json(session,urls[1]);validate_target_state(name,ci,agent)
   tasks=read_json(session,urls[0],{'name':'executeCommand','periodic':False,'limit':100,'offset':0})
   validate_task_list(name,tasks,'executeCommand')  # Includes Windows historical unresolved commands; never cancel them.
-  if name!='astra' and not (name=='windows' and r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2}):raise ValueError('windows_metadata_payload_not_implemented')
+  if name!='astra' and not (name=='windows' and r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2}|RECOVERY_DRY_PROFILES):raise ValueError('windows_metadata_payload_not_implemented')
   validate_preflight(name,ci,agent,read_json(session,urls[2]),tasks)
   return {'target':name,'ci_id':t['ci_id'],'agent_id':t['agent_id'],'core_version':CORE,
     'ready':True,'payload_sha256':r['payload_sha256'],'read_at':now(),'session_id':session.session_id,'mutation_executed':False}
@@ -306,6 +334,9 @@ def create(session,name,jid,cid):
   if r['profile_id']==LOG_PRESENCE_V2:
    from windows_agent_log_presence_v2 import payload as log_payload
    payload=log_payload(name)
+  if r['profile_id'] in RECOVERY_DRY_PROFILES:
+   recovery=recovery_module(r['profile_id'])
+   payload=recovery.payload(name,r['profile_id'])
   if r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:
    import software_change_fixture as change
    if r['profile_id']==SOFTWARE_CHANGE_V2:import software_change_fixture_v2 as change
@@ -379,13 +410,17 @@ def read(session,name,jid,cid):
    stdout,code,stderr=data['stdout'],data.get('errorlevel'),data['stderr']
   else:stdout,code,stderr=env.get('result'),env.get('error_code'),env.get('error_msg')
   from powershell_streams import inspect_stderr
-  streams=inspect_stderr(stderr) if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2} else {'kind':'empty' if stderr in ('',None) else 'unrecognized','progress_records':0}
+  streams=inspect_stderr(stderr) if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2}|RECOVERY_DRY_PROFILES else {'kind':'empty' if stderr in ('',None) else 'unrecognized','progress_records':0}
   if not isinstance(stdout,str) or len(stdout.encode())>262144 or code not in (0,'0') or streams['kind'] not in {'empty','progress_only'}:
    raise ValueError('endpoint_command_output_invalid')
   from legacy_vnc_identity import PROFILE as LEGACY,summarize as summarize_legacy
   from windows_legacy_msi import summarize as summarize_msi,summarize_absence
   if r['profile_id'] in {MSI,POST_MSI} and historical:raise ValueError('msi_current_postcondition_freshness_required')
-  if r['profile_id'] in {SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2}:
+  if r['profile_id'] in RECOVERY_DRY_PROFILES:
+   if historical:raise ValueError('recovery_current_result_required')
+   recovery=recovery_module(r['profile_id'])
+   summary=recovery.summarize(json.loads(stdout.lstrip('\ufeff')),name,r['profile_id'])
+  elif r['profile_id'] in {SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2}:
    if historical:raise ValueError('session_current_observation_freshness_required')
    if r['profile_id']==SESSIONS:from user_session_census import summarize as summarize_sessions
    elif r['profile_id']==GPUS:from gpu_os_baseline import summarize as summarize_sessions

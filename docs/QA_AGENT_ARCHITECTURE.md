@@ -1,5 +1,15 @@
 # Архитектура QA-агента UQA
 
+REGSERVICE746: source13 Windows recovery prerequisite remains unaccepted. Fixed
+our cmd length/quoting/bootstrap, localized SYSTEM SID and .NET7digit parsing;
+old failures retained, no product bug confirmation or original-case PASS. Own V4
+Scheduler registration/diagnostic/V5 same-task READ reconciled; callback reports
+ancestry_unknown, no independent recovery accepted. All failed registration/
+diagnostic writers retired, own retained objects never overwritten/replayed.
+Prepared single-option phases/operator code/environment/approvals/rebind are not
+ordinary autonomy; diagnostic model overclaim rejected. See
+UQA_SERVICE_RECOVERY_TRANSPORT_20261017.md. W0/21 A1/19 unchanged.
+
 REGROOT734: устранять причины UQA/environment BLOCKED, не пропускать автоматически;
 product/test mismatch не исправляется подгонкой oracle. Исправлен наш Windows
 log-root: bin/var/log → exact source agentServer/var/log, новый Windows-only v2,

@@ -1,5 +1,14 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+REGSERVICE746 current: finish numeric13 safely, don't label preparatory commands
+full PASS. Existing dry Task UQA-Regress-Service-Dry-v735/proof retained, callback
+ancestry_unknown. Registration and observer MUST NOT be replayed. Investigate a
+native Scheduler-engine ancestry anchor (not implemented/verified yet), keeping
+exact SID/action/hash/own-origin proof; missing ancestors are not independence.
+Only after real recovery prerequisite can stop→queued drive audit→start→agent-log
+content be attempted. Source40/301 coverage W0/21 A1/19 remains. Later cases and
+collections/procedures/policies not completed by technical smoke.
+
 REGROOT734 replaces skip-at-technical-BLOCKED: investigate/fix own framework,
 environment/access causes within existing scope. Windows log path fixed and
 real UQA own result3files/2nonempty accepted for presence-only; not original

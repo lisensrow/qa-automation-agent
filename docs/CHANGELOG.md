@@ -1,5 +1,13 @@
 # История изменений UQA
 
+17Oct746: technical service-recovery preparation, not a new passed case. Own
+transport/bootstrap/localized SID/.NET timestamp defects diagnosed and corrected;
+strict100ns <=60s, real host cmd decoded-SHA/AST, Core policy/history retirement
+tests. V4 created owned dry Scheduler task; V5 same-task READ returns explicit
+ancestry_unknown, independent callback not accepted. No service stop/restart,
+permission change or replay. Earlier model diagnostic overclaim preserved/rejected.
+Consolidated evidence/source: UQA_SERVICE_RECOVERY_TRANSPORT_20261017.md.
+
 17Oct734: найден и исправлен собственный Windows log-root bug; old v1 historical
 unknown/failed reports retained, new v2 strict source-root/binary/reparse/budget/
 policy/journal/no-repeat guards. Mock old failure/new success +full311 PASS.

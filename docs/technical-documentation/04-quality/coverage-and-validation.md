@@ -1,5 +1,11 @@
 # Проверки, покрытие и ограничения
 
+REGSERVICE746: W0/21 A1/19, unchanged. Native registration/definition/observer
+execution verification is not a new passed source13. Own observer749 reports
+ancestry_unknown; model745 definition-only callback-success claim rejected.
+No agent stop or independent recovery accepted. Technical tests, parser fixes,
+candidate indexed memory and operator-prepared phases are accounted separately.
+
 REGCHAIN724: prepared original1/40 unchanged (Windows0/21 Astra1/19), source40/301
 не runtime coverage. Legacy chain GET returnsHTML despite installed OpenAPI;
 writer retired, historical uncertain not resent/reclassified. Independent own

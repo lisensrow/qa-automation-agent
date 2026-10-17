@@ -1,5 +1,12 @@
 # План приёмки UQA: дневное продолжение
 
+REGSERVICE746: no new full case. Actual source13 prerequisite produced bounded
+technical failures and owned Scheduler proof ancestry_unknown. Preserve original
+failed reports and awaiting/verified operation distinctions; VERIFY execution is
+not VERIFY business behavior. Model745 diagnostic-only callback overclaim is
+rejected. Operator/framework assistance and same-task parser/read recovery are
+explicit. Original W0/21 A1/19 unchanged, no stopped agent, Jira/Zephyr untouched.
+
 REGROOT734 user correction: UQA/framework/environment BLOCKED требует причинной
 диагностики и исправления в разрешённом scope, не молчаливого пропуска. Наш log-root
 bug исправлен v2, actual Windows3regular/2nonempty +accepted narrow assessment;

@@ -1,5 +1,14 @@
 # Поток исполнения задачи
 
+REGSERVICE746: own native success envelope/errorlevel0 cannot override stderr or
+invalid output. Windows cmd budget is enforced separately from Win32 length;
+fixed-script decompression is tested by exact SHA+nonempty+empty stderr+AST.
+SYSTEM identity uses exact SID, not localized label. .NET7fraction timestamps
+preserve original duration bound in100ns ticks;60s+100ns is rejected. Same-task
+READ/rebind may recover parser failure without a new POST; failed original stays.
+Callback ancestry_unknown is a failed prerequisite, not independent recovery.
+Historical failed writers retired; retained task/proof/Jobs never deleted.
+
 REGROOT734: исправленный Windows source-root v2 сохраняет старые команды/receipts
 и все guards. Actual own fetch3regular/2nonempty; framework report source-ID/
 counts binding не выдаётся за свободный model recall. Model only bounded criterion
