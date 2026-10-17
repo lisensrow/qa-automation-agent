@@ -305,6 +305,8 @@ TOOLS = [
                 "ожидаемого поведения, API, архитектуры, плагинов, "
                 "настроек и процедур. Не считай документацию "
                 "доказательством фактического состояния стенда."
+                " source_namespace=product_docs ищет только продуктовые руководства, "
+                "experience только опыт/кейсы, all сохраняет общий поиск. Scope не подтверждает актуальность или authority."
             ),
             "parameters": {
                 "type": "object",
@@ -322,6 +324,10 @@ TOOLS = [
                         "description": (
                             "Число фрагментов. Обычно 3, максимум 5."
                         )
+                    },
+                    "source_namespace": {
+                        "type":"string","enum":["all","product_docs","experience"],
+                        "description":"Fixed source-location filter before ranking/limit, default all. No arbitrary path or permission."
                     }
                 },
                 "required": ["query"]
@@ -2511,6 +2517,7 @@ def execute_tool(name: str, arguments: dict):
         return knowledge_search(
             query=arguments["query"],
             limit=arguments.get("limit", 3),
+            **({'source_namespace':arguments['source_namespace']} if arguments.get('source_namespace','all')!='all' else {}),
         )
 
     if name == "ssh_docker_ps":

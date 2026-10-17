@@ -42,7 +42,10 @@ def _is_useless_chunk(
 def knowledge_search(
     query: str,
     limit: int = 5,
+    source_namespace: str = "all",
 ) -> dict:
+    if not isinstance(source_namespace,str) or source_namespace not in {'all','product_docs','experience'}:
+        return {'status':'invalid_source_namespace','results':[]}
     query = str(query).strip()
 
     if not query:
@@ -68,10 +71,10 @@ def knowledge_search(
         max(limit * 4, limit),
     )
 
-    raw = search(
-        query,
-        limit=candidate_limit,
-    )
+    if source_namespace == 'all':
+        raw = search(query,limit=candidate_limit)
+    else:
+        raw = search(query,limit=candidate_limit,source_namespace=source_namespace)
 
     results = []
     total_chars = 0
@@ -138,9 +141,13 @@ def knowledge_search(
         if total_chars >= MAX_TOTAL_CHARS:
             break
 
-    return {
+    output = {
         "status": "ok",
         "query": query,
         "result_count": len(results),
         "results": results,
     }
+    if source_namespace != 'all':
+        output.update(source_namespace=source_namespace,indexed_excerpts_only=True,
+            current_source_bytes_rechecked=False,execution_permission_granted=False)
+    return output

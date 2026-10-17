@@ -808,7 +808,11 @@ def _make_fts_query(query: str):
 def search(
     query: str,
     limit: int = 5,
+    source_namespace: str = "all",
 ):
+    prefixes = {'all': None, 'product_docs': 'UQA-docs/%', 'experience': 'UQA-experience/%'}
+    if not isinstance(source_namespace,str) or source_namespace not in prefixes:
+        raise ValueError('invalid_source_namespace')
     limit = max(
         1,
         min(int(limit), 20),
@@ -820,8 +824,7 @@ def search(
 
     con = _connect()
 
-    rows = con.execute(
-        """
+    sql = """
         SELECT
             rowid,
             source,
@@ -831,14 +834,17 @@ def search(
             bm25(chunks) AS score
         FROM chunks
         WHERE chunks MATCH ?
+        """
+    params = [fts_query]
+    if prefixes[source_namespace] is not None:
+        sql += " AND source LIKE ? "
+        params.append(prefixes[source_namespace])
+    sql += """
         ORDER BY score
         LIMIT ?
-        """,
-        (
-            fts_query,
-            limit,
-        ),
-    ).fetchall()
+        """
+    params.append(limit)
+    rows = con.execute(sql,tuple(params)).fetchall()
 
     con.close()
 
