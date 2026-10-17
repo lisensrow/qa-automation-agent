@@ -1,5 +1,14 @@
 # Поток исполнения задачи
 
+REGROOT734: исправленный Windows source-root v2 сохраняет старые команды/receipts
+и все guards. Actual own fetch3regular/2nonempty; framework report source-ID/
+counts binding не выдаётся за свободный model recall. Model only bounded criterion
+assessment, single-option phases и operator fixes/standing prompts явно отделены.
+Generic freshness refusal сначала уточняется собственным pinned readiness;
+только proven stale допускает одну pluginAudit, без установки/доставки/ослабления
+age gate. Technical blockers расследовать/исправлять; product/test mismatch
+сохранять без подгонки oracle. Original fullcases остаются1/40.
+
 REGCHAIN724: installed schema ≠ routed JSON API. Chain writer retired before
 prompt/journal; READ diagnostics remain, historical uncertain unchanged. New
 metadata-only log presence profile has exact OS/root/payload, native own-result,

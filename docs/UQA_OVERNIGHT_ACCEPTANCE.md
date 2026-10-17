@@ -1,5 +1,12 @@
 # План приёмки UQA: дневное продолжение
 
+REGROOT734 user correction: UQA/framework/environment BLOCKED требует причинной
+диагностики и исправления в разрешённом scope, не молчаливого пропуска. Наш log-root
+bug исправлен v2, actual Windows3regular/2nonempty +accepted narrow assessment;
+full311technical не original casePASS. Product bug/test mismatch не подгонять,
+security/authority boundaries сохраняются. Independent service recovery пока
+не доказан, продолжить исследование безопасного восстановления. См. REGROOT734.
+
 Closing726: actual memory725 wrong case/unknown interpretation despite retrieving
 indexed724 source. Saved separately, no unchanged retry or promotion. Full310
 technical +22MD verification not business fullcase coverage; original1/40 remains.

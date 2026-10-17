@@ -9,10 +9,10 @@ from contextlib import ExitStack
 from uuid import uuid4
 import agent_log_presence as p
 
-def main():
+def main(p=p,targets=('windows','astra'),execute_python_probe=True):
  import uqa,job_store as store,endpoint_metadata as ep
  from operation_journal import list_operations,reconcile_operation
- for name in ('windows','astra'):
+ for name in targets:
   body={'probe_version':1,'platform':name,'query_complete':True,'error':'',
         'files':[{'id':'a'*64,'size':23,'mtime_ms':123}]}
   assert p.summarize(body,name)['adapted_presence_status']=='PASS'
@@ -68,8 +68,9 @@ def main():
    assert not uqa.execute_tool_with_policy(ep.CREATE,args,messages,**ctx).get('executed') and len(posts)==1
  # Execute only the fixed Python probe on this host: unknown root is BLOCKED,
  # not a production run or a positive fixture substituted for target evidence.
- raw=subprocess.run([sys.executable,'-c',p.ASTRA],capture_output=True,text=True,check=True)
- p.summarize(json.loads(raw.stdout),'astra')
+ if execute_python_probe:
+  raw=subprocess.run([sys.executable,'-c',p.ASTRA],capture_output=True,text=True,check=True)
+  p.summarize(json.loads(raw.stdout),'astra')
  print('PASS current log presence: strict metadata/bothOS Core/policy/own fresh fetch/journal/no replay; not five-day rotation or desktop')
 
 if __name__=='__main__':main()

@@ -1,5 +1,15 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+REGROOT734 replaces skip-at-technical-BLOCKED: investigate/fix own framework,
+environment/access causes within existing scope. Windows log path fixed and
+real UQA own result3files/2nonempty accepted for presence-only; not original
+retention/rotation/full-case. Next independent service recovery: VMware CLI works
+only in ordinary approved host execution, Windows Tools running/Astra unknown,
+guest operations require credentials not available. Investigate safe proven
+recovery alternative before stop; no auth/security/Tools changes or blind POST
+replay. Continue next cases once their real prerequisites/contract are fixed;
+product defects/test mismatches remain evidenced, expected not relaxed. REGROOT734.
+
 REGSTOP728: numeric13 own source fully understood both OS (US-T92/US-T99),
 runtime BLOCKED before stop: independent service recovery unconfirmed. Do not
 re-read for counters or stop only control channel. Numeric14 still retired chain;

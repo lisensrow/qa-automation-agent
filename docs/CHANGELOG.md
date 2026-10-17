@@ -1,5 +1,13 @@
 # История изменений UQA
 
+17Oct734: найден и исправлен собственный Windows log-root bug; old v1 historical
+unknown/failed reports retained, new v2 strict source-root/binary/reparse/budget/
+policy/journal/no-repeat guards. Mock old failure/new success +full311 PASS.
+Actual731 after necessary own stale-inventory refresh: complete3files/2nonempty,
+accepted model presence-only assessment. IDs/counts compiler-bound to own source/
+native proof, не доказанный model recall. Operator scope/fix/coordinator/approvals
+отдельно. Original full-case count1/40 unchanged; Jira/Zephyr untouched. REGROOT734.
+
 17Oct728: continued next numeric13 on both OS through UQA own full source read,
 coverage and correct interpretation. No service stop/start or task POST without
 independent recovery path. Source-understanding acceptance separate from runtime

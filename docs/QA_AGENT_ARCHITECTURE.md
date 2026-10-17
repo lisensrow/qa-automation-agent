@@ -1,5 +1,16 @@
 # Архитектура QA-агента UQA
 
+REGROOT734: устранять причины UQA/environment BLOCKED, не пропускать автоматически;
+product/test mismatch не исправляется подгонкой oracle. Исправлен наш Windows
+log-root: bin/var/log → exact source agentServer/var/log, новый Windows-only v2,
+v1 неизменен. Actual731 own fresh3files/2nonempty, model assessment accepted
+presencePASS only; stale prerequisite восстановлен одной pluginAudit через Core.
+Prepared coordinator привязывает source ID/counts к own receipts вместо свободной
+генерации моделью; single-option phases/operator fix/standing approvals раскрыты,
+не ordinary autonomy/full original-case. Full311technical/Windows mocked execution
+PASS. См. UQA_WINDOWS_LOG_ROOT_FIX_20261017.md. Independent service recovery ещё
+исследовать, не считать отсутствие готового доступа вечным пропуском.
+
 REGSTOP728: UQA own source13 interpretation accepted WindowsUS-T925steps and
 AstraUS-T994steps, exact stop/submit/start/driveDeviceAudit. Independent recovery
 unconfirmed => BLOCKED before service stop/POST; zero product tasks. Operator
