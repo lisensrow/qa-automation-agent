@@ -1,5 +1,13 @@
 # План приёмки UQA: дневное продолжение
 
+INSTALL776 first-case checkpoint: private configured distributions acquired,
+DEB archive inspected; no guest mutation/model action/full PASS. Both cursors1.
+Next in order: observe native user-upload body -> closed Core/journal delivery
+via source/schema-confirmed send-file -> independently surviving installer with
+durable result/recovery -> all source postchecks -> restore original KEs.
+Do not substitute equal-version updateAgent, archive presence or preserved files
+for a clean first-install case. Details: UQA_INSTALLER_SUPPLY_AND_HANDOFF_20261018.md.
+
 INSTALL773 first-case prep: current schema + observed prefix + exact1.3.27
 catalogue/working-package metadata read. Canonical/observed-prefix operator bug
 corrected in same zero-op Job, old failure retained. Next: protected artifact

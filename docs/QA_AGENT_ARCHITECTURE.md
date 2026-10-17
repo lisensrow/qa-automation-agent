@@ -1,5 +1,12 @@
 # Архитектура QA-агента UQA
 
+INSTALL776: exact configured installers privately downloaded/inspected; this is
+operator preparation only. DEB replacement can stop its own agent executor;
+independent launch/result/recovery remains mandatory. Native UC send-file is
+source/schema-grounded, but upload body/runtime dispatch is not yet verified.
+No token exposure, first-case PASS or cursor advancement. See
+UQA_INSTALLER_SUPPLY_AND_HANDOFF_20261018.md.
+
 INSTALL773: current first-case installer preparation now derives observed
 same-origin API prefix instead of asserting canonical schema routing. Old771
 failure preserved, same zero-operation Job773 metadata GETs succeeded. Current

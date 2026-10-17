@@ -1,5 +1,11 @@
 # История изменений UQA
 
+18Oct INSTALL776: received exact configured Windows/Astra1.3.27 distributions
+privately, recorded hashes and DEB metadata/maintainer-script observations.
+Archive inventory is not installed-tree verification. Native send-file contract
+identified, no upload/delivery/install/identity/X mutation. Operator preparation,
+not UQA runtime or additional full case. See UQA_INSTALLER_SUPPLY_AND_HANDOFF_20261018.md.
+
 18Oct INSTALL773: fixed operator preparation's wrong canonical-prefix assertion
 using exact observed same-origin context. Preserved failed771, same Job773 read
 current build/package metadata; schema/operationIds/OS/type grounded in installed
