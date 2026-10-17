@@ -1,5 +1,37 @@
 # План приёмки UQA: дневное продолжение
 
+INSTALL773 first-case prep: current schema + observed prefix + exact1.3.27
+catalogue/working-package metadata read. Canonical/observed-prefix operator bug
+corrected in same zero-op Job, old failure retained. Next: protected artifact
+download/provenance, closed per-OS launch and independent recovery BEFORE source
+identity/install actions. No guessing MSI/OS/params, no working-package edits,
+private config into prompts/Git or unsafe source interpretation. No full PASS.
+
+LABNET768 completed infrastructure recovery: current UC65/UQA71, UC/RC DNS65,
+UQA hosts corrected and persistent~lab.local routing, artifact listener71 active.
+Windows online after operator soft reboot, Astra ready. Keep this separate from
+model skills and original case coverage. Resume first incomplete installation
+case per OS, do not repeat baseline tasks, plugin delivery or advance to case2.
+Preserve pending reviewed764 runtime-memory/code closure and existing dirty diff.
+
+REGINSTALL761 supersedes old755 clean-target authority blocker: latest human
+permits case-required actions on existing Windows/Astra with full restoration,
+no new VMs. Both fresh v757 snapshots confirmed, rollback not yet exercised.
+Stay numeric1 (US-T116/US-T117), no case2 on incomplete metadata preparation.
+Next: own current file baseline, supported exact installer staging/launch with
+independent recovery, source-tree and actual Tray/reboot/RDP/X negative+restore
+proofs, then restore original working state. Do not mistake existing core/tree,
+scope interpretation, metadata probe or structural checks for fresh installation.
+Windows source759 abstract flag failed, literal760 diagnosis succeeded; preserve
+both. Supplied legacy bundled-VNC expectations remain a visible test mismatch.
+Jira/Zephyr/model/context/GPU unchanged. No new original full-case PASS.
+Own current file baseline DONE on both existing endpoints, both metadata ops
+VERIFIED and final scope assessments matched. Two stale-proven inventory
+refreshes only, no delivery. Existing-file missing states must be compared to
+post-install independently, not called a fresh-install failure already. Next
+supported installer staging/independent launch/recovery and original remaining
+steps; no case2 advancement. See UQA_CASE1_BASELINE_RUNTIME_20261017.md.
+
 REGORDER755 direct user correction: stay on first incomplete case per OS,
 US-T116 Windows and US-T117 Astra, not number13. BLOCKED does not advance cursor.
 Full-source installation steps include restricted identity deletion/X-access

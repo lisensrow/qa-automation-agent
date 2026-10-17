@@ -1,5 +1,40 @@
 # Архитектура QA-агента UQA
 
+INSTALL773: current first-case installer preparation now derives observed
+same-origin API prefix instead of asserting canonical schema routing. Old771
+failure preserved, same zero-operation Job773 metadata GETs succeeded. Current
+schema hash differs from historical260: keep old pins immutable, do not weaken
+validators. Exact1.3.27 catalogue lists windows_x64/system and debian_x64/system;
+no artifact/config disclosure, task or installation. Operator preparation, not
+model autonomy. See UQA_INSTALLER_CONTRACT_PREPARATION_20261018.md.
+
+LABNET768 (18Oct closure): operator network migration UC65/UQA71 completed;
+MikroTik UC/RC names65, UQA hosts override corrected, narrow NM~lab.local route
+persisted, artifact unit bind71:8765 with original hardening intact, trusted SSH
+keys relocated after fingerprint checks. Astra readiness true; Windows1.3.27
+recovered online after one operator soft-reboot (not a case/model action).
+No auth/firewall/TLS/model/context/GPU/Jira changes. See
+UQA_LAB_NETWORK_MIGRATION_20261017.md. No new regression PASS/cursor advancement.
+
+REGINSTALL761: current human scope is EXISTING Windows/Astra, first incomplete
+case1 on each, no new VMs. Operator-created current v757 snapshots are confirmed,
+restore not exercised. New closed installation-file inventory reads metadata
+only through existing executeCommand/Core/journal/own-full verifier; it cannot
+install, reset identity, read keys or change X-access. Literal source action and
+abstract summary are separate: own759 Windows abstract identity-deletion flag
+failed; same-receipt760 verb/path extraction matched, diagnosis not general fix.
+Astra own759 five-step scope matched, installation not performed. See pinned
+UQA_CASE1_INSTALLATION_INVENTORY_20261017.md. Candidate recipe indexed with
+snapshot/dedup/integrity,2927 unrelated chunks preserved. Runtime762 Windows
+stopped0ops on command-plugin freshness;763 guarded same-job continuation checks
+own stale proof before any necessary pluginAudit. No first-case PASS or cursor
+advancement; operator/framework assistance stays explicit. Own Windows24-entry
+and Astra22-entry file baselines now completed with exact own fresh full and
+VERIFIED operations after one stale-proven pluginAudit each. Final318technical
+PASS. Recipe search observed; private continuation selectors did not consume
+whole recipe, so no general memory transfer/freeform-autonomy claim. See
+UQA_CASE1_BASELINE_RUNTIME_20261017.md for actual refs and missing paths.
+
 REGENGINE753: own new Scheduler-native engine/GUID/path ancestry anchor dry proof
 verified on Windows, both register/observer ops VERIFIED and final model limits
 correct. It is NOT stopped-service recovery/fullcase/freeform autonomy. Previous

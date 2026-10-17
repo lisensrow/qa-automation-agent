@@ -1,5 +1,33 @@
 # История изменений UQA
 
+18Oct INSTALL773: fixed operator preparation's wrong canonical-prefix assertion
+using exact observed same-origin context. Preserved failed771, same Job773 read
+current build/package metadata; schema/operationIds/OS/type grounded in installed
+schema and fresh catalogue, no download/installation/endpoint task or case PASS.
+Post-reboot318 technical smoke PASS with durable private log;22MD validation PASS.
+Source: UQA_INSTALLER_CONTRACT_PREPARATION_20261018.md.
+
+18Oct LABNET768: moved existing UC DHCP71→65 and UQA72→71 in safe order, updated
+only UC/RC static DNS, corrected UQA hosts and narrow lab DNS routing, artifact
+bind override without changing hardening. Trusted SSH keys remapped after pin
+checks; backups retained. Windows offline recovered after one operator soft
+reboot, Astra ready; not UQA skill or regression PASS. No Jira/Zephyr changes.
+Source: UQA_LAB_NETWORK_MIGRATION_20261017.md.
+
+17Oct761: existing-target first-case preparation, no new VM. Added strict closed
+Windows/Astra installation-file metadata profile and prepared runtime recipe;
+unchanged Core policy, exact targets, own fresh result/journal/no-repeat guards.
+Windows literal source action extracted correctly after abstract label failure;
+old failure retained, not a new passed case. Both current restore checkpoints
+created by operator, supplied installer formats/hashes read, no install/reset/X
+actions. Candidate deep recipe snapshotted/deduplicated/indexed, unrelated2927
+chunks unchanged. Final318/318 after runtime and ancestor-path guards PASS.
+Own metadata baselines on both OS now observed/reconciled, bounded model
+assessments matched; each used one own-proven stale pluginAudit, no delivery.
+Windows zero-op failure kept, SAME Job continuation explicit. Runtime evidence
+and operator/framework/retrieval limits: UQA_CASE1_BASELINE_RUNTIME_20261017.md.
+No fresh install or original full-case acceptance;0/21+historical1/19 unchanged.
+
 17Oct755: corrected regression workflow by direct human instruction. Return to
 first incomplete WindowsUS-T116/AstraUS-T117, no advancement on partial/blocked
 checks. Full archived sources/hash reviewed, identity/X-access authorization

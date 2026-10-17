@@ -8,6 +8,8 @@ from command_stage_runtime import bound
 from plugin_audit_runtime import phase_decision_schema,decode_phase_decision
 from operation_journal import list_operations,reconcile_operation
 from endpoint_metadata import SOFTWARE_CHANGE_V2
+from agent_installation_inventory import PROFILE as INSTALL_FILES
+INSTALL_FILES_SOURCE='UQA-experience/UQA_CASE1_INSTALLATION_INVENTORY_20261017.md'
 SOURCE='UQA-experience/UQA_PARAMETERLESS_PLUGIN_REGRESSION.md'
 SOFTWARE_SOURCE='UQA-experience/UQA_SOFTWARE_OS_BASELINE_20261017.md'
 OS_IDENTITY_SOURCE='UQA-experience/UQA_OS_IDENTITY_BASELINE_20261017.md'
@@ -24,7 +26,7 @@ PROMPT=('You are UQA observing Tray/log metadata through one fixed dedicated Ast
 
 def catalog(trace,r):
     if not trace:
-        query=(r['profile_id'] if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2} else PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
+        query=(r['profile_id'] if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2,INSTALL_FILES} else PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
                POST_LOG if r['profile_id']==POST_LOG else r['profile_id']+' TightVNC ownership no uninstall')
         return [bound('knowledge_search',{'query':query,'limit':4})]
     if not any(x['tool']=='browser_open_page' for x in trace):return [bound('browser_open_page',{'url':'https://uc.lab.local/cmdb'})]
@@ -47,6 +49,13 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
         return {'started':False,'completed':False,'reason':str(e)}
     from windows_legacy_msi import PROFILE as MSI
     prompt=PROMPT
+    if r['profile_id']==INSTALL_FILES:
+        prompt=('UQA: prepare the FIRST installation case on the existing dedicated Windows/Astra only. '
+          'Retrieve the reviewed installation-file-inventory recipe, then exact readiness, create ONE fixed metadata task, fetch its own fresh full and interpret the canonical file states. '
+          'This phase NEVER installs, resets identity, reads file contents/certificates or changes X-access. Literal source actions remain separate: Windows step1 says remove machine_uid.txt, but that has NOT been executed by this probe. '
+          'Existing files are a baseline, not fresh installation proof. Missing is an observed state, denied/reparse is unknown/BLOCKED, never evidence of absence. '
+          'Do not install legacy TightVNC/TigerVNC merely to satisfy an outdated template; report that mismatch separately. No second-case advancement, new VMs, Jira/Zephyr, arbitrary commands or task replay. '
+          'Operator snapshots/code/oracle/standing approvals and framework single-option phases are explicit, not freeform autonomy.')
     if r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:
         prompt=('UQA: install exactly one operator-prepared harmless owned Astra software-change fixture through unchanged Core WRITE/journal. '
           'Read profile/readiness, send once, fetch own fresh full, require absence before, exact package/version/hash after and probe output. '
@@ -146,6 +155,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
                 if r['profile_id']==SOFTWARE:suffix=' Package/registry census only; sample is not whole list, no all-software/UI/plugin comparison/full-case acceptance.'
                 if r['profile_id']==OS_IDENTITY:suffix=' Native identity fields only, unknowns retained; no plugin comparison/all OS fields/users/volumes/UI/full-case acceptance.'
                 if r['profile_id']==DMI_IDENTITY:suffix=' Eight raw identity strings only, unknown/placeholder markers retained; no plugin/all-SMBIOS/CPU/DIMM/UI/full-case acceptance.'
+                if r['profile_id']==INSTALL_FILES:suffix=' Case1 file metadata baseline only; no installation, identity reset, Tray icon or X-access proof; no advancement to case2.'
                 if r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:suffix=' Exactly one owned package installation only; fresh softAudit and linked new CMDB record are separate required steps before US-T114 acceptance.'
                 answer=api.ask_ollama([{'role':'system','content':prompt+suffix},
                     {'role':'user','content':'Summarize only this canonical limited observation: '+json.dumps(report)}],
@@ -175,7 +185,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
                 if fn['name']==READ and result['error']=='own_endpoint_result_not_ready' and pending_reads<(24 if r['profile_id'] in {MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY} else 8):
                     pending_reads+=1;time.sleep(2);continue
                 raise ValueError('endpoint_tool_failed:'+str(result['error']))
-            source='UQA-experience/UQA_SOFTWARE_CHANGE_CASE_20261017.md' if r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2} else DMI_IDENTITY_SOURCE if r['profile_id']==DMI_IDENTITY else OS_IDENTITY_SOURCE if r['profile_id']==OS_IDENTITY else SOFTWARE_SOURCE if r['profile_id']==SOFTWARE else SOURCE
+            source=INSTALL_FILES_SOURCE if r['profile_id']==INSTALL_FILES else 'UQA-experience/UQA_SOFTWARE_CHANGE_CASE_20261017.md' if r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2} else DMI_IDENTITY_SOURCE if r['profile_id']==DMI_IDENTITY else OS_IDENTITY_SOURCE if r['profile_id']==OS_IDENTITY else SOFTWARE_SOURCE if r['profile_id']==SOFTWARE else SOURCE
             if fn['name']=='knowledge_search' and not any(x.get('source')==source and r['profile_id'] in str(x) for x in result.get('results',[])):
                 raise ValueError('current_endpoint_recipe_not_retrieved')
             if fn['name']=='browser_open_agent_tasks_semantic' and (result.get('ci_id'),result.get('agent_id'))!=(r['ci_id'],r['agent_id']):

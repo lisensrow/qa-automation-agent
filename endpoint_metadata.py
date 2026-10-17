@@ -25,6 +25,7 @@ from os_identity_baseline import PROFILE as OS_IDENTITY
 from smbios_os_baseline import PROFILE as DMI_IDENTITY
 from agent_log_presence import PROFILE as LOG_PRESENCE
 from windows_agent_log_presence_v2 import PROFILE as LOG_PRESENCE_V2
+from agent_installation_inventory import PROFILE as INSTALL_FILES
 from service_recovery_dry_run import PROFILES as RECOVERY_DRY_V1
 from service_recovery_dry_v2 import PROFILES as RECOVERY_DRY_V2
 from service_recovery_dry_v3 import PROFILES as RECOVERY_DRY_V3
@@ -105,7 +106,7 @@ def validate_log_baseline():
  if len(oldops)!=1 or oldops[0]['status']!='verified':raise ValueError('log_baseline_execution_required')
  return True
 def requirement(name,campaign,profile=PROFILE,observation_renewal=None):
- if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2,SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}|RECOVERY_DRY_PROFILES:raise ValueError('endpoint_profile_required')
+ if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2,INSTALL_FILES,SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}|RECOVERY_DRY_PROFILES:raise ValueError('endpoint_profile_required')
  from legacy_vnc_identity import PROFILE as LEGACY,SHA as LSHA
  t=target(name)
  if not isinstance(campaign,str) or not 1<=len(campaign)<=80 or not campaign.replace('-','').isalnum():
@@ -149,7 +150,7 @@ def requirement(name,campaign,profile=PROFILE,observation_renewal=None):
    'uninstall_performed':False,'full_source_case_passed':False})
   s=r['operation_stages'][0];s.update(workflow_id=POST_MSI,resource_key='agent-'+t['agent_id']+'-legacy-msi-absence')
   s['verification'].update(profile_id=POST_MSI,payload_sha256=POST_SHA)
- if profile in {SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2}:
+ if profile in {SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2,INSTALL_FILES}:
   if profile==SESSIONS:from user_session_census import sha
   elif profile==GPUS:from gpu_os_baseline import sha
   elif profile==SOFTWARE:from software_os_baseline import sha
@@ -157,6 +158,7 @@ def requirement(name,campaign,profile=PROFILE,observation_renewal=None):
   elif profile==DMI_IDENTITY:from smbios_os_baseline import sha
   elif profile==LOG_PRESENCE:from agent_log_presence import sha
   elif profile==LOG_PRESENCE_V2:from windows_agent_log_presence_v2 import sha
+  elif profile==INSTALL_FILES:from agent_installation_inventory import sha
   else:from drive_os_baseline import sha
   r.update(profile_id=profile,payload_sha256=sha(name),supported_os=name,expected_profile={
    'registered_session_query_only':True,'usernames_emitted':False,'desktop_verified':False,
@@ -179,6 +181,9 @@ def requirement(name,campaign,profile=PROFILE,observation_renewal=None):
   if profile==DMI_IDENTITY:s['resource_key']='agent-'+t['agent_id']+'-dmi-identity-baseline'
   if profile==LOG_PRESENCE:s['resource_key']='agent-'+t['agent_id']+'-current-log-presence'
   if profile==LOG_PRESENCE_V2:s['resource_key']='agent-'+t['agent_id']+'-source-root-log-presence-v2'
+  if profile==INSTALL_FILES:
+   r['expected_profile']={'file_metadata_only':True,'installation_executed':False,'identity_changed':False,'file_contents_read':False,'full_case_passed':False}
+   s['resource_key']='agent-'+t['agent_id']+'-installation-file-inventory'
  if profile in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:
   import software_change_fixture as change
   if profile==SOFTWARE_CHANGE_V2:import software_change_fixture_v2 as change
@@ -232,7 +237,7 @@ def read_ready(session,name,jid,cid):
   t,ci,urls=context(session,name);agent=read_json(session,urls[1]);validate_target_state(name,ci,agent)
   tasks=read_json(session,urls[0],{'name':'executeCommand','periodic':False,'limit':100,'offset':0})
   validate_task_list(name,tasks,'executeCommand')  # Includes Windows historical unresolved commands; never cancel them.
-  if name!='astra' and not (name=='windows' and r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2}|RECOVERY_DRY_PROFILES):raise ValueError('windows_metadata_payload_not_implemented')
+  if name!='astra' and not (name=='windows' and r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2,INSTALL_FILES}|RECOVERY_DRY_PROFILES):raise ValueError('windows_metadata_payload_not_implemented')
   validate_preflight(name,ci,agent,read_json(session,urls[2]),tasks)
   return {'target':name,'ci_id':t['ci_id'],'agent_id':t['agent_id'],'core_version':CORE,
     'ready':True,'payload_sha256':r['payload_sha256'],'read_at':now(),'session_id':session.session_id,'mutation_executed':False}
@@ -336,6 +341,9 @@ def create(session,name,jid,cid):
   if r['profile_id']==LOG_PRESENCE_V2:
    from windows_agent_log_presence_v2 import payload as log_payload
    payload=log_payload(name)
+  if r['profile_id']==INSTALL_FILES:
+   from agent_installation_inventory import payload as install_payload
+   payload=install_payload(name)
   if r['profile_id'] in RECOVERY_DRY_PROFILES:
    recovery=recovery_module(r['profile_id'])
    payload=recovery.payload(name,r['profile_id'])
@@ -412,7 +420,7 @@ def read(session,name,jid,cid):
    stdout,code,stderr=data['stdout'],data.get('errorlevel'),data['stderr']
   else:stdout,code,stderr=env.get('result'),env.get('error_code'),env.get('error_msg')
   from powershell_streams import inspect_stderr
-  streams=inspect_stderr(stderr) if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2}|RECOVERY_DRY_PROFILES else {'kind':'empty' if stderr in ('',None) else 'unrecognized','progress_records':0}
+  streams=inspect_stderr(stderr) if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2,INSTALL_FILES}|RECOVERY_DRY_PROFILES else {'kind':'empty' if stderr in ('',None) else 'unrecognized','progress_records':0}
   if not isinstance(stdout,str) or len(stdout.encode())>262144 or code not in (0,'0') or streams['kind'] not in {'empty','progress_only'}:
    raise ValueError('endpoint_command_output_invalid')
   from legacy_vnc_identity import PROFILE as LEGACY,summarize as summarize_legacy
@@ -422,7 +430,7 @@ def read(session,name,jid,cid):
    if historical:raise ValueError('recovery_current_result_required')
    recovery=recovery_module(r['profile_id'])
    summary=recovery.summarize(json.loads(stdout.lstrip('\ufeff')),name,r['profile_id'])
-  elif r['profile_id'] in {SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2}:
+  elif r['profile_id'] in {SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,LOG_PRESENCE,LOG_PRESENCE_V2,INSTALL_FILES}:
    if historical:raise ValueError('session_current_observation_freshness_required')
    if r['profile_id']==SESSIONS:from user_session_census import summarize as summarize_sessions
    elif r['profile_id']==GPUS:from gpu_os_baseline import summarize as summarize_sessions
@@ -431,6 +439,7 @@ def read(session,name,jid,cid):
    elif r['profile_id']==DMI_IDENTITY:from smbios_os_baseline import summarize as summarize_sessions
    elif r['profile_id']==LOG_PRESENCE:from agent_log_presence import summarize as summarize_sessions
    elif r['profile_id']==LOG_PRESENCE_V2:from windows_agent_log_presence_v2 import summarize as summarize_sessions
+   elif r['profile_id']==INSTALL_FILES:from agent_installation_inventory import summarize as summarize_sessions
    else:from drive_os_baseline import summarize as summarize_sessions
    summary=summarize_sessions(json.loads(stdout.lstrip('\ufeff')),name)
   elif r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:

@@ -1,5 +1,25 @@
 # Проверки, покрытие и ограничения
 
+LABNET768: coordinated server-address/DNS/host override/listener migration and
+one Windows soft-reboot are operator environment recovery, not learned skills
+or passed regression cases. Both agent identities/core versions retained; no
+auth/firewall/TLS weakening. Cursors and original full coverage stay unchanged.
+
+REGINSTALL761: first incomplete cursors remain WindowsUS-T116/1 and AstraUS-T117/1.
+Current user authorized existing-target installation/identity/X tests with
+restoration, no new VMs. Snapshots are operator actions, not UQA ability. Own
+source759: Windows3steps read but abstract identity flag FAIL, literal diagnostic
+760 matched action/path; Astra5steps scope interpretation matched, no execution.
+File-inventory profile is metadata only: complete census is not expected files
+present, fresh installation, Tray, reboot/RDP/X or full-case PASS. Candidate
+memory and technical smoke are not coverage. Historical W0/21+A1/19 unchanged.
+Actual prepared file baselines: Windows24entries/Astra22entries, own full and
+journal verification on both; model final scope flags matched. Each needed only
+one own-stale inventory refresh, no delivery. This is not installation/reset/
+Tray/RDP/X execution. Final318technical PASS. Whole-recipe use by the private
+continuation selectors was not tested, no ordinary autonomy claim. Runtime refs
+and missing-file observations are in UQA_CASE1_BASELINE_RUNTIME_20261017.md.
+
 REGENGINE753 confirms Windows Scheduler callback dry origin only. Both own
 operations and bounded interpretation verified, but original W0/21 A1/19 remains.
 No source13 stop/queued-audit/start/log-content acceptance, no Astra recovery
