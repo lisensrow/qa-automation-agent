@@ -1,5 +1,7 @@
 # Проверки, покрытие и ограничения
 
+v633: full630299technicalPASS checks safe error stages/prerequisite limits/projections. Real631both one comparator call→observed_context; checks correctly describe missing UI context but no navigation/comparison.0new tasks/ops; autonomous recovery/new memory use/whole-case not accepted,0added cases/steps40/301. Original623raw subsets remain distinct. Next independent source2step5 own-read coverage, not repeated identical failure.
+
 v629: full626298technicalPASS validates exact-scope catalog only. Actual generic625both wrong routes; actual628both select comparator but fail generic prerequisite, no comparison/ops. Neither new memory application nor navigation recovery/full lifecycle accepted; no added cases/steps40/301. REGOSENTRY629 has primary receipts/roles/title-only retrieval failure. Original623prepared subset comparison remains valid, not whole-case promotion.
 
 Current624: both-OS recorded raw OS comparison623 completed; Windows1different/Astra2equal. Adds0complete cases/steps to40/301: naming contract/all OS/UI/users/mounts unknown, both source cases BLOCKED. Operator620first full osAudit hash and prepared scope/phases distinct from model own GET/report. Focused621/Core/hash/time/unknown fixtures and full297technicalPASS; not297business tests. Primary refs/limits in REGOSPAIR624; old source608/597/604/614/UI602failures retained.

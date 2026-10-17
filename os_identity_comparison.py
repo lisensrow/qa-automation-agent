@@ -4,7 +4,7 @@ from datetime import datetime,timezone
 from uuid import UUID
 import hashlib,json,re
 import job_store
-from command_probe_contract import target,validate_target_state,CORE
+from command_probe_contract import target,validate_target_state,CORE,ORIGIN
 from command_stage_native import context,read_json
 from operation_journal import list_operations
 from plugin_preparation import stamp
@@ -15,6 +15,19 @@ RULES={'windows':{'data.host_name':'native.Win32_OperatingSystem.CSName_exact'},
  'astra':{'data.host_name':'native.socket.gethostname_exact','data.os.kernel_version':'native.uname.release_exact'}}
 LIMITS={'product_naming_contract_verified':False,'all_os_fields_verified':False,'users_or_volumes_verified':False,
  'os_ui_verified':False,'live_current_state_verified':False,'developer_confirmed_bug':False,'full_case_passed':False,'business_pass':False}
+BLOCK_STAGES={'scope','source_proofs','time_window','observed_context','target_readiness','native_os_payload','audit_payload','raw_comparison'}
+
+def blocked(stage,name=None):
+ """Safe diagnostic enum, no raw exception, no dispatch or permission upgrade."""
+ if stage not in BLOCK_STAGES or name not in {*RULES,None}:raise ValueError('blocked_projection_scope')
+ context_required=stage=='observed_context' and name in RULES
+ next_reads=[]
+ if context_required:
+  next_reads=[{'tool':'browser_open_page','arguments':{'url':ORIGIN+'/cmdb'}},
+   {'tool':'browser_open_agent_tasks_semantic','arguments':{'ci_name':target(name)['ci_name']}}]
+ return {'error':'owned_os_identity_pair_unavailable','profile_id':PROFILE,'target':name,'blocked_stage':stage,
+  'observed_agent_task_context_required':context_required,'read_context_prerequisites':next_reads,'prerequisites_are_not_execution_authority':True,
+  'raw_hypothesis_status':'BLOCKED','independent_raw_value_comparison_done':False,'new_agent_tasks':0,'mutation_executed':False,'resend_authorized':False,**LIMITS}
 def _ref(ref):
  if type(ref) not in (list,tuple) or len(ref)!=3 or any(type(x)!=str for x in ref):raise ValueError('owned_pair_reference_shape')
  if not all(re.fullmatch(p,v) for p,v in zip([r'[0-9]{8}-[0-9]{6}-[0-9a-f]{8}',r'tc-[0-9a-f]{8}',r'ev-[0-9a-f]{12}'],ref)):raise ValueError('owned_pair_reference_format')
@@ -93,6 +106,12 @@ def compare_fields(expected,actual,name):
  status='BLOCKED' if counts['unknown_fields'] else 'MISMATCH' if counts['raw_different_fields'] else 'MATCH'
  return {'raw_hypothesis_status':status,'rows':rows,'field_count':len(rows),**counts}
 def compact(value):
+ if isinstance(value,dict) and value.get('error')=='owned_os_identity_pair_unavailable':
+  try:
+   expected=blocked(value.get('blocked_stage'),value.get('target'))
+   if any(type(value.get(k)) is not type(v) or value[k]!=v for k,v in expected.items()):return {}
+   return expected
+  except (ValueError,TypeError):return {}
  if not isinstance(value,dict) or value.get('profile_id')!=PROFILE or value.get('target') not in RULES or any(value.get(k) is not v for k,v in LIMITS.items()):return {}
  expected_flags={'recorded_pair_only':True,'normalization_applied':False,'resend_authorized':False,'independent_raw_value_comparison_done':True,'same_os_payload_as_original_read':True,'same_audit_data_as_operator_capture':True,'same_audit_full_payload_as_original_model_read_proved':False}
  if any(value.get(k) is not v for k,v in expected_flags.items()) or value.get('new_agent_tasks')!=0 or value.get('full_source_case_status')!='BLOCKED' or value.get('comparison_scope')!='predeclared_raw_mapping_hypothesis_not_product_contract':return {}
@@ -115,11 +134,15 @@ def _same_full(full,proof,name,r):
  if not isinstance(env,dict) or full.get('id')!=proof['task_id'] or full.get('agent_id')!=r['agent_id'] or full.get('name')!=name or full.get('status')!='success' or full.get('created_at')!=proof['server_created_at'] or env.get('machine_uid')!=r['ci_id'] or env.get('processed_at')!=proof['processed_at']:raise ValueError('same_recorded_os_task_required')
  return env
 def inspect(session,args,jid,cid):
+ stage='scope';name=None
  try:
-  r=validate_context(job_store.get_job(jid),cid,args);os,audit,cp,cap=source_proofs(r);name=r['target']
+  r=validate_context(job_store.get_job(jid),cid,args);name=r['target'];stage='source_proofs';os,audit,cp,cap=source_proofs(r)
+  stage='time_window'
   gap=(stamp(audit['processed_at'])-stamp(os['processed_at'])).total_seconds()
   if not -5<=gap<=r['max_pair_seconds']:raise ValueError('raw_pair_time_window')
-  _,ci,urls=context(session,name);validate_target_state(name,ci,read_json(session,urls[1]))
+  stage='observed_context';_,ci,urls=context(session,name)
+  stage='target_readiness';validate_target_state(name,ci,read_json(session,urls[1]))
+  stage='native_os_payload'
   env=_same_full(read_json(session,urls[0]+'/'+os['task_id']+'/full'),os,'executeCommand',r);data=env.get('data')
   if isinstance(data,dict) and isinstance(data.get('stdout'),str):stdout,code,stderr=data['stdout'],data.get('errorlevel'),data.get('stderr')
   else:stdout,code,stderr=env.get('result'),env.get('error_code'),env.get('error_msg')
@@ -127,13 +150,14 @@ def inspect(session,args,jid,cid):
   if not isinstance(stdout,str) or len(stdout.encode())>262144 or code not in (0,'0') or inspect_stderr(stderr)['kind'] not in {'empty','progress_only'}:raise ValueError('os_identity_full_output_invalid')
   os_sha=hashlib.sha256(stdout.encode()).hexdigest()
   if os_sha!=os['result_sha256'] or baseline.summarize(json.loads(stdout.lstrip('\ufeff')),name)!=os['summary']:raise ValueError('os_identity_original_data_changed')
-  aenv=_same_full(read_json(session,urls[0]+'/'+audit['task_id']+'/full'),audit,'osAudit',r);data=aenv.get('data')
+  stage='audit_payload';aenv=_same_full(read_json(session,urls[0]+'/'+audit['task_id']+'/full'),audit,'osAudit',r);data=aenv.get('data')
   if not isinstance(data,dict) or not isinstance(data.get('os'),dict) or aenv.get('result')!='success' or len(json.dumps(data,ensure_ascii=False).encode())>1000000:raise ValueError('os_audit_data_shape')
   audit_sha=hashlib.sha256(json.dumps(data,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
   if audit_sha!=cap['data_sha256'] or data.get('host_name')!=audit['host_name'] or {k:data['os'].get(k) for k in audit['os_subset']}!=audit['os_subset']:raise ValueError('os_audit_operator_digest_or_original_subset_changed')
   projected={'data.host_name':data.get('host_name')}
   if name=='astra':projected['data.os.kernel_version']=data['os'].get('kernel_version')
   if projected!=cap['projected_raw_fields']:raise ValueError('os_audit_projection_changed')
+  stage='raw_comparison'
   out={**compare_fields(cp['expected_raw_fields'],projected,name),'profile_id':PROFILE,'target':name,'comparison_scope':'predeclared_raw_mapping_hypothesis_not_product_contract',
    **LIMITS,'recorded_pair_only':True,'normalization_applied':False,'resend_authorized':False,'independent_raw_value_comparison_done':True,
    'same_os_payload_as_original_read':True,'same_audit_data_as_operator_capture':True,'same_audit_full_payload_as_original_model_read_proved':False,
@@ -143,4 +167,4 @@ def inspect(session,args,jid,cid):
   if not compact(out):raise ValueError('raw_pair_projection_rejected')
   return out
  except (ValueError,TypeError,KeyError,AttributeError,StopIteration,OverflowError,OSError):
-  return {'error':'owned_os_identity_pair_unavailable','raw_hypothesis_status':'BLOCKED','independent_raw_value_comparison_done':False,'new_agent_tasks':0,'mutation_executed':False,'resend_authorized':False,**LIMITS}
+  return blocked(stage,name)
