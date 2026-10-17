@@ -10,6 +10,10 @@ from pathlib import Path
 ROOT = Path(os.getenv("UQA_SMOKE_ROOT", "/opt/uqa")).resolve()
 SMOKE_DIR = ROOT / "smoke"
 PRODUCTION_FILES = [
+    ROOT / "software_change_fixture.py",
+    ROOT / "software_change_fixture_v2.py",
+    ROOT / "software_change_review.py",
+    ROOT / "source_read_entry.py",
     ROOT / "read_recovery_gate.py",
     ROOT / "knowledge_tool.py",
     ROOT / "gpu_result_comparison.py",
@@ -95,6 +99,9 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_source_read_entry.py",
+    "smoke_software_change_fixture.py",
+    "smoke_software_change_review.py",
     "smoke_read_recovery_gate.py",
     "smoke_regression_json_example.py",
     "smoke_smbios_os_baseline.py",

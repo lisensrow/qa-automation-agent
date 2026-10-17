@@ -1,5 +1,14 @@
 # История изменений UQA
 
+17Oct691: последующая memory interpretation690 FAILED step_count1vs3 при полном правильном retrieved chunk; case/OS/autonomy/matrix4поля корректны. Не исправляли новым prompt и не переписывали689source/runtime687; сохранена отдельная limitation. Финальный full689307/307technicalPASS и22MDPASS; первый suite registry mismatch закрыт contextless Core-only dispatch refusal/negative test. Доказательства/границы UQA_SOFTWARE_CHANGE_MEMORY_LIMIT_20261017.md.
+
+## 17 октября 2026 — один полный scoped software-change сценарий
+
+- US-T114 Astra3/3: parent20261017-132524-dd45d6c2, canonical ev-8c2d447afa2b/model ev-959882d99659; own native install/fresh softAudit/new linked CMDB record,2VERIFIED ops. Полные подготовленные сценарии W0/21,A1/19,total1/40; freeform autonomy не принята.
+- Exact additive fixture profile и GET-only own-proof/CMDB verifier сохраняют locked expected, WRITE policy, no-rekey и promotion. ПО в detail.name/version, nullable верхний name не oracle.
+- Мой v1 .deb без directory entry дал dpkg1, история/артефакты/awaiting journal сохранены; исходная команда не повторена. Новый v2 до реального запуска прошёл isolated unpack/query/probe. Штатный failure JSON теперь отображается как BLOCKED, success predicate не ослаблен.
+- source_entry677/679 подтверждены source-only; не network runtime/full cases. Reviewed source/точные роли/ограничения UQA_SOFTWARE_CHANGE_CASE_20261017.md. Jira/Zephyr, модель/context/GPU не менялись.
+
 ## 2026-10-17 — verified system handoff, rejected model narrative preserved
 
 - Prompt/progress/catalog-only trials665–671 did not establish free recovery; retained without promotion. Core673 now automatically restores the model-selected original READ comparator intent through at most3canonical, policy-controlled, separately attributed framework dispatches; a failed prerequisite is not replayed.

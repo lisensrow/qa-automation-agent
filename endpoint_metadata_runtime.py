@@ -3,10 +3,11 @@ import json
 import time
 from copy import deepcopy
 import job_store as store
-from endpoint_metadata import CREATE,READ,READY,PROFILE,POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,validate_context
+from endpoint_metadata import CREATE,READ,READY,PROFILE,POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,SOFTWARE_CHANGE,validate_context
 from command_stage_runtime import bound
 from plugin_audit_runtime import phase_decision_schema,decode_phase_decision
 from operation_journal import list_operations,reconcile_operation
+from endpoint_metadata import SOFTWARE_CHANGE_V2
 SOURCE='UQA-experience/UQA_PARAMETERLESS_PLUGIN_REGRESSION.md'
 SOFTWARE_SOURCE='UQA-experience/UQA_SOFTWARE_OS_BASELINE_20261017.md'
 OS_IDENTITY_SOURCE='UQA-experience/UQA_OS_IDENTITY_BASELINE_20261017.md'
@@ -23,7 +24,7 @@ PROMPT=('You are UQA observing Tray/log metadata through one fixed dedicated Ast
 
 def catalog(trace,r):
     if not trace:
-        query=(r['profile_id'] if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY} else PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
+        query=(r['profile_id'] if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2} else PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
                POST_LOG if r['profile_id']==POST_LOG else r['profile_id']+' TightVNC ownership no uninstall')
         return [bound('knowledge_search',{'query':query,'limit':4})]
     if not any(x['tool']=='browser_open_page' for x in trace):return [bound('browser_open_page',{'url':'https://uc.lab.local/cmdb'})]
@@ -46,6 +47,12 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
         return {'started':False,'completed':False,'reason':str(e)}
     from windows_legacy_msi import PROFILE as MSI
     prompt=PROMPT
+    if r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:
+        prompt=('UQA: install exactly one operator-prepared harmless owned Astra software-change fixture through unchanged Core WRITE/journal. '
+          'Read profile/readiness, send once, fetch own fresh full, require absence before, exact package/version/hash after and probe output. '
+          'No apt/DNF/update/dependency download/scripts/triggers/removal/repair, existing software or rights/security/Jira changes. '
+          'Existing package/path, nonroot, unknown or errors BLOCKED, never retry/rekey. Preserve staged artifact, no cleanup. '
+          'This proves installation only, not softAudit/CMDB/full US-T114. Operator package/oracle/preparation and framework phases explicit.')
     if r['profile_id']==DMI_IDENTITY:
         prompt=('UQA: observe eight nonsensitive system/BIOS/baseboard identity strings on exact dedicated Windows/Astra through one fixed executeCommand. '
           'Retrieve reviewed profile/readiness, send once through unchanged Core WRITE/journal and fetch own fresh full. '
@@ -139,6 +146,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
                 if r['profile_id']==SOFTWARE:suffix=' Package/registry census only; sample is not whole list, no all-software/UI/plugin comparison/full-case acceptance.'
                 if r['profile_id']==OS_IDENTITY:suffix=' Native identity fields only, unknowns retained; no plugin comparison/all OS fields/users/volumes/UI/full-case acceptance.'
                 if r['profile_id']==DMI_IDENTITY:suffix=' Eight raw identity strings only, unknown/placeholder markers retained; no plugin/all-SMBIOS/CPU/DIMM/UI/full-case acceptance.'
+                if r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:suffix=' Exactly one owned package installation only; fresh softAudit and linked new CMDB record are separate required steps before US-T114 acceptance.'
                 answer=api.ask_ollama([{'role':'system','content':prompt+suffix},
                     {'role':'user','content':'Summarize only this canonical limited observation: '+json.dumps(report)}],
                     tools=[],response_schema=schema)['message'].get('content') or ''
@@ -167,7 +175,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
                 if fn['name']==READ and result['error']=='own_endpoint_result_not_ready' and pending_reads<(24 if r['profile_id'] in {MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY} else 8):
                     pending_reads+=1;time.sleep(2);continue
                 raise ValueError('endpoint_tool_failed:'+str(result['error']))
-            source=DMI_IDENTITY_SOURCE if r['profile_id']==DMI_IDENTITY else OS_IDENTITY_SOURCE if r['profile_id']==OS_IDENTITY else SOFTWARE_SOURCE if r['profile_id']==SOFTWARE else SOURCE
+            source='UQA-experience/UQA_SOFTWARE_CHANGE_CASE_20261017.md' if r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2} else DMI_IDENTITY_SOURCE if r['profile_id']==DMI_IDENTITY else OS_IDENTITY_SOURCE if r['profile_id']==OS_IDENTITY else SOFTWARE_SOURCE if r['profile_id']==SOFTWARE else SOURCE
             if fn['name']=='knowledge_search' and not any(x.get('source')==source and r['profile_id'] in str(x) for x in result.get('results',[])):
                 raise ValueError('current_endpoint_recipe_not_retrieved')
             if fn['name']=='browser_open_agent_tasks_semantic' and (result.get('ci_id'),result.get('agent_id'))!=(r['ci_id'],r['agent_id']):

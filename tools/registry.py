@@ -215,6 +215,9 @@ TOOLS = [
     {'type':'function','function':{'name':'browser_compare_owned_os_identity_semantic',
         'description':'OBSERVE exact locked owned Windows/Astra recorded native OS/osAudit pair. Validate original proofs, pre-dispatch raw hypothesis and explicit operator data-digest preparation, GET both payloads, compare only declared raw hostname/kernel fields. Not normative product naming, current live state, all OS/UI/full-case PASS or new task authority. Operator first full audit hash is NOT original model full-hash proof.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target'],'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
+    {'type':'function','function':{'name':'browser_inspect_owned_software_change_semantic',
+        'description':'OBSERVE exact locked US-T114 owned Astra software-change case. Before: complete scoped CMDB absence; after: own verified additive fixture install, fresh softAudit exact name/version and new linked CMDB software record. No writes, arbitrary scope, all-software or ordinary freeform autonomy claim. Requires exact source/child references; otherwise refuse.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['phase'],'properties':{'phase':{'type':'string','enum':['before','after']}}}}},
     {'type':'function','function':{'name':'browser_compare_owned_software_values_semantic',
         'description':'OBSERVE locked owned Astra recorded OS592/softAudit594 pair. GET same hash-verified full payloads and compare every exact unique package name/version; no architecture stripping/normalization, new task, other-field/UI/all-app/full-case proof or replay authority. Bounded explicit difference samples, not raw inventory export.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target'],'properties':{'target':{'type':'string','enum':['astra']}}}}},
@@ -2474,6 +2477,8 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_inspect_owned_software_change_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "knowledge_inspect_own_regression_json_example":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "knowledge_inspect_own_regression_read_coverage":

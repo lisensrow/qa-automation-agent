@@ -2038,6 +2038,7 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        'browser_inspect_owned_software_change_semantic',
         'browser_inspect_closed_endpoint_metadata_semantic',
         'browser_read_closed_endpoint_metadata_readiness_semantic',
         'browser_inspect_closed_vnc_session_semantic',
@@ -4696,6 +4697,15 @@ def execute_tool_with_policy(
             return {'error':'locked_os_identity_pair_scope_required','executed':False,
                 'action_class':action_class,'action_policy_status':'blocked_by_os_identity_pair_scope'}
 
+    if name=='browser_inspect_owned_software_change_semantic':
+        try:
+            from software_change_review import validate as validate_change_review
+            if not job_id or not case_id:raise ValueError('review_job_case_required')
+            validate_change_review(get_job(job_id),case_id,arguments)
+        except (ValueError,TypeError,KeyError,AttributeError):
+            return {'error':'locked_software_change_review_required','executed':False,
+                    'action_class':action_class,'action_policy_status':'blocked_by_software_change_scope'}
+
     if name=='browser_compare_owned_software_values_semantic':
         try:
             from software_result_comparison import validate_context
@@ -5420,6 +5430,10 @@ def execute_tool_with_policy(
         if name==CREATE:invoke=lambda:create(_session,arguments['target'],arguments['plugin_name'],arguments['stage_id'],job_id,case_id)
         elif name==READ:invoke=lambda:read(_session,arguments['target'],arguments['plugin_name'],arguments['task_id'],job_id,case_id)
         else:invoke=lambda:read_ready(_session,arguments['target'],arguments['plugin_name'],job_id,case_id)
+    elif name=='browser_inspect_owned_software_change_semantic':
+        from tools.browser import _session
+        from software_change_review import inspect as inspect_software_change
+        invoke=lambda:inspect_software_change(_session,arguments,job_id,case_id)
     elif name in {'browser_remove_exact_legacy_msi_semantic','browser_start_closed_endpoint_metadata_semantic','browser_inspect_closed_endpoint_metadata_semantic','browser_read_closed_endpoint_metadata_readiness_semantic'}:
         from tools.browser import _session
         from endpoint_metadata import CREATE,REMOVE,READ,create,read,read_ready
@@ -14937,7 +14951,10 @@ def run_turn(
             if outcome.get('status')!='observed_ui_draft':
                 finalize_case_blocked(job_id,case_id,outcome.get('reason','condition_draft_unavailable'))
                 return
-    append_reviewed_product_memory(messages, navigation_task, job_id, case_id, action_policy)
+    from source_read_entry import admitted as source_read_admitted
+    source_read_entry = bool(job_id and case_id and source_read_admitted(get_job(job_id) or {}, case_id))
+    if not source_read_entry:
+        append_reviewed_product_memory(messages, navigation_task, job_id, case_id, action_policy)
     failed_semantic_inspections = {}
     attempted_field_panel_recovery = set()
     failed_semantic_clicks = {}
@@ -14979,7 +14996,7 @@ def run_turn(
     )
     composite_tabs_required = bool(required_observation and required_observation["tool"] ==
                                    "browser_verify_exact_table_row_tabs_semantic")
-    telemetry_route_message = None if composite_tabs_required or owned_os_pair_schema_tools else _read_only_agent_telemetry_route_message(
+    telemetry_route_message = None if composite_tabs_required or owned_os_pair_schema_tools or source_read_entry else _read_only_agent_telemetry_route_message(
         managed_agent_request_text,
         telemetry_ci_name,
     )
@@ -15008,7 +15025,7 @@ def run_turn(
             telemetry_ci_name,
             plugin_target,
         )
-        if not telemetry_route_message and not composite_tabs_required and not owned_os_pair_schema_tools
+        if not telemetry_route_message and not composite_tabs_required and not owned_os_pair_schema_tools and not source_read_entry
         else None
     )
     if plugin_route_message:
@@ -15129,7 +15146,12 @@ def run_turn(
                 if action_policy == 'confirm_mutations':
                     from ui_popup_context import menu_tool_catalog
                     catalog = menu_tool_catalog(catalog, messages[popup_context_start:])
-                data = ask_ollama(messages, tools=catalog)
+                if source_read_entry:
+                    from source_read_entry import model_messages as source_model_messages, catalog as source_catalog
+                    catalog = source_catalog(catalog)
+                    data = ask_ollama(source_model_messages(messages, SYSTEM_PROMPT, managed_agent_stand_url), tools=catalog)
+                else:
+                    data = ask_ollama(messages, tools=catalog)
         except Exception as exc:
             if job_id and case_id:
                 finalize_case_blocked(

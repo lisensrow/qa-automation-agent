@@ -23,6 +23,8 @@ from gpu_os_baseline import PROFILE as GPUS
 from software_os_baseline import PROFILE as SOFTWARE
 from os_identity_baseline import PROFILE as OS_IDENTITY
 from smbios_os_baseline import PROFILE as DMI_IDENTITY
+from software_change_fixture import PROFILE as SOFTWARE_CHANGE
+from software_change_fixture_v2 import PROFILE as SOFTWARE_CHANGE_V2
 PROGRAM='/usr/bin/python3'
 CODE=r"""import os,stat,time,json,hashlib
 ROOT='/opt/usystem/usagent/var/log/usagent'
@@ -83,7 +85,7 @@ def validate_log_baseline():
  if len(oldops)!=1 or oldops[0]['status']!='verified':raise ValueError('log_baseline_execution_required')
  return True
 def requirement(name,campaign,profile=PROFILE):
- if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY}:raise ValueError('endpoint_profile_required')
+ if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:raise ValueError('endpoint_profile_required')
  from legacy_vnc_identity import PROFILE as LEGACY,SHA as LSHA
  t=target(name)
  if not isinstance(campaign,str) or not 1<=len(campaign)<=80 or not campaign.replace('-','').isalnum():
@@ -150,6 +152,18 @@ def requirement(name,campaign,profile=PROFILE):
   if profile==SOFTWARE:s['resource_key']='agent-'+t['agent_id']+'-software-os-baseline'
   if profile==OS_IDENTITY:s['resource_key']='agent-'+t['agent_id']+'-os-identity-baseline'
   if profile==DMI_IDENTITY:s['resource_key']='agent-'+t['agent_id']+'-dmi-identity-baseline'
+ if profile in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:
+  import software_change_fixture as change
+  if profile==SOFTWARE_CHANGE_V2:import software_change_fixture_v2 as change
+  CHANGE_SHA,PACKAGE,VERSION,ARTIFACT_SHA=change.SHA,change.PACKAGE,change.VERSION,change.ARTIFACT_SHA
+  if name!='astra':raise ValueError('software_fixture_astra_only')
+  r.update(profile_id=profile,payload_sha256=CHANGE_SHA,supported_os='astra',
+   expected_profile={'package':PACKAGE,'version':VERSION,'artifact_sha256':ARTIFACT_SHA,
+    'absent_before':True,'installed_after':True,'probe_output_matches':True,
+    'existing_software_modified':False,'full_case_passed':False,'business_pass':False})
+  s=r['operation_stages'][0];s.update(workflow_id=profile,
+    resource_key='agent-'+t['agent_id']+'-owned-software-change-20261017'+('-v2' if profile==SOFTWARE_CHANGE_V2 else ''))
+  s['verification'].update(profile_id=profile,payload_sha256=CHANGE_SHA)
  return r
 def validate_context(job,cid,starting=False):
  if not isinstance(job,dict) or len(job.get('test_cases',[]))!=1:raise ValueError('single_endpoint_case_required')
@@ -166,6 +180,7 @@ def validate_context(job,cid,starting=False):
 def admit(job,cid,args):
  _,r=validate_context(job,cid)
  if args!={'target':r['target']}:raise ValueError('endpoint_exact_target_required')
+ if r['profile_id']==SOFTWARE_CHANGE:raise ValueError('fixture_v1_retired_history_only_use_v2')
  return deepcopy(r['operation_stages'][0])
 def read_ready(session,name,jid,cid):
  try:
@@ -267,6 +282,10 @@ def create(session,name,jid,cid):
   if r['profile_id']==DMI_IDENTITY:
    from smbios_os_baseline import payload as dmi_payload
    payload=dmi_payload(name)
+  if r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:
+   import software_change_fixture as change
+   if r['profile_id']==SOFTWARE_CHANGE_V2:import software_change_fixture_v2 as change
+   payload=change.PAYLOAD
   program=payload['additional_params']['programm']
   sent=now();response=session.context.request.post(urls[0],data=deepcopy(payload),timeout=15000);received=now()
   if response.status!=201:raise ValueError('endpoint_create_status')
@@ -351,6 +370,11 @@ def read(session,name,jid,cid):
    elif r['profile_id']==DMI_IDENTITY:from smbios_os_baseline import summarize as summarize_sessions
    else:from drive_os_baseline import summarize as summarize_sessions
    summary=summarize_sessions(json.loads(stdout.lstrip('\ufeff')),name)
+  elif r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:
+   import software_change_fixture as change
+   if r['profile_id']==SOFTWARE_CHANGE_V2:import software_change_fixture_v2 as change
+   if historical:raise ValueError('software_change_fresh_postcondition_required')
+   summary=change.summarize(json.loads(stdout))
   else:
    summary=(summarize_absence if r['profile_id']==POST_MSI else summarize_msi if r['profile_id']==MSI else summarize_legacy if r['profile_id']==LEGACY else summarize)(json.loads(stdout.lstrip('\ufeff')))
   if r['profile_id']==POST_LOG:
@@ -397,6 +421,7 @@ def evaluate(job,op,eid,contract):
   return {'verified':True,'evidence_id':eid,'receipt_evidence_id':ce['evidence_id'],
     'identifier_value':a['task_id'],'postcondition_verified':True,'resend_authorized':False,
     'verification_scope':('closed_exact_msi_execution_not_full_source_regression' if r['profile_id']==MSI
+      else 'owned_additive_software_fixture_install_not_full_case' if r['profile_id'] in {SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}
       else 'closed_readonly_endpoint_metadata_execution_not_tray_desktop'),'business_pass':False}
  except (ValueError,TypeError,KeyError,AttributeError,StopIteration):
   return {'verified':False,'reason':'endpoint_metadata_evidence_insufficient','resend_authorized':False}
