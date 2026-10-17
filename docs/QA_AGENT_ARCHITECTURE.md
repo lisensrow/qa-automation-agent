@@ -1,5 +1,25 @@
 # Архитектура QA-агента UQA
 
+Closing726: full724310/310technical PASS,22MD PASS. Deep724 two candidate events
+saved once, source b451fb63e0247e85ae29f0a271c03f75be104502465cc5f58e1ba9552a0cbcab,
+snapshot/dedup/integrity/retrieval/2898otherchunks preserved. Subsequent own search725
+retrieved current source but FAILED application (AstraUS-T114 vsUS-T110 and
+unknownWindows count→zero). Не повторять prompt ради PASS; отдельная immutable
+limitation UQA_CHAIN_LOG_MEMORY_LIMIT_20261017.md, not promotion/freeform skill.
+
+REGCHAIN724: схема API не является доказательством доступности маршрута.
+Owned chain writer retired (`WRITES_ENABLED=False`) после HTML вместо JSON на
+GET stages/pipelines/jobs; Core отказывает до prompt/reservation. Исторический
+uncertain716 не переклассифицируется новым trusted preflight whitelist. READ
+diagnostics/изолированный compiler сохранены; actual chain не запускалась.
+Отдельный fixed `owned-current-agent-log-presence-v1` проверяет только метаданные
+обычных файлов на exact Windows/Astra через executeCommand1.4.0; capped128,
+identity/root guard, unknown≠zero, без содержимого/изменений/security. Наличие
+непустых файлов — отдельная пользовательская адаптация, не source5days/rotation
+или Tray. Ошибки модели722 и отдельно оказанная помощь single-option phases723
+сохраняются раздельно. Полный prepared source count остаётся1/40, не ordinary
+autonomy. Доказательства и роли: UQA_CHAIN_AND_LOG_PRESENCE_20261017.md.
+
 Closing701: final stronger contract/fingerprint code308/308technicalPASS/22MDPASS, actual699 stored contract READ revalidated/no command. Deep701 sourceSHA9650f51ad530ae68c6d4ac9bf69d602d7ce77719a7cd97d63f432e898955a1fe candidate/document_review snapshot/dedup/integrity/retrievalPASS/2892otherchunks preserved. Subsequent newrecipe local-model application remains unverified; not promotion or freeform lifecycle. No further per-user install attempted.
 
 v697–701: explicit session_observation_renewal разрешает только новый наблюдающий WTS/logind цикл после старого VERIFIED own complete результата >=3600s и нового полного собственного source read. Exact scope/payload/исходный contract/journal fingerprints/latest verified/ref/source/time; unresolved/concurrent history отказ. Default no-rekey и все MSI/install/other profiles неизменны. Реальный699 Windows census COMPLETE3registered/0user candidates, own fresh READ/VERIFIED; operator preparation/standing approvals и framework one-option phases раскрыты. Полный per-user US-T84 BLOCKED, не заменять установкой от SYSTEM;692 full own source, но финальные structured checks отсутствуют. Общий prepared business1/40 прежний. См. UQA_WINDOWS_CHANGE_PREREQUISITE_20261017.md; Jira/Zephyr/model/context/GPU unchanged.

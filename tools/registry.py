@@ -178,6 +178,18 @@ from ssh_worker import (
 
 
 TOOLS = [
+    {'type':'function','function':{'name':'browser_create_owned_chain_stage_semantic',
+     'description':'Core WRITE: one closed declared stage in a NEW owned three-audit chain on exact lab Windows/Astra. No arbitrary endpoints/payload, edits/deletes/schedules or replay. Requires current schema, own full source, ready plugins, verified preceding stages and durable journal. Native readback separately; not agent log or full case PASS.',
+     'parameters':{'type':'object','additionalProperties':False,'required':['target','stage_id'],
+      'properties':{'target':{'type':'string','enum':['windows','astra']},'stage_id':{'type':'string','enum':['stage1','stage2','stage3','pipeline','attach','job','run']}}}}},
+    {'type':'function','function':{'name':'browser_inspect_owned_chain_stage_semantic',
+     'description':'READ only original owned same-session chain receipt by independent native GET. Strict exact payload/order/target, not generic HTTP, no resend. Structural/instance verification is not log verification/full case PASS.',
+     'parameters':{'type':'object','additionalProperties':False,'required':['target','stage_id'],
+      'properties':{'target':{'type':'string','enum':['windows','astra']},'stage_id':{'type':'string','enum':['stage1','stage2','stage3','pipeline','attach','job','run']}}}}},
+    {'type':'function','function':{'name':'browser_read_owned_chain_readiness_semantic',
+     'description':'READ exact target core1.3.27, current installed schema pin, three loaded audit versions and absence of unresolved audits. No refresh/delivery/WRITE or full case PASS.',
+     'parameters':{'type':'object','additionalProperties':False,'required':['target'],
+      'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
     {'type':'function','function':{'name':'browser_remove_exact_legacy_msi_semantic',
       'description':'DESTRUCTIVE: only locked human-authorized Windows legacy TightVNC2.8.85.0 exact MSI product. Fresh native identity preflight, no arbitrary command/manual deletion/reboot/plugin changes; Core context/policy/journal required.',
       'parameters':{'type':'object','additionalProperties':False,'required':['target'],
@@ -2477,6 +2489,12 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_create_owned_chain_stage_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_inspect_owned_chain_stage_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
+    if name == "browser_read_owned_chain_readiness_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_inspect_owned_software_change_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "knowledge_inspect_own_regression_json_example":

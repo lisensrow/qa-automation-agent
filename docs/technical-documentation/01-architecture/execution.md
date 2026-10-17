@@ -1,5 +1,14 @@
 # Поток исполнения задачи
 
+REGCHAIN724: installed schema ≠ routed JSON API. Chain writer retired before
+prompt/journal; READ diagnostics remain, historical uncertain unchanged. New
+metadata-only log presence profile has exact OS/root/payload, native own-result,
+Core WRITE/policy/journal/no-rekey guards; no contents/settings changes. Model722
+free-choice order failures retained;723 separate single-option dependency phases
+are framework assistance, not ordinary autonomy. Both final model interpretations
+failed strict provenance/unknown checks despite verified tasks. Never publish
+those as full-case PASS; canonical metadata and model answer remain distinct.
+
 v689: полный bounded US-T114 = own-source child + exact additive fixture install child + existing softAudit primitive child + parent GET-only proof/CMDB comparison. Успех требует всех3бизнес-шагов и принятого модельного итога, не ACK/HTTP/структуры. Parent20261017-132524-dd45d6c2/ev-8c2d447afa2b/ev-959882d99659. Operator package/oracle/child prep/служебный запуск/standing confirmations и framework одноопционный каталог/compiled payload раскрыты; это НЕ freeform autonomy. Мой v1 archive failure/awaiting журнал сохранены, новый v2 прошёл isolated unpack/query/probe до реальной отправки. STEP/AUTO/v069/no-rekey/promotion неизменны. Primary refs/границы UQA_SOFTWARE_CHANGE_CASE_20261017.md.
 
 v673–675: попытки оставить recovery только на модельном планировании не приняты. После canonical missing-context от выбранного моделью comparator Core восстанавливает только исходное READ-намерение: два точных safe prerequisites + один retry, максимум3dispatch; не повторяет проваленное предусловие. Каждый вызов имеет отдельный durable framework/model_selected=false trace, обычную policy/проверку scope/receipt. Это автоматическое поведение UQA, но не три самостоятельных модельных решения. При partial source/OS/DMI сценарии Core публикует только canonical counts/evidence/BLOCKED; исходный неверифицированный текст/checks модели сохраняется отдельно, не маскируется под успешный отчёт. Ни WRITE, ни oracle, ни evidence/promotion validator не ослабляются.

@@ -1,5 +1,13 @@
 # Проверки, покрытие и ограничения
 
+REGCHAIN724: prepared original1/40 unchanged (Windows0/21 Astra1/19), source40/301
+не runtime coverage. Legacy chain GET returnsHTML despite installed OpenAPI;
+writer retired, historical uncertain not resent/reclassified. Independent own
+log metadata723: Astra2regular/1nonempty proves only user-adapted presence;
+Windows unavailable→unknown/BLOCKED. Both model final reports unaccepted; neither
+five-day/rotation/source case nor freeform autonomy accepted. See
+../../UQA_CHAIN_AND_LOG_PRESENCE_20261017.md for Job/evidence and assistance.
+
 Closing701: final stronger prior-contract/fingerprint/full308/308 PASS `/tmp/v700-full-smoke-final.log`,22MDPASS. Same actual699 renewal proof revalidated READ-only with final guards, no new command. Candidate701 sourceSHA9650f51ad530ae68c6d4ac9bf69d602d7ce77719a7cd97d63f432e898955a1fe persisted snapshot/dedup/integrity/retrieval/2892otherchunks preserved. Newrecipe model reuse not accepted. Initial memory helper typo refused before DB; originals not rewritten. Whole-source case counters unchanged.
 
 701: Windows US-T84 source692 all3 own-read, final structured checks absent/unaccepted. Fresh prerequisite699 own task14cc9d53-f080-4f86-94d3-308a77bcc4b2/ev-b63cb851a2d8 VERIFIED, COMPLETE3registered/0candidate; no confirmed per-user target/run channel/installer, full case BLOCKED. Counts W0/21,A1/19,total1/40 unchanged. New session-renewal positive/negative fixture; full308/308technical first pass distinct from actual census and later strengthened fingerprint checks. No whole301step/autonomy promotion, no Jira/Zephyr access. Exact evidence/roles/limits in UQA_WINDOWS_CHANGE_PREREQUISITE_20261017.md.

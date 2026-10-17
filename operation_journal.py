@@ -170,7 +170,7 @@ def record_receipt(job_id, operation_id, result=None, error_type=None):
                     and operation['tool'] == 'browser_click_semantic'
                     and result.get('click_status') == 'not_executed')
         not_sent = not_sent or (type(result) is AuditPreflightRefused and not error_type
-                    and operation['tool'] in {'browser_remove_exact_legacy_msi_semantic','browser_start_closed_endpoint_metadata_semantic','browser_start_closed_vnc_session_semantic','browser_create_closed_plugin_discovery_semantic','browser_create_closed_plugin_preparation_semantic','browser_create_closed_command_stage_semantic','browser_create_pinned_agent_audit_semantic','browser_deliver_pinned_agent_plugin_semantic'}
+                    and operation['tool'] in {'browser_create_owned_chain_stage_semantic','browser_remove_exact_legacy_msi_semantic','browser_start_closed_endpoint_metadata_semantic','browser_start_closed_vnc_session_semantic','browser_create_closed_plugin_discovery_semantic','browser_create_closed_plugin_preparation_semantic','browser_create_closed_command_stage_semantic','browser_create_pinned_agent_audit_semantic','browser_deliver_pinned_agent_plugin_semantic'}
                     and bool(result.get('error')) and result.get('executed') is False
                     and result.get('mutation_executed') is False and result.get('dispatch_state')=='not_started')
         result = result if valid_result else {}
@@ -220,7 +220,7 @@ def reconcile_operation(job_id, operation_id, evidence_id):
         requirement = case.get('requirement') or {}
         from operation_workflow import active_stage
         stage = active_stage(data, operation['case_id']) or requirement.get('operation_stage') or {}
-        if requirement.get('type') in {'closed_endpoint_metadata','closed_vnc_session','closed_plugin_discovery','closed_plugin_preparation','pinned_agent_audit','pinned_plugin_audit','closed_command_probe'} and requirement.get('operation_stages'):
+        if requirement.get('type') in {'owned_chain_regression','closed_endpoint_metadata','closed_vnc_session','closed_plugin_discovery','closed_plugin_preparation','pinned_agent_audit','pinned_plugin_audit','closed_command_probe'} and requirement.get('operation_stages'):
             stage=next((s for s in requirement['operation_stages'] if s.get('stage_id')==operation['stage_id']),{})
         contract = stage.get('verification')
         if (requirement.get('locked') is not True or operation.get('verification_fingerprint') is None

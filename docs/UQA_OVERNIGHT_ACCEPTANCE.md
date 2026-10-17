@@ -1,5 +1,18 @@
 # План приёмки UQA: дневное продолжение
 
+Closing726: actual memory725 wrong case/unknown interpretation despite retrieving
+indexed724 source. Saved separately, no unchanged retry or promotion. Full310
+technical +22MD verification not business fullcase coverage; original1/40 remains.
+
+REGCHAIN724 continuation: original40/301 не закрыты, whole prepared1/40 без
+изменений. Нельзя выдавать source-only qualification, pluginAudit readiness,
+chain fixture или user-adapted log presence за full source PASS. Actual chain716
+остановлен на HTML GET; writer retired, uncertain сохранён. Astra log presence723
+канонически подтверждена только как metadata2files/1nonempty; Windows unknown,
+финальные оба model reports unaccepted. История ошибок/операторская N/фазовая помощь
+отдельны от модели. Следующие safe cases без Jira/Zephyr/model/context/GPU изменений;
+automation остаётся PAUSED. См. UQA_CHAIN_AND_LOG_PRESENCE_20261017.md.
+
 691: полный prepared runtime US-T1143/3 подтверждён, но subsequent memory check690 accepted=false: собственный достаточный source3/3 → модель сказала1шаг. Source689/passed runtime687 и оригинал recall690 сохранены, нет unchanged retries/подставленного ответа. Это ещё не полноценное автономное владение кейсом. Отдельный limitation UQA_SOFTWARE_CHANGE_MEMORY_LIMIT_20261017.md; full307technical/22MDPASS не заменяет recall/business acceptance.
 
 CURRENT689: завершены679 source-only Astra и ОДИН полный US-T114 Astra,3/3. Parent20261017-132524-dd45d6c2, canonical ev-8c2d447afa2b/model ev-959882d99659;2VERIFIED ops, новый exact-version linked software CI. Coverage подготовленных бизнес-сценариев W0/21,A1/19,total1/40; свободная автономность всех301шагов не принята. Operator fixture/source/oracle/служебный запуск/standing confirmations и framework одноопционные child phases явно раскрыты. Мой v1 packaging failure сохранён BLOCKED/awaiting; v2 новая owned fixture после isolated install/query/probe PASS, не replay старого. См. UQA_SOFTWARE_CHANGE_CASE_20261017.md. В этом заходе других кейсов не начинать: закрепить результат/память; следующий критерий — перенос без next-tool диктата. Jira/Zephyr полностью не трогать; модель/context/GPU прежние, automation PAUSED.

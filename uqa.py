@@ -2031,6 +2031,8 @@ def classify_tool_action(
         else {}
     )
 
+    if name == 'browser_create_owned_chain_stage_semantic':
+        return 'write'
     if name == 'browser_add_tree_row_semantic':
         return 'write'
     if name == "browser_table_cell_control_semantic":
@@ -2038,6 +2040,8 @@ def classify_tool_action(
         return "observe" if action == "inspect" else "write" if action in {"fill", "select"} else "unknown"
 
     observe_tools = {
+        'browser_inspect_owned_chain_stage_semantic',
+        'browser_read_owned_chain_readiness_semantic',
         'browser_inspect_owned_software_change_semantic',
         'browser_inspect_closed_endpoint_metadata_semantic',
         'browser_read_closed_endpoint_metadata_readiness_semantic',
@@ -2470,7 +2474,7 @@ def tool_policy_check(
     if not read_only:
         return None
 
-    if name in {'browser_remove_exact_legacy_msi_semantic','browser_start_closed_endpoint_metadata_semantic','browser_start_closed_vnc_session_semantic', 'browser_create_closed_plugin_discovery_semantic', 'browser_create_closed_plugin_preparation_semantic', 'browser_create_closed_command_stage_semantic', 'browser_add_tree_row_semantic', 'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'} or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
+    if name in {'browser_create_owned_chain_stage_semantic','browser_remove_exact_legacy_msi_semantic','browser_start_closed_endpoint_metadata_semantic','browser_start_closed_vnc_session_semantic', 'browser_create_closed_plugin_discovery_semantic', 'browser_create_closed_plugin_preparation_semantic', 'browser_create_closed_command_stage_semantic', 'browser_add_tree_row_semantic', 'browser_create_pinned_agent_update_semantic', 'browser_deliver_pinned_agent_plugin_semantic', 'browser_create_pinned_agent_audit_semantic'} or (name == "browser_table_cell_control_semantic" and classify_tool_action(name, arguments) != "observe"):
         return {"error":"tool_policy_blocked","status":"blocked_by_policy","tool":name,"executed":False,
                 "policy":"strict_read_only" if force_read_only else "read_only_request"}
 
@@ -4590,7 +4594,7 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
     """Stage identity does not grant permission; policy still evaluates first."""
     if not job_id or not case_id or action_class not in {"write", "destructive"}:
         return None
-    direct = {"browser_remove_exact_legacy_msi_semantic", "browser_start_closed_endpoint_metadata_semantic", "browser_start_closed_vnc_session_semantic", "browser_edit_owned_resource_roundtrip_semantic", "browser_delete_json_resource",
+    direct = {"browser_create_owned_chain_stage_semantic", "browser_remove_exact_legacy_msi_semantic", "browser_start_closed_endpoint_metadata_semantic", "browser_start_closed_vnc_session_semantic", "browser_edit_owned_resource_roundtrip_semantic", "browser_delete_json_resource",
               "browser_create_closed_command_stage_semantic",
               "browser_create_closed_plugin_discovery_semantic",
               "browser_create_closed_plugin_preparation_semantic",
@@ -4615,7 +4619,7 @@ def _mutation_operation_context(name, arguments, action_class, job_id, case_id):
     if requirement.get("type") == "owned_resource_workflow":
         initialize_workflow(job_id, case_id)
     stage = current_stage(job_id, case_id) or requirement.get("operation_stage")
-    if requirement.get('type') in {'closed_endpoint_metadata','closed_vnc_session','closed_plugin_discovery','closed_plugin_preparation','pinned_agent_audit','pinned_plugin_audit','closed_command_probe'} and requirement.get('operation_stages'):
+    if requirement.get('type') in {'owned_chain_regression','closed_endpoint_metadata','closed_vnc_session','closed_plugin_discovery','closed_plugin_preparation','pinned_agent_audit','pinned_plugin_audit','closed_command_probe'} and requirement.get('operation_stages'):
         stage=next((s for s in requirement['operation_stages'] if s.get('tool')==name and s.get('arguments')==arguments),None)
         if commit and stage is None:
             raise ValueError('audit operation not declared')
@@ -4696,6 +4700,18 @@ def execute_tool_with_policy(
         except (ValueError,TypeError,KeyError,AttributeError):
             return {'error':'locked_os_identity_pair_scope_required','executed':False,
                 'action_class':action_class,'action_policy_status':'blocked_by_os_identity_pair_scope'}
+
+    if name in {'browser_create_owned_chain_stage_semantic','browser_inspect_owned_chain_stage_semantic','browser_read_owned_chain_readiness_semantic'}:
+        try:
+            from owned_chain_regression import validate_context as chain_context, admit as chain_admit, STAGES as chain_stages
+            _,chain_req=chain_context(get_job(job_id),case_id)
+            if name=='browser_read_owned_chain_readiness_semantic':
+                if arguments!={'target':chain_req['target']}:raise ValueError('chain readiness args')
+            else:
+                chain_admit(get_job(job_id),case_id,arguments,for_write=name=='browser_create_owned_chain_stage_semantic')
+        except (ValueError,TypeError,KeyError,AttributeError,StopIteration,OSError):
+            return {'error':'locked_owned_chain_scope_required','executed':False,
+                    'action_class':action_class,'action_policy_status':'blocked_by_owned_chain_scope'}
 
     if name=='browser_inspect_owned_software_change_semantic':
         try:
@@ -5430,6 +5446,13 @@ def execute_tool_with_policy(
         if name==CREATE:invoke=lambda:create(_session,arguments['target'],arguments['plugin_name'],arguments['stage_id'],job_id,case_id)
         elif name==READ:invoke=lambda:read(_session,arguments['target'],arguments['plugin_name'],arguments['task_id'],job_id,case_id)
         else:invoke=lambda:read_ready(_session,arguments['target'],arguments['plugin_name'],job_id,case_id)
+    elif name in {'browser_create_owned_chain_stage_semantic','browser_inspect_owned_chain_stage_semantic','browser_read_owned_chain_readiness_semantic'}:
+        from tools.browser import _session
+        from owned_chain_regression import CREATE as CHAIN_CREATE,READY as CHAIN_READY,create as chain_create,read as chain_read,ready as chain_ready
+        if name==CHAIN_READY:invoke=lambda:chain_ready(_session,arguments['target'],job_id,case_id)
+        else:
+            fn=chain_create if name==CHAIN_CREATE else chain_read
+            invoke=lambda:fn(_session,arguments['target'],arguments['stage_id'],job_id,case_id)
     elif name=='browser_inspect_owned_software_change_semantic':
         from tools.browser import _session
         from software_change_review import inspect as inspect_software_change

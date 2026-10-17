@@ -1,5 +1,19 @@
 # История изменений UQA
 
+17Oct726 closing: full310technical/22MD PASS, deep724 snapshot/candidate/dedup/
+integrity/retrieval successful. New local-model own retrieval725 application FAIL:
+wrong Astra provenance and unknown→zero. Отдельная limitation memory726 сохраняет
+ошибку, не переписывает source724/723reports и не наращивает prompt retries.
+
+17Oct REGCHAIN724: закрытый chain compiler/READ diagnostics и journal own
+instance-stage linkage; legacy writer отключён после GET HTML preflight. Future
+native refusal classified NOT_SENT без изменения старого uncertain716. Две
+pluginAudit714 VERIFIED/no delivery. Source6–8/14 чтение и ошибки сохранены.
+Fixed metadata-only log-presence profile обеих ОС с Core/policy/own-fetch/no-replay
+fixtures. Astra actual presence criterion PASS (2files/1nonempty), Windows unknown
+BLOCKED; оба финальных model reports unaccepted, не полные source cases. Ошибки
+порядка722 и фазовая помощь723 раскрыты. См. REGCHAIN724 experience source.
+
 17Oct691: последующая memory interpretation690 FAILED step_count1vs3 при полном правильном retrieved chunk; case/OS/autonomy/matrix4поля корректны. Не исправляли новым prompt и не переписывали689source/runtime687; сохранена отдельная limitation. Финальный full689307/307technicalPASS и22MDPASS; первый suite registry mismatch закрыт contextless Core-only dispatch refusal/negative test. Доказательства/границы UQA_SOFTWARE_CHANGE_MEMORY_LIMIT_20261017.md.
 
 ## 17 октября 2026 — один полный scoped software-change сценарий

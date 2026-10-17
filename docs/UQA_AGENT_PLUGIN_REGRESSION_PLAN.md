@@ -1,5 +1,21 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+Closing726: technical310/22MD PASS; indexed724 recall725 still unaccepted, wrong
+source ID/unknown semantics. Never loosen oracle or publish model prose as PASS.
+Persisted limitation separate; remaining numeric cases and provenance-safe reports
+still needed. No additional original whole cases, ordinary autonomy unaccepted.
+
+NEXT REGCHAIN724: остальные кейсы в numeric порядке с явными BLOCKED; не
+повторять716/714/723 или неизменные model retries. Chain14 требует routed JSON
+contract до WRITE; schema alone недостаточно. Logging12 (US-T91/US-T110): own
+source read complete, source5days/rotation НЕ выполнены. Отдельная адаптация723:
+Astra2files/1nonempty canonical presencePASS; Windows unknown/BLOCKED; оба model
+reports unaccepted. No false full-case promotion. Tray/VNC требуют desktop proof;
+source install/cert/firewall запрещены, per-user Windows prerequisite unresolved.
+Prepared original Windows0/21 Astra1/19; не считать metadata/fixtures новыми кейсами.
+Затем свежий общий прогон без wipe/reinstall, потом collections/procedures/policies.
+Доказательства/роли: UQA_CHAIN_AND_LOG_PRESENCE_20261017.md.
+
 Closed701 checks: final308/308technical/22MDPASS; Deep701 saved once SHA9650f51ad530ae68c6d4ac9bf69d602d7ce77719a7cd97d63f432e898955a1fe/snapshot/dedup/integrity/retrieval/2892otherchunks preserved. Newrecipe model reuse still open; no more unchanged current-session attempts. Windows per-user prerequisite unresolved, prepared whole-case1/40 unchanged. Final all-cycle run must preserve BLOCKED forbidden install/cert/firewall portions, no promise of40PASS.
 
 NEXT701: user resumes remaining cases one-by-one then fresh full campaign, not wipe/reinstall. Windows paired US-T84 own source692 all3 but semantic final unaccepted; fresh census6993registered/0active candidates, exact new task/VERIFIED. Need confirmed safe user/run_as_user/per-user installer; do not substitute SYSTEM or Astra package. Full business counts unchanged W0/21 A1/19. Explicit session renewal only with old VERIFIED/new source/age/latest resolved history, no bypass for uncertain/mutations. Case6 uninstall/reinstall,7certificates,Astra8firewall remain forbidden/BLOCKED; preserve numeric coverage and proceed only allowed scopes. New recipe REGUSER701; immutable689/691 retained, Jira/Zephyr prohibited, automation PAUSED/model/context/GPU unchanged.

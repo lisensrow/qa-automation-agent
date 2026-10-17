@@ -69,6 +69,9 @@ def _read(case, evidence_id, contract, before=None, after=None):
 
 def evaluate_recovery(job, operation, evidence_id, contract):
     """Requires explicit locked immutable oracle + complete before/after GETs."""
+    if isinstance(contract,dict) and contract.get('kind')=='owned_chain_stage':
+        from owned_chain_regression import evaluate
+        return evaluate(job,operation,evidence_id,contract)
     if isinstance(contract,dict) and contract.get('kind')=='owned_endpoint_metadata':
         from endpoint_metadata import evaluate
         return evaluate(job,operation,evidence_id,contract)
