@@ -14920,6 +14920,8 @@ def run_turn(
     contract_check_templates = prepared_contract_check_templates(managed_agent_job, case_id)
     case_requirement = next((case.get("requirement") or {} for case in
                              managed_agent_job.get("test_cases", []) if case.get("case_id") == case_id), {})
+    from os_identity_comparison import schema_tools_for_case as os_pair_schema_tools_for_case
+    owned_os_pair_schema_tools = os_pair_schema_tools_for_case(managed_agent_job, case_id)
     required_observation_attempted = False
     structured_repair_attempts = 0
     search_phase_reminders = set()
@@ -14928,7 +14930,7 @@ def run_turn(
     )
     composite_tabs_required = bool(required_observation and required_observation["tool"] ==
                                    "browser_verify_exact_table_row_tabs_semantic")
-    telemetry_route_message = None if composite_tabs_required else _read_only_agent_telemetry_route_message(
+    telemetry_route_message = None if composite_tabs_required or owned_os_pair_schema_tools else _read_only_agent_telemetry_route_message(
         managed_agent_request_text,
         telemetry_ci_name,
     )
@@ -14957,7 +14959,7 @@ def run_turn(
             telemetry_ci_name,
             plugin_target,
         )
-        if not telemetry_route_message and not composite_tabs_required
+        if not telemetry_route_message and not composite_tabs_required and not owned_os_pair_schema_tools
         else None
     )
     if plugin_route_message:
@@ -15003,6 +15005,7 @@ def run_turn(
     reviewed_schema_tools = reviewed_tool_schema_hints(navigation_task)
     contract_schema_tools = locked_contract_schema_tools(managed_agent_job, case_id)
     selected_model_tools |= contract_schema_tools
+    selected_model_tools |= owned_os_pair_schema_tools
     form_support_tools = locked_form_support_tools(managed_agent_job, case_id)
     messages.append({"role": "user", "content": (
         "[UQA CORE: PROGRESSIVE TOOL CATALOG]\n"

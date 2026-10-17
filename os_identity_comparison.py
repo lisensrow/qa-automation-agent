@@ -32,6 +32,15 @@ def validate_context(job,cid,args):
  if c.get('case_id')!=cid or r!=expected or args!={'target':r['target']} or job.get('stand')!='lab' or job.get('job_type') not in {'manual','regression'} or job.get('status')!='running' or c.get('status')!='running' or job.get('resources'):raise ValueError('locked_owned_pair_scope')
  if not all(r[k] in job.get('request','') for k in ['ci_name','ci_id','agent_id','profile_id']):raise ValueError('owned_pair_original_request')
  return r
+
+def schema_tools_for_case(job,cid):
+ """Expose schemas for an existing exact READ contract; no source read or authority."""
+ try:
+  c=next(c for c in job.get('test_cases',[]) if c.get('case_id')==cid)
+  r=validate_context(job,cid,{'target':(c.get('requirement') or {}).get('target')})
+  if r['type']!='owned_os_identity_raw_comparison':return set()
+  return {TOOL,'browser_open_agent_tasks_semantic'}
+ except (ValueError,TypeError,KeyError,AttributeError,StopIteration):return set()
 def _load(ref):
  jid,cid,eid=_ref(ref);j=job_store.get_job(jid);c=next(c for c in j['test_cases'] if c['case_id']==cid);e=next(e for e in c['evidence'] if e.get('evidence_id')==eid)
  if j.get('stand')!='lab' or j.get('status')=='running' or e.get('execution_status') not in {'observed','executed'}:raise ValueError('finished_owned_source_required')
