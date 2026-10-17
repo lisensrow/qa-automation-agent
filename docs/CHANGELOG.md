@@ -1,5 +1,17 @@
 # История изменений UQA
 
+## 2026-10-17 — verified system handoff, rejected model narrative preserved
+
+- Prompt/progress/catalog-only trials665–671 did not establish free recovery; retained without promotion. Core673 now automatically restores the model-selected original READ comparator intent through at most3canonical, policy-controlled, separately attributed framework dispatches; a failed prerequisite is not replayed.
+- Actual673 Windows/Astra both reached own frozen-pair comparison without operator next-step input or new agent commands; W1raw difference/A2raw equal, not a normative bug/fullcase. Model final reports remain rejected for unlinked observations and unsupported severity/PASS claims.
+- Guard675 publishes only canonical partial counts/own evidence/BLOCKED, preserving unaccepted model narrative/checks separately. This is not a successful model report or relaxed evidence validator. Subsequent source2step6/memory application and final technical retest are separate acceptance stages.
+
+## 2026-10-17 — bounded recovery progress and partial-case verdict boundary
+
+- Diagnosed real631 terminal refusal without navigation; first664 gate technical304PASS but real665 still repeated CMDB. Windows intermediate false passed retained in original evidence and explicitly corrected668 to BLOCKED; Astra operator read-only interruption separately recorded.
+- Added own-receipt, exact-scope prerequisite progress view and bounded finalization recovery; no automatic tool dispatch, source/hash/time/readiness bypass, permission or oracle changes.
+- Source-only/recorded OS/DMI partial scopes cannot produce full case-level PASS or trigger success ingestion. Negative guards cover foreign/invalid scope, failed/wrong-origin navigation and non-context refusal. Full business regression remains unaccepted; exact outcomes and roles in UQA_AUTONOMY_RECOVERY_20261017.md.
+
 v663: recorded subsequent662recall failure before search (private query-length guard/answer null/no own receipt), not claimed source misunderstanding or successful memory use. Distinct candidate/snapshot/dedup/integrity/retrieval, pinned661/old failures preserved,0new tasks/fullcases. No code/model/context/GPU/Jira change. Next observable bounded query planning/recovery, then independent network oracle.
 
 ## v654–661 — own-read JSON source validation, not regression PASS

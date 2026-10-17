@@ -4658,6 +4658,13 @@ def execute_tool_with_policy(
                         'executed': False, 'action_class': action_class,
                         'action_policy_status': 'blocked_by_advisory_contract'}
 
+    if job_id and case_id and name in {'browser_open_page', 'browser_open_agent_tasks_semantic'}:
+        from read_recovery_gate import completed_read_refusal
+        completed_read = completed_read_refusal(get_job(job_id) or {}, case_id, name, arguments)
+        if completed_read:
+            return {**completed_read, 'action_class': action_class,
+                    'action_policy_status': 'blocked_by_owned_read_progress'}
+
     if name=='knowledge_inspect_own_regression_json_example':
         try:
             from regression_json_example import validate_context as validate_example_context
@@ -14965,6 +14972,7 @@ def run_turn(
     owned_os_pair_schema_tools = os_pair_schema_tools_for_case(managed_agent_job, case_id)
     required_observation_attempted = False
     structured_repair_attempts = 0
+    read_recovery_reminders = 0
     search_phase_reminders = set()
     telemetry_ci_name = _agent_telemetry_ci_name_from_request(
         managed_agent_request_text
@@ -15058,6 +15066,14 @@ def run_turn(
     )})
     for _ in range(MAX_TOOL_STEPS):
         try:
+            framework_read_recovery = None
+            if job_id and case_id and owned_os_pair_schema_tools:
+                from read_recovery_gate import pending_context_recovery, refresh_progress, next_framework_recovery
+                refresh_progress(messages, pending_context_recovery(get_job(job_id) or {}, case_id))
+                framework_read_recovery = next_framework_recovery(get_job(job_id) or {}, case_id)
+                if framework_read_recovery and framework_read_recovery.get('blocked'):
+                    finalize_case_blocked(job_id, case_id, framework_read_recovery['blocked'])
+                    return
             if job_id and case_id and not blocked_mutation_calls:
                 current_job = get_job(job_id)
                 phase_message = (incomplete_search_phase_message(current_job, case_id)
@@ -15073,7 +15089,19 @@ def run_turn(
                 import sys
                 from condition_draft_runtime import completed_checks as completed_condition_checks
                 completed_checks=completed_condition_checks(sys.modules[__name__],get_job(job_id),case_id)
-            if pending_compatibility_probe:
+            if framework_read_recovery:
+                recovery_call = framework_read_recovery['call']
+                # Policy, scope validation and ordinary receipt recording still run below.
+                # Never attribute this compiled prerequisite/retry to the model.
+                add_evidence(job_id, case_id, 'read_recovery_dispatch',
+                             json.dumps(framework_read_recovery, ensure_ascii=False),
+                             source='uqa_framework_read_recovery', execution_status='observed',
+                             usable_for_pass=False, usable_for_verdict=False,
+                             eligibility_reason='framework_prerequisite_not_model_choice_or_business_pass')
+                data = {'message': {'content': '[UQA CORE compiled READ context recovery; not model-selected]',
+                                    'tool_calls': [{'function': {'name': recovery_call['tool'],
+                                                                 'arguments': recovery_call['arguments']}}]}}
+            elif pending_compatibility_probe:
                 pending_compatibility_probe = False
                 compatibility_probe_attempts += 1
                 data = {"message": {"content": "", "tool_calls": [{"function": {
@@ -15095,6 +15123,9 @@ def run_turn(
             else:
                 catalog = model_tool_catalog(selected_model_tools | required_names | reviewed_schema_tools | case_schema_tools)
                 catalog = bind_reader_catalog(catalog,managed_agent_job,case_id)
+                if owned_os_pair_schema_tools:
+                    from read_recovery_gate import pending_context_recovery, recovery_catalog
+                    catalog = recovery_catalog(catalog, pending_context_recovery(get_job(job_id) or {}, case_id))
                 if action_policy == 'confirm_mutations':
                     from ui_popup_context import menu_tool_catalog
                     catalog = menu_tool_catalog(catalog, messages[popup_context_start:])
@@ -15136,6 +15167,13 @@ def run_turn(
         messages.append(assistant_message)
 
         if not tool_calls:
+            if job_id and case_id and read_recovery_reminders < 2:
+                from read_recovery_gate import pending_context_recovery, continuation_message
+                recoverable_read = pending_context_recovery(get_job(job_id) or {}, case_id)
+                if recoverable_read:
+                    read_recovery_reminders += 1
+                    messages.append(continuation_message(recoverable_read))
+                    continue
             if required_observation and not required_observation_attempted:
                 messages.append({"role": "user", "content": (
                     "[UQA CORE: REQUIRED READ-ONLY OBSERVATION]\n"
@@ -15388,7 +15426,8 @@ def run_turn(
                     for item in current_case.get("evidence", [])
                 )
 
-            if visible_content.strip() and not agent_check_case:
+            from read_recovery_gate import partial_scope_reason
+            if visible_content.strip() and not agent_check_case and not partial_scope_reason(case_requirement):
                 console.print()
                 console.print(
                     Markdown(visible_content)
@@ -15544,6 +15583,21 @@ def run_turn(
                         + "status=BLOCKED\n"
                         + "reason=verdict_not_detected"
                     )
+
+                from read_recovery_gate import partial_scope_reason
+                partial_scope = partial_scope_reason(case_requirement)
+                if partial_scope:
+                    from read_recovery_gate import partial_report
+                    add_evidence(job_id, case_id, 'unaccepted_partial_model_report',
+                                 json.dumps({'model_text': visible_content, 'guarded_checks': structured_checks,
+                                             'pre_guard_result': stored_result, 'pre_guard_status': case_status,
+                                             'model_report_accepted': False}, ensure_ascii=False),
+                                 source='uqa_core_result_guard', execution_status='observed',
+                                 usable_for_pass=False, usable_for_verdict=False,
+                                 eligibility_reason='partial_model_narrative_not_business_oracle')
+                    case_status = 'blocked'
+                    stored_result = partial_report(get_job(job_id) or {}, case_id)
+                    console.print(Markdown(stored_result))
 
                 if case_status:
                     update_test_case(
@@ -16166,6 +16220,10 @@ def run_turn(
                     result,
                 )
             )
+
+            if framework_read_recovery and isinstance(result, dict):
+                result['uqa_dispatch_origin'] = 'framework_read_context_recovery'
+                result['uqa_model_selected'] = False
 
             tool_evidence = (
                 record_tool_evidence(
