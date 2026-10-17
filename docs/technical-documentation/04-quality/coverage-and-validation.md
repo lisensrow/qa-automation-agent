@@ -1,5 +1,7 @@
 # Проверки, покрытие и ограничения
 
+v637: actual636both source5 complete own cell coverage +bounded structured understanding, NOT execution. Windows expected6240 in1window/prerequisites observed; Astra8257 in6expected pages/8cells total/prerequisites unknown; all case28/23steps not read. Described smbiosAudit correctly, original559error retained. Full634300technicalPASS not300business tests,0added full cases/steps40/301. Runtime semantics/data correctness/UI and ordinary human execution remain unaccepted. Own633memory applied bounded flag; prose mostlyold631limitations, not all newrequirements.
+
 v633: full630299technicalPASS checks safe error stages/prerequisite limits/projections. Real631both one comparator call→observed_context; checks correctly describe missing UI context but no navigation/comparison.0new tasks/ops; autonomous recovery/new memory use/whole-case not accepted,0added cases/steps40/301. Original623raw subsets remain distinct. Next independent source2step5 own-read coverage, not repeated identical failure.
 
 v629: full626298technicalPASS validates exact-scope catalog only. Actual generic625both wrong routes; actual628both select comparator but fail generic prerequisite, no comparison/ops. Neither new memory application nor navigation recovery/full lifecycle accepted; no added cases/steps40/301. REGOSENTRY629 has primary receipts/roles/title-only retrieval failure. Original623prepared subset comparison remains valid, not whole-case promotion.

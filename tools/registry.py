@@ -309,6 +309,11 @@ TOOLS = [
                     "char_offset":{"type":"integer"},"char_count":{"type":"integer"}}}
         }
     },
+    {'type':'function','function':{
+        'name':'knowledge_inspect_own_regression_read_coverage',
+        'description':'READ-only verify own current Job/case archived-source receipts against exact pinned primary cells. Report contiguous page/field hashes and gaps for one step, precondition and whole-case SOURCE coverage separately. Never supplies the described plugin name, proves comprehension/current oracle/runtime/PASS, adopts other Jobs or grants execution. Requires an existing exact locked source-read profile.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['case_key','step_number'],
+            'properties':{'case_key':{'type':'string','pattern':'^US-T[0-9]{1,8}$'},'step_number':{'type':'integer','minimum':1,'maximum':100}}}}},
     {
         "type": "function",
         "function": {
@@ -2463,6 +2468,8 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "knowledge_inspect_own_regression_read_coverage":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_compare_owned_os_identity_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_compare_owned_software_values_semantic":
