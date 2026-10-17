@@ -809,7 +809,10 @@ def search(
     query: str,
     limit: int = 5,
     source_namespace: str = "all",
+    required_term: str | None = None,
 ):
+    if required_term is not None and (not isinstance(required_term,str) or not re.fullmatch(r'[A-Za-z0-9]{2,80}',required_term)):
+        raise ValueError('invalid_required_term')
     prefixes = {'all': None, 'product_docs': 'UQA-docs/%', 'experience': 'UQA-experience/%'}
     if not isinstance(source_namespace,str) or source_namespace not in prefixes:
         raise ValueError('invalid_source_namespace')
@@ -821,6 +824,8 @@ def search(
     fts_query = _make_fts_query(
         query
     )
+    if required_term is not None:
+        fts_query = '(' + fts_query + ') AND "' + required_term + '"'
 
     con = _connect()
 

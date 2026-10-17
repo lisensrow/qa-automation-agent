@@ -1,4 +1,5 @@
 from knowledge_index import search
+import re
 
 
 MAX_RESULTS = 5
@@ -43,7 +44,10 @@ def knowledge_search(
     query: str,
     limit: int = 5,
     source_namespace: str = "all",
+    required_term: str | None = None,
 ) -> dict:
+    if required_term is not None and (not isinstance(required_term,str) or not re.fullmatch(r'[A-Za-z0-9]{2,80}',required_term)):
+        return {'status':'invalid_required_term','results':[]}
     if not isinstance(source_namespace,str) or source_namespace not in {'all','product_docs','experience'}:
         return {'status':'invalid_source_namespace','results':[]}
     query = str(query).strip()
@@ -71,10 +75,10 @@ def knowledge_search(
         max(limit * 4, limit),
     )
 
-    if source_namespace == 'all':
-        raw = search(query,limit=candidate_limit)
-    else:
-        raw = search(query,limit=candidate_limit,source_namespace=source_namespace)
+    filters={}
+    if source_namespace != 'all':filters['source_namespace']=source_namespace
+    if required_term is not None:filters['required_term']=required_term
+    raw = search(query,limit=candidate_limit,**filters)
 
     results = []
     total_chars = 0
@@ -147,7 +151,9 @@ def knowledge_search(
         "result_count": len(results),
         "results": results,
     }
-    if source_namespace != 'all':
+    if source_namespace != 'all' or required_term is not None:
         output.update(source_namespace=source_namespace,indexed_excerpts_only=True,
             current_source_bytes_rechecked=False,execution_permission_granted=False)
+    if required_term is not None:
+        output.update(required_term=required_term,anchor_is_retrieval_filter_not_specification=True)
     return output

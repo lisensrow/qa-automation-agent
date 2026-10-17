@@ -307,6 +307,7 @@ TOOLS = [
                 "доказательством фактического состояния стенда."
                 " source_namespace=product_docs ищет только продуктовые руководства, "
                 "experience только опыт/кейсы, all сохраняет общий поиск. Scope не подтверждает актуальность или authority."
+                " required_term задаёт один обязательный редкий alphanumeric identifier token, чтобы общие name/note не вытесняли предмет поиска; это фильтр, не контракт."
             ),
             "parameters": {
                 "type": "object",
@@ -328,6 +329,10 @@ TOOLS = [
                     "source_namespace": {
                         "type":"string","enum":["all","product_docs","experience"],
                         "description":"Fixed source-location filter before ranking/limit, default all. No arbitrary path or permission."
+                    },
+                    "required_term": {
+                        "type":"string","pattern":"^[A-Za-z0-9]{2,80}$",
+                        "description":"Optional exact identifier token required in every indexed hit. Remaining query terms keep normal ranking; not current-source/semantic proof."
                     }
                 },
                 "required": ["query"]
@@ -2518,6 +2523,7 @@ def execute_tool(name: str, arguments: dict):
             query=arguments["query"],
             limit=arguments.get("limit", 3),
             **({'source_namespace':arguments['source_namespace']} if arguments.get('source_namespace','all')!='all' else {}),
+            **({'required_term':arguments['required_term']} if 'required_term' in arguments else {}),
         )
 
     if name == "ssh_docker_ps":
