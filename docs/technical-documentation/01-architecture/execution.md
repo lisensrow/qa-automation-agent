@@ -62,3 +62,6 @@ v234: документированный родительский раздел �
 Нет полного natural-language compiler произвольных lifecycle-контрактов. Физический outbound/UI guard для всех unknown autosave не закрыт. Существуют legacy paths без полного owned protocol. Длительность/нестабильность продукта и контекста модели не снимают ограничения безопасности.
 
 Новая память v1 сейчас вызывается доверенным операторским кодом. Она не подключает новые model tools и не меняет этот execution flow.
+# Session observation renewal v697–701
+
+Only fixed read-only WTS/logind may start a new observation with an explicit prior VERIFIED own complete result, identical locked scope/payload/journal fingerprints, old age>=3600s, new fully own-read source and reservation age<=1800s. All same-scope history must be resolved and prior reference latest; concurrent/uncertain sends refused. Default no-rekey/mutation profiles unchanged. Actual699 own new Windows result3registered/0active user candidates VERIFIED. Prepared phases/operator requests/standing confirmations distinct; not freeform per-user lifecycle. See UQA_WINDOWS_CHANGE_PREREQUISITE_20261017.md; no full source-case promotion.

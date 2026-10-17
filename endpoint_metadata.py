@@ -84,7 +84,7 @@ def validate_log_baseline():
  oldops=list_operations('20261016-093351-aeec52e0')
  if len(oldops)!=1 or oldops[0]['status']!='verified':raise ValueError('log_baseline_execution_required')
  return True
-def requirement(name,campaign,profile=PROFILE):
+def requirement(name,campaign,profile=PROFILE,observation_renewal=None):
  if profile not in {PROFILE,'legacy-vnc-identity-v1',POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,SOFTWARE_CHANGE,SOFTWARE_CHANGE_V2}:raise ValueError('endpoint_profile_required')
  from legacy_vnc_identity import PROFILE as LEGACY,SHA as LSHA
  t=target(name)
@@ -164,11 +164,15 @@ def requirement(name,campaign,profile=PROFILE):
   s=r['operation_stages'][0];s.update(workflow_id=profile,
     resource_key='agent-'+t['agent_id']+'-owned-software-change-20261017'+('-v2' if profile==SOFTWARE_CHANGE_V2 else ''))
   s['verification'].update(profile_id=profile,payload_sha256=CHANGE_SHA)
+ if observation_renewal is not None:
+  from session_observation_renewal import declaration
+  r['observation_renewal']=declaration(observation_renewal,profile)
+  r['operation_stages'][0]['verification']['observation_renewal']=deepcopy(r['observation_renewal'])
  return r
 def validate_context(job,cid,starting=False):
  if not isinstance(job,dict) or len(job.get('test_cases',[]))!=1:raise ValueError('single_endpoint_case_required')
  c=job['test_cases'][0];r=c.get('requirement') or {}
- if (c.get('case_id')!=cid or r!=requirement(r.get('target'),r.get('campaign_id'),r.get('profile_id'))
+ if (c.get('case_id')!=cid or r!=requirement(r.get('target'),r.get('campaign_id'),r.get('profile_id'),r.get('observation_renewal'))
    or job.get('stand')!='lab' or job.get('status')!='running' or c.get('status')!='running'
    or job.get('job_type') not in {'manual','regression'} or job.get('resources')):
   raise ValueError('locked_endpoint_context_required')
@@ -251,12 +255,17 @@ def create(session,name,jid,cid):
   ready=read_ready(session,name,jid,cid)
   if ready.get('ready') is not True:raise ValueError(ready.get('error') or 'endpoint_not_ready')
   validate_release_source(job_store.get_job(RELEASE_JOB))
+  _,r=validate_context(job_store.get_job(jid),cid)
+  renewal=None
+  if r.get('observation_renewal') is not None:
+   from session_observation_renewal import validate as validate_renewal
+   renewal=validate_renewal(job_store.get_job(jid),r,job_store.get_job,list_operations,job_store.list_jobs(limit=None))
   for j in job_store.list_jobs(limit=None):
    if j['job_id']==jid:continue
    if any((c.get('requirement') or {}).get('type')=='closed_endpoint_metadata'
       and c['requirement'].get('target')==name for c in j.get('test_cases',[])):
     if any((c.get('requirement') or {}).get('profile_id')==stage['workflow_id'] for c in j.get('test_cases',[])) and any(o['status'] not in {'not_sent','rejected'} for o in list_operations(j['job_id'])):
-     raise ValueError('endpoint_prior_attempt_no_rekey')
+     if renewal is None:raise ValueError('endpoint_prior_attempt_no_rekey')
   t,_,urls=context(session,name);opid=candidates[0]['operation_id']
  except Exception as e:return refusal(str(e)[:150] if isinstance(e,ValueError) else 'endpoint_preflight_refused')
  try:
