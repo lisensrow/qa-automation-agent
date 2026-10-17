@@ -1,5 +1,11 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+REGSTOP728: numeric13 own source fully understood both OS (US-T92/US-T99),
+runtime BLOCKED before stop: independent service recovery unconfirmed. Do not
+re-read for counters or stop only control channel. Numeric14 still retired chain;
+next15 requires verified authorized SNMP target/current contract, not source IP.
+No new full case. See UQA_STOPPED_AGENT_PREREQUISITE_20261017.md.
+
 Closing726: technical310/22MD PASS; indexed724 recall725 still unaccepted, wrong
 source ID/unknown semantics. Never loosen oracle or publish model prose as PASS.
 Persisted limitation separate; remaining numeric cases and provenance-safe reports

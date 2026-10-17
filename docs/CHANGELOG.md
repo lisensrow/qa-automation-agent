@@ -1,5 +1,12 @@
 # История изменений UQA
 
+17Oct728: continued next numeric13 on both OS through UQA own full source read,
+coverage and correct interpretation. No service stop/start or task POST without
+independent recovery path. Source-understanding acceptance separate from runtime
+BLOCKED/fullcase1/40 unchanged; one framework completeness feedback each disclosed.
+Source/evidence: UQA_STOPPED_AGENT_PREREQUISITE_20261017.md. Code remains c372916,
+310technical/22MD; Jira/Zephyr/model/context/GPU unchanged.
+
 17Oct726 closing: full310technical/22MD PASS, deep724 snapshot/candidate/dedup/
 integrity/retrieval successful. New local-model own retrieval725 application FAIL:
 wrong Astra provenance and unknown→zero. Отдельная limitation memory726 сохраняет

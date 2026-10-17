@@ -1,5 +1,12 @@
 # Архитектура QA-агента UQA
 
+REGSTOP728: UQA own source13 interpretation accepted WindowsUS-T925steps and
+AstraUS-T994steps, exact stop/submit/start/driveDeviceAudit. Independent recovery
+unconfirmed => BLOCKED before service stop/POST; zero product tasks. Operator
+oracle/order and one generic completeness feedback per OS explicit. This is
+source understanding only, not full/runtime autonomy; prepared count1/40 stays.
+See UQA_STOPPED_AGENT_PREREQUISITE_20261017.md; no unchanged source rerun needed.
+
 Closing726: full724310/310technical PASS,22MD PASS. Deep724 two candidate events
 saved once, source b451fb63e0247e85ae29f0a271c03f75be104502465cc5f58e1ba9552a0cbcab,
 snapshot/dedup/integrity/retrieval/2898otherchunks preserved. Subsequent own search725
