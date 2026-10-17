@@ -282,6 +282,14 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "knowledge_read_indexed_source_window",
+            "description": "READ-only two allowlisted indexed sources (official UC user guide and reviewed software-comparison memory). First call without expected_index_sha256 returns manifest only; then supply its exact digest for complete 1..3 chunk windows. No silent truncation, raw-file provenance/current-state/permission/fullcase claim. Use own observed source/cursors and next_chunk to read missing context.",
+            "parameters": {"type":"object","additionalProperties":False,"required":["source"],"properties":{"source":{"type":"string","enum":["UQA-docs/UC Руководство пользователя от 06.07.2026.docx","UQA-experience/UQA_SOFTWARE_VALUE_COMPARISON_20261017.md"]},"first_chunk":{"type":"integer"},"chunk_count":{"type":"integer"},"expected_index_sha256":{"type":"string"}}}
+        }
+    },
+    {
+        "type":"function",
+        "function":{
             "name": "knowledge_read_regression_case",
             "description": "Read a hash-pinned archived Windows/Astra regression source window (1..3 steps), including exact expected/test data. Source only, no execution/permission or current-state proof. Use next_step to read every required window; an oversized result is refused, never truncated.",
             "parameters": {"type":"object","additionalProperties":False,"properties":{"case_key":{"type":"string"},"first_step":{"type":"integer"},"step_count":{"type":"integer"}},"required":["case_key"]}
@@ -2515,6 +2523,11 @@ def execute_tool(name: str, arguments: dict):
         from tools.browser import _session
         from tools.table_cell_controls import operate
         return operate(_session, **arguments)
+    if name == "knowledge_read_indexed_source_window":
+        from indexed_source_reader import read_window
+        if set(arguments)-{'source','first_chunk','chunk_count','expected_index_sha256'}:
+            return {'status':'indexed_source_unavailable','reason':'indexed_reader_arguments_invalid','executed':False}
+        return read_window(arguments.get('source'),arguments.get('first_chunk',1),arguments.get('chunk_count',1),arguments.get('expected_index_sha256'))
     if name == "knowledge_read_regression_case":
         if set(arguments)-{'case_key','first_step','step_count'}:
             return {'error':'source_reader_arguments_invalid','executed':False}
