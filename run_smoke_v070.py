@@ -94,6 +94,7 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_regression_json_example.py",
     "smoke_smbios_os_baseline.py",
     "smoke_regression_read_coverage.py",
     "smoke_os_pair_context_feedback.py",

@@ -1,5 +1,9 @@
 # История изменений UQA
 
+## v654–661 — own-read JSON source validation, not regression PASS
+
+Added exact Core READ source JSON inspector with full own cell receipt/hash prerequisites, bounded HTML-text projection/quoted-value preservation, strict syntax/duplicate/nonstandard-constant checks and key shapes without values/repair/authority. Full659303technicalPASS and focused synthetic guards; actual660both own source→coverage→parser→correct bounded JSON/key/negative flags. Preserved654W/657Asemantic failures and separate operator11field oracle error; Wsource15fields versusA14lexical/invalid JSON and legacy11subset, no source rewrite. Full own case2 read receipts W28/A23 are not runtime/all-case semantics.0new endpoint tasks/full cases/steps40/301; model/context/GPU/Jira unchanged. REGNET661 contains primary proofs/roles/budget limits/remaining blockers.
+
 ## v638–653 — independent DMI / recorded SMBIOS / retained report failures
 
 Fixed8field native projection, existing endpoint Core WRITE/journal/no-repeat; exact locked READ same originally model-hashed pair, pre-native/pre-audit raw mapping/singleton/unknown/max1800s, stage fingerprints/canonical proof. Actual646both native observations;647both verified audits but wrong delivery claims → workflows/report NOT accepted; originals retained/no resend. Actual650both8fields6equal/0different/2unknown/raw BLOCKED, correct source-failure flags/0new tasks. Full638301/full648final302technicalPASS, focused bothOS/Core/hash/time/unknown/cardinality/privacy and12source-proof forgeries rejected, not source-case passes. REGDMI651 candidate saved once/snapshot/dedup/integrity/retrieval2864others, SHA82e19015c792548cab15c6428f5873af30153cd707f364a5c00e762d4829a990. Subsequent652 own chosen query/own source quote/structured application correct, source-only not ordinary autonomy. No Jira/model/context/GPU changes;0added full cases/steps40/301. Details REGDMI638/651 and separate memory-application note.

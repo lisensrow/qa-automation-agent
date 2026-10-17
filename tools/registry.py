@@ -206,6 +206,9 @@ TOOLS = [
       'description':'READ: exact locked target/core and fresh loaded displayMonitoring1.3.1/vncServer1.5.5, complete terminal prior task lists. No delivery or session.',
       'parameters':{'type':'object','additionalProperties':False,'required':['target'],
           'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
+    {'type':'function','function':{'name':'knowledge_inspect_own_regression_json_example',
+        'description':'OBSERVE strict JSON syntax and key shapes from a fully own-read immutable source cell. No source repair, values export, execution/current-oracle/PASS authority. Invalid JSON lexical keys are not parsed data fields.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['case_key','step_number','field'],'properties':{'case_key':{'type':'string'},'step_number':{'type':'integer'},'field':{'type':'string','enum':['description_html','test_data_html','expected_html']}}}}},
     {'type':'function','function':{'name':'browser_compare_owned_dmi_identity_semantic',
         'description':'OBSERVE exact locked owned Windows/Astra DMI and SMBIOS recorded pair. GET same originally model-hashed payloads; compare all eight predeclared raw identity fields, singleton arrays and unknown placeholders. No normalization, CPU/DIMM/all hardware/UI/full case, new task or delivery authority.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target'],'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
@@ -2471,6 +2474,8 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "knowledge_inspect_own_regression_json_example":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "knowledge_inspect_own_regression_read_coverage":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_compare_owned_dmi_identity_semantic":

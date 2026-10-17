@@ -1,5 +1,7 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+Current661/17Oct: own full source2read receipts now W28/A23, but654/657all-case semantics unaccepted (permission/PASS/JSON/coverage errors retained); source reading is not execution. Numeric nextstep6networkDeviceAudit: Wsource15datafields/A14lexical invalidJSON, not complete legacy11subset.655Wsource6bounded correct/current inventory stale;657A source6failed despite thenfresh readiness. New659strict own-cell JSON inspector/full303technicalPASS and660both parser-assisted syntax/key/negative answers accepted only as source-only bounded checks.0new endpoint tasks/full cases/steps40/301. Next network runtime requires own current OS oracle/predeclared scope/freshness; do NOTreplayoldnetwork deliveries/structural audits or interpretsourceJSON as executable payload. Keep all-cases/ordinary-autonomy blockers and collections/procedures/policies deferred until actual full regression.
+
 ## Current651 — 17Oct2026: source archive available, Jira must NOT be opened
 
 This current section supersedes historical Jira/session prerequisites below. Offline40cases/301steps pinned, numeric cycle order1..21/1..19. Current work remains case2 US-T79/US-T102 (installation case1 separately BLOCKED; no identity deletion/reinstall for counters). Full-case delta this stage0. Ordinary freeform end-to-end acceptance still open; no declaration of ideal/full regression.

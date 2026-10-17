@@ -304,6 +304,7 @@ MODEL_BASE_TOOL_NAMES = {
     "knowledge_read_regression_case",
     "knowledge_read_regression_step_cell",
     "knowledge_inspect_own_regression_read_coverage",
+    "knowledge_inspect_own_regression_json_example",
 }
 MODEL_CATALOG_TOOL_NAME = "tool_catalog_select"
 
@@ -2049,6 +2050,7 @@ def classify_tool_action(
         'browser_compare_owned_os_identity_semantic',
         'browser_compare_owned_dmi_identity_semantic',
         'knowledge_inspect_own_regression_read_coverage',
+        'knowledge_inspect_own_regression_json_example',
         'browser_inspect_tray_catalog_semantic',
         'browser_read_closed_plugin_discovery_semantic',
         'browser_inspect_closed_plugin_discovery_semantic',
@@ -4656,6 +4658,13 @@ def execute_tool_with_policy(
                         'executed': False, 'action_class': action_class,
                         'action_policy_status': 'blocked_by_advisory_contract'}
 
+    if name=='knowledge_inspect_own_regression_json_example':
+        try:
+            from regression_json_example import validate_context as validate_example_context
+            validate_example_context(get_job(job_id),case_id,arguments)
+        except (ValueError,TypeError,KeyError,AttributeError,OSError):
+            return {'error':'locked_own_source_json_scope_required','executed':False,'action_class':action_class,'action_policy_status':'blocked_by_source_json_scope'}
+
     if name=='knowledge_inspect_own_regression_read_coverage':
         try:
             from regression_read_coverage import validate_context as validate_source_read_context
@@ -5361,7 +5370,10 @@ def execute_tool_with_policy(
             resource_arguments["external_id"] = None
             ignored_external_id = proposed_external_id
 
-    if name=='knowledge_inspect_own_regression_read_coverage':
+    if name=='knowledge_inspect_own_regression_json_example':
+        from regression_json_example import inspect as inspect_source_json_example
+        invoke=lambda:inspect_source_json_example(job_id,case_id,arguments)
+    elif name=='knowledge_inspect_own_regression_read_coverage':
         from regression_read_coverage import inspect as inspect_own_source_coverage
         invoke=lambda:inspect_own_source_coverage(job_id,case_id,arguments)
     elif name=='browser_compare_owned_dmi_identity_semantic':
