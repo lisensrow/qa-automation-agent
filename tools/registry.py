@@ -206,6 +206,9 @@ TOOLS = [
       'description':'READ: exact locked target/core and fresh loaded displayMonitoring1.3.1/vncServer1.5.5, complete terminal prior task lists. No delivery or session.',
       'parameters':{'type':'object','additionalProperties':False,'required':['target'],
           'properties':{'target':{'type':'string','enum':['windows','astra']}}}}},
+    {'type':'function','function':{'name':'browser_compare_owned_software_values_semantic',
+        'description':'OBSERVE locked owned Astra recorded OS592/softAudit594 pair. GET same hash-verified full payloads and compare every exact unique package name/version; no architecture stripping/normalization, new task, other-field/UI/all-app/full-case proof or replay authority. Bounded explicit difference samples, not raw inventory export.',
+        'parameters':{'type':'object','additionalProperties':False,'required':['target'],'properties':{'target':{'type':'string','enum':['astra']}}}}},
     {'type':'function','function':{'name':'browser_compare_owned_gpu_names_semantic',
         'description':'OBSERVE locked owned Astra GPU/OS recorded pair. GET same hash-verified gpuDeviceAudit payload, compare predeclared exact vendor-space-device name hypothesis only. No new tasks/delivery, note/all-GPU/render/full-case proof or replay authority.',
         'parameters':{'type':'object','additionalProperties':False,'required':['target'],'properties':{'target':{'type':'string','enum':['astra']}}}}},
@@ -2449,6 +2452,8 @@ TOOLS = [
 
 
 def execute_tool(name: str, arguments: dict):
+    if name == "browser_compare_owned_software_values_semantic":
+        return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_compare_owned_gpu_names_semantic":
         return {'error':'trusted_Core_job_case_context_required','executed':False}
     if name == "browser_compare_owned_drive_values_semantic":

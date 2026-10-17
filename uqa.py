@@ -2043,6 +2043,7 @@ def classify_tool_action(
         'browser_review_plugin_result_semantic',
         'browser_compare_owned_drive_values_semantic',
         'browser_compare_owned_gpu_names_semantic',
+        'browser_compare_owned_software_values_semantic',
         'browser_inspect_tray_catalog_semantic',
         'browser_read_closed_plugin_discovery_semantic',
         'browser_inspect_closed_plugin_discovery_semantic',
@@ -4649,6 +4650,14 @@ def execute_tool_with_policy(
                         'executed': False, 'action_class': action_class,
                         'action_policy_status': 'blocked_by_advisory_contract'}
 
+    if name=='browser_compare_owned_software_values_semantic':
+        try:
+            from software_result_comparison import validate_context
+            validate_context(get_job(job_id),case_id,arguments)
+        except (ValueError,TypeError,KeyError,AttributeError):
+            return {'error':'locked_software_comparison_scope_required','executed':False,
+                'action_class':action_class,'action_policy_status':'blocked_by_software_comparison_scope'}
+
     if name=='browser_compare_owned_gpu_names_semantic':
         try:
             from gpu_result_comparison import validate_context
@@ -5322,7 +5331,11 @@ def execute_tool_with_policy(
             resource_arguments["external_id"] = None
             ignored_external_id = proposed_external_id
 
-    if name=='browser_compare_owned_gpu_names_semantic':
+    if name=='browser_compare_owned_software_values_semantic':
+        from tools.browser import _session
+        from software_result_comparison import inspect as inspect_software_values
+        invoke=lambda:inspect_software_values(_session,arguments,job_id,case_id)
+    elif name=='browser_compare_owned_gpu_names_semantic':
         from tools.browser import _session
         from gpu_result_comparison import inspect as inspect_gpu_names
         invoke=lambda:inspect_gpu_names(_session,arguments,job_id,case_id)
@@ -6950,6 +6963,9 @@ def _historical_browser_result_summary(tool_name, content):
         summary = {'tool':tool_name, **compact(parsed)}
     if tool_name == 'browser_compare_owned_gpu_names_semantic':
         from gpu_result_comparison import compact
+        summary = {'tool':tool_name, **compact(parsed)}
+    if tool_name == 'browser_compare_owned_software_values_semantic':
+        from software_result_comparison import compact
         summary = {'tool':tool_name, **compact(parsed)}
     if "control_location_hint" in parsed:
         from product_knowledge_context import compact_control_location_hint
