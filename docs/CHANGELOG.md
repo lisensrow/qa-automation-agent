@@ -1,5 +1,7 @@
 # История изменений UQA
 
+v663: recorded subsequent662recall failure before search (private query-length guard/answer null/no own receipt), not claimed source misunderstanding or successful memory use. Distinct candidate/snapshot/dedup/integrity/retrieval, pinned661/old failures preserved,0new tasks/fullcases. No code/model/context/GPU/Jira change. Next observable bounded query planning/recovery, then independent network oracle.
+
 ## v654–661 — own-read JSON source validation, not regression PASS
 
 Added exact Core READ source JSON inspector with full own cell receipt/hash prerequisites, bounded HTML-text projection/quoted-value preservation, strict syntax/duplicate/nonstandard-constant checks and key shapes without values/repair/authority. Full659303technicalPASS and focused synthetic guards; actual660both own source→coverage→parser→correct bounded JSON/key/negative flags. Preserved654W/657Asemantic failures and separate operator11field oracle error; Wsource15fields versusA14lexical/invalid JSON and legacy11subset, no source rewrite. Full own case2 read receipts W28/A23 are not runtime/all-case semantics.0new endpoint tasks/full cases/steps40/301; model/context/GPU/Jira unchanged. REGNET661 contains primary proofs/roles/budget limits/remaining blockers.
