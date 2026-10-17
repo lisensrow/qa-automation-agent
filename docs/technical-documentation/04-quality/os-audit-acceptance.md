@@ -1,5 +1,7 @@
 # Приёмка модельного workflow osAudit
 
+17Oct addition621/624: own native612 + own osAudit619 + later OPERATOR full-data hash620 + own model GET comparison623. Windows hostname1raw difference, Astra hostname/kernel2raw matches; full source case BLOCKED on both, not established product naming contract/all OS/users/mounts/UI. Exact Jobs/evidence/provenance/roles in docs/UQA_OS_RECORDED_COMPARISON_20261017.md. No new agent task623, no original expected rewrite. Closed profile/Core READ/hash/time/source proof safeguards/full297technicalPASS. Prepared phase catalogue/operator digest assistance, not ordinary autonomous full regression.
+
 Проверено 15 октября2026 на Windows10Pro22H2/build19045.6456 и AstraLinux1.8/build1.8.1.6, core1.3.27 и osAudit1.3.4. Версии ОС взяты из inventory/результатов, не независимой физической инспекции.
 
 Локальная qwen3:14b через штатный UQA Core выполнила на каждой цели: поиск памяти → текущую проверку готовности → обновление устаревшего списка плагинов через pluginAudit → чтение своей новой задачи и свежего loaded inventory → новую osAudit → чтение её свежего результата → канонический expected/actual отчёт. Обе новые операции каждого Job подтверждены по первичным ответам. Отправка команды и успешный HTTP-ответ сами по себе не считались результатом.

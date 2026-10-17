@@ -94,6 +94,7 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_os_identity_comparison.py",
     "smoke_indexed_source_reader.py",
     "smoke_os_identity_baseline.py",
     "smoke_software_result_comparison.py",
