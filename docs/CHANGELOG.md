@@ -1,5 +1,13 @@
 # История изменений UQA
 
+17Oct753: Windows native running-task EnginePID/InstanceGuid origin anchor replaces
+the unrealistic historical PID-to-zero prerequisite in a NEW owned dry profile;
+old oracle/proof/task not changed. Actual752 own registration and own observer
+accepted, model correctly denies stop/recovery/fullcase/freeform claims. Real
+cmd/SHA/AST and Core/negative ancestry/own-predecessor/no-replay fixtures passed.
+V5 failed writer retired; tasksv735/v750 retained. Original1/40 unchanged.
+Source/evidence: UQA_SCHEDULER_ENGINE_DRY_PROOF_20261017.md.
+
 17Oct746: technical service-recovery preparation, not a new passed case. Own
 transport/bootstrap/localized SID/.NET timestamp defects diagnosed and corrected;
 strict100ns <=60s, real host cmd decoded-SHA/AST, Core policy/history retirement

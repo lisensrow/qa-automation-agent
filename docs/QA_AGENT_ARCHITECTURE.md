@@ -1,5 +1,13 @@
 # Архитектура QA-агента UQA
 
+REGENGINE753: own new Scheduler-native engine/GUID/path ancestry anchor dry proof
+verified on Windows, both register/observer ops VERIFIED and final model limits
+correct. It is NOT stopped-service recovery/fullcase/freeform autonomy. Previous
+746 ancestry_unknown and false745 diagnostic report unchanged. Operator fixed
+scope/code/two standing approvals, framework one-option phases explicit. Own
+memory retrieval746 INTRO only, not full cause recall. See
+UQA_SCHEDULER_ENGINE_DRY_PROOF_20261017.md; W0/21 A1/19 unchanged.
+
 REGSERVICE746: source13 Windows recovery prerequisite remains unaccepted. Fixed
 our cmd length/quoting/bootstrap, localized SYSTEM SID and .NET7digit parsing;
 old failures retained, no product bug confirmation or original-case PASS. Own V4

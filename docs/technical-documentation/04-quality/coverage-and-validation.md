@@ -1,5 +1,10 @@
 # Проверки, покрытие и ограничения
 
+REGENGINE753 confirms Windows Scheduler callback dry origin only. Both own
+operations and bounded interpretation verified, but original W0/21 A1/19 remains.
+No source13 stop/queued-audit/start/log-content acceptance, no Astra recovery
+equivalent. Memory746 intro retrieval is not full-body learning/transfer.
+
 REGSERVICE746: W0/21 A1/19, unchanged. Native registration/definition/observer
 execution verification is not a new passed source13. Own observer749 reports
 ancestry_unknown; model745 definition-only callback-success claim rejected.

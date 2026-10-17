@@ -1,5 +1,13 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+REGENGINE753 advances numeric13 prerequisite: Windows independent callback DRY
+now accepted through native Scheduler instance/engine ancestry. This callback
+REQUIRES the agent already running and is NOT a stopped-service watchdog. Next
+requires safe independently proven actual stopped-service recovery before any
+stop, then offline queued-audit and fresh correlated agent-log content. Do not
+reuse/re-register retained Taskv735 or Taskv750. Astra equivalent not implemented;
+prepared original coverage W0/21 A1/19 remains, not all40/301 autonomous.
+
 REGSERVICE746 current: finish numeric13 safely, don't label preparatory commands
 full PASS. Existing dry Task UQA-Regress-Service-Dry-v735/proof retained, callback
 ancestry_unknown. Registration and observer MUST NOT be replayed. Investigate a

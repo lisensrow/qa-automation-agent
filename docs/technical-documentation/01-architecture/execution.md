@@ -1,5 +1,12 @@
 # Поток исполнения задачи
 
+REGENGINE753 new fixed dry profile uses native matching RunningTask path/GUID/
+EnginePID and requires callback ancestry to reach that engine outside agent tree.
+Missing parents/PID0 are NOT accepted as proof. Own new registration→fresh own
+result→journal→observer→own result→bounded interpretation verified Windows752.
+Prior failures/markers retained; no stop/restart/privilege change. Dry callback
+requires RUNNING service, not actual stopped-service recovery or fullcase.
+
 REGSERVICE746: own native success envelope/errorlevel0 cannot override stderr or
 invalid output. Windows cmd budget is enforced separately from Win32 length;
 fixed-script decompression is tested by exact SHA+nonempty+empty stderr+AST.

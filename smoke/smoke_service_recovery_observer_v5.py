@@ -28,7 +28,7 @@ def main():
   try:ep.admit(job,'fixture',{'target':'windows'})
   except ValueError as e:assert str(e)=='dry_recovery_attempt_retired_history_only_no_new_command'
   else:raise AssertionError('retired attempt admitted')
- assert p.PROFILE not in ep.RETIRED_RECOVERY_PROFILES and d.PROFILE in ep.RETIRED_RECOVERY_PROFILES
+ assert p.PROFILE in ep.RETIRED_RECOVERY_PROFILES and d.PROFILE in ep.RETIRED_RECOVERY_PROFILES
  print('PASS own SID observer scope/negative independence/retired historical writers; no OS execution')
 
 if __name__=='__main__':main()

@@ -1,5 +1,11 @@
 # План приёмки UQA: дневное продолжение
 
+REGENGINE753: narrow Windows dry origin verified, own final model interpretation
+accepted only within that scope. Zero new full cases, no actual stop/recovery,
+Windows0/21 Astra1/19 unchanged. No deletion/auth/security/model/context/GPU/Jira
+changes. Operator/prepared-framework assistance remains distinct from autonomy;
+memory search read only746 introduction, not all prior failure causes.
+
 REGSERVICE746: no new full case. Actual source13 prerequisite produced bounded
 technical failures and owned Scheduler proof ancestry_unknown. Preserve original
 failed reports and awaiting/verified operation distinctions; VERIFY execution is
