@@ -3,13 +3,14 @@ import json
 import time
 from copy import deepcopy
 import job_store as store
-from endpoint_metadata import CREATE,READ,READY,PROFILE,POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,validate_context
+from endpoint_metadata import CREATE,READ,READY,PROFILE,POST_LOG,MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY,validate_context
 from command_stage_runtime import bound
 from plugin_audit_runtime import phase_decision_schema,decode_phase_decision
 from operation_journal import list_operations,reconcile_operation
 SOURCE='UQA-experience/UQA_PARAMETERLESS_PLUGIN_REGRESSION.md'
 SOFTWARE_SOURCE='UQA-experience/UQA_SOFTWARE_OS_BASELINE_20261017.md'
 OS_IDENTITY_SOURCE='UQA-experience/UQA_OS_IDENTITY_BASELINE_20261017.md'
+DMI_IDENTITY_SOURCE='UQA-experience/UQA_DMI_IDENTITY_BASELINE_20261017.md'
 PROMPT=('You are UQA observing Tray/log metadata through one fixed dedicated Astra agent task. '
  'Select only admitted JSON phases; retrieve reviewed memory and exact readiness first. '
  'No arbitrary commands, log contents/writes, settings, security, installation or Jira/Zephyr. '
@@ -22,7 +23,7 @@ PROMPT=('You are UQA observing Tray/log metadata through one fixed dedicated Ast
 
 def catalog(trace,r):
     if not trace:
-        query=(r['profile_id'] if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY} else PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
+        query=(r['profile_id'] if r['profile_id'] in {MSI,POST_MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY} else PROFILE+' Tray log files write_between_samples' if r['profile_id']==PROFILE else
                POST_LOG if r['profile_id']==POST_LOG else r['profile_id']+' TightVNC ownership no uninstall')
         return [bound('knowledge_search',{'query':query,'limit':4})]
     if not any(x['tool']=='browser_open_page' for x in trace):return [bound('browser_open_page',{'url':'https://uc.lab.local/cmdb'})]
@@ -45,6 +46,15 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
         return {'started':False,'completed':False,'reason':str(e)}
     from windows_legacy_msi import PROFILE as MSI
     prompt=PROMPT
+    if r['profile_id']==DMI_IDENTITY:
+        prompt=('UQA: observe eight nonsensitive system/BIOS/baseboard identity strings on exact dedicated Windows/Astra through one fixed executeCommand. '
+          'Retrieve reviewed profile/readiness, send once through unchanged Core WRITE/journal and fetch own fresh full. '
+          'Windows only projected Win32_ComputerSystemProduct/Win32_BIOS/Win32_BaseBoard properties; Astra only eight fixed sysfs DMI files. '
+          'No serials/UUIDs, CPU/DIMM enumeration, BIOS/settings/rights/security/install/filesystem changes, users/secrets or Jira. '
+          'Missing/denied/empty/placeholder-like is unknown, not matching or absence proof. Raw strings preserved; Linux file final newline alone removed as declared text-file terminator. '
+          'These limited native observations are not smbiosAudit comparison, all hardware/SMBIOS/UI correctness or full-case PASS. '
+          'Later comparison needs a separate predeclared field/source/time oracle before fresh audit; unknowns stay visible. '
+          'Pending same task GET; uncertainty STOP/no resend/rekey. Operator fixed code/scope/oracle/standing approvals and framework phases explicit, not freeform autonomy.')
     if r['profile_id']==OS_IDENTITY:
         prompt=('UQA: read independent current OS identity on the exact dedicated Windows/Astra through one fixed read-only executeCommand. '
           'Retrieve profile and exact readiness, send once through unchanged Core WRITE/journal, fetch own fresh full. '
@@ -108,7 +118,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
     try:
         from tools.browser import _session
         _session.reset_case_context()
-        for turn in range(40 if r['profile_id'] in {MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY} else 20):
+        for turn in range(40 if r['profile_id'] in {MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY} else 20):
             options=catalog(trace,r)
             if not options:
                 last=trace[-1]['result'];ops=list_operations(jid)
@@ -118,7 +128,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
                     'read_evidence_id':trace[-1]['evidence_id'],'full_business_case_passed':False,'jira_written':False}
                 status_key='absence_status' if r['profile_id']==POST_MSI else 'removal_status' if r['profile_id']==MSI else 'logging_status' if r['profile_id'] in {PROFILE,POST_LOG} else 'observation_status'
                 schema={'type':'object','additionalProperties':False,'required':[status_key,'full_business_case_passed','summary'],
-                    'properties':{status_key:{'type':'string','enum':['PASS','BLOCKED'] if status_key in {'logging_status','removal_status','absence_status'} else ['OBSERVED','OBSERVED_WITH_UNKNOWNS','BLOCKED'] if r['profile_id']==OS_IDENTITY else ['COMPLETE','BLOCKED']},
+                    'properties':{status_key:{'type':'string','enum':['PASS','BLOCKED'] if status_key in {'logging_status','removal_status','absence_status'} else ['OBSERVED','OBSERVED_WITH_UNKNOWNS','BLOCKED'] if r['profile_id'] in {OS_IDENTITY,DMI_IDENTITY} else ['COMPLETE','BLOCKED']},
                         'full_business_case_passed':{'type':'boolean'},'summary':{'type':'string'}}}
                 suffix=(' Only the exact authorized MSI is in scope; full regression is not proved.' if r['profile_id']==MSI
                   else ' Only current exact absence is checked, not the original uninterrupted lifecycle or full regression.' if r['profile_id']==POST_MSI
@@ -128,6 +138,7 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
                 if r['profile_id']==GPUS:suffix=' OS GPU metadata only; PCI scope/name database limits and no plugin comparison/full-case acceptance.'
                 if r['profile_id']==SOFTWARE:suffix=' Package/registry census only; sample is not whole list, no all-software/UI/plugin comparison/full-case acceptance.'
                 if r['profile_id']==OS_IDENTITY:suffix=' Native identity fields only, unknowns retained; no plugin comparison/all OS fields/users/volumes/UI/full-case acceptance.'
+                if r['profile_id']==DMI_IDENTITY:suffix=' Eight raw identity strings only, unknown/placeholder markers retained; no plugin/all-SMBIOS/CPU/DIMM/UI/full-case acceptance.'
                 answer=api.ask_ollama([{'role':'system','content':prompt+suffix},
                     {'role':'user','content':'Summarize only this canonical limited observation: '+json.dumps(report)}],
                     tools=[],response_schema=schema)['message'].get('content') or ''
@@ -153,10 +164,10 @@ def run(api,messages,jid,cid,policy,force_read_only=False):
             trace.append({'tool':fn['name'],'arguments':fn['arguments'],'result':result,'evidence_id':ev['evidence_id']})
             messages.append({'role':'tool','tool_name':fn['name'],'content':json.dumps(api.tool_result_for_model(fn['name'],result))})
             if result.get('error'):
-                if fn['name']==READ and result['error']=='own_endpoint_result_not_ready' and pending_reads<(24 if r['profile_id'] in {MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY} else 8):
+                if fn['name']==READ and result['error']=='own_endpoint_result_not_ready' and pending_reads<(24 if r['profile_id'] in {MSI,SESSIONS,DISKS,GPUS,SOFTWARE,OS_IDENTITY,DMI_IDENTITY} else 8):
                     pending_reads+=1;time.sleep(2);continue
                 raise ValueError('endpoint_tool_failed:'+str(result['error']))
-            source=OS_IDENTITY_SOURCE if r['profile_id']==OS_IDENTITY else SOFTWARE_SOURCE if r['profile_id']==SOFTWARE else SOURCE
+            source=DMI_IDENTITY_SOURCE if r['profile_id']==DMI_IDENTITY else OS_IDENTITY_SOURCE if r['profile_id']==OS_IDENTITY else SOFTWARE_SOURCE if r['profile_id']==SOFTWARE else SOURCE
             if fn['name']=='knowledge_search' and not any(x.get('source')==source and r['profile_id'] in str(x) for x in result.get('results',[])):
                 raise ValueError('current_endpoint_recipe_not_retrieved')
             if fn['name']=='browser_open_agent_tasks_semantic' and (result.get('ci_id'),result.get('agent_id'))!=(r['ci_id'],r['agent_id']):

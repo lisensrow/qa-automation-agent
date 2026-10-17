@@ -1,5 +1,19 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+## Current651 — 17Oct2026: source archive available, Jira must NOT be opened
+
+This current section supersedes historical Jira/session prerequisites below. Offline40cases/301steps pinned, numeric cycle order1..21/1..19. Current work remains case2 US-T79/US-T102 (installation case1 separately BLOCKED; no identity deletion/reinstall for counters). Full-case delta this stage0. Ordinary freeform end-to-end acceptance still open; no declaration of ideal/full regression.
+
+| Source2 area | Windows | Astra | Acceptance boundary |
+| --- | --- | --- | --- |
+| step5 own source |636full step cells/prerequisites observed |636full step cells/prerequisites unknown |Not all28/23steps or runtime |
+| independent DMI |646own8fields/2unknown |646own8fields/2unknown |No CPU/DIMM/all hardware/UI |
+| fresh SMBIOS |647verified own full; final report FAILED |647verified own full; final report FAILED |Wrong current-run delivery claim retained; no actual delivery |
+| own recorded raw compare |6506equal/0different/2unknown |6506equal/0different/2unknown |8rows, raw/full source BLOCKED, source-report false |
+| whole case / ordinary autonomy |Not accepted |Not accepted |0new complete cases/steps40/301 |
+
+Next: candidate651snapshot/dedup/integrity/retrieval and subsequent local-model application; accurate per-current-run action attribution, not resend of already-verified647 tasks. Continue safe numeric source scenarios with independent current oracles, visible blockers and exact original source. Frozen pair comparisons may reread same hashes, never launch source work merely for counters. Collections/policies/procedures remain behind actual full regression acceptance. All existing safety/policy/replay/OS/model/context/GPU boundaries preserved; no Jira/Zephyr access.
+
 v534: session prerequisite stage finished through UQA: Windows3registered/0active candidates, Astra1registered/0graphical candidates, own fresh results/2verified ops. Not global logout or desktop PASS. Initial Windows0operation retrieval failure preserved; separate query-route-fixed continuation. Full533285technicalPASS. User action needed: restore Jira session for complete40case steps and active owned test desktops through existing ordinary access, no passwords in chat. No forced login/unlock/consent/security changes. Then source export/completeness→per-case contracts→UQA own execution and result validation. Independent engineering next can validate VncServer status from actual frontend source before install; no status/install task or UC patch yet. Do not repeat successful probes/starts for counters; Jira/Zephyr read-only. Recipe534 has primary proofs/source hashes/roles.
 
 v531 next: final285technical suite, then UQA one fixed local WTS/logind census on each owned Windows/Astra through existing Core WRITE/journal and own fresh read. Identify registered active user-session candidates without names/login/unlock/activation or changing consent/security. Unknown is not zero; candidates not desktop. No Tray/VNC retry. Use result to distinguish current prerequisite from plugin outcome; exact control/session prerequisites still required before any new action. Full Zephyr step source remains Jira-login blocked, no writes. Recipe531 contains code/source boundaries.

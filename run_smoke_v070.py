@@ -94,10 +94,12 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_smbios_os_baseline.py",
     "smoke_regression_read_coverage.py",
     "smoke_os_pair_context_feedback.py",
     "smoke_os_pair_catalog_routing.py",
     "smoke_os_identity_comparison.py",
+    "smoke_smbios_identity_comparison.py",
     "smoke_indexed_source_reader.py",
     "smoke_os_identity_baseline.py",
     "smoke_software_result_comparison.py",

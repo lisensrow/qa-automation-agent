@@ -2047,6 +2047,7 @@ def classify_tool_action(
         'browser_compare_owned_gpu_names_semantic',
         'browser_compare_owned_software_values_semantic',
         'browser_compare_owned_os_identity_semantic',
+        'browser_compare_owned_dmi_identity_semantic',
         'knowledge_inspect_own_regression_read_coverage',
         'browser_inspect_tray_catalog_semantic',
         'browser_read_closed_plugin_discovery_semantic',
@@ -4663,6 +4664,14 @@ def execute_tool_with_policy(
             return {'error':'locked_own_source_read_scope_required','executed':False,
                 'action_class':action_class,'action_policy_status':'blocked_by_own_source_read_scope'}
 
+    if name=='browser_compare_owned_dmi_identity_semantic':
+        try:
+            from smbios_identity_comparison import validate_context
+            validate_context(get_job(job_id),case_id,arguments)
+        except (ValueError,TypeError,KeyError,AttributeError):
+            return {'error':'locked_dmi_identity_pair_scope_required','executed':False,
+                'action_class':action_class,'action_policy_status':'blocked_by_dmi_identity_pair_scope'}
+
     if name=='browser_compare_owned_os_identity_semantic':
         try:
             from os_identity_comparison import validate_context
@@ -5355,6 +5364,10 @@ def execute_tool_with_policy(
     if name=='knowledge_inspect_own_regression_read_coverage':
         from regression_read_coverage import inspect as inspect_own_source_coverage
         invoke=lambda:inspect_own_source_coverage(job_id,case_id,arguments)
+    elif name=='browser_compare_owned_dmi_identity_semantic':
+        from tools.browser import _session
+        from smbios_identity_comparison import inspect as inspect_dmi_identity_pair
+        invoke=lambda:inspect_dmi_identity_pair(_session,arguments,job_id,case_id)
     elif name=='browser_compare_owned_os_identity_semantic':
         from tools.browser import _session
         from os_identity_comparison import inspect as inspect_os_identity_pair
@@ -6994,6 +7007,9 @@ def _historical_browser_result_summary(tool_name, content):
         summary = {'tool':tool_name, **compact(parsed)}
     if tool_name == 'browser_compare_owned_software_values_semantic':
         from software_result_comparison import compact
+        summary = {'tool':tool_name, **compact(parsed)}
+    if tool_name == 'browser_compare_owned_dmi_identity_semantic':
+        from smbios_identity_comparison import compact
         summary = {'tool':tool_name, **compact(parsed)}
     if tool_name == 'browser_compare_owned_os_identity_semantic':
         from os_identity_comparison import compact
