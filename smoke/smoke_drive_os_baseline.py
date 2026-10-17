@@ -8,7 +8,7 @@ from unittest.mock import patch
 from uuid import uuid4
 import json
 
-def core_fixture(name,body):
+def core_fixture(name,body,summary_check=None):
     import uqa,job_store as store,endpoint_metadata as ep,endpoint_metadata_runtime as rt
     from operation_journal import list_operations,reconcile_operation
     r=ep.requirement(name,'fixture-drive-os-baseline',p.PROFILE)
@@ -51,7 +51,10 @@ def core_fixture(name,body):
         out=uqa.execute_tool_with_policy(ep.READ,args,messages,**ctx);assert out.get('native_result_verified'),out
         ev=uqa.record_tool_evidence(jid,cid,ep.READ,args,out);op=list_operations(jid)[0]
         assert reconcile_operation(jid,op['operation_id'],ev['evidence_id'])['verified']
-        assert out['summary']['row_count']==1 and not out['summary']['plugin_result_compared']
+        if summary_check is None:
+            assert out['summary']['row_count']==1 and not out['summary']['plugin_result_compared']
+        else:
+            summary_check(out['summary'])
         assert not uqa.execute_tool_with_policy(ep.CREATE,args,messages,**ctx).get('executed') and len(posts)==1
 
 def main():
