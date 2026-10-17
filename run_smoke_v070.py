@@ -94,6 +94,7 @@ PRODUCTION_FILES = [
     ROOT / "tools" / "browser.py",
 ]
 SMOKES = [
+    "smoke_software_os_baseline.py",
     "smoke_required_knowledge_term.py",
     "smoke_scoped_knowledge_search.py",
     "smoke_gpu_result_comparison.py",
