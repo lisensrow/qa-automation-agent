@@ -1,5 +1,14 @@
 # UQA — приоритет: регресс агента U-Connect по плагинам
 
+REGORDER755 supersedes the prior next-case13 direction. Current cursors are
+Windows US-T116/1 and Astra US-T117/1. Do not advance on BLOCKED/partial preparation
+or count later partial skills as completed predecessors. Full case requires every
+source step and expected/current oracle accounted with actual execution evidence.
+Installation/reset and Astra temporary X-access test conflict with standing
+identity/security boundaries; resolve exact authority/clean target approach first,
+not by silently bypassing tests or restarting case13. See
+UQA_STRICT_REGRESSION_ORDER_20261017.md. Historical1/40 remains, not1..12 complete.
+
 REGENGINE753 advances numeric13 prerequisite: Windows independent callback DRY
 now accepted through native Scheduler instance/engine ancestry. This callback
 REQUIRES the agent already running and is NOT a stopped-service watchdog. Next

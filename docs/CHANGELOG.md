@@ -1,5 +1,11 @@
 # История изменений UQA
 
+17Oct755: corrected regression workflow by direct human instruction. Return to
+first incomplete WindowsUS-T116/AstraUS-T117, no advancement on partial/blocked
+checks. Full archived sources/hash reviewed, identity/X-access authorization
+conflicts recorded before actions. No model/agent test launched, no new PASS.
+Source: UQA_STRICT_REGRESSION_ORDER_20261017.md. Earlier work/history preserved.
+
 17Oct753: Windows native running-task EnginePID/InstanceGuid origin anchor replaces
 the unrealistic historical PID-to-zero prerequisite in a NEW owned dry profile;
 old oracle/proof/task not changed. Actual752 own registration and own observer

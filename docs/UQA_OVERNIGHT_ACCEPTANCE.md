@@ -1,5 +1,11 @@
 # План приёмки UQA: дневное продолжение
 
+REGORDER755 direct user correction: stay on first incomplete case per OS,
+US-T116 Windows and US-T117 Astra, not number13. BLOCKED does not advance cursor.
+Full-source installation steps include restricted identity deletion/X-access
+changes: source is not permission, no installation/reset/security action yet.
+Operator review/order correction is not local-model runtime; historical1/40 stays.
+
 REGENGINE753: narrow Windows dry origin verified, own final model interpretation
 accepted only within that scope. Zero new full cases, no actual stop/recovery,
 Windows0/21 Astra1/19 unchanged. No deletion/auth/security/model/context/GPU/Jira
